@@ -26,8 +26,8 @@ Decoration::~Decoration() = default;
 bool Decoration::init()
 {
     loadConfig();
-    updateLayout();
     createButtons();
+    updateLayout();
     updateShadow();
 
     if (window()) {
@@ -67,10 +67,19 @@ void Decoration::loadConfig()
 
 void Decoration::updateLayout()
 {
-    int headerH = m_config.titleBarHeight;
+    const int headerH = m_config.titleBarHeight;
+    const int w = size().width();
 
-    setTitleBar(QRectF(0, 0, size().width(), headerH));
+    setTitleBar(QRectF(0, 0, w, headerH));
     setBorders(QMarginsF(0, headerH, 0, 0));
+
+    if (m_rightButtonGroup) {
+        qreal groupW = m_rightButtonGroup->geometry().width();
+        qreal groupH = m_rightButtonGroup->geometry().height();
+        qreal x = w - groupW - m_config.buttonRightMargin;
+        qreal y = (headerH - groupH) / 2.0;
+        m_rightButtonGroup->setPos(QPointF(x, qMax(0.0, y)));
+    }
 }
 
 void Decoration::createButtons()
@@ -208,6 +217,11 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
                 painter->drawText(textRect, align, elidedCaption);
             }
         }
+    }
+
+    // Paint button group!
+    if (m_rightButtonGroup) {
+        m_rightButtonGroup->paint(painter, repaintRegion);
     }
 
     painter->restore();

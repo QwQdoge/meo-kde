@@ -17,6 +17,13 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
     : KDecoration3::DecorationButton(type, decoration, parent)
     , m_decoration(decoration)
 {
+    if (decoration) {
+        int hitSz = decoration->config().buttonHitSize;
+        setGeometry(QRectF(0, 0, hitSz, hitSz));
+    } else {
+        setGeometry(QRectF(0, 0, 26, 26));
+    }
+
     m_hoverAnim = new QVariantAnimation(this);
     m_hoverAnim->setDuration(180);
     m_hoverAnim->setEasingCurve(QEasingCurve::OutCubic);
