@@ -1,0 +1,15 @@
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meosystemplugin.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meo-system-state-smoke.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meo-task-role-smoke.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/edit_cache.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/rebuild_cache.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/list_install_components.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/install.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/install/local.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/install/strip.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meosystemplugin_autogen_timestamp_deps.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meosystemplugin_autogen.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meo-system-state-smoke_autogen_timestamp_deps.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meo-system-state-smoke_autogen.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meo-task-role-smoke_autogen_timestamp_deps.dir
+/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/CMakeFiles/meo-task-role-smoke_autogen.dir

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/shekong/Projects/meo-kde/packaging/arch/src/system-build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

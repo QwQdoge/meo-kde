@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Id": "org.meo.topbar",
+        "Name": "Meo Top Status Bar",
+        "Description": "Adaptive Material 3 top status bar for Meo Desktop",
+        "Icon": "meoarch-logo",
+        "Authors": [
+            {
+                "Name": "Meo Desktop Team"
+            }
+        ],
+        "Category": "Panel",
+        "License": "GPL-2.0-or-later",
+        "Version": "0.2.0"
+    },
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

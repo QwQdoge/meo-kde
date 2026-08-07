@@ -1,0 +1,17 @@
+mkdir -p /home/shekong/.local/state/meo-desktop/backups/20260802T103527Z /home/shekong/.local/share/plasma/look-and-feel /home/shekong/.local/share/plasma/plasmoids /home/shekong/.local/share/wallpapers/MeoArch /home/shekong/.local/share/fonts/meo /home/shekong/.local/lib/qt6/qml/MeoKDE /home/shekong/.config/fontconfig/conf.d 
+cp -a /home/shekong/.config/kdeglobals /home/shekong/.local/state/meo-desktop/backups/20260802T103527Z/kdeglobals 
+cp -a /home/shekong/.config/kwinrc /home/shekong/.local/state/meo-desktop/backups/20260802T103527Z/kwinrc 
+cp -a /home/shekong/.config/plasmarc /home/shekong/.local/state/meo-desktop/backups/20260802T103527Z/plasmarc 
+cp -a /home/shekong/.config/plasma-org.kde.plasma.desktop-appletsrc /home/shekong/.local/state/meo-desktop/backups/20260802T103527Z/plasma-org.kde.plasma.desktop-appletsrc 
+rm -rf /home/shekong/.local/share/plasma/look-and-feel/org.meo.desktop 
+cp -a /home/shekong/Projects/meo-kde/themes/look-and-feel/org.meo.desktop /home/shekong/.local/share/plasma/look-and-feel/org.meo.desktop 
+rm -rf /home/shekong/.local/share/plasma/plasmoids/org.meo.shelf 
+cp -a /home/shekong/Projects/meo-kde/plasmoids/org.meo.shelf /home/shekong/.local/share/plasma/plasmoids/org.meo.shelf 
+rm -rf /home/shekong/.local/share/plasma/plasmoids/org.meo.topbar 
+cp -a /home/shekong/Projects/meo-kde/plasmoids/org.meo.topbar /home/shekong/.local/share/plasma/plasmoids/org.meo.topbar 
+cp -a /home/shekong/Projects/meo-kde/qml/MeoKDE/. /home/shekong/.local/lib/qt6/qml/MeoKDE/ 
+cp -a /home/shekong/Projects/meo-kde/assets/fonts/. /home/shekong/.local/share/fonts/meo/ 
+cp -a /home/shekong/Projects/meo-kde/defaults/fonts/50-meo-fonts.conf /home/shekong/.config/fontconfig/conf.d/50-meo-fonts.conf 
+cp -a /home/shekong/Projects/meo-kde/assets/wallpapers/installer_background.png /home/shekong/.local/share/wallpapers/MeoArch/installer_background.png 
+fc-cache -f /home/shekong/.local/share/fonts/meo 
+plasma-apply-lookandfeel -a org.meo.desktop --resetLayout 

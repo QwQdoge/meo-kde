@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="78" height="78" viewBox="0 0 78 78">
+  <style id="current-color-scheme" type="text/css">
+    .ColorScheme-Background { color: #f7f2fa; }
+  </style>
+  <g fill="currentColor" class="ColorScheme-Background" fill-opacity="0.90">
+    <path id="center" d="M26 26h26v26H26z"/><path id="top" d="M26 2h26v24H26z"/><path id="bottom" d="M26 52h26v24H26z"/><path id="left" d="M2 26h24v26H2z"/><path id="right" d="M52 26h24v26H52z"/><path id="topleft" d="M26 2C12.7 2 2 12.7 2 26h24z"/><path id="topright" d="M52 2c13.3 0 24 10.7 24 24H52z"/><path id="bottomleft" d="M2 52c0 13.3 10.7 24 24 24V52z"/><path id="bottomright" d="M52 76c13.3 0 24-10.7 24-24H52z"/>
+  </g>
+  <rect id="hint-top-margin" x="37" y="22" width="4" height="4" fill="#ff00ff"/><rect id="hint-bottom-margin" x="37" y="52" width="4" height="4" fill="#ff00ff"/><rect id="hint-left-margin" x="22" y="37" width="4" height="4" fill="#ff00ff"/><rect id="hint-right-margin" x="52" y="37" width="4" height="4" fill="#ff00ff"/><rect id="hint-stretch-borders" x="0" y="0" width="1" height="1" fill="#ff00ff"/>
+</svg>

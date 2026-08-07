@@ -1,0 +1,15 @@
+[Effect-overview]
+BorderActivate=9
+
+[Plugins]
+overviewEnabled=true
+
+[TabBox]
+LayoutName=thumbnail_grid
+
+[Windows]
+FocusPolicy=ClickToFocus
+
+[org.kde.kdecoration2]
+library=org.kde.kwin.aurorae.v2
+theme=__aurorae__svg__WillowDark

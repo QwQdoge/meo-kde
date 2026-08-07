@@ -1,0 +1,16 @@
+{
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "MeoArch"
+      }
+    ],
+    "Category": "Desktop Theme",
+    "Description": "Adaptive Material 3 Plasma surfaces for Meo Desktop",
+    "EnabledByDefault": true,
+    "Id": "Meo",
+    "License": "GPL-3.0-or-later",
+    "Name": "Meo Material 3",
+    "Version": "0.2.0"
+  }
+}

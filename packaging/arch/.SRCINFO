@@ -1,0 +1,27 @@
+pkgbase = meo-desktop
+	pkgdesc = MeoArch KDE Plasma desktop defaults
+	pkgver = 0.2.0
+	pkgrel = 1
+	url = https://github.com/QwQdoge
+	arch = x86_64
+	license = GPL-3.0-or-later
+	makedepends = cmake
+	depends = meoui-qml>=1.0.1
+	depends = plasma-desktop
+	depends = plasma-workspace
+	depends = plasma-nm
+	depends = plasma-pa
+	depends = powerdevil
+	depends = bluedevil
+	depends = systemsettings
+	depends = dolphin
+	depends = konsole
+	depends = sddm
+	depends = breeze
+	depends = networkmanager-qt
+	depends = bluez-qt
+	depends = solid
+	depends = pulseaudio-qt
+	optdepends = omnistore-bin: MeoArch application discovery and package management
+
+pkgname = meo-desktop

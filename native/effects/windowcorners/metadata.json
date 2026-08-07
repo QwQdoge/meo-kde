@@ -1,0 +1,21 @@
+{
+    "KPlugin": {
+        "Id": "org.meo.windowcorners",
+        "Name": "Meo Window Corners Effect",
+        "Name[zh_CN]": "Meo 窗口圆角特效",
+        "Description": "Companion KWin effect providing true rounded corners for application windows",
+        "Description[zh_CN]": "用于为所有应用程序窗口提供全窗口真实圆角裁切的 KWin 配套特效",
+        "Category": "Appearance",
+        "Version": "0.3.0",
+        "License": "GPL-3.0-or-later",
+        "Authors": [
+            {
+                "Name": "MeoArch OS Team",
+                "Email": "dev@meoarch.org"
+            }
+        ]
+    },
+    "org.kde.kwin.effect": {
+        "exclusiveGroup": "window-corners"
+    }
+}

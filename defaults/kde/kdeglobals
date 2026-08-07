@@ -1,0 +1,21 @@
+[General]
+ColorScheme=MeoLight
+Name=Meo Desktop
+font=Roboto,10,-1,5,50,0,0,0,0,0
+menuFont=Roboto,10,-1,5,50,0,0,0,0,0
+smallestReadableFont=Roboto,8,-1,5,50,0,0,0,0,0
+toolBarFont=Roboto,10,-1,5,50,0,0,0,0,0
+
+[KDE]
+LookAndFeelPackage=org.meo.desktop
+SingleClick=false
+ShowDeleteCommand=false
+
+[Icons]
+Theme=MeoSymbols
+
+[Colors:Selection]
+ColorScheme=AccentColor
+
+[WM]
+activeFont=Roboto Medium,10,-1,5,57,0,0,0,0,0

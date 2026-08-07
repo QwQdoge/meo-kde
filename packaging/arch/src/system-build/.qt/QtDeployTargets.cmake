@@ -1,0 +1,6 @@
+set(__QT_DEPLOY_TARGET_meosystemplugin_FILE /home/shekong/Projects/meo-kde/packaging/arch/src/system-build/qml/Meo/System/libmeosystemplugin.so)
+set(__QT_DEPLOY_TARGET_meosystemplugin_TYPE MODULE_LIBRARY)
+set(__QT_DEPLOY_TARGET_meo-system-state-smoke_FILE /home/shekong/Projects/meo-kde/packaging/arch/src/system-build/meo-system-state-smoke)
+set(__QT_DEPLOY_TARGET_meo-system-state-smoke_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_meo-task-role-smoke_FILE /home/shekong/Projects/meo-kde/packaging/arch/src/system-build/meo-task-role-smoke)
+set(__QT_DEPLOY_TARGET_meo-task-role-smoke_TYPE EXECUTABLE)

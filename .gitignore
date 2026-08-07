@@ -1,0 +1,6 @@
+/out/
+/build/
+/validation/screenshots/
+*.pkg.tar.*
+.DS_Store
+*.user

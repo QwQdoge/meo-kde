@@ -1,0 +1,2 @@
+/usr/lib/qt6/qml/Meo/System/libmeosystemplugin.so
+/usr/lib/qt6/qml/Meo/System/qmldir

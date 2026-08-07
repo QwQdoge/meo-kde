@@ -1,0 +1,25 @@
+[Icon Theme]
+Name=Meo Mono
+Comment=MeoArch monochrome Material 3 symbol fallback theme
+Inherits=breeze,hicolor
+Directories=scalable/apps
+
+[scalable/apps]
+Size=48
+MinSize=16
+MaxSize=512
+Type=Scalable
+Context=Applications
+
+DesktopDefault=48
+DesktopSizes=16,22,24,32,48,64
+ToolbarDefault=22
+ToolbarSizes=16,22,24,32,48
+MainToolbarDefault=22
+MainToolbarSizes=16,22,24,32,48
+SmallDefault=16
+SmallSizes=16,22,24,32,48
+PanelDefault=22
+PanelSizes=16,22,24,32,48
+DialogDefault=48
+DialogSizes=16,22,24,32,48,64
