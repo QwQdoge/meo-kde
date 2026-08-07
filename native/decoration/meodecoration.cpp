@@ -11,6 +11,8 @@
 #include <QPainterPath>
 #include <QFontMetrics>
 #include <QGuiApplication>
+#include <QImage>
+#include <QtMath>
 
 namespace MeoDecoration {
 
@@ -39,6 +41,11 @@ bool Decoration::init()
         });
         connect(window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, [this]() {
             updateLayout();
+            updateShadow();
+            update();
+        });
+        connect(window(), &KDecoration3::DecoratedWindow::sizeChanged, this, [this]() {
+            updateLayout();
             update();
         });
     }
@@ -50,16 +57,16 @@ void Decoration::loadConfig()
     auto config = KSharedConfig::openConfig("kwinrc");
     KConfigGroup group(config, "org.meo.decoration");
 
-    m_config.titleBarHeight = group.readEntry("TitleBarHeight", 36);
-    m_config.cornerRadius = group.readEntry("CornerRadius", 14);
-    m_config.buttonDiameter = group.readEntry("ButtonDiameter", 13);
-    m_config.buttonHitSize = group.readEntry("ButtonHitSize", 26);
-    m_config.buttonSpacing = group.readEntry("ButtonSpacing", 7);
-    m_config.buttonRightMargin = group.readEntry("ButtonRightMargin", 14);
+    m_config.titleBarHeight = qBound(24, group.readEntry("TitleBarHeight", 36), 72);
+    m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 14), 48);
+    m_config.buttonDiameter = qBound(8, group.readEntry("ButtonDiameter", 13), 32);
+    m_config.buttonHitSize = qBound(m_config.buttonDiameter, group.readEntry("ButtonHitSize", 26), 48);
+    m_config.buttonSpacing = qBound(0, group.readEntry("ButtonSpacing", 7), 24);
+    m_config.buttonRightMargin = qBound(0, group.readEntry("ButtonRightMargin", 14), 48);
     m_config.showButtonBackground = group.readEntry("ShowButtonBackground", true);
     m_config.shadowIntensity = group.readEntry("ShadowIntensity", 0.25);
-    m_config.shadowRadius = group.readEntry("ShadowRadius", 24);
-    m_config.shadowOffsetY = group.readEntry("ShadowOffsetY", 4);
+    m_config.shadowRadius = qBound(0, group.readEntry("ShadowRadius", 24), 64);
+    m_config.shadowOffsetY = qBound(-m_config.shadowRadius, group.readEntry("ShadowOffsetY", 4), m_config.shadowRadius);
     m_config.alignTitleCenter = group.readEntry("AlignTitleCenter", true);
     m_config.squareMaximized = group.readEntry("SquareMaximized", true);
     m_config.enableAccentTint = group.readEntry("EnableAccentTint", true);
@@ -126,9 +133,32 @@ void Decoration::updateShadow()
         m_shadow = std::make_shared<KDecoration3::DecorationShadow>();
     }
 
-    int rad = m_config.shadowRadius;
-    int offset = m_config.shadowOffsetY;
-    m_shadow->setPadding(QMargins(rad, rad + offset, rad, rad - offset));
+    const int radius = m_config.shadowRadius;
+    const int offset = m_config.shadowOffsetY;
+    const int imageSize = (radius * 2) + 1;
+    QImage image(imageSize, imageSize, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+
+    // DecorationShadow is a nine-patch image. Supplying only padding creates
+    // an empty shadow; render one compact radial source image for KWin to tile.
+    if (radius > 0 && m_config.shadowIntensity > 0.0) {
+        QPainter shadowPainter(&image);
+        shadowPainter.setRenderHint(QPainter::Antialiasing, true);
+        const QPointF center(radius, radius - offset);
+        const qreal outerRadius = radius;
+        QRadialGradient gradient(center, outerRadius);
+        const int alpha = qBound(0, qRound(255.0 * m_config.shadowIntensity), 255);
+        gradient.setColorAt(0.0, QColor(0, 0, 0, alpha));
+        gradient.setColorAt(0.6, QColor(0, 0, 0, alpha / 3));
+        gradient.setColorAt(1.0, Qt::transparent);
+        shadowPainter.setPen(Qt::NoPen);
+        shadowPainter.setBrush(gradient);
+        shadowPainter.drawEllipse(center, outerRadius, outerRadius);
+    }
+
+    m_shadow->setShadow(image);
+    m_shadow->setInnerShadowRect(QRectF(radius, radius, 1, 1));
+    m_shadow->setPadding(QMarginsF(radius, radius + offset, radius, radius - offset));
     
     setShadow(m_shadow);
 }
@@ -208,6 +238,10 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     painter->setBrush(titleBarBackgroundColor());
     painter->drawPath(path);
 
+    if (m_rightButtonGroup) {
+        m_rightButtonGroup->paint(painter, repaintRegion);
+    }
+
     QColor lineCol = isWindowActive() ? QColor(0, 0, 0, 18) : QColor(0, 0, 0, 10);
     painter->setPen(QPen(lineCol, 1.0));
     painter->drawLine(QPointF(0, headerH - 0.5), QPointF(w, headerH - 0.5));
@@ -222,7 +256,10 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
             painter->setFont(titleFont);
 
             QFontMetrics fm(titleFont);
-            int rightOffset = m_config.buttonRightMargin + (3 * m_config.buttonHitSize) + (2 * m_config.buttonSpacing) + 12;
+            const int groupWidth = m_rightButtonGroup
+                ? qCeil(m_rightButtonGroup->geometry().width())
+                : 0;
+            const int rightOffset = m_config.buttonRightMargin + groupWidth + 12;
             int leftMargin = 16;
             int availableWidth = w - leftMargin - rightOffset;
 

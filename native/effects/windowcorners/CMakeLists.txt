@@ -5,8 +5,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui)
-find_package(KWin 6.0 REQUIRED COMPONENTS Effect)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Widgets DBus Quick)
+find_package(KWin 6.0 REQUIRED)
 find_package(KF6Config REQUIRED)
 
 add_library(meowindowcorners MODULE
@@ -17,7 +17,8 @@ add_library(meowindowcorners MODULE
 target_link_libraries(meowindowcorners PRIVATE
     Qt6::Core
     Qt6::Gui
-    KWin::Effect
+    Qt6::Widgets
+    KWin::kwin
     KF6::ConfigCore
 )
 

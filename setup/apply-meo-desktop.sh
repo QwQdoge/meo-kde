@@ -6,8 +6,8 @@ desktop_root="${repo_root}"
 config_root="${XDG_CONFIG_HOME:-${HOME}/.config}"
 data_root="${XDG_DATA_HOME:-${HOME}/.local/share}"
 qml_root="${MEO_KDE_QML_ROOT:-${HOME}/.local/share/meo-kde/qml}"
-meoui_source="${MEOUI_QML_SOURCE:-/home/shekong/Projects/meo-ui/out/build/release/MeoUI}"
-native_build_root="${repo_root}/out/build/system"
+meoui_source="${MEOUI_QML_SOURCE:-${repo_root}/../meo-ui/out/build/release/MeoUI}"
+native_build_root="${repo_root}/out/build/native"
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/meo-desktop"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 backup_root="${state_root}/backups/${timestamp}"
@@ -82,6 +82,16 @@ run cp -a "${meoui_source}/." "${qml_root}/MeoUI/"
 run cp -a "${repo_root}/qml/MeoKDE/." "${qml_root}/MeoKDE/"
 run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${native_build_root}" --parallel
+if [ "${dry_run}" -eq 0 ]; then
+  if [ "$(id -u)" -eq 0 ]; then
+    cmake --install "${native_build_root}"
+  elif command -v pkexec >/dev/null 2>&1; then
+    pkexec cmake --install "${native_build_root}"
+  else
+    echo "Native KWin plugins need a privileged install. Re-run this script as root or install ${native_build_root} with cmake --install." >&2
+    exit 1
+  fi
+fi
 run mkdir -p "${qml_root}/Meo/System"
 if [ -d "${native_build_root}/qml/Meo/System" ]; then
   run cp -a "${native_build_root}/qml/Meo/System/." "${qml_root}/Meo/System/"
@@ -97,6 +107,11 @@ if command -v kwriteconfig6 >/dev/null 2>&1; then
   run kwriteconfig6 --file kwinrc --group "org.meo.decoration" --key ButtonSpacing 7
   run kwriteconfig6 --file kwinrc --group "org.meo.decoration" --key AlignTitleCenter true
   run kwriteconfig6 --file kwinrc --group "org.meo.decoration" --key EnableAccentTint true
+  run kwriteconfig6 --file kwinrc --group "org.meo.decoration" --key EnableCompanionEffect true
+fi
+
+if [ "${dry_run}" -eq 0 ] && command -v qdbus6 >/dev/null 2>&1; then
+  qdbus6 org.kde.KWin /KWin reconfigure
 fi
 run cp -a "${repo_root}/assets/fonts/." "${data_root}/fonts/meo/"
 run cp -a "${repo_root}/defaults/fonts/50-meo-fonts.conf" "${config_root}/fontconfig/conf.d/50-meo-fonts.conf"

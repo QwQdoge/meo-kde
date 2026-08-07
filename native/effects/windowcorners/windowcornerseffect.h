@@ -2,6 +2,10 @@
 
 #include <kwin/effect/effect.h>
 #include <kwin/effect/effectwindow.h>
+#include <kwin/effect/effecthandler.h>
+#include <kwin/core/rendertarget.h>
+#include <kwin/core/renderviewport.h>
+#include <kwin/core/region.h>
 #include <KConfigGroup>
 #include <KSharedConfig>
 #include <QRegion>
@@ -22,7 +26,7 @@ public:
                     const KWin::RenderViewport &viewport,
                     KWin::EffectWindow *w,
                     int mask,
-                    const QRegion &region,
+                    const KWin::Region &region,
                     KWin::WindowPaintData &data) override;
 
     bool isActive() const override;
@@ -35,12 +39,12 @@ private:
     bool m_enabled = true;
 };
 
-class WindowCornersEffectFactory : public KWin::EffectFactory {
+class WindowCornersEffectFactory : public KWin::EffectPluginFactory {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID KPluginFactory_iid FILE "metadata.json")
+    Q_PLUGIN_METADATA(IID EffectPluginFactory_iid FILE "metadata.json")
     Q_INTERFACES(KPluginFactory)
 public:
-    WindowCornersEffectFactory();
+    bool isSupported() const override;
     KWin::Effect *createEffect() const override;
 };
 

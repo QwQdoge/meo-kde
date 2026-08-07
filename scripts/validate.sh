@@ -22,9 +22,9 @@ run bash -n "${repo_root}/setup/reset-meo-desktop.sh"
 run bash -n "${repo_root}/scripts/sync-to-workspace.sh"
 run python -m configparser "${repo_root}/themes/icons/MeoSymbols/index.theme"
 run python "${repo_root}/tools/icons/build_icon_theme.py" --check
-run python -m unittest "${repo_root}/tests/icons/test_theme.py"
+run python -m unittest discover -s "${repo_root}/tests/icons" -p 'test_*.py'
 run python "${repo_root}/tools/icons/audit_icon_coverage.py"
-run python -m unittest "${repo_root}/tests/theme/test_color_schemes.py"
+run python -m unittest discover -s "${repo_root}/tests/theme" -p 'test_*.py'
 run cmake -S "${repo_root}/native/system" -B "${repo_root}/out/build/system" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${repo_root}/out/build/system" --parallel
 run "${repo_root}/out/build/system/meo-system-state-smoke"

@@ -136,14 +136,16 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const QRectF hitRect = geometry();
     const QPointF center = hitRect.center();
 
-    qreal circleRadius = (cfg.buttonHitSize / 2.0) - 1.0;
+    // The hit target intentionally remains larger than the visible control.
+    // Material controls use a generous target with a compact circular affordance.
+    const qreal circleRadius = qMax<qreal>(1.0, cfg.buttonDiameter / 2.0);
     const bool active = m_decoration->isWindowActive();
     const bool isCloseBtn = (type() == KDecoration3::DecorationButtonType::Close);
 
     qreal combinedHover = qMax(m_groupHoverOpacity, m_directHoverOpacity);
 
     // 1. Draw Circular Drop Shadow when Group Hovered or Direct Hovered
-    if (combinedHover > 0.001) {
+    if (cfg.showButtonBackground && combinedHover > 0.001) {
         qreal shadowRadius = circleRadius + 3.5;
         QRadialGradient shadowGrad(center, shadowRadius);
         shadowGrad.setColorAt(0.0, QColor(0, 0, 0, int(28 * combinedHover)));

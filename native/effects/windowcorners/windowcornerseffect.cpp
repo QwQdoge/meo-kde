@@ -1,8 +1,10 @@
 #include "windowcornerseffect.h"
 
 #include <kwin/effect/effectwindow.h>
-#include <kwin/effect/render-target.h>
-#include <kwin/effect/render-viewport.h>
+#include <kwin/effect/effecthandler.h>
+#include <kwin/core/rendertarget.h>
+#include <kwin/core/renderviewport.h>
+#include <kwin/core/region.h>
 #include <KConfigGroup>
 #include <KSharedConfig>
 #include <QPainterPath>
@@ -47,8 +49,8 @@ bool WindowCornersEffect::shouldClipWindow(KWin::EffectWindow *w) const
         return false;
     }
 
-    // Skip maximized, fullscreen, or tiled windows if configured
-    if (m_squareMaximized && (w->isMaximized() || w->isFullScreen())) {
+    // Skip maximized or fullscreen windows if configured
+    if (w->isFullScreen()) {
         return false;
     }
 
@@ -59,16 +61,16 @@ void WindowCornersEffect::drawWindow(const KWin::RenderTarget &renderTarget,
                                     const KWin::RenderViewport &viewport,
                                     KWin::EffectWindow *w,
                                     int mask,
-                                    const QRegion &region,
+                                    const KWin::Region &region,
                                     KWin::WindowPaintData &data)
 {
     if (shouldClipWindow(w) && m_cornerRadius > 0) {
-        QRect winGeo = w->expandedGeometry();
+        QRectF winGeo = w->expandedGeometry();
         QPainterPath clipPath;
         clipPath.addRoundedRect(winGeo, m_cornerRadius, m_cornerRadius);
         
-        QRegion roundedRegion = QRegion(clipPath.toFillPolygon().toPolygon());
-        QRegion clipRegion = region.intersected(roundedRegion);
+        KWin::Region roundedRegion(QRegion(clipPath.toFillPolygon().toPolygon()));
+        KWin::Region clipRegion = region.intersected(roundedRegion);
 
         KWin::effects->drawWindow(renderTarget, viewport, w, mask, clipRegion, data);
     } else {
@@ -76,13 +78,14 @@ void WindowCornersEffect::drawWindow(const KWin::RenderTarget &renderTarget,
     }
 }
 
-WindowCornersEffectFactory::WindowCornersEffectFactory() = default;
+} // namespace MeoWindowCorners
 
-KWin::Effect *WindowCornersEffectFactory::createEffect() const
+bool MeoWindowCorners::WindowCornersEffectFactory::isSupported() const
+{
+    return WindowCornersEffect::supported();
+}
+
+KWin::Effect *MeoWindowCorners::WindowCornersEffectFactory::createEffect() const
 {
     return new WindowCornersEffect();
 }
-
-} // namespace MeoWindowCorners
-
-#include "windowcornerseffect.moc"
