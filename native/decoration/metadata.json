@@ -15,7 +15,7 @@
             }
         ]
     },
-    "org.kde.kdecoration2": {
+    "org.kde.kdecoration3": {
         "kcmodule": false
     }
 }
