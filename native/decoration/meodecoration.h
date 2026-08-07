@@ -10,6 +10,8 @@
 
 namespace MeoDecoration {
 
+class Button;
+
 struct ConfigSettings {
     int titleBarHeight = 36;
     int cornerRadius = 14;
@@ -41,6 +43,9 @@ public:
 
     bool isWindowActive() const;
     bool isWindowMaximized() const;
+
+    bool isRightGroupHovered() const;
+    void updateGroupHoverState();
 
 private:
     void loadConfig();

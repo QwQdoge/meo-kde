@@ -24,24 +24,32 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         setGeometry(QRectF(0, 0, 26, 26));
     }
 
-    m_hoverAnim = new QVariantAnimation(this);
-    m_hoverAnim->setDuration(180);
-    m_hoverAnim->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_hoverAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
-        m_hoverOpacity = value.toReal();
+    m_groupHoverAnim = new QVariantAnimation(this);
+    m_groupHoverAnim->setDuration(160);
+    m_groupHoverAnim->setEasingCurve(QEasingCurve::OutCubic);
+    connect(m_groupHoverAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+        m_groupHoverOpacity = value.toReal();
+        update();
+    });
+
+    m_directHoverAnim = new QVariantAnimation(this);
+    m_directHoverAnim->setDuration(140);
+    m_directHoverAnim->setEasingCurve(QEasingCurve::OutCubic);
+    connect(m_directHoverAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+        m_directHoverOpacity = value.toReal();
         update();
     });
 
     m_rippleAnim = new QVariantAnimation(this);
-    m_rippleAnim->setDuration(220);
-    m_rippleAnim->setEasingCurve(QEasingCurve::OutCubic);
+    m_rippleAnim->setDuration(240);
+    m_rippleAnim->setEasingCurve(QEasingCurve::OutQuad);
     connect(m_rippleAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         m_rippleProgress = value.toReal();
         update();
     });
 
     m_rippleFadeAnim = new QVariantAnimation(this);
-    m_rippleFadeAnim->setDuration(160);
+    m_rippleFadeAnim->setDuration(180);
     m_rippleFadeAnim->setEasingCurve(QEasingCurve::OutQuad);
     connect(m_rippleFadeAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         m_rippleOpacity = value.toReal();
@@ -51,12 +59,25 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
 
 Button::~Button() = default;
 
-void Button::animateHover(qreal targetOpacity)
+void Button::setGroupHovered(bool hovered)
 {
-    m_hoverAnim->stop();
-    m_hoverAnim->setStartValue(m_hoverOpacity);
-    m_hoverAnim->setEndValue(targetOpacity);
-    m_hoverAnim->start();
+    animateGroupHover(hovered ? 1.0 : 0.0);
+}
+
+void Button::animateGroupHover(qreal target)
+{
+    m_groupHoverAnim->stop();
+    m_groupHoverAnim->setStartValue(m_groupHoverOpacity);
+    m_groupHoverAnim->setEndValue(target);
+    m_groupHoverAnim->start();
+}
+
+void Button::animateDirectHover(qreal target)
+{
+    m_directHoverAnim->stop();
+    m_directHoverAnim->setStartValue(m_directHoverOpacity);
+    m_directHoverAnim->setEndValue(target);
+    m_directHoverAnim->start();
 }
 
 void Button::startRipple(const QPointF &pressPos)
@@ -75,21 +96,23 @@ bool Button::event(QEvent *event)
 {
     switch (event->type()) {
     case QEvent::HoverEnter:
-        m_hovered = true;
-        animateHover(1.0);
+        animateDirectHover(1.0);
+        if (m_decoration) {
+            m_decoration->updateGroupHoverState();
+        }
         break;
     case QEvent::HoverLeave:
-        m_hovered = false;
-        animateHover(0.0);
+        animateDirectHover(0.0);
+        if (m_decoration) {
+            m_decoration->updateGroupHoverState();
+        }
         break;
     case QEvent::MouseButtonPress: {
         auto mouseEv = static_cast<QMouseEvent*>(event);
-        m_pressed = true;
         startRipple(mouseEv->position());
         break;
     }
     case QEvent::MouseButtonRelease:
-        m_pressed = false;
         m_rippleFadeAnim->stop();
         m_rippleFadeAnim->setStartValue(m_rippleOpacity);
         m_rippleFadeAnim->setEndValue(0.0);
@@ -117,58 +140,69 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const bool active = m_decoration->isWindowActive();
     const bool isCloseBtn = (type() == KDecoration3::DecorationButtonType::Close);
 
-    // 1. Draw Circular Drop Shadow on Hover
-    if (m_hoverOpacity > 0.001) {
+    qreal combinedHover = qMax(m_groupHoverOpacity, m_directHoverOpacity);
+
+    // 1. Draw Circular Drop Shadow when Group Hovered or Direct Hovered
+    if (combinedHover > 0.001) {
         qreal shadowRadius = circleRadius + 3.5;
         QRadialGradient shadowGrad(center, shadowRadius);
-        shadowGrad.setColorAt(0.0, QColor(0, 0, 0, int(30 * m_hoverOpacity)));
-        shadowGrad.setColorAt(0.65, QColor(0, 0, 0, int(12 * m_hoverOpacity)));
+        shadowGrad.setColorAt(0.0, QColor(0, 0, 0, int(28 * combinedHover)));
+        shadowGrad.setColorAt(0.65, QColor(0, 0, 0, int(10 * combinedHover)));
         shadowGrad.setColorAt(1.0, QColor(0, 0, 0, 0));
 
         painter->setPen(Qt::NoPen);
         painter->setBrush(shadowGrad);
         painter->drawEllipse(center, shadowRadius, shadowRadius);
 
-        // 2. Draw Circular Background on Hover
+        // 2. Draw Circular Background (Group Hover vs Direct Hover Darkening)
         QColor circleColor;
         if (isCloseBtn) {
-            circleColor = QColor(229, 57, 53, int(210 * m_hoverOpacity));
+            // Group hover: soft red (180 alpha). Direct hover: deeper vivid red (235 alpha).
+            int alpha = int(180 * m_groupHoverOpacity + (235 - 180) * m_directHoverOpacity);
+            int redVal = int(229 - (229 - 211) * m_directHoverOpacity);
+            circleColor = QColor(redVal, 57, 53, alpha);
         } else {
-            circleColor = active ? QColor(0, 0, 0, int(22 * m_hoverOpacity)) : QColor(0, 0, 0, int(14 * m_hoverOpacity));
+            // Group hover: light circle (16 alpha). Direct hover: deepened circle (36 alpha).
+            int alpha = int(16 * m_groupHoverOpacity + (36 - 16) * m_directHoverOpacity);
+            if (!active) alpha = int(alpha * 0.75);
+            circleColor = QColor(0, 0, 0, alpha);
         }
 
         painter->setBrush(circleColor);
         painter->drawEllipse(center, circleRadius, circleRadius);
     }
 
-    // 3. Draw Press Ripple Expansion Animation from Mouse Origin
+    // 3. Draw Press Ripple Expansion Animation from Mouse Press Origin
     if (m_rippleOpacity > 0.001 && m_rippleProgress > 0.001) {
+        // Convert m_pressPos (button-local coords) to painter's decoration coords:
+        QPointF pressPosInDeco = hitRect.topLeft() + m_pressPos;
+
         QPainterPath clipBounds;
         clipBounds.addEllipse(center, circleRadius, circleRadius);
 
         painter->save();
         painter->setClipPath(clipBounds);
 
-        qreal maxDist = qMax(QLineF(m_pressPos, center).length() + circleRadius, circleRadius * 2.0);
+        qreal maxDist = qMax(QLineF(pressPosInDeco, center).length() + circleRadius, circleRadius * 2.0);
         qreal currentRippleRadius = maxDist * m_rippleProgress;
 
         QColor rippleColor;
         if (isCloseBtn) {
-            rippleColor = QColor(183, 28, 28, int(180 * m_rippleOpacity));
+            rippleColor = QColor(183, 28, 28, int(200 * m_rippleOpacity));
         } else {
-            rippleColor = QColor(0, 0, 0, int(38 * m_rippleOpacity));
+            rippleColor = QColor(0, 0, 0, int(50 * m_rippleOpacity));
         }
 
         painter->setPen(Qt::NoPen);
         painter->setBrush(rippleColor);
-        painter->drawEllipse(m_pressPos, currentRippleRadius, currentRippleRadius);
+        painter->drawEllipse(pressPosInDeco, currentRippleRadius, currentRippleRadius);
 
         painter->restore();
     }
 
     // 4. Vector Icon Drawing
     QColor iconColor;
-    if (isCloseBtn && m_hoverOpacity > 0.5) {
+    if (isCloseBtn && combinedHover > 0.3) {
         iconColor = Qt::white;
     } else {
         iconColor = m_decoration->titleTextColor();

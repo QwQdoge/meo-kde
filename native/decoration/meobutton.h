@@ -18,16 +18,20 @@ public:
     void paint(QPainter *painter, const QRectF &repaintRegion) override;
     bool event(QEvent *event) override;
 
+    void setGroupHovered(bool hovered);
+
 private:
-    void animateHover(qreal targetOpacity);
+    void animateGroupHover(qreal target);
+    void animateDirectHover(qreal target);
     void startRipple(const QPointF &pressPos);
 
     Decoration *m_decoration = nullptr;
-    bool m_hovered = false;
-    bool m_pressed = false;
 
-    qreal m_hoverOpacity = 0.0;
-    QVariantAnimation *m_hoverAnim = nullptr;
+    qreal m_groupHoverOpacity = 0.0;
+    QVariantAnimation *m_groupHoverAnim = nullptr;
+
+    qreal m_directHoverOpacity = 0.0;
+    QVariantAnimation *m_directHoverAnim = nullptr;
 
     QPointF m_pressPos;
     qreal m_rippleProgress = 0.0;

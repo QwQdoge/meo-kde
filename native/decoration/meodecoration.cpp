@@ -93,10 +93,26 @@ void Decoration::createButtons()
     );
 
     m_rightButtonGroup->setSpacing(m_config.buttonSpacing);
-    
-    m_rightButtonGroup->addButton(new Button(KDecoration3::DecorationButtonType::Minimize, this));
-    m_rightButtonGroup->addButton(new Button(KDecoration3::DecorationButtonType::Maximize, this));
-    m_rightButtonGroup->addButton(new Button(KDecoration3::DecorationButtonType::Close, this));
+}
+
+bool Decoration::isRightGroupHovered() const
+{
+    if (!m_rightButtonGroup) return false;
+    for (auto *btn : m_rightButtonGroup->buttons()) {
+        if (btn->isHovered()) return true;
+    }
+    return false;
+}
+
+void Decoration::updateGroupHoverState()
+{
+    bool groupHovered = isRightGroupHovered();
+    if (!m_rightButtonGroup) return;
+    for (auto *btn : m_rightButtonGroup->buttons()) {
+        if (auto *meoBtn = qobject_cast<Button*>(btn)) {
+            meoBtn->setGroupHovered(groupHovered);
+        }
+    }
 }
 
 void Decoration::updateShadow()
@@ -217,11 +233,6 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
                 painter->drawText(textRect, align, elidedCaption);
             }
         }
-    }
-
-    // Paint button group!
-    if (m_rightButtonGroup) {
-        m_rightButtonGroup->paint(painter, repaintRegion);
     }
 
     painter->restore();
