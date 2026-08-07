@@ -1,6 +1,6 @@
 #pragma once
 
-#include <KDecoration2/DecorationButton>
+#include <KDecoration3/DecorationButton>
 #include <QVariantAnimation>
 #include <QPainter>
 #include <QPointF>
@@ -9,19 +9,14 @@ namespace MeoDecoration {
 
 class Decoration;
 
-class Button : public KDecoration2::DecorationButton {
+class Button : public KDecoration3::DecorationButton {
     Q_OBJECT
 public:
-    Button(KDecoration2::DecorationButtonType type, Decoration *decoration, QObject *parent = nullptr);
+    Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent = nullptr);
     ~Button() override;
 
-    void paint(QPainter *painter, const QRect &repaintRegion) override;
-
-protected:
-    void hoverEnteredEvent(QHoverEvent *event) override;
-    void hoverLeftEvent(QHoverEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
+    void paint(QPainter *painter, const QRectF &repaintRegion) override;
+    bool event(QEvent *event) override;
 
 private:
     void animateHover(qreal targetOpacity);

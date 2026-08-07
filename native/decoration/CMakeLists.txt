@@ -9,7 +9,7 @@ find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Widgets)
 find_package(KF6CoreAddons REQUIRED)
 find_package(KF6Config REQUIRED)
 find_package(KF6ColorScheme REQUIRED)
-find_package(KDecoration2 REQUIRED)
+find_package(KDecoration3 REQUIRED)
 
 add_library(meodecoration MODULE
     meodecoration.cpp
@@ -25,15 +25,15 @@ target_link_libraries(meodecoration PRIVATE
     KF6::CoreAddons
     KF6::ConfigCore
     KF6::ColorScheme
-    KDecoration2::KDecoration2
+    KDecoration3::KDecoration
 )
 
 set_target_properties(meodecoration PROPERTIES
     OUTPUT_NAME "org.meo.decoration"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/org.kde.kdecoration2"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/org.kde.kdecoration3"
 )
 
 include(GNUInstallDirs)
 install(TARGETS meodecoration
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/plugins/org.kde.kdecoration2"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/plugins/org.kde.kdecoration3"
 )

@@ -4,8 +4,9 @@
 #include <KConfigGroup>
 #include <KSharedConfig>
 #include <KColorScheme>
-#include <KDecoration2/DecorationBridge>
-#include <KDecoration2/DecorationSettings>
+#include <KPluginFactory>
+#include <KDecoration3/DecorationSettings>
+#include <KDecoration3/DecoratedWindow>
 #include <QPainter>
 #include <QPainterPath>
 #include <QFontMetrics>
@@ -13,30 +14,35 @@
 
 namespace MeoDecoration {
 
+K_PLUGIN_CLASS_WITH_JSON(Decoration, "metadata.json")
+
 Decoration::Decoration(QObject *parent, const QVariantList &args)
-    : KDecoration2::Decoration(parent, args)
+    : KDecoration3::Decoration(parent, args)
 {
 }
 
 Decoration::~Decoration() = default;
 
-void Decoration::init()
+bool Decoration::init()
 {
     loadConfig();
     updateLayout();
     createButtons();
     updateShadow();
 
-    connect(client().data(), &KDecoration2::DecoratedClient::activeChanged, this, [this]() {
-        update();
-    });
-    connect(client().data(), &KDecoration2::DecoratedClient::captionChanged, this, [this]() {
-        update();
-    });
-    connect(client().data(), &KDecoration2::DecoratedClient::maximizedChanged, this, [this]() {
-        updateLayout();
-        update();
-    });
+    if (window()) {
+        connect(window(), &KDecoration3::DecoratedWindow::activeChanged, this, [this]() {
+            update();
+        });
+        connect(window(), &KDecoration3::DecoratedWindow::captionChanged, this, [this]() {
+            update();
+        });
+        connect(window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, [this]() {
+            updateLayout();
+            update();
+        });
+    }
+    return true;
 }
 
 void Decoration::loadConfig()
@@ -61,30 +67,27 @@ void Decoration::loadConfig()
 
 void Decoration::updateLayout()
 {
-    int borderTop = isWindowMaximized() ? 0 : 0;
     int headerH = m_config.titleBarHeight;
 
-    // Set titlebar metrics for KDecoration2
-    setTitleBar(QRect(0, 0, size().width(), headerH));
-    setBorders(QMargins(0, headerH, 0, 0));
+    setTitleBar(QRectF(0, 0, size().width(), headerH));
+    setBorders(QMarginsF(0, headerH, 0, 0));
 }
 
 void Decoration::createButtons()
 {
-    m_rightButtonGroup = new KDecoration2::DecorationButtonGroup(
-        KDecoration2::DecorationButtonGroup::Position::Right,
+    m_rightButtonGroup = new KDecoration3::DecorationButtonGroup(
+        KDecoration3::DecorationButtonGroup::Position::Right,
         this,
-        [this](KDecoration2::DecorationButtonType type, KDecoration2::Decoration *decoration, QObject *parent) {
+        [this](KDecoration3::DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent) {
             return new Button(type, static_cast<Decoration*>(decoration), parent);
         }
     );
 
     m_rightButtonGroup->setSpacing(m_config.buttonSpacing);
     
-    // Window control buttons order: Minimize -> Maximize -> Close
-    m_rightButtonGroup->addButton(KDecoration2::DecorationButtonType::Minimize);
-    m_rightButtonGroup->addButton(KDecoration2::DecorationButtonType::Maximize);
-    m_rightButtonGroup->addButton(KDecoration2::DecorationButtonType::Close);
+    m_rightButtonGroup->addButton(new Button(KDecoration3::DecorationButtonType::Minimize, this));
+    m_rightButtonGroup->addButton(new Button(KDecoration3::DecorationButtonType::Maximize, this));
+    m_rightButtonGroup->addButton(new Button(KDecoration3::DecorationButtonType::Close, this));
 }
 
 void Decoration::updateShadow()
@@ -95,7 +98,7 @@ void Decoration::updateShadow()
     }
 
     if (!m_shadow) {
-        m_shadow = std::make_shared<KDecoration2::DecorationShadow>();
+        m_shadow = std::make_shared<KDecoration3::DecorationShadow>();
     }
 
     int rad = m_config.shadowRadius;
@@ -107,12 +110,12 @@ void Decoration::updateShadow()
 
 bool Decoration::isWindowActive() const
 {
-    return client() ? client()->isActive() : true;
+    return window() ? window()->isActive() : true;
 }
 
 bool Decoration::isWindowMaximized() const
 {
-    return client() ? client()->isMaximized() : false;
+    return window() ? window()->isMaximized() : false;
 }
 
 QColor Decoration::titleBarBackgroundColor() const
@@ -125,7 +128,6 @@ QColor Decoration::titleBarBackgroundColor() const
     QColor targetBg = isDark ? QColor(33, 39, 46) : QColor(230, 236, 239);
 
     if (m_config.enableAccentTint && accent.isValid()) {
-        // Dynamic Accent Color fusion: blend subtle accent tint into pastel base
         qreal alpha = isDark ? 0.12 : 0.08;
         targetBg.setRedF(targetBg.redF() * (1.0 - alpha) + accent.redF() * alpha);
         targetBg.setGreenF(targetBg.greenF() * (1.0 - alpha) + accent.greenF() * alpha);
@@ -149,7 +151,7 @@ QColor Decoration::titleTextColor() const
     return txtColor;
 }
 
-void Decoration::paint(QPainter *painter, const QRect &repaintRegion)
+void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion);
     if (!painter) return;
@@ -157,14 +159,13 @@ void Decoration::paint(QPainter *painter, const QRect &repaintRegion)
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
 
-    const int w = size().width();
-    const int headerH = m_config.titleBarHeight;
+    const qreal w = size().width();
+    const qreal headerH = m_config.titleBarHeight;
     const bool maxed = isWindowMaximized();
     const int rad = (maxed && m_config.squareMaximized) ? 0 : m_config.cornerRadius;
 
     QRectF titleBarRect(0, 0, w, headerH);
 
-    // Render Titlebar Background with rounded top corners
     QPainterPath path;
     if (rad > 0) {
         path.moveTo(0, headerH);
@@ -182,14 +183,12 @@ void Decoration::paint(QPainter *painter, const QRect &repaintRegion)
     painter->setBrush(titleBarBackgroundColor());
     painter->drawPath(path);
 
-    // Subtle bottom separator line
     QColor lineCol = isWindowActive() ? QColor(0, 0, 0, 18) : QColor(0, 0, 0, 10);
     painter->setPen(QPen(lineCol, 1.0));
     painter->drawLine(QPointF(0, headerH - 0.5), QPointF(w, headerH - 0.5));
 
-    // Render Window Title Text
-    if (client()) {
-        QString caption = client()->caption();
+    if (window()) {
+        QString caption = window()->caption();
         if (!caption.isEmpty()) {
             painter->setPen(titleTextColor());
             QFont titleFont = QGuiApplication::font();
@@ -212,16 +211,6 @@ void Decoration::paint(QPainter *painter, const QRect &repaintRegion)
     }
 
     painter->restore();
-}
-
-DecorationFactory::DecorationFactory(QObject *parent)
-    : KDecoration2::DecorationFactory(parent)
-{
-}
-
-KDecoration2::Decoration *DecorationFactory::create(QObject *parent, const QVariantList &args)
-{
-    return new Decoration(parent, args);
 }
 
 } // namespace MeoDecoration
