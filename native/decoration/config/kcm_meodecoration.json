@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Name": "Meo Window Decoration",
+        "Description": "Configure the Meo Chrome Frame window decoration",
+        "Icon": "preferences-system-windows",
+        "ServiceTypes": ["KCModule"]
+    },
+    "X-KDE-Keywords": "meo,decoration,chrome frame",
+    "X-KDE-ParentApp": "kcontrol",
+    "X-KDE-Weight": 50
+}

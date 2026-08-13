@@ -1,6 +1,5 @@
 {
     "KPlugin": {
-        "Id": "org.meo.decoration",
         "Name": "Meo Window Decoration",
         "Name[zh_CN]": "Meo 窗口装饰",
         "Description": "Pixel / Material 3 style window decoration with rounded corners and circular buttons for KDE Plasma 6",
@@ -15,7 +14,6 @@
             }
         ]
     },
-    "org.kde.kdecoration3": {
-        "kcmodule": false
-    }
+    "X-KDE-ConfigModule": "kcm_meodecoration",
+    "org.kde.kdecoration3": {}
 }

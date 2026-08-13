@@ -9,10 +9,18 @@ QtObject {
     // Plasma can derive its accent from the wallpaper. This bridge turns that
     // live system palette into the complete role object consumed by MeoUI.
     property color accentColor: Kirigami.Theme.highlightColor
+    property color contentOnAccentColor: Kirigami.Theme.highlightedTextColor
     property color backgroundColor: Kirigami.Theme.backgroundColor
     property color textColor: Kirigami.Theme.textColor
     property color disabledTextColor: Kirigami.Theme.disabledTextColor
+    property color linkColor: Kirigami.Theme.linkColor
+    property color positiveColor: Kirigami.Theme.positiveTextColor
+    property color negativeColor: Kirigami.Theme.negativeTextColor
+    property font systemFont: Kirigami.Theme.defaultFont
     readonly property bool darkMode: luminance(backgroundColor) < 0.48
+    readonly property real systemFontPixels: systemFont.pixelSize > 0
+                                              ? systemFont.pixelSize
+                                              : Math.max(1, systemFont.pointSize * 96 / 72)
 
     function luminance(color) {
         function linear(channel) {
@@ -35,14 +43,13 @@ QtObject {
         const base = backgroundColor
         const ink = textColor
         const accent = accentColor
-        const white = Qt.rgba(1, 1, 1, 1)
-        const black = Qt.rgba(0, 0, 0, 1)
-        const onAccent = luminance(accent) > 0.48 ? black : white
-        const surfaceStep = darkMode ? white : black
+        const onAccent = contentOnAccentColor
+        const surfaceStep = darkMode ? Qt.rgba(1, 1, 1, 1)
+                                     : Qt.rgba(0, 0, 0, 1)
         const primaryContainer = mix(base, accent, darkMode ? 0.34 : 0.22)
-        const secondary = mix(accent, ink, darkMode ? 0.36 : 0.48)
-        const tertiary = mix(accent, darkMode ? Qt.rgba(1, 0.64, 0.72, 1)
-                                              : Qt.rgba(0.52, 0.20, 0.30, 1), 0.34)
+        const secondary = linkColor
+        const tertiary = positiveColor
+        const error = negativeColor
 
         return {
             "primary": accent,
@@ -50,17 +57,17 @@ QtObject {
             "primaryContainer": primaryContainer,
             "onPrimaryContainer": ink,
             "secondary": secondary,
-            "onSecondary": luminance(secondary) > 0.48 ? black : white,
+            "onSecondary": contentColorFor(secondary),
             "secondaryContainer": mix(base, secondary, darkMode ? 0.28 : 0.16),
             "onSecondaryContainer": ink,
             "tertiary": tertiary,
-            "onTertiary": luminance(tertiary) > 0.48 ? black : white,
+            "onTertiary": contentColorFor(tertiary),
             "tertiaryContainer": mix(base, tertiary, darkMode ? 0.30 : 0.17),
             "onTertiaryContainer": ink,
-            "error": darkMode ? "#ffb4ab" : "#ba1a1a",
-            "onError": darkMode ? "#690005" : "#ffffff",
-            "errorContainer": darkMode ? "#93000a" : "#ffdad6",
-            "onErrorContainer": darkMode ? "#ffdad6" : "#410002",
+            "error": error,
+            "onError": contentColorFor(error),
+            "errorContainer": mix(base, error, darkMode ? 0.34 : 0.18),
+            "onErrorContainer": ink,
             "background": base,
             "onBackground": ink,
             "surface": base,
@@ -79,16 +86,25 @@ QtObject {
         }
     }
 
+    function contentColorFor(color) {
+        return luminance(color) > 0.48 ? Qt.rgba(0, 0, 0, 1)
+                                       : Qt.rgba(1, 1, 1, 1)
+    }
+
     function sync() {
         MeoTheme.isDarkMode = darkMode
-        MeoTheme.fontFamily = "Roboto"
-        MeoTheme.fontFamilyBrand = "Comfortaa"
+        MeoTheme.fontFamily = systemFont.family
+        MeoTheme.fontScale = Math.max(0.85, Math.min(1.5, systemFontPixels / 14))
         MeoTheme.applyDynamicColorScheme(scheme())
     }
 
     onAccentColorChanged: sync()
     onBackgroundColorChanged: sync()
     onTextColorChanged: sync()
+    onContentOnAccentColorChanged: sync()
+    onLinkColorChanged: sync()
+    onPositiveColorChanged: sync()
+    onNegativeColorChanged: sync()
+    onSystemFontChanged: sync()
     Component.onCompleted: sync()
 }
-

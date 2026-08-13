@@ -1,122 +1,72 @@
 #include "meobutton.h"
 #include "meodecoration.h"
 
-#include <QEasingCurve>
 #include <QEvent>
-#include <QHoverEvent>
+#include <QLineF>
 #include <QMouseEvent>
 #include <QPainterPath>
-#include <QRadialGradient>
-#include <QLineF>
+#include <QPainterPathStroker>
+#include <QTransform>
 #include <QtMath>
-#include <KDecoration3/Decoration>
 
 namespace MeoDecoration {
+namespace {
+
+constexpr qreal kGlyphViewport = 16.0;
+
+QPainterPath centerGlyphPath(const QPainterPath &source,
+                             const QPointF &targetCenter,
+                             const QPointF &opticalOffset,
+                             qreal strokeWidth)
+{
+    QPainterPathStroker stroker;
+    stroker.setWidth(strokeWidth);
+    stroker.setCapStyle(Qt::RoundCap);
+    stroker.setJoinStyle(Qt::RoundJoin);
+    const QRectF visualBounds = source.united(stroker.createStroke(source)).boundingRect();
+    const QPointF translation = targetCenter - visualBounds.center() + opticalOffset;
+    QTransform transform;
+    transform.translate(translation.x(), translation.y());
+    return transform.map(source);
+}
+
+} // namespace
 
 Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, QObject *parent)
     : KDecoration3::DecorationButton(type, decoration, parent)
     , m_decoration(decoration)
 {
-    if (decoration) {
-        int hitSz = decoration->config().buttonHitSize;
-        setGeometry(QRectF(0, 0, hitSz, hitSz));
-    } else {
-        setGeometry(QRectF(0, 0, 26, 26));
-    }
+    const int hitSize = decoration ? decoration->config().buttonHitSize : 32;
+    setGeometry(QRectF(0, 0, hitSize, hitSize));
 
-    m_groupHoverAnim = new QVariantAnimation(this);
-    m_groupHoverAnim->setDuration(160);
-    m_groupHoverAnim->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_groupHoverAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
-        m_groupHoverOpacity = value.toReal();
+    m_hoverAnimation = new QVariantAnimation(this);
+    m_hoverAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    connect(m_hoverAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+        m_hoverProgress = value.toReal();
         update();
     });
-
-    m_directHoverAnim = new QVariantAnimation(this);
-    m_directHoverAnim->setDuration(140);
-    m_directHoverAnim->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_directHoverAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
-        m_directHoverOpacity = value.toReal();
-        update();
-    });
-
-    m_rippleAnim = new QVariantAnimation(this);
-    m_rippleAnim->setDuration(240);
-    m_rippleAnim->setEasingCurve(QEasingCurve::OutQuad);
-    connect(m_rippleAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+    m_rippleAnimation = new QVariantAnimation(this);
+    m_rippleAnimation->setDuration(180);
+    m_rippleAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    connect(m_rippleAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         m_rippleProgress = value.toReal();
-        update();
-    });
-
-    m_rippleFadeAnim = new QVariantAnimation(this);
-    m_rippleFadeAnim->setDuration(180);
-    m_rippleFadeAnim->setEasingCurve(QEasingCurve::OutQuad);
-    connect(m_rippleFadeAnim, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
-        m_rippleOpacity = value.toReal();
         update();
     });
 }
 
 Button::~Button() = default;
 
-void Button::setGroupHovered(bool hovered)
-{
-    animateGroupHover(hovered ? 1.0 : 0.0);
-}
-
-void Button::animateGroupHover(qreal target)
-{
-    m_groupHoverAnim->stop();
-    m_groupHoverAnim->setStartValue(m_groupHoverOpacity);
-    m_groupHoverAnim->setEndValue(target);
-    m_groupHoverAnim->start();
-}
-
-void Button::animateDirectHover(qreal target)
-{
-    m_directHoverAnim->stop();
-    m_directHoverAnim->setStartValue(m_directHoverOpacity);
-    m_directHoverAnim->setEndValue(target);
-    m_directHoverAnim->start();
-}
-
-void Button::startRipple(const QPointF &pressPos)
-{
-    m_pressPos = pressPos;
-    m_rippleProgress = 0.0;
-    m_rippleOpacity = 1.0;
-
-    m_rippleAnim->stop();
-    m_rippleAnim->setStartValue(0.0);
-    m_rippleAnim->setEndValue(1.0);
-    m_rippleAnim->start();
-}
-
 bool Button::event(QEvent *event)
 {
     switch (event->type()) {
     case QEvent::HoverEnter:
-        animateDirectHover(1.0);
-        if (m_decoration) {
-            m_decoration->updateGroupHoverState();
-        }
+        animateHover(1.0, m_decoration->config().hoverInDuration);
         break;
     case QEvent::HoverLeave:
-        animateDirectHover(0.0);
-        if (m_decoration) {
-            m_decoration->updateGroupHoverState();
-        }
+        animateHover(0.0, m_decoration->config().hoverOutDuration);
         break;
-    case QEvent::MouseButtonPress: {
-        auto mouseEv = static_cast<QMouseEvent*>(event);
-        startRipple(mouseEv->position());
-        break;
-    }
-    case QEvent::MouseButtonRelease:
-        m_rippleFadeAnim->stop();
-        m_rippleFadeAnim->setStartValue(m_rippleOpacity);
-        m_rippleFadeAnim->setEndValue(0.0);
-        m_rippleFadeAnim->start();
+    case QEvent::MouseButtonPress:
+        beginRipple(static_cast<QMouseEvent *>(event)->position());
         break;
     default:
         break;
@@ -124,129 +74,119 @@ bool Button::event(QEvent *event)
     return KDecoration3::DecorationButton::event(event);
 }
 
+void Button::animateHover(qreal target, int duration)
+{
+    m_hoverAnimation->stop();
+    m_hoverAnimation->setDuration(duration);
+    m_hoverAnimation->setStartValue(m_hoverProgress);
+    m_hoverAnimation->setEndValue(target);
+    m_hoverAnimation->start();
+}
+
+void Button::beginRipple(const QPointF &position)
+{
+    m_rippleOrigin = position;
+    m_rippleAnimation->stop();
+    m_rippleAnimation->setStartValue(0.0);
+    m_rippleAnimation->setEndValue(1.0);
+    m_rippleAnimation->start();
+}
+
 void Button::paint(QPainter *painter, const QRectF &repaintRegion)
 {
     Q_UNUSED(repaintRegion);
-    if (!painter || !m_decoration) return;
+    if (!painter || !m_decoration) {
+        return;
+    }
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
 
-    const auto &cfg = m_decoration->config();
     const QRectF hitRect = geometry();
     const QPointF center = hitRect.center();
+    const qreal stateLayerDiameter = m_decoration->config().buttonDiameter;
+    const QRectF interactionRect(center.x() - stateLayerDiameter / 2.0,
+                                 center.y() - stateLayerDiameter / 2.0,
+                                 stateLayerDiameter,
+                                 stateLayerDiameter);
+    const qreal hoverProgress = isPressed() ? 1.0 : m_hoverProgress;
+    QColor interaction = m_decoration->titleTextColor();
 
-    // The hit target intentionally remains larger than the visible control.
-    // Material controls use a generous target with a compact circular affordance.
-    const qreal circleRadius = qMax<qreal>(1.0, cfg.buttonDiameter / 2.0);
-    const bool active = m_decoration->isWindowActive();
-    const bool isCloseBtn = (type() == KDecoration3::DecorationButtonType::Close);
-
-    qreal combinedHover = qMax(m_groupHoverOpacity, m_directHoverOpacity);
-
-    // 1. Draw Circular Drop Shadow when Group Hovered or Direct Hovered
-    if (cfg.showButtonBackground && combinedHover > 0.001) {
-        qreal shadowRadius = circleRadius + 3.5;
-        QRadialGradient shadowGrad(center, shadowRadius);
-        shadowGrad.setColorAt(0.0, QColor(0, 0, 0, int(28 * combinedHover)));
-        shadowGrad.setColorAt(0.65, QColor(0, 0, 0, int(10 * combinedHover)));
-        shadowGrad.setColorAt(1.0, QColor(0, 0, 0, 0));
-
+    // Keep the 40px input target separate from the 30px interaction shape.
+    // Close deliberately uses the same tonal feedback as the other controls.
+    if (m_decoration->config().showButtonBackground && hoverProgress > 0.001) {
+        interaction.setAlphaF(0.08 * hoverProgress);
         painter->setPen(Qt::NoPen);
-        painter->setBrush(shadowGrad);
-        painter->drawEllipse(center, shadowRadius, shadowRadius);
-
-        // 2. Draw Circular Background (Group Hover vs Direct Hover Darkening)
-        QColor circleColor;
-        if (isCloseBtn) {
-            // Group hover: soft red (180 alpha). Direct hover: deeper vivid red (235 alpha).
-            int alpha = int(180 * m_groupHoverOpacity + (235 - 180) * m_directHoverOpacity);
-            int redVal = int(229 - (229 - 211) * m_directHoverOpacity);
-            circleColor = QColor(redVal, 57, 53, alpha);
-        } else {
-            // Group hover: light circle (16 alpha). Direct hover: deepened circle (36 alpha).
-            int alpha = int(16 * m_groupHoverOpacity + (36 - 16) * m_directHoverOpacity);
-            if (!active) alpha = int(alpha * 0.75);
-            circleColor = QColor(0, 0, 0, alpha);
-        }
-
-        painter->setBrush(circleColor);
-        painter->drawEllipse(center, circleRadius, circleRadius);
+        painter->setBrush(interaction);
+        painter->drawEllipse(interactionRect);
     }
 
-    // 3. Draw Press Ripple Expansion Animation from Mouse Press Origin
-    if (m_rippleOpacity > 0.001 && m_rippleProgress > 0.001) {
-        // Convert m_pressPos (button-local coords) to painter's decoration coords:
-        QPointF pressPosInDeco = hitRect.topLeft() + m_pressPos;
-
-        QPainterPath clipBounds;
-        clipBounds.addEllipse(center, circleRadius, circleRadius);
-
+    if (m_rippleAnimation->state() == QAbstractAnimation::Running) {
+        QPainterPath clip;
+        clip.addEllipse(interactionRect);
         painter->save();
-        painter->setClipPath(clipBounds);
-
-        qreal maxDist = qMax(QLineF(pressPosInDeco, center).length() + circleRadius, circleRadius * 2.0);
-        qreal currentRippleRadius = maxDist * m_rippleProgress;
-
-        QColor rippleColor;
-        if (isCloseBtn) {
-            rippleColor = QColor(183, 28, 28, int(200 * m_rippleOpacity));
-        } else {
-            rippleColor = QColor(0, 0, 0, int(50 * m_rippleOpacity));
+        painter->setClipPath(clip);
+        const QPointF origin = hitRect.topLeft() + m_rippleOrigin;
+        qreal maxDistance = 0.0;
+        for (const QPointF &corner : {interactionRect.topLeft(), interactionRect.topRight(), interactionRect.bottomLeft(), interactionRect.bottomRight()}) {
+            maxDistance = qMax(maxDistance, QLineF(origin, corner).length());
         }
-
+        QColor ripple = m_decoration->titleTextColor();
+        ripple.setAlphaF(0.06 * (1.0 - m_rippleProgress));
         painter->setPen(Qt::NoPen);
-        painter->setBrush(rippleColor);
-        painter->drawEllipse(pressPosInDeco, currentRippleRadius, currentRippleRadius);
-
+        painter->setBrush(ripple);
+        painter->drawEllipse(origin, maxDistance * m_rippleProgress, maxDistance * m_rippleProgress);
         painter->restore();
     }
 
-    // 4. Vector Icon Drawing
-    QColor iconColor;
-    if (isCloseBtn && combinedHover > 0.3) {
-        iconColor = Qt::white;
-    } else {
-        iconColor = m_decoration->titleTextColor();
-        if (!active) {
-            iconColor.setAlpha(150);
-        }
-    }
+    QColor iconColor = m_decoration->titleTextColor();
+    const qreal normalOpacity = m_decoration->captionIconOpacity();
+    iconColor.setAlphaF((hoverProgress > 0.001 || isPressed()) ? 1.0 : normalOpacity);
 
-    QPen pen(iconColor, 1.35, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen pen(iconColor, 1.25, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
 
+    // Every caption glyph shares this centered 16px viewport. The button
+    // slot and its position never participate in per-glyph corrections.
+    const QRectF glyphViewport(center.x() - kGlyphViewport / 2.0,
+                               center.y() - kGlyphViewport / 2.0,
+                               kGlyphViewport,
+                               kGlyphViewport);
+    painter->save();
+    painter->translate(glyphViewport.topLeft());
+
     switch (type()) {
-    case KDecoration3::DecorationButtonType::Minimize: {
-        qreal halfW = 3.2;
-        painter->drawLine(QPointF(center.x() - halfW, center.y()),
-                          QPointF(center.x() + halfW, center.y()));
+    case KDecoration3::DecorationButtonType::Minimize:
+        painter->drawLine(QPointF(4.5, 9.5), QPointF(11.5, 9.5));
         break;
-    }
-    case KDecoration3::DecorationButtonType::Maximize: {
-        if (isChecked()) { // Restore
-            QRectF backBox(center.x() - 1.5, center.y() - 3.5, 4.5, 4.5);
-            QRectF frontBox(center.x() - 3.5, center.y() - 1.5, 4.5, 4.5);
-            painter->drawRect(backBox);
-            painter->drawRect(frontBox);
-        } else { // Maximize
-            QRectF box(center.x() - 3.2, center.y() - 3.2, 6.4, 6.4);
-            painter->drawRect(box);
+    case KDecoration3::DecorationButtonType::Maximize:
+        if (isChecked()) {
+            constexpr qreal restoreStroke = 1.15;
+            QPainterPath restorePath;
+            restorePath.addRoundedRect(QRectF(4.75, 6.0, 6.25, 6.25), 0.55, 0.55);
+            restorePath.moveTo(6.5, 4.75);
+            restorePath.lineTo(11.5, 4.75);
+            restorePath.quadTo(11.75, 4.75, 11.75, 5.0);
+            restorePath.lineTo(11.75, 10.0);
+
+            // Center the complete, stroke-aware composite—not only its
+            // front rectangle—then apply the minimal optical correction.
+            painter->setPen(QPen(iconColor, restoreStroke, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            painter->drawPath(centerGlyphPath(restorePath, QPointF(8.0, 8.0), QPointF(0.0, 0.5), restoreStroke));
+        } else {
+            painter->drawRoundedRect(QRectF(4.75, 4.75, 6.5, 6.5), 0.6, 0.6);
         }
         break;
-    }
-    case KDecoration3::DecorationButtonType::Close: {
-        qreal sz = 3.0;
-        painter->drawLine(QPointF(center.x() - sz, center.y() - sz),
-                          QPointF(center.x() + sz, center.y() + sz));
-        painter->drawLine(QPointF(center.x() + sz, center.y() - sz),
-                          QPointF(center.x() - sz, center.y() + sz));
+    case KDecoration3::DecorationButtonType::Close:
+        painter->drawLine(QPointF(4.75, 4.75), QPointF(11.25, 11.25));
+        painter->drawLine(QPointF(11.25, 4.75), QPointF(4.75, 11.25));
         break;
-    }
     default:
         break;
     }
+
+    painter->restore();
 
     painter->restore();
 }

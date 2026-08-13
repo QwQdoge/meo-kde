@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meoui_import="${MEOUI_IMPORT_ROOT:-/home/shekong/Projects/meo-ui/out/build/release}"
+meoui_source="${MEOUI_SOURCE_DIR:-/home/shekong/Projects/meo-ui}"
 system_import="${repo_root}/out/build/system/qml"
 evidence_root="${MEO_KDE_EVIDENCE_ROOT:-/home/shekong/Projects/outputs/evidence/meo-kde}"
 log_root="${evidence_root}/logs"
@@ -28,6 +29,12 @@ run python -m unittest discover -s "${repo_root}/tests/theme" -p 'test_*.py'
 run cmake -S "${repo_root}/native/system" -B "${repo_root}/out/build/system" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${repo_root}/out/build/system" --parallel
 run "${repo_root}/out/build/system/meo-system-state-smoke"
+run cmake -S "${repo_root}/native" -B "${repo_root}/out/build/application-style" \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}"
+run cmake --build "${repo_root}/out/build/application-style" --parallel
+run ctest --test-dir "${repo_root}/out/build/application-style" --output-on-failure
+run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
 
 while IFS= read -r metadata; do
   run python -m json.tool "${metadata}"

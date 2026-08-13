@@ -3,12 +3,19 @@ widgetStyle=Breeze
 
 [kdeglobals][General]
 ColorScheme=MeoLight
+font=Roboto,10,-1,5,50,0,0,0,0,0,Regular
+menuFont=Roboto,10,-1,5,50,0,0,0,0,0,Regular
+smallestReadableFont=Roboto,8,-1,5,50,0,0,0,0,0,Regular
+toolBarFont=Roboto,10,-1,5,50,0,0,0,0,0,Regular
 
 [kdeglobals][Icons]
 Theme=MeoSymbols
 
 [plasmarc][Theme]
 name=MeoLight
+
+[plasmarc][General]
+AccentColorFromWallpaper=true
 
 [Wallpaper]
 Image=/usr/share/wallpapers/MeoArch/installer_background.png
@@ -17,8 +24,42 @@ Image=/usr/share/wallpapers/MeoArch/installer_background.png
 cursorTheme=breeze_cursors
 
 [kwinrc][org.kde.kdecoration2]
-library=org.kde.kwin.aurorae.v2
-theme=__aurorae__svg__WillowDark
+library=org.meo.decoration
+theme=Meo Chrome Frame
+
+[kwinrc][Plugins]
+org.meo.windowcornersEnabled=false
+kwin4_effect_shapecornersEnabled=true
+
+[kwinrc][org.meo.decoration]
+TitleBarHeight=32
+CornerRadius=10
+ButtonDiameter=22
+ButtonHitSize=32
+ButtonSpacing=0
+ButtonRightMargin=4
+ShowButtonBackground=true
+ShadowIntensity=0.22
+ShadowRadius=24
+ShadowOffsetY=6
+AlignTitleCenter=true
+EnableAccentTint=true
+EnableCompanionEffect=false
+SquareMaximized=true
+HoverInDuration=100
+HoverOutDuration=80
+FocusTransitionDuration=180
+
+[kwinrc][Round-Corners]
+Size=10
+InactiveCornerRadius=10
+UseSquircleShape=false
+UseNativeDecorationShadows=true
+OutlineThickness=0
+InactiveOutlineThickness=0
+DisableRoundTile=true
+DisableRoundMaximize=true
+DisableRoundFullScreen=true
 
 [ksplashrc][KSplash]
 Theme=org.kde.breeze.desktop

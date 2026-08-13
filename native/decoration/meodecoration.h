@@ -8,21 +8,26 @@
 #include <QColor>
 #include <memory>
 
+class QVariantAnimation;
+
 namespace MeoDecoration {
 
 class Button;
 
 struct ConfigSettings {
-    int titleBarHeight = 36;
-    int cornerRadius = 14;
-    int buttonDiameter = 13;
-    int buttonHitSize = 26;
-    int buttonSpacing = 7;
-    int buttonRightMargin = 14;
+    int titleBarHeight = 32;
+    int cornerRadius = 10;
+    int buttonDiameter = 22;
+    int buttonHitSize = 32;
+    int buttonSpacing = 0;
+    int buttonRightMargin = 4;
     bool showButtonBackground = true;
-    double shadowIntensity = 0.25;
+    double shadowIntensity = 0.22;
     int shadowRadius = 24;
-    int shadowOffsetY = 4;
+    int shadowOffsetY = 6;
+    int hoverInDuration = 100;
+    int hoverOutDuration = 80;
+    int focusTransitionDuration = 180;
     bool alignTitleCenter = true;
     bool squareMaximized = true;
     bool enableAccentTint = true;
@@ -43,19 +48,21 @@ public:
 
     bool isWindowActive() const;
     bool isWindowMaximized() const;
-
-    bool isRightGroupHovered() const;
-    void updateGroupHoverState();
+    qreal captionIconOpacity() const;
+    qreal captionTitleOpacity() const;
 
 private:
     void loadConfig();
     void updateLayout();
     void updateShadow();
     void createButtons();
+    void updateFocusAnimation(bool active);
 
     ConfigSettings m_config;
     KDecoration3::DecorationButtonGroup *m_rightButtonGroup = nullptr;
     std::shared_ptr<KDecoration3::DecorationShadow> m_shadow;
+    QVariantAnimation *m_focusAnimation = nullptr;
+    qreal m_focusProgress = 1.0;
 };
 
 } // namespace MeoDecoration

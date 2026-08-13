@@ -1,0 +1,59 @@
+diff --git a/kdecoration/breeze.json b/kdecoration/breeze.json
+--- a/kdecoration/breeze.json
++++ b/kdecoration/breeze.json
+@@ -54,7 +54,7 @@
+         "Description[zh_CN]": "Breeze 微风外观样式的 Plasma 桌面窗口装饰",
+         "Description[zh_TW]": "使用 Plasma 桌面 Breeze 視覺樣式的視窗裝飾",
+         "EnabledByDefault": true,
+-        "Name": "Breeze",
++        "Name": "Meo Chrome Breeze",
+         "Name[ar]": "النسيم",
+         "Name[ast]": "Breeze",
+         "Name[az]": "Breeze",
+diff --git a/kdecoration/breeze.h b/kdecoration/breeze.h
+--- a/kdecoration/breeze.h
++++ b/kdecoration/breeze.h
+@@ -26,12 +26,12 @@ namespace Metrics
+ // NOTE: this value is multiplied by settings()->smallSpacing()
+ // which is always 2 on wayland, but can be something else on X11
+-static constexpr qreal Frame_FrameRadius = 2.5;
++static constexpr qreal Frame_FrameRadius = 6.0;
+ 
+ //* titlebar metrics, in units of small spacing
+-static constexpr int TitleBar_TopMargin = 2;
+-static constexpr int TitleBar_BottomMargin = 2;
++static constexpr int TitleBar_TopMargin = 1;
++static constexpr int TitleBar_BottomMargin = 1;
+ static constexpr int TitleBar_SideMargin = 2;
+-static constexpr int TitleBar_ButtonSpacing = 2;
++static constexpr int TitleBar_ButtonSpacing = 1;
+ 
+ // shadow dimensions (pixels)
+ static constexpr int Shadow_Overlap = 3;
+diff --git a/kdecoration/breezebutton.cpp b/kdecoration/breezebutton.cpp
+--- a/kdecoration/breezebutton.cpp
++++ b/kdecoration/breezebutton.cpp
+@@ -181,19 +181,17 @@ void Button::drawIcon(QPainter *painter) const
+         }
+ 
+         case DecorationButtonType::Maximize: {
+             if (isChecked()) {
+-                pen.setJoinStyle(Qt::RoundJoin);
+-                painter->setPen(pen);
+-
+-                painter->drawPolygon(QVector<QPointF>{QPointF(4, 9), QPointF(9, 4), QPointF(14, 9), QPointF(9, 14)});
++                painter->drawRect(QRectF(5, 4, 8, 8));
++                painter->drawRect(QRectF(7, 6, 8, 8));
+ 
+             } else {
+-                painter->drawPolyline(QVector<QPointF>{QPointF(4, 11), QPointF(9, 6), QPointF(14, 11)});
++                painter->drawRect(QRectF(4.5, 4.5, 10, 10));
+             }
+             break;
+         }
+ 
+         case DecorationButtonType::Minimize: {
+-            painter->drawPolyline(QVector<QPointF>{QPointF(4, 7), QPointF(9, 12), QPointF(14, 7)});
++            painter->drawLine(QPointF(4.5, 12), QPointF(13.5, 12));
+             break;
+         }

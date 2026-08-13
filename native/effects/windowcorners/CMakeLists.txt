@@ -24,6 +24,7 @@ target_link_libraries(meowindowcorners PRIVATE
 
 set_target_properties(meowindowcorners PROPERTIES
     OUTPUT_NAME "org.meo.windowcorners"
+    PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/kwin/effects/plugins"
 )
 
