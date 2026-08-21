@@ -282,7 +282,7 @@ QQC2.ScrollView {
                     required property int tileSpan
                     Layout.columnSpan: tileSpan
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 96 * MeoTheme.globalScale
+                    Layout.preferredHeight: (tileSpan === 2 ? 72 : 96) * MeoTheme.globalScale
 
                     DropArea {
                         anchors.fill: parent

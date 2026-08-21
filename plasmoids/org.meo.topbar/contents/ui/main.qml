@@ -32,7 +32,14 @@ PlasmoidItem {
     Layout.preferredHeight: compactHeight
     Layout.maximumHeight: compactHeight
 
-    Component.onCompleted: MeoShellTheme.sync()
+    readonly property string legacyQuickTileSizes: "wifi:1,bluetooth:2,focus:1,nightLight:1,keepAwake:1,powerMode:1,microphone:1,audioDevices:2,display:1,screenshot:1"
+    readonly property string pillQuickTileSizes: "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
+
+    Component.onCompleted: {
+        MeoShellTheme.sync()
+        if (Plasmoid.configuration.quickTileSizes === legacyQuickTileSizes)
+            Plasmoid.configuration.quickTileSizes = pillQuickTileSizes
+    }
 
     compactRepresentation: Item {
         id: compactRoot

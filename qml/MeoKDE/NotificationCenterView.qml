@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.notificationmanager as NotificationManager
+import org.kde.kirigami as Kirigami
 import MeoUI 1.0
 
 Item {
@@ -16,8 +17,6 @@ Item {
                                              ? notifications.count : 0
     readonly property int unreadCount: notifications && typeof notifications.unreadNotificationsCount === "number"
                                        ? notifications.unreadNotificationsCount : 0
-    readonly property int activeCount: notifications && typeof notifications.activeNotificationsCount === "number"
-                                       ? notifications.activeNotificationsCount : notificationCount
     readonly property int activeJobsCount: notifications && typeof notifications.activeJobsCount === "number"
                                            ? notifications.activeJobsCount : 0
 
@@ -116,7 +115,7 @@ Item {
             }
 
             MeoButton {
-                visible: root.activeCount > 0
+                visible: root.notificationCount > 0
                 type: "text"
                 size: "s"
                 text: qsTr("Clear all")
@@ -188,6 +187,10 @@ Item {
                     required property bool closable
                     required property bool configurable
                     required property bool hasDefaultAction
+                    required property bool hasReplyAction
+                    required property string replyActionLabel
+                    required property string replyPlaceholderText
+                    required property string replySubmitButtonText
                     required property var actionNames
                     required property var actionLabels
                     required property int type
@@ -206,17 +209,46 @@ Item {
                     readonly property bool isJob: type === NotificationManager.Notifications.JobType
                     readonly property bool critical: urgency === NotificationManager.Notifications.CriticalUrgency
                     readonly property var effectiveTime: updated || created
+                    property bool replyExpanded: false
+
+                    function submitReply() {
+                        if (!root.notifications || !root.notifications.reply || replyField.text.trim() === "")
+                            return
+                        root.notifications.reply(notificationCard.sourceIndex, replyField.text.trim(),
+                                                 NotificationManager.Notifications.Close)
+                        replyField.clear()
+                        notificationCard.replyExpanded = false
+                    }
 
                     width: notificationList.width
                     implicitHeight: cardContent.implicitHeight + 2 * MeoTheme.space12
                     color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
                     radius: MeoTheme.shapeLarge
                     elevation: 0
+                    activeFocusOnTab: hasDefaultAction
+                    Accessible.role: Accessible.ListItem
+                    Accessible.name: summary !== "" ? summary : applicationName
+                    Accessible.description: root.displayBody(body, type, percentage)
+                    Accessible.focusable: hasDefaultAction
+                    Accessible.onPressAction: if (hasDefaultAction && root.notifications
+                                                     && root.notifications.invokeDefaultAction)
+                                                  root.notifications.invokeDefaultAction(sourceIndex)
+                    Keys.onReturnPressed: if (hasDefaultAction && root.notifications
+                                               && root.notifications.invokeDefaultAction)
+                                              root.notifications.invokeDefaultAction(sourceIndex)
+                    Keys.onEnterPressed: if (hasDefaultAction && root.notifications
+                                              && root.notifications.invokeDefaultAction)
+                                             root.notifications.invokeDefaultAction(sourceIndex)
+                    Keys.onSpacePressed: if (hasDefaultAction && root.notifications
+                                              && root.notifications.invokeDefaultAction)
+                                             root.notifications.invokeDefaultAction(sourceIndex)
 
-                    TapHandler {
+                    MouseArea {
+                        anchors.fill: parent
                         enabled: notificationCard.hasDefaultAction
-                        onTapped: if (root.notifications && root.notifications.invokeDefaultAction)
-                                      root.notifications.invokeDefaultAction(notificationCard.sourceIndex)
+                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: if (root.notifications && root.notifications.invokeDefaultAction)
+                                       root.notifications.invokeDefaultAction(notificationCard.sourceIndex)
                     }
 
                     ColumnLayout {
@@ -229,9 +261,10 @@ Item {
                             Layout.fillWidth: true
                             spacing: MeoTheme.space8
 
-                            MeoIcon {
-                                icon: notificationCard.displayIcon
-                                size: 20
+                            Kirigami.Icon {
+                                source: notificationCard.displayIcon
+                                Layout.preferredWidth: 20 * MeoTheme.globalScale
+                                Layout.preferredHeight: Layout.preferredWidth
                                 color: notificationCard.critical ? MeoTheme.onErrorContainer
                                                                  : MeoTheme.onSurfaceVariant
                             }
@@ -317,7 +350,8 @@ Item {
                         }
 
                         Flow {
-                            visible: (notificationCard.actionNames && notificationCard.actionNames.length > 0)
+                            visible: notificationCard.hasReplyAction
+                                     || (notificationCard.actionNames && notificationCard.actionNames.length > 0)
                                      || (notificationCard.isJob && (notificationCard.suspendable || notificationCard.killable))
                             Layout.fillWidth: true
                             spacing: MeoTheme.space4
@@ -334,6 +368,19 @@ Item {
                                           ? notificationCard.actionLabels[index] : modelData
                                     onClicked: if (root.notifications && root.notifications.invokeAction)
                                                    root.notifications.invokeAction(notificationCard.sourceIndex, modelData)
+                                }
+                            }
+
+                            MeoButton {
+                                visible: notificationCard.hasReplyAction
+                                type: notificationCard.replyExpanded ? "tonal" : "text"
+                                size: "s"
+                                text: notificationCard.replyActionLabel !== ""
+                                      ? notificationCard.replyActionLabel : qsTr("Reply")
+                                onClicked: {
+                                    notificationCard.replyExpanded = !notificationCard.replyExpanded
+                                    if (notificationCard.replyExpanded)
+                                        replyField.forceActiveFocus()
                                 }
                             }
 
@@ -360,6 +407,32 @@ Item {
                                 text: qsTr("Cancel")
                                 onClicked: if (root.notifications && root.notifications.killJob)
                                                root.notifications.killJob(notificationCard.sourceIndex)
+                            }
+                        }
+
+                        RowLayout {
+                            visible: notificationCard.hasReplyAction && notificationCard.replyExpanded
+                            Layout.fillWidth: true
+                            spacing: MeoTheme.space8
+
+                            MeoTextField {
+                                id: replyField
+                                Layout.fillWidth: true
+                                size: "s"
+                                type: "outlined"
+                                placeholder: notificationCard.replyPlaceholderText !== ""
+                                             ? notificationCard.replyPlaceholderText : qsTr("Write a reply")
+                                Accessible.name: placeholder
+                                onAccepted: notificationCard.submitReply()
+                            }
+
+                            MeoButton {
+                                type: "filled"
+                                size: "s"
+                                enabled: replyField.text.trim() !== ""
+                                text: notificationCard.replySubmitButtonText !== ""
+                                      ? notificationCard.replySubmitButtonText : qsTr("Send")
+                                onClicked: notificationCard.submitReply()
                             }
                         }
                     }

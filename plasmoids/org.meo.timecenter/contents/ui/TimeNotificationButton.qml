@@ -30,7 +30,8 @@ QQC2.AbstractButton {
                             : (unreadCount > 0
                                ? qsTr("%1 unread notifications").arg(unreadCount)
                                : (activeJobsCount > 0
-                                  ? qsTr("%1 background tasks").arg(activeJobsCount)
+                                  ? qsTr("%1 background tasks, %2 percent complete")
+                                      .arg(activeJobsCount).arg(jobsPercentage)
                                   : qsTr("No unread notifications")))
     onClicked: statusCenterRequested()
 

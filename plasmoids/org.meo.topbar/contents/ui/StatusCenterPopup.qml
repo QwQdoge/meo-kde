@@ -45,7 +45,7 @@ QQC2.Popup {
         showDismissed: false
         sortMode: NotificationManager.Notifications.SortByDate
         sortOrder: Qt.DescendingOrder
-        groupMode: NotificationManager.Notifications.GroupApplicationsFlat
+        groupMode: NotificationManager.Notifications.GroupDisabled
         window: statusCenter.notificationWindow
     }
 

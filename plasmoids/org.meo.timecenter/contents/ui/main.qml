@@ -53,7 +53,10 @@ PlasmoidItem {
         showDismissed: false
         sortMode: NotificationManager.Notifications.SortByDate
         sortOrder: Qt.DescendingOrder
-        groupMode: NotificationManager.Notifications.GroupApplicationsFlat
+        // This delegate renders every advertised action and job control. Keep
+        // the model ungrouped so no child notification is hidden behind an
+        // aggregate row with different role semantics.
+        groupMode: NotificationManager.Notifications.GroupDisabled
         window: root.Window.window
     }
 
