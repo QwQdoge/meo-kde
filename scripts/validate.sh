@@ -21,11 +21,17 @@ run() {
 run bash -n "${repo_root}/setup/apply-meo-desktop.sh"
 run bash -n "${repo_root}/setup/reset-meo-desktop.sh"
 run bash -n "${repo_root}/scripts/sync-to-workspace.sh"
+run bash -n "${repo_root}/tools/input-method/meo-input-method.sh"
+run bash -n "${repo_root}/tools/theme/apply-meo-mode.sh"
+run bash -n "${repo_root}/tools/theme/apply-meo-desktop.sh"
+run bash -n "${repo_root}/tools/shell/apply-meo-panel-layout.sh"
 run python -m configparser "${repo_root}/themes/icons/MeoSymbols/index.theme"
 run python "${repo_root}/tools/icons/build_icon_theme.py" --check
 run python -m unittest discover -s "${repo_root}/tests/icons" -p 'test_*.py'
 run python "${repo_root}/tools/icons/audit_icon_coverage.py"
 run python -m unittest discover -s "${repo_root}/tests/theme" -p 'test_*.py'
+run python -m unittest discover -s "${repo_root}/tests/input_method" -p 'test_*.py'
+run python -m unittest discover -s "${repo_root}/tests/shell" -p 'test_*.py'
 run cmake -S "${repo_root}/native/system" -B "${repo_root}/out/build/system" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${repo_root}/out/build/system" --parallel
 run "${repo_root}/out/build/system/meo-system-state-smoke"
@@ -34,7 +40,7 @@ run cmake -S "${repo_root}/native" -B "${repo_root}/out/build/application-style"
 run cmake --build "${repo_root}/out/build/application-style" --parallel
 run ctest --test-dir "${repo_root}/out/build/application-style" --output-on-failure
 run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
-  -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
+  -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
 
 while IFS= read -r metadata; do
   run python -m json.tool "${metadata}"

@@ -7,6 +7,7 @@ config_root="${XDG_CONFIG_HOME:-${HOME}/.config}"
 data_root="${XDG_DATA_HOME:-${HOME}/.local/share}"
 qml_root="${MEO_KDE_QML_ROOT:-${HOME}/.local/share/meo-kde/qml}"
 user_plugin_root="${MEO_KDE_PLUGIN_ROOT:-${HOME}/.local/lib/qt6/plugins}"
+local_bin_root="${XDG_BIN_HOME:-${HOME}/.local/bin}"
 # MeoUI stays an independent, dynamically imported Qt QML module.  Build it
 # from the sibling project rather than carrying a source snapshot in MeoKDE.
 meoui_project_root="${MEOUI_PROJECT_ROOT:-${repo_root}/../meo-ui}"
@@ -24,15 +25,6 @@ fi
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/meo-desktop"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 backup_root="${state_root}/backups/${timestamp}"
-launcher_action_display="Activate Application Launcher"
-legacy_shelf_action_display=""
-if [ -f "${config_root}/kglobalshortcutsrc" ]; then
-  # KGlobalAccel identifies the display text as part of a foreign action ID;
-  # capture the localized text before replacing the legacy shortcut entry.
-  launcher_action_display="$(awk -F= '$1 == "activate application launcher" { count = split($2, fields, ","); print fields[count]; exit }' "${config_root}/kglobalshortcutsrc")"
-  launcher_action_display="${launcher_action_display:-Activate Application Launcher}"
-  legacy_shelf_action_display="$(awk -F= '$1 == "activate widget 20" { count = split($2, fields, ","); print fields[count]; exit }' "${config_root}/kglobalshortcutsrc")"
-fi
 dry_run=0
 reset_layout=0
 apply_theme=0
@@ -54,6 +46,90 @@ run() {
   printf '\n'
   if [ "${dry_run}" -eq 0 ]; then
     "$@"
+  fi
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Required command is unavailable: $1" >&2
+    exit 1
+  fi
+}
+
+qt_install_path() {
+  local query="$1"
+  if command -v qmake6 >/dev/null 2>&1; then
+    qmake6 -query "${query}"
+    return
+  fi
+  if command -v qtpaths6 >/dev/null 2>&1; then
+    case "${query}" in
+      QT_INSTALL_PLUGINS) qtpaths6 --plugin-dir ;;
+      QT_INSTALL_QML) qtpaths6 --qml-dir ;;
+      *) return 1 ;;
+    esac
+    return
+  fi
+  return 1
+}
+
+has_plasma_package() {
+  local package_id="$1"
+  local data_dirs="${XDG_DATA_HOME:-${HOME}/.local/share}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+  local data_dir
+  IFS=: read -r -a data_dir_list <<< "${data_dirs}"
+  for data_dir in "${data_dir_list[@]}"; do
+    if [ -f "${data_dir}/plasma/plasmoids/${package_id}/metadata.json" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+preflight_plasma() {
+  require_command plasmashell
+  require_command cmake
+  require_command qml6
+  require_command kreadconfig6
+  require_command kwriteconfig6
+  require_command plasma-apply-lookandfeel
+  require_command busctl
+
+  local plasma_version
+  plasma_version="$(plasmashell --version | awk '{print $2}')"
+  local plasma_major="${plasma_version%%.*}"
+  if ! [[ "${plasma_major}" =~ ^[0-9]+$ ]] || [ "${plasma_major}" -lt 6 ]; then
+    echo "Meo Desktop requires KDE Plasma 6 or newer; found: ${plasma_version:-unknown}" >&2
+    exit 1
+  fi
+
+  local qt_plugin_dir qt_qml_dir
+  qt_plugin_dir="$(qt_install_path QT_INSTALL_PLUGINS)" || {
+    echo "Could not locate Qt's plugin directory (qmake6 or qtpaths6 is required)." >&2
+    exit 1
+  }
+  qt_qml_dir="$(qt_install_path QT_INSTALL_QML)" || {
+    echo "Could not locate Qt's QML directory (qmake6 or qtpaths6 is required)." >&2
+    exit 1
+  }
+
+  for required in \
+    "${qt_plugin_dir}/plasma/applets/org.kde.plasma.kickoff.so" \
+    "${qt_plugin_dir}/plasma/applets/org.kde.plasma.appmenu.so" \
+    "${qt_plugin_dir}/plasma/applets/org.kde.plasma.systemtray.so" \
+    "${qt_plugin_dir}/kwin/effects/plugins/kwin4_effect_shapecorners.so" \
+    "${qt_qml_dir}/org/kde/plasma/clock/qmldir" \
+    "${qt_qml_dir}/org/kde/notificationmanager/qmldir" \
+    "${qt_qml_dir}/org/kde/plasma/workspace/calendar/qmldir"; do
+    if [ ! -e "${required}" ]; then
+      echo "Required Plasma runtime component is missing: ${required}" >&2
+      exit 1
+    fi
+  done
+
+  if ! has_plasma_package org.kde.plasma.icontasks; then
+    echo "Required Plasma widget is missing: org.kde.plasma.icontasks" >&2
+    exit 1
   fi
 }
 
@@ -88,24 +164,6 @@ prepare_meoui() {
   fi
 }
 
-install_rounded_corners_effect() {
-  local package_name="kwin-effect-rounded-corners-git"
-  if pacman -Q "${package_name}" >/dev/null 2>&1; then
-    return
-  fi
-
-  # KDE-Rounded-Corners supplies the maintained Plasma 6 shader effect and
-  # its KCM. Install only when absent so ordinary theme applies stay fast.
-  if command -v paru >/dev/null 2>&1; then
-    run paru -S --needed --noconfirm "${package_name}"
-  elif command -v yay >/dev/null 2>&1; then
-    run yay -S --needed --noconfirm "${package_name}"
-  else
-    echo "${package_name} requires paru or yay for automatic AUR installation." >&2
-    exit 1
-  fi
-}
-
 for required in \
   "${desktop_root}/themes/look-and-feel/org.meo.desktop/metadata.json" \
   "${desktop_root}/themes/desktoptheme/MeoLight/metadata.json" \
@@ -113,6 +171,10 @@ for required in \
   "${desktop_root}/themes/icons/MeoSymbols/index.theme" \
   "${desktop_root}/themes/icons/MeoSymbolsDark/index.theme" \
   "${repo_root}/qml/MeoKDE/qmldir" \
+  "${repo_root}/defaults/plasma/meo-shellrc" \
+  "${repo_root}/tools/shell/apply-meo-panel-layout.sh" \
+  "${repo_root}/tools/theme/apply-meo-desktop.sh" \
+  "${repo_root}/plasmoids/org.meo.timecenter/metadata.json" \
   "${repo_root}/assets/wallpapers/installer_background.png"; do
   if [ ! -f "${required}" ]; then
     echo "Required Meo Desktop asset is missing: ${required}" >&2
@@ -120,15 +182,61 @@ for required in \
   fi
 done
 
+preflight_plasma
 prepare_meoui
 
-run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${user_plugin_root}/kwin/effects/plugins"
+# Build every native artifact before changing user data or configuration. A
+# failed compiler or missing KDE development dependency therefore leaves the
+# desktop exactly as it was.
+if [ -n "${native_cxx}" ]; then
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}"
+else
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
+fi
+run cmake --build "${native_build_root}" --parallel
 
-for config in kdeglobals kwinrc plasmarc plasma-org.kde.plasma.desktop-appletsrc; do
+run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
+
+for config in kdeglobals kwinrc plasmarc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
   if [ -e "${config_root}/${config}" ]; then
     run cp -a "${config_root}/${config}" "${backup_root}/${config}"
   fi
 done
+
+# The profile is deliberately user-editable. Keep an existing profile intact
+# across source updates; first install gets the dual-panel MD3 default.
+if [ ! -f "${config_root}/meo-shellrc" ]; then
+  run install -Dm644 "${repo_root}/defaults/plasma/meo-shellrc" "${config_root}/meo-shellrc"
+fi
+
+# Version 1 briefly replaced the useful native tray with a second top task
+# manager and enlarged the Dock. Migrate only that exact legacy combination;
+# all other user-edited profiles keep their choices untouched.
+profile_version=3
+if [ -f "${config_root}/meo-shellrc" ]; then
+  profile_version="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion --default 0)"
+fi
+if ! [[ "${profile_version}" =~ ^[0-9]+$ ]]; then
+  profile_version=0
+fi
+if [ "${profile_version}" -lt 2 ] && [ -f "${config_root}/meo-shellrc" ]; then
+  legacy_tray="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key ShowSystemTray --default false)"
+  legacy_top_tasks="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key ShowTopAppTasks --default true)"
+  legacy_dock_height="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockHeight --default 68)"
+  if [ "${legacy_tray,,}" = false ] && [ "${legacy_top_tasks,,}" = true ] \
+      && [ "${legacy_dock_height}" = 68 ]; then
+    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key ShowSystemTray --type bool true
+    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key ShowTopAppTasks --type bool false
+    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockHeight 56
+    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key TopAppTaskLimit --delete ''
+  fi
+fi
+if [ "${profile_version}" -lt 3 ] && [ -f "${config_root}/meo-shellrc" ]; then
+  # Version 3 makes the native tray and the two Meo status applets converge on
+  # one deterministic order/config when the user explicitly reapplies the
+  # panel profile. Merely installing the update does not rebuild live panels.
+  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 3
+fi
 
 # Install Look-and-Feel package
 run rm -rf "${data_root}/plasma/look-and-feel/org.meo.desktop"
@@ -146,65 +254,58 @@ for icon_theme in MeoSymbols MeoSymbolsDark; do
   run cp -a "${desktop_root}/themes/icons/${icon_theme}" "${data_root}/icons/${icon_theme}"
 done
 
-# The panel is composed from Plasma's own AppMenu, Kickoff, Icons-Only Task
-# Manager, System Tray and Digital Clock. Remove historical custom panel
-# plasmoids so they cannot remain as duplicate choices in System Settings.
-for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.topbar; do
+# Meo owns the quick-settings and time surfaces; KDE owns the native System
+# Tray/StatusNotifier application icons and the bottom task manager.
+for meo_panel_applet in org.meo.topbar org.meo.timecenter; do
+  if [ -e "${data_root}/plasma/plasmoids/${meo_panel_applet}" ]; then
+    run mkdir -p "${backup_root}/plasmoids"
+    run cp -a "${data_root}/plasma/plasmoids/${meo_panel_applet}" \
+      "${backup_root}/plasmoids/${meo_panel_applet}"
+  fi
+done
+for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.toptasks; do
   run rm -rf "${data_root}/plasma/plasmoids/${legacy_plasmoid}"
+done
+for meo_panel_applet in org.meo.topbar org.meo.timecenter; do
+  run rm -rf "${data_root}/plasma/plasmoids/${meo_panel_applet}"
+  run cp -a "${repo_root}/plasmoids/${meo_panel_applet}" \
+    "${data_root}/plasma/plasmoids/${meo_panel_applet}"
 done
 
 run cp -a "${meoui_source}/." "${qml_root}/MeoUI/"
+# The QML plugin links against libmeoui.  Keep its runtime next to the module
+# as well, so a source-built desktop does not depend on an absolute build-tree
+# RUNPATH remaining at the same location after installation or an update.
+for meoui_runtime_library in "${meoui_build_root}"/libmeoui.so*; do
+  if [ -f "${meoui_runtime_library}" ]; then
+    run cp -a "${meoui_runtime_library}" "${qml_root}/MeoUI/"
+  fi
+done
 run cp -a "${repo_root}/qml/MeoKDE/." "${qml_root}/MeoKDE/"
-if [ -n "${native_cxx}" ]; then
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}"
-else
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
-fi
-run cmake --build "${native_build_root}" --parallel
-install_rounded_corners_effect
+run install -Dm755 "${repo_root}/tools/input-method/meo-input-method.sh" "${local_bin_root}/meo-input-method"
+run install -Dm755 "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "${local_bin_root}/meo-desktop-layout"
+run install -Dm755 "${repo_root}/tools/theme/apply-meo-desktop.sh" "${local_bin_root}/meo-desktop-apply"
+run install -Dm644 "${repo_root}/defaults/kwin/kwinrc" "${data_root}/meo-kde/defaults/kwinrc"
+run mkdir -p "${data_root}/fcitx5/themes"
+for input_theme in MeoInputMethod-Light MeoInputMethod-Dark; do
+  run rm -rf "${data_root}/fcitx5/themes/${input_theme}"
+  run cp -a "${repo_root}/themes/input-method/fcitx5/${input_theme}" "${data_root}/fcitx5/themes/${input_theme}"
+done
+run install -Dm644 "${repo_root}/themes/input-method/ibus/gtk.css.in" "${data_root}/meo-kde/input-method/ibus/gtk.css.in"
+run install -Dm644 "${repo_root}/themes/input-method/ibus/index.theme" "${data_root}/meo-kde/input-method/ibus/index.theme"
+run install -Dm0755 "${native_build_root}/dynamic-color/meo-dynamic-colors" "${local_bin_root}/meo-dynamic-colors"
 # Install the independent native decoration. KWin owns every window action;
 # this module supplies only visual geometry and caption-button rendering.
 run install -Dm0755 "${native_build_root}/bin/org.kde.kdecoration3/org.meo.decoration.so" "${user_plugin_root}/org.kde.kdecoration3/org.meo.decoration.so"
 run install -Dm0755 "${native_build_root}/decoration/kcm_meodecoration.so" "${user_plugin_root}/org.kde.kdecoration3.kcm/kcm_meodecoration.so"
 run rm -f "${user_plugin_root}/org.kde.kdecoration3/org.meo.chromebreeze.so"
-# Do not install the old clipping effect. KWin's normal window rendering and
-# resize borders are the desired default for every application.
+# Client-surface clipping is delegated to KDE-Rounded-Corners. It uses KWin's
+# shader and repaint pipeline and is maintained across KWin releases. Remove
+# the retired Meo region-clipping plugin so a stale user copy cannot be loaded.
 run rm -f "${user_plugin_root}/kwin/effects/plugins/org.meo.windowcorners.so"
 run mkdir -p "${qml_root}/Meo/System"
 if [ -d "${native_build_root}/qml/Meo/System" ]; then
   run cp -a "${native_build_root}/qml/Meo/System/." "${qml_root}/Meo/System/"
-fi
-
-if command -v kwriteconfig6 >/dev/null 2>&1; then
-  # Look-and-feel defaults are applied only when a theme is selected. Persist
-  # the KDE-native decoration selection so reboot paths are identical.
-  run kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.meo.decoration
-  run kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme "Meo Chrome Frame"
-  run kwriteconfig6 --file kwinrc --group Plugins --key org.meo.windowcornersEnabled false
-  run kwriteconfig6 --file kwinrc --group Plugins --key kwin4_effect_shapecornersEnabled true
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key TitleBarHeight 32
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key CornerRadius 10
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ButtonDiameter 22
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ButtonHitSize 32
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ButtonSpacing 0
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ButtonRightMargin 4
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ShadowIntensity 0.22
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ShadowRadius 24
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key ShadowOffsetY 6
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key HoverInDuration 100
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key HoverOutDuration 80
-  run kwriteconfig6 --file kwinrc --group org.meo.decoration --key FocusTransitionDuration 180
-  # Match the decoration radius while preserving DecorationShadow and avoid
-  # applying rounded corners to edge-to-edge/tiled window states.
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key Size 10
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key InactiveCornerRadius 10
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key UseSquircleShape false
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key UseNativeDecorationShadows true
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key OutlineThickness 0
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key InactiveOutlineThickness 0
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key DisableRoundTile true
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key DisableRoundMaximize true
-  run kwriteconfig6 --file kwinrc --group Round-Corners --key DisableRoundFullScreen true
 fi
 
 # Do not ask a live Wayland compositor to reload decoration modules. The
@@ -218,7 +319,13 @@ if command -v systemctl >/dev/null 2>&1; then
   # This is deliberately only a daemon reload. The drop-in takes effect on a
   # future normal login; never restart KWin from a theme installer.
   run mkdir -p "${config_root}/systemd/user/plasma-kwin_wayland.service.d"
-  run cp -a "${repo_root}/defaults/systemd/50-meo-chrome-breeze.conf" "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-chrome-breeze.conf"
+  run rm -f "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-chrome-breeze.conf"
+  run cp -a "${repo_root}/defaults/systemd/50-meo-native-plugins.conf" "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-native-plugins.conf"
+  # The dynamic-color watcher is installed but deliberately left disabled.
+  # It only starts after the user explicitly enables it, so applying Meo does
+  # not alter the current color scheme behind their back.
+  run cp -a "${repo_root}/defaults/systemd/meo-dynamic-colors.service" "${config_root}/systemd/user/meo-dynamic-colors.service"
+  run cp -a "${repo_root}/defaults/systemd/meo-dynamic-colors.path" "${config_root}/systemd/user/meo-dynamic-colors.path"
   run systemctl --user daemon-reload
 fi
 
@@ -231,42 +338,17 @@ if [ "${dry_run}" -eq 0 ]; then
   printf '%s\n' "${backup_root}" > "${state_root}/last-backup"
 fi
 
-if [ "${apply_theme}" -eq 1 ] && command -v plasma-apply-lookandfeel >/dev/null 2>&1; then
+if [ "${apply_theme}" -eq 1 ]; then
+  apply_arguments=(--no-backup)
   if [ "${reset_layout}" -eq 1 ]; then
-    run plasma-apply-lookandfeel -a org.meo.desktop --resetLayout
-  else
-    run plasma-apply-lookandfeel -a org.meo.desktop
+    apply_arguments+=(--reset-layout)
   fi
-elif [ "${apply_theme}" -eq 1 ] && command -v lookandfeeltool >/dev/null 2>&1; then
-  run lookandfeeltool -a org.meo.desktop
+  if [ "${dry_run}" -eq 1 ]; then
+    apply_arguments+=(--dry-run)
+  fi
+  run env MEO_INPUT_METHOD_HELPER="${repo_root}/tools/input-method/meo-input-method.sh" \
+    MEO_KWIN_DEFAULTS="${repo_root}/defaults/kwin/kwinrc" \
+    "${repo_root}/tools/theme/apply-meo-desktop.sh" "${apply_arguments[@]}"
 else
   echo "Meo is installed for selection in System Settings. Run with --apply only to apply it immediately." >&2
-fi
-
-# plasma-apply-lookandfeel can rewrite kwinrc from package defaults after the
-# earlier install phase. Reassert the selected, installed decoration last.
-if [ "${apply_theme}" -eq 1 ] && command -v kwriteconfig6 >/dev/null 2>&1; then
-  run kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library org.meo.decoration
-  run kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme "Meo Chrome Frame"
-fi
-
-if [ "${apply_theme}" -eq 1 ] && [ "${reset_layout}" -eq 1 ] && command -v systemctl >/dev/null 2>&1; then
-  # Remove stale Meo widget bindings and restore KDE's own Kickoff action.
-  # The standard Plasma launcher is the sole owner of Meta after the reset.
-  if command -v kwriteconfig6 >/dev/null 2>&1; then
-    run kwriteconfig6 --file kglobalshortcutsrc --group plasmashell --key "activate application launcher" $'Meta\tAlt+F1,Meta\tAlt+F1,'"${launcher_action_display}"
-    if [ -n "${legacy_shelf_action_display}" ]; then
-      run kwriteconfig6 --file kglobalshortcutsrc --group plasmashell --key "activate widget 20" "none,none,${legacy_shelf_action_display}"
-    fi
-    run kwriteconfig6 --file kglobalshortcutsrc --group plasmashell --delete "activate widget 48"
-    run kwriteconfig6 --file kglobalshortcutsrc --group plasmashell --delete "activate widget 98"
-  fi
-  # KGlobalAccel keeps a live copy, so update the real KDE launcher action too.
-  if command -v busctl >/dev/null 2>&1; then
-    run busctl --user call org.kde.kglobalaccel /kglobalaccel org.kde.KGlobalAccel setForeignShortcut asai 4 plasmashell "activate application launcher" plasmashell "${launcher_action_display}" 2 150994992 16777250
-    if [ -n "${legacy_shelf_action_display}" ]; then
-      run busctl --user call org.kde.kglobalaccel /kglobalaccel org.kde.KGlobalAccel setForeignShortcut asai 4 plasmashell "activate widget 20" plasmashell "${legacy_shelf_action_display}" 0
-    fi
-  fi
-  echo "Layout reset is written. Plasma will use it at the next normal login; no live shell restart was requested." >&2
 fi

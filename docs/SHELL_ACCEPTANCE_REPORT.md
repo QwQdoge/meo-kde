@@ -10,10 +10,12 @@ present. Those claims are not carried forward.
 
 Verified in the current source tree:
 
-- The layout contains a persistent 44 dp top status bar and a 68 dp bottom
-  Shelf.
-- Both shell packages consume MeoUI roles after `MeoShellTheme` maps the live
-  Plasma palette/accent into a complete dynamic role set.
+- The layout contains a persistent top status bar and an auto-hiding Plasma
+  Icons-Only Task Manager Dock.
+- The Meo status package consumes MeoUI roles after `MeoShellTheme` passes the
+  live KDE accent through the native HCT/CAM16 Material 3 role generator.
+- The status center consumes real Plasma Clock, Calendar and Notification
+  Manager models; it does not create local time or notification state.
 - Power actions bind to KDE `SessionManagement` capability and request APIs.
 - Audio binds to Plasma's preferred sink when that backend is available.
 - Local fake Wi-Fi and Bluetooth booleans were removed.
@@ -22,11 +24,11 @@ Verified in the current source tree:
 Still requiring VM/manual evidence:
 
 - clean package installation and first Plasma login;
-- launcher execution, task activation/minimisation/grouping and context menus;
-- top bar/system tray composition and popup placement;
+- Kickoff Meta invocation, task activation/minimisation/grouping, previews and
+  window menus in the native task manager;
+- top bar/system tray composition, status-center and quick-settings popup placement;
 - session power confirmation flows;
 - 1280x720 through 2560x1440 and 100% through 200% scaling;
 - keyboard-only, screen-reader, reduced-motion, multi-monitor and fullscreen
   behaviour;
 - comparison screenshots from the installed ISO.
-

@@ -6,5 +6,7 @@
 - Do not implement fake network, Bluetooth, brightness, power or audio state.
 - Preserve a visible top status bar and a bottom Shelf at all supported sizes.
 - Run `scripts/validate.sh` before syncing into the ISO workspace.
-- Treat `meo-arch-os-workspace/meo-desktop` as a generated integration snapshot.
-
+- Treat `meo-arch-os-workspace/build/archiso/profile/airootfs/opt/meo-desktop`
+  as generated ISO staging, never as MeoKDE source authority.
+- Put screenshots and runtime acceptance evidence under
+  `artifacts/validation/<run-id>/`; keep compiler output under `out/`.

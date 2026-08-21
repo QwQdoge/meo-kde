@@ -1,6 +1,11 @@
 /out/
 /build/
+/artifacts/
+/packaging/arch/pkg/
+/packaging/arch/src/
 /validation/screenshots/
+**/__pycache__/
+*.py[cod]
 *.pkg.tar.*
 .DS_Store
 *.user

@@ -40,6 +40,5 @@ class MeoColorSchemeTests(unittest.TestCase):
             self.assertTrue((root / "colors").is_file())
             self.assertTrue((root / "widgets" / "background.svg").is_file())
 
-
 if __name__ == "__main__":
     unittest.main()

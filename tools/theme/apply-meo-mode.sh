@@ -48,3 +48,9 @@ plasma-apply-colorscheme "$color_scheme"
 plasma-apply-desktoptheme "$desktop_theme"
 kwriteconfig6 --file "${XDG_CONFIG_HOME:-${HOME}/.config}/kdeglobals" --group Icons --key Theme "$icon_theme"
 kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+
+# Fcitx selects its packaged light/dark capsule through the portal. IBus has
+# an explicitly opted-in private GTK theme, so refresh only that rendered file.
+if command -v meo-input-method >/dev/null 2>&1; then
+  meo-input-method --sync --quiet || true
+fi

@@ -6,13 +6,21 @@ QtObject {
     readonly property real topBarHeight: 40 * MeoTheme.globalScale
     readonly property real screenMargin: 20 * MeoTheme.globalScale
     readonly property real popupGap: 12 * MeoTheme.globalScale
+    readonly property real popupContentMargin: 20 * MeoTheme.globalScale
+    readonly property real popupSectionSpacing: 16 * MeoTheme.globalScale
+    readonly property real popupItemSpacing: 8 * MeoTheme.globalScale
+    readonly property real popupHeaderHeight: 48 * MeoTheme.globalScale
 
     readonly property real launcherWidth: 420 * MeoTheme.globalScale
     readonly property real launcherMaxHeight: 520 * MeoTheme.globalScale
     readonly property real launcherSearchHeight: 44 * MeoTheme.globalScale
-    readonly property real quickSettingsWidth: 372 * MeoTheme.globalScale
+    readonly property real quickSettingsWidth: 392 * MeoTheme.globalScale
+    readonly property real quickSettingsHeight: 680 * MeoTheme.globalScale
+    readonly property real quickSettingsTileHeight: 72 * MeoTheme.globalScale
+    readonly property real statusCenterWidth: 760 * MeoTheme.globalScale
+    readonly property real statusCenterHeight: 520 * MeoTheme.globalScale
 
-    readonly property real shelfPanelHeight: 68 * MeoTheme.globalScale
+    readonly property real shelfPanelHeight: 56 * MeoTheme.globalScale
     readonly property real shelfSurfaceHeight: 56 * MeoTheme.globalScale
     readonly property real shelfBottomMargin: 12 * MeoTheme.globalScale
     readonly property real shelfItemSize: 44 * MeoTheme.globalScale

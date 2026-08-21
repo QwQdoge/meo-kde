@@ -1,15 +1,21 @@
 pkgname=meo-desktop
-pkgver=0.2.0
-pkgrel=8
+pkgver=0.3.0
+pkgrel=1
 pkgdesc="MeoArch KDE Plasma desktop defaults and Meo Qt application style"
 arch=('x86_64')
 url="https://github.com/QwQdoge"
 license=('GPL-3.0-or-later')
-depends=('meoui-qml>=1.0.1' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
+depends=('meoui-qml>=1.0.2' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
          'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'sddm' 'breeze'
-         'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4')
+         'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
+         'kwin-effect-rounded-corners')
 makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative')
-optdepends=('omnistore-bin: MeoArch application discovery and package management')
+optdepends=('omnistore-bin: MeoArch application discovery and package management'
+            'fcitx5: Fcitx 5 candidate UI for compatible input engines'
+            'fcitx5-configtool: graphical configuration for Fcitx 5 options'
+            'fcitx5-gtk: Fcitx 5 GTK and XWayland input-method module'
+            'fcitx5-qt: Fcitx 5 Qt and XWayland input-method module'
+            'ibus: IBus candidate panel bridge; enable with meo-input-method')
 source=()
 sha256sums=()
 
@@ -32,6 +38,10 @@ package() {
     cp -a "${workspace}/themes/desktoptheme/${desktop_theme}" \
       "${pkgdir}/usr/share/plasma/desktoptheme/"
   done
+  install -d "${pkgdir}/usr/share/plasma/plasmoids"
+  cp -a "${workspace}/plasmoids/org.meo.topbar" \
+    "${workspace}/plasmoids/org.meo.timecenter" \
+    "${pkgdir}/usr/share/plasma/plasmoids/"
   install -d "${pkgdir}/usr/share/color-schemes"
   install -m644 "${workspace}"/themes/color-schemes/*.colors \
     "${pkgdir}/usr/share/color-schemes/"
@@ -43,6 +53,14 @@ package() {
     "${pkgdir}/usr/share/icons/hicolor/scalable/apps/meoarch-logo.svg"
   install -Dm755 "${workspace}/tools/theme/apply-meo-mode.sh" \
     "${pkgdir}/usr/bin/meo-theme-mode"
+  install -Dm755 "${workspace}/tools/theme/apply-meo-desktop.sh" \
+    "${pkgdir}/usr/bin/meo-desktop-apply"
+  install -Dm644 "${workspace}/defaults/kwin/kwinrc" \
+    "${pkgdir}/usr/share/meo-desktop/defaults/kwinrc"
+  install -Dm755 "${workspace}/tools/shell/apply-meo-panel-layout.sh" \
+    "${pkgdir}/usr/bin/meo-desktop-layout"
+  install -Dm644 "${workspace}/defaults/plasma/meo-shellrc" \
+    "${pkgdir}/etc/xdg/meo-shellrc"
   install -Dm644 "${workspace}/defaults/sddm/meoarch.conf" \
     "${pkgdir}/etc/sddm.conf.d/20-meoarch.conf"
   install -Dm644 "${workspace}/defaults/sddm/theme.conf.user" \
@@ -57,6 +75,18 @@ package() {
     "${pkgdir}/etc/xdg/plasmarc"
   install -Dm644 "${workspace}/defaults/plasma/plasma-welcomerc" \
     "${pkgdir}/etc/xdg/plasma-welcomerc"
+  install -Dm644 "${workspace}/defaults/input-method/fcitx5/conf/classicui.conf" \
+    "${pkgdir}/etc/xdg/fcitx5/conf/classicui.conf"
+  install -d "${pkgdir}/usr/share/fcitx5/themes"
+  cp -a "${workspace}/themes/input-method/fcitx5/MeoInputMethod-Light" \
+    "${workspace}/themes/input-method/fcitx5/MeoInputMethod-Dark" \
+    "${pkgdir}/usr/share/fcitx5/themes/"
+  install -Dm755 "${workspace}/tools/input-method/meo-input-method.sh" \
+    "${pkgdir}/usr/bin/meo-input-method"
+  install -Dm644 "${workspace}/themes/input-method/ibus/gtk.css.in" \
+    "${pkgdir}/usr/share/meo-desktop/input-method/ibus/gtk.css.in"
+  install -Dm644 "${workspace}/themes/input-method/ibus/index.theme" \
+    "${pkgdir}/usr/share/meo-desktop/input-method/ibus/index.theme"
 
   install -d "${pkgdir}/usr/lib/qt6/qml/MeoKDE"
   cp -a "${workspace}/qml/MeoKDE/." "${pkgdir}/usr/lib/qt6/qml/MeoKDE/"

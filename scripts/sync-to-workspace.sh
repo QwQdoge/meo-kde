@@ -10,7 +10,7 @@ if [ ! -d "${workspace}/meoarch-os" ] || [ ! -d "${destination}" ]; then
   exit 2
 fi
 
-for directory in assets defaults docs icons native packaging plasmoids qml setup themes; do
+for directory in assets defaults docs icons native packaging plasmoids qml setup themes tools; do
   rm -rf "${destination:?}/${directory}"
   cp -a "${source_root}/${directory}" "${destination}/${directory}"
 done

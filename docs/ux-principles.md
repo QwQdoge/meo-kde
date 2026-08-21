@@ -5,10 +5,11 @@ the launcher and selecting an application. The shelf must visibly distinguish
 pinned, running, active, and minimized applications through Plasma's task
 manager states.
 
-Quick settings expose everyday state through the KDE system tray. Advanced
-network, Bluetooth, audio, display, and power controls remain in System
-Settings. Destructive actions stay in KDE's session UI and require explicit
-labels and confirmation.
+Quick Settings exposes everyday Wi-Fi, Bluetooth, volume, battery and power
+state through the Meo top bar while retaining KDE's system services as the
+source of truth. Advanced network, Bluetooth, audio and display controls stay
+in System Settings. Destructive actions stay in KDE's session UI and require
+explicit labels and confirmation.
 
 Every custom MeoUI surface must define loading, empty, offline, failure,
 permission-denied, unavailable-service, and no-result states. Tab,

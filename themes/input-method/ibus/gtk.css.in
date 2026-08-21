@@ -1,0 +1,59 @@
+/*
+ * IBus GTK 3 candidate panel theme.
+ *
+ * meo-input-method resolves every placeholder from the currently selected
+ * KDE color scheme before installing this file as the private
+ * MeoInputMethod GTK theme.  Keep this template role-based: colours belong to
+ * Meo's color scheme, not to a second hard-coded GTK palette.
+ */
+@define-color theme_bg_color @MEO_SURFACE@;
+@define-color theme_base_color @MEO_SURFACE@;
+@define-color theme_fg_color @MEO_ON_SURFACE@;
+@define-color theme_selected_bg_color @MEO_SECONDARY_CONTAINER@;
+@define-color theme_selected_fg_color @MEO_ON_SECONDARY_CONTAINER@;
+@define-color placeholder_text_color @MEO_ON_SURFACE_VARIANT@;
+@define-color borders @MEO_OUTLINE@;
+
+@define-color meo_surface_container @MEO_SURFACE_CONTAINER@;
+@define-color meo_primary @MEO_PRIMARY@;
+@define-color meo_secondary_container @MEO_SECONDARY_CONTAINER@;
+@define-color meo_on_secondary_container @MEO_ON_SECONDARY_CONTAINER@;
+@define-color meo_outline @MEO_OUTLINE@;
+
+#IBusCandidate {
+    background-color: @meo_surface_container;
+    color: @theme_fg_color;
+    border: 0;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px alpha(@theme_fg_color, 0.18);
+    padding: 7px;
+}
+
+#IBusCandidate label {
+    color: @theme_fg_color;
+    padding: 8px;
+}
+
+#IBusCandidate button {
+    background-color: transparent;
+    background-image: none;
+    color: @theme_fg_color;
+    border: 0;
+    border-radius: 17px;
+    margin: 0;
+    padding: 8px;
+}
+
+#IBusCandidate button:hover {
+    background-color: alpha(@meo_primary, 0.08);
+}
+
+#IBusCandidate button:active {
+    background-color: alpha(@meo_primary, 0.12);
+}
+
+#IBusCandidate separator {
+    background-color: @meo_outline;
+    min-height: 1px;
+    min-width: 1px;
+}

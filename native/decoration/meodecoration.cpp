@@ -74,21 +74,21 @@ void Decoration::loadConfig()
     const int requestedTitlebarHeight = group.readEntry("TitleBarHeight", 32);
     const int minimumForFont = QFontMetrics(QGuiApplication::font()).height() + 8;
     m_config.titleBarHeight = qBound(30, qMax(requestedTitlebarHeight, minimumForFont), 34);
-    m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 10), 48);
-    m_config.buttonDiameter = qBound(16, group.readEntry("ButtonDiameter", 22), 32);
+    m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 12), 48);
+    m_config.buttonDiameter = qBound(16, group.readEntry("ButtonDiameter", 20), 32);
     m_config.buttonHitSize = qBound(26, group.readEntry("ButtonHitSize", 32), 40);
     m_config.buttonSpacing = qBound(0, group.readEntry("ButtonSpacing", 0), 24);
     m_config.buttonRightMargin = qBound(0, group.readEntry("ButtonRightMargin", 4), 48);
     m_config.showButtonBackground = group.readEntry("ShowButtonBackground", true);
-    m_config.shadowIntensity = qBound(0.0, group.readEntry("ShadowIntensity", 0.22), 1.0);
-    m_config.shadowRadius = qBound(0, group.readEntry("ShadowRadius", 24), 64);
+    m_config.shadowIntensity = qBound(0.0, group.readEntry("ShadowIntensity", 0.18), 1.0);
+    m_config.shadowRadius = qBound(0, group.readEntry("ShadowRadius", 28), 64);
     m_config.shadowOffsetY = qBound(-m_config.shadowRadius, group.readEntry("ShadowOffsetY", 6), m_config.shadowRadius);
     m_config.hoverInDuration = qBound(0, group.readEntry("HoverInDuration", 100), 300);
     m_config.hoverOutDuration = qBound(0, group.readEntry("HoverOutDuration", 80), 300);
     m_config.focusTransitionDuration = qBound(0, group.readEntry("FocusTransitionDuration", 180), 400);
     m_config.alignTitleCenter = group.readEntry("AlignTitleCenter", true);
     m_config.squareMaximized = group.readEntry("SquareMaximized", true);
-    m_config.enableAccentTint = group.readEntry("EnableAccentTint", true);
+    m_config.enableAccentTint = group.readEntry("EnableAccentTint", false);
 }
 
 void Decoration::updateLayout()
@@ -241,24 +241,11 @@ void Decoration::updateFocusAnimation(bool active)
 QColor Decoration::titleBarBackgroundColor() const
 {
     KColorScheme scheme(isWindowActive() ? QPalette::Active : QPalette::Inactive, KColorScheme::Header);
-    QColor baseBg = scheme.background(KColorScheme::NormalBackground).color();
-    QColor accent = scheme.foreground(KColorScheme::ActiveText).color();
-
-    bool isDark = (baseBg.lightness() < 128);
-    QColor targetBg = baseBg;
-
-    if (m_config.enableAccentTint && accent.isValid()) {
-        qreal alpha = isDark ? 0.10 : 0.05;
-        targetBg.setRedF(targetBg.redF() * (1.0 - alpha) + accent.redF() * alpha);
-        targetBg.setGreenF(targetBg.greenF() * (1.0 - alpha) + accent.greenF() * alpha);
-        targetBg.setBlueF(targetBg.blueF() * (1.0 - alpha) + accent.blueF() * alpha);
-    }
-
-    if (!isWindowActive()) {
-        targetBg.setAlphaF(0.85);
-    }
-
-    return targetBg;
+    // `meo-dynamic-colors` writes the complete Material role set into KDE's
+    // active color scheme. Using the Header role directly keeps the native
+    // decoration in that same MD3 palette instead of applying a second,
+    // hand-mixed accent tint on top of it.
+    return scheme.background(KColorScheme::NormalBackground).color();
 }
 
 QColor Decoration::titleTextColor() const
@@ -325,11 +312,14 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
                 : 0;
             const int rightOffset = m_config.buttonRightMargin + groupWidth + 12;
             int leftMargin = 16;
-            int availableWidth = w - leftMargin - rightOffset;
+            const int horizontalReserve = m_config.alignTitleCenter
+                ? qMax(leftMargin, rightOffset)
+                : leftMargin;
+            int availableWidth = w - horizontalReserve - (m_config.alignTitleCenter ? horizontalReserve : rightOffset);
 
             if (availableWidth > 40) {
                 QString elidedCaption = fm.elidedText(caption, Qt::ElideRight, availableWidth);
-                QRect textRect(leftMargin, 0, availableWidth, headerH);
+                QRect textRect(horizontalReserve, 0, availableWidth, headerH);
                 Qt::Alignment align = m_config.alignTitleCenter ? Qt::AlignCenter : (Qt::AlignLeft | Qt::AlignVCenter);
                 painter->drawText(textRect, align, elidedCaption);
             }

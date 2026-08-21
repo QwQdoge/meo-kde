@@ -18,26 +18,26 @@ theme=Meo Chrome Frame
 
 [org.meo.decoration]
 TitleBarHeight=32
-CornerRadius=10
-ButtonDiameter=22
+CornerRadius=12
+ButtonDiameter=20
 ButtonHitSize=32
 ButtonSpacing=0
 ButtonRightMargin=4
 ShowButtonBackground=true
-ShadowIntensity=0.22
-ShadowRadius=24
+ShadowIntensity=0.18
+ShadowRadius=28
 ShadowOffsetY=6
 HoverInDuration=100
 HoverOutDuration=80
 FocusTransitionDuration=180
 AlignTitleCenter=true
-EnableAccentTint=true
+EnableAccentTint=false
 EnableCompanionEffect=false
 SquareMaximized=true
 
 [Round-Corners]
-Size=10
-InactiveCornerRadius=10
+Size=12
+InactiveCornerRadius=12
 UseSquircleShape=false
 UseNativeDecorationShadows=true
 OutlineThickness=0

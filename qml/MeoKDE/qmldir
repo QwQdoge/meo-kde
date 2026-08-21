@@ -3,3 +3,8 @@ singleton MeoShellTheme 1.0 MeoShellTheme.qml
 singleton ShellMetrics 1.0 ShellMetrics.qml
 singleton MeoMotion 1.0 MeoMotion.qml
 FrostedSurface 1.0 FrostedSurface.qml
+PopupPageHeader 1.0 PopupPageHeader.qml
+PopupInlineMessage 1.0 PopupInlineMessage.qml
+PopupEmptyState 1.0 PopupEmptyState.qml
+PopupSectionLabel 1.0 PopupSectionLabel.qml
+NotificationCenterView 1.0 NotificationCenterView.qml

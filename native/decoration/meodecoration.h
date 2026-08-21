@@ -16,21 +16,21 @@ class Button;
 
 struct ConfigSettings {
     int titleBarHeight = 32;
-    int cornerRadius = 10;
-    int buttonDiameter = 22;
+    int cornerRadius = 12;
+    int buttonDiameter = 20;
     int buttonHitSize = 32;
     int buttonSpacing = 0;
     int buttonRightMargin = 4;
     bool showButtonBackground = true;
-    double shadowIntensity = 0.22;
-    int shadowRadius = 24;
+    double shadowIntensity = 0.18;
+    int shadowRadius = 28;
     int shadowOffsetY = 6;
     int hoverInDuration = 100;
     int hoverOutDuration = 80;
     int focusTransitionDuration = 180;
     bool alignTitleCenter = true;
     bool squareMaximized = true;
-    bool enableAccentTint = true;
+    bool enableAccentTint = false;
 };
 
 class Decoration : public KDecoration3::Decoration {

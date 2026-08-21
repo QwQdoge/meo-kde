@@ -1,4 +1,7 @@
 #include "systemstatehub.h"
+#include "dynamiccolorprovider.h"
+#include "mediacontroller.h"
+#include "platformcontroller.h"
 
 #include <QQmlEngine>
 #include <QQmlExtensionPlugin>
@@ -16,6 +19,27 @@ QObject *systemStateProvider(QQmlEngine *, QJSEngine *)
     return state;
 }
 
+QObject *platformProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *controller = new PlatformController;
+    QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
+    return controller;
+}
+
+QObject *materialColorsProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *provider = new DynamicColorProvider;
+    QQmlEngine::setObjectOwnership(provider, QQmlEngine::CppOwnership);
+    return provider;
+}
+
+QObject *mediaProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *controller = new MediaController;
+    QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
+    return controller;
+}
+
 class MeoSystemPlugin final : public QQmlExtensionPlugin
 {
     Q_OBJECT
@@ -26,6 +50,9 @@ public:
     {
         Q_ASSERT(QByteArray(uri) == QByteArray("Meo.System"));
         qmlRegisterSingletonType<SystemStateHub>(uri, 1, 0, "SystemState", systemStateProvider);
+        qmlRegisterSingletonType<PlatformController>(uri, 1, 0, "Platform", platformProvider);
+        qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
+        qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);
     }
 };
 }

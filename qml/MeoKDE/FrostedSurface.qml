@@ -1,7 +1,7 @@
 import QtQuick
 import MeoUI 1.0
 
-Rectangle {
+MeoMotionSurface {
     id: root
 
     property color baseColor: MeoTheme.surfaceContainer
@@ -10,9 +10,5 @@ Rectangle {
 
     radius: ShellMetrics.radiusPopup
     color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, surfaceOpacity)
-    border.width: ShellMetrics.panelOutlineWidth
-    border.color: Qt.rgba(MeoTheme.outlineVariant.r,
-                         MeoTheme.outlineVariant.g,
-                         MeoTheme.outlineVariant.b,
-                         MeoTheme.isDarkMode ? 0.30 : 0.45)
+    elevation: 3
 }

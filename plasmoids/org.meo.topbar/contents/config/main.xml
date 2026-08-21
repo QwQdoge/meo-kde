@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+
+  <group name="Appearance">
+    <entry name="textScalePercent" type="Int">
+      <label>Text size for the Meo top bar, in percent.</label>
+      <default>100</default>
+    </entry>
+    <entry name="showNetwork" type="Bool">
+      <label>Show network status in the compact top bar.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showBluetooth" type="Bool">
+      <label>Show Bluetooth status in the compact top bar.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showVolume" type="Bool">
+      <label>Show audio status in the compact top bar.</label>
+      <default>true</default>
+    </entry>
+    <entry name="batteryDisplay" type="Int">
+      <label>Battery display mode: 0 hidden, 1 icon, 2 icon and percentage, 3 detailed state.</label>
+      <default>2</default>
+    </entry>
+    <entry name="showDate" type="Bool">
+      <label>Show the date alongside the time.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showNotifications" type="Bool">
+      <label>Show the notification indicator.</label>
+      <default>true</default>
+    </entry>
+    <entry name="use24HourClock" type="Bool">
+      <label>Use a 24-hour clock.</label>
+      <default>true</default>
+    </entry>
+    <entry name="quickTileOrder" type="String">
+      <label>Quick Settings tile order.</label>
+      <default>wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot</default>
+    </entry>
+    <entry name="quickTileSizes" type="String">
+      <label>Quick Settings tile grid spans.</label>
+      <default>wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2</default>
+    </entry>
+  </group>
+</kcfg>

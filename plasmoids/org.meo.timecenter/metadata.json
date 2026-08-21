@@ -1,0 +1,18 @@
+{
+  "KPlugin": {
+    "Id": "org.meo.timecenter",
+    "Name": "Meo Time and Notifications",
+    "Description": "Adaptive Material 3 time, calendar, and notification center",
+    "Icon": "preferences-system-time",
+    "Authors": [
+      {
+        "Name": "Meo Desktop Team"
+      }
+    ],
+    "Category": "Panel",
+    "License": "GPL-2.0-or-later",
+    "Version": "0.3.0"
+  },
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

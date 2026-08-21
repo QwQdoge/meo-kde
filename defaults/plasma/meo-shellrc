@@ -1,0 +1,29 @@
+[General]
+# Used only for narrow, non-destructive migrations of Meo's packaged defaults.
+ProfileVersion=3
+
+[Panels]
+# dual: Meo top bar plus a separate auto-hidden bottom dock (default)
+# single: one top panel; no bottom dock
+Mode=dual
+ShowSystemTray=true
+# Display the active window's native KDE global menu (File, Edit, View, Help)
+# beside the launcher. This is not the task manager or the bottom dock.
+ShowGlobalMenu=true
+# The application icons beside the controls belong to KDE's native System
+# Tray/StatusNotifier area. Do not add a second task manager to the top panel.
+ShowTopAppTasks=false
+TopPanelHeight=40
+# Native Plasma Icons-Only Task Manager in a compact floating Dock.
+DockHeight=56
+
+[StatusBar]
+TextScalePercent=100
+ShowNetwork=true
+ShowBluetooth=true
+ShowVolume=true
+# 0 hidden, 1 icon, 2 icon and percentage, 3 detailed state
+BatteryDisplay=2
+ShowDate=true
+ShowNotifications=true
+Use24HourClock=true
