@@ -1,15 +1,15 @@
 #include "dynamiccolors.h"
 
-#include <KConfigBase>
 #include <KConfigGroup>
 #include <KSharedConfig>
 
 #include <QCommandLineOption>
 #include <QCommandLineParser>
-#include <QCoreApplication>
 #include <QDir>
+#include <QGuiApplication>
 #include <QStandardPaths>
 #include <QTextStream>
+#include <QTimer>
 
 namespace {
 QColor parseColor(const QString &serialized)
@@ -47,11 +47,19 @@ bool isDarkScheme()
     return KConfigGroup(globals, "General").readEntry("ColorScheme", QString())
         .contains(QStringLiteral("Dark"), Qt::CaseInsensitive);
 }
+
+QString activeColorScheme()
+{
+    const auto globals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"));
+    return KConfigGroup(globals, "General").readEntry("ColorScheme", QString());
+}
 }
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
+    // Applying a palette exports Qt/GTK compatibility settings through krdb,
+    // which uses GUI primitives even though this is a command-line tool.
+    QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("meo-dynamic-colors"));
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("Generate a Material 3 KDE color scheme from the active KDE accent color."));
@@ -63,13 +71,22 @@ int main(int argc, char *argv[])
     QCommandLineOption contrastOption("contrast",
                                       "Material contrast level from -1.0 to 1.0 (default: 0.0).", "level", "0.0");
     QCommandLineOption applyOption("apply", "Select the generated light or dark scheme in kdeglobals.");
+    QCommandLineOption followOption("follow-meo",
+                                    "Apply only while the active KDE scheme belongs to Meo.");
     QCommandLineOption darkOption("dark", "Generate/select the dark scheme.");
     parser.addOption(accentOption);
     parser.addOption(outputOption);
     parser.addOption(contrastOption);
     parser.addOption(applyOption);
+    parser.addOption(followOption);
     parser.addOption(darkOption);
     parser.process(app);
+
+    if (parser.isSet(followOption)
+        && !activeColorScheme().startsWith(QStringLiteral("Meo"), Qt::CaseInsensitive)) {
+        QTextStream(stdout) << "MEO_DYNAMIC_COLORS skipped=non-meo-scheme" << Qt::endl;
+        return 0;
+    }
 
     bool contrastOk = false;
     const qreal contrast = parser.value(contrastOption).toDouble(&contrastOk);
@@ -90,20 +107,22 @@ int main(int argc, char *argv[])
         : QDir(parser.value(outputOption)).absolutePath();
     const auto scheme = DynamicColors::schemeFor(accent, dark, contrast);
     QString error;
-    if (!DynamicColors::writeScheme(QDir(outputDir).filePath(name + QStringLiteral(".colors")), name, scheme, &error)) {
+    const QString schemePath = QDir(outputDir).filePath(name + QStringLiteral(".colors"));
+    if (!DynamicColors::writeScheme(schemePath, name, scheme, &error)) {
         QTextStream(stderr) << error << Qt::endl;
         return 1;
     }
 
     if (parser.isSet(applyOption)) {
-        const auto globals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"));
-        KConfigGroup general(globals, "General");
-        general.writeEntry("ColorScheme", name, KConfigBase::Notify);
-        general.writeEntry("AccentColor", QStringLiteral("%1,%2,%3").arg(accent.red()).arg(accent.green()).arg(accent.blue()),
-                           KConfigBase::Notify);
-        globals->sync();
+        if (!DynamicColors::applyScheme(schemePath, name, accent, true, nullptr, &error)) {
+            QTextStream(stderr) << error << Qt::endl;
+            return 1;
+        }
     }
     QTextStream(stdout) << "MEO_DYNAMIC_COLORS accent=" << accent.name(QColor::HexRgb)
                         << " scheme=" << name << " contrast=" << contrast << Qt::endl;
-    return 0;
+    // krdb schedules its launch-environment update for the next event-loop
+    // turn. Match plasma-apply-colorscheme so that update is not dropped.
+    QTimer::singleShot(0, &app, [&app]() { app.exit(0); });
+    return app.exec();
 }

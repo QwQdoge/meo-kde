@@ -201,6 +201,11 @@ QQC2.ScrollView {
                 visible: index === 0 || root.displayExpanded
                 iconName: "light_mode"
                 label: root.displayExpanded && Platform.brightnessDisplays.length > 1 ? modelData.label : ""
+                accessibleName: modelData.label
+                    ? qsTr("%1 brightness").arg(modelData.label)
+                    : qsTr("Display brightness")
+                iconAccessibleName: ""
+                iconActionEnabled: false
                 from: 0
                 to: modelData.maximum
                 value: modelData.brightness
@@ -216,6 +221,8 @@ QQC2.ScrollView {
             visible: SystemState.audioAvailable
             iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
             label: ""
+            accessibleName: qsTr("Output volume")
+            iconAccessibleName: SystemState.audioMuted ? qsTr("Unmute output") : qsTr("Mute output")
             from: 0
             to: 100
             value: SystemState.volumePercent
@@ -250,6 +257,9 @@ QQC2.ScrollView {
                     visible: SystemState.microphoneAvailable
                     iconName: SystemState.microphoneMuted ? "mic_off" : "mic"
                     label: SystemState.microphoneDevice
+                    accessibleName: qsTr("Microphone volume")
+                    iconAccessibleName: SystemState.microphoneMuted
+                        ? qsTr("Unmute microphone") : qsTr("Mute microphone")
                     from: 0; to: 100; value: SystemState.microphoneVolumePercent
                     onMoved: function(value) { SystemState.microphoneVolumePercent = Math.round(value) }
                     onIconTriggered: SystemState.microphoneMuted = !SystemState.microphoneMuted
@@ -268,7 +278,7 @@ QQC2.ScrollView {
         GridLayout {
             id: tileGrid
             Layout.fillWidth: true
-            columns: 4
+            columns: root.availableWidth < 320 * MeoTheme.globalScale ? 2 : 4
             uniformCellWidths: true
             columnSpacing: MeoTheme.space8
             rowSpacing: MeoTheme.space8

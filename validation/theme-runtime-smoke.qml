@@ -29,6 +29,10 @@ Window {
                 throw new Error("font scale is outside the supported range")
             if (!MeoTheme.dynamicColorsAvailable)
                 throw new Error("system palette did not reach MeoUI")
+            if (MeoTheme.reduceMotion !== (MeoShellTheme.platformShortDuration <= 0))
+                throw new Error("KDE reduced-motion preference did not reach MeoUI")
+            if (!MeoTheme.reduceMotion && MeoTheme.motionScale <= 0)
+                throw new Error("KDE animation duration scale did not reach MeoUI")
             if (ShellMetrics.radiusControl !== MeoTheme.shapeMedium)
                 throw new Error("shell control radius bypasses MeoUI shape tokens")
             if (ShellMetrics.radiusPopup !== MeoTheme.shapeExtraLarge)
@@ -41,6 +45,8 @@ Window {
             console.warn("MEO_THEME_RUNTIME_OK",
                          "font=" + MeoTheme.fontFamily,
                          "fontScale=" + MeoTheme.fontScale,
+                         "platformShortDuration=" + MeoShellTheme.platformShortDuration,
+                         "motionScale=" + MeoTheme.motionScale,
                          "dark=" + MeoTheme.isDarkMode,
                          "primary=" + MeoTheme.primary)
             Qt.quit()

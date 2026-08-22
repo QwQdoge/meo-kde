@@ -24,6 +24,10 @@ else
 fi
 
 data_root="${XDG_DATA_HOME:-${HOME}/.local/share}"
+dynamic_color_helper="${MEO_DYNAMIC_COLORS_HELPER:-}"
+if [ -z "${dynamic_color_helper}" ] && command -v meo-dynamic-colors >/dev/null 2>&1; then
+  dynamic_color_helper="$(command -v meo-dynamic-colors)"
+fi
 theme_available() {
   [ -d "${data_root}/plasma/desktoptheme/${desktop_theme}" ] || [ -d "/usr/share/plasma/desktoptheme/${desktop_theme}" ]
 }
@@ -35,6 +39,9 @@ icon_theme_available() {
 }
 if [ "$dry_run" -eq 1 ]; then
   printf 'plasma-apply-colorscheme %q\n' "$color_scheme"
+  if [ -n "${dynamic_color_helper}" ]; then
+    printf '%q --apply\n' "${dynamic_color_helper}"
+  fi
   printf 'plasma-apply-desktoptheme %q\n' "$desktop_theme"
   printf 'kwriteconfig6 --file %q --group Icons --key Theme %q\n' "${XDG_CONFIG_HOME:-${HOME}/.config}/kdeglobals" "$icon_theme"
   exit 0
@@ -45,12 +52,18 @@ scheme_available || { echo "Missing color scheme: ${color_scheme}" >&2; exit 1; 
 icon_theme_available || { echo "Missing icon theme: ${icon_theme}" >&2; exit 1; }
 
 plasma-apply-colorscheme "$color_scheme"
+# Establish light/dark with the shipped scheme first, then derive the complete
+# HCT scheme from the active accent. This also makes dark -> light transitions
+# deterministic because the generator observes the mode just selected above.
+if [ -n "${dynamic_color_helper}" ]; then
+  "${dynamic_color_helper}" --apply
+fi
 plasma-apply-desktoptheme "$desktop_theme"
 kwriteconfig6 --file "${XDG_CONFIG_HOME:-${HOME}/.config}/kdeglobals" --group Icons --key Theme "$icon_theme"
 kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 
-# Fcitx selects its packaged light/dark capsule through the portal. IBus has
-# an explicitly opted-in private GTK theme, so refresh only that rendered file.
+# Refresh only input frameworks already using a Meo presentation. The helper
+# never enables or starts an input method as part of a color-mode switch.
 if command -v meo-input-method >/dev/null 2>&1; then
   meo-input-method --sync --quiet || true
 fi

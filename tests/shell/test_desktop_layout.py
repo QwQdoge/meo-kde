@@ -107,6 +107,104 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("quickTileSizes", config)
         self.assertIn("tileLayoutChanged", center)
         self.assertIn("Plasmoid.configuration.quickTileOrder", main)
+        self.assertIn("root.availableWidth < 320 * MeoTheme.globalScale ? 2 : 4", home)
+
+    def test_status_and_quick_settings_have_compact_width_contracts(self):
+        status = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
+        quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
+
+        self.assertIn("Layout.minimumWidth: 320 * MeoTheme.globalScale", status)
+        self.assertIn("root.width >= 620 * MeoTheme.globalScale", status)
+        self.assertIn("Layout.minimumWidth: 280 * MeoTheme.globalScale", quick_center)
+
+    def test_quick_control_sliders_expose_real_actions_and_names(self):
+        home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
+
+        self.assertIn('qsTr("Display brightness")', home)
+        self.assertIn("iconActionEnabled: false", home)
+        self.assertIn('accessibleName: qsTr("Output volume")', home)
+        self.assertIn('qsTr("Mute output")', home)
+        self.assertIn('accessibleName: qsTr("Microphone volume")', home)
+        self.assertIn('qsTr("Mute microphone")', home)
+
+    def test_meoui_update_is_explicit_opt_in(self):
+        source = INSTALLER.read_text(encoding="utf-8")
+
+        self.assertIn("refresh_meoui=0", source)
+        self.assertIn("--update-meoui) refresh_meoui=1", source)
+
+    def test_validation_instantiates_shared_shell_components(self):
+        validator = (REPO_ROOT / "scripts/validate.sh").read_text(encoding="utf-8")
+        smoke = (REPO_ROOT / "validation/meoui-shell-components-smoke.qml").read_text(encoding="utf-8")
+
+        self.assertIn("meoui-shell-components-smoke.qml", validator)
+        self.assertIn('artifacts/validation/${validation_run_id}', validator)
+        self.assertIn("MeoStatusCenter", smoke)
+
+    def test_reset_removes_every_named_runtime_installed_by_setup(self):
+        installer = INSTALLER.read_text(encoding="utf-8")
+        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
+
+        for owned_path in (
+            '${data_root}/icons/MeoSymbols',
+            '${data_root}/icons/MeoSymbolsDark',
+            '${qml_root}/MeoUI',
+            '${data_root}/fcitx5/themes/MeoInputMethod-Light',
+            '${data_root}/fcitx5/themes/MeoInputMethod-Dark',
+            '${data_root}/fcitx5/themes/MeoInputMethod-Dynamic',
+            '${data_root}/color-schemes/MeoLight.colors',
+            '${data_root}/color-schemes/MeoDark.colors',
+            '${data_root}/color-schemes/MeoDynamicLight.colors',
+            '${data_root}/color-schemes/MeoDynamicDark.colors',
+            '${user_plugin_root}/styles/meostyle.so',
+            '${local_bin_root}/meo-input-method',
+            '${local_bin_root}/meo-desktop-layout',
+            '${local_bin_root}/meo-desktop-apply',
+        ):
+            self.assertIn(owned_path, reset)
+        self.assertIn("runtime-backup-v1", installer)
+        self.assertIn("runtime-backup-v1", reset)
+        self.assertIn('${backup_root}/runtime/${runtime_group}/.', reset)
+
+    def test_native_application_and_dynamic_color_bridges_are_installed(self):
+        defaults = configparser.ConfigParser(interpolation=None)
+        defaults.optionxform = str
+        defaults.read(REPO_ROOT / "defaults/kde/kdeglobals", encoding="utf-8")
+        self.assertEqual(defaults["KDE"]["widgetStyle"], "Meo")
+        self.assertEqual(defaults["General"]["accentColorFromWallpaper"], "true")
+
+        look_and_feel = (REPO_ROOT / "themes/look-and-feel/org.meo.desktop/contents/defaults").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("widgetStyle=Meo", look_and_feel)
+        self.assertIn("accentColorFromWallpaper=true", look_and_feel)
+        self.assertNotIn("AccentColorFromWallpaper", look_and_feel)
+
+        environment = (REPO_ROOT / "defaults/environment/90-meo-applications.conf").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("QT_STYLE_OVERRIDE=Meo", environment)
+        self.assertIn("SAL_USE_VCLPLUGIN=kf6", environment)
+
+        installer = INSTALLER.read_text(encoding="utf-8")
+        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('qt-plugins/styles/meostyle.so', installer)
+        self.assertIn('styles/meostyle.so', reset)
+        self.assertIn('MEO_DYNAMIC_COLORS_HELPER', installer)
+        self.assertIn('meo-dynamic-colors.path', package)
+        self.assertIn('default.target.wants/meo-dynamic-colors.path', package)
+        self.assertIn('enable --now meo-dynamic-colors.path', apply_helper)
+
+    def test_reset_reloads_restored_input_method_state(self):
+        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
+
+        self.assertIn("ReloadAddonConfig s classicui", reset)
+        self.assertIn("GetConfig s fcitx://config/addon/classicui", reset)
+        self.assertIn('custom-theme Adwaita', reset)
 
     def test_top_application_icons_use_the_native_system_tray(self):
         source = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
@@ -159,8 +257,8 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("canonical new-session layout", helper)
         self.assertNotIn(
-            '"${repo_root}/tools/shell/apply-meo-panel-layout.sh"',
-            source[source.index("if [ \"${apply_theme}\" -eq 1 ]"):],
+            'run "${repo_root}/tools/shell/apply-meo-panel-layout.sh"',
+            source,
         )
         self.assertIn("tools/theme/apply-meo-desktop.sh", source)
         self.assertIn("--resetLayout", apply_helper)
@@ -211,7 +309,8 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("--kwin-only", apply_helper)
         self.assertIn('/usr/share/meo-desktop/defaults/kwinrc', apply_helper)
         self.assertIn('usr/share/meo-desktop/defaults/kwinrc', package)
-        self.assertIn("setup themes tools", workspace_sync)
+        self.assertIn("scripts/sync-installer-to-airootfs.sh", workspace_sync)
+        self.assertIn('exec "${workspace_sync}"', workspace_sync)
 
     def test_profile_and_applet_schema_cover_the_customisation_contract(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")

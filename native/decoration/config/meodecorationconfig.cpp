@@ -94,8 +94,8 @@ void ConfigWidget::save()
 void ConfigWidget::defaults()
 {
     m_titlebarHeight->setValue(32); m_buttonSlot->setValue(32); m_buttonSpacing->setValue(0);
-    m_cornerRadius->setValue(10); m_hoverDiameter->setValue(22); m_shadowSize->setValue(24);
-    m_shadowOffsetY->setValue(6); m_shadowStrength->setValue(22); m_hoverDuration->setValue(100); m_focusDuration->setValue(180);
+    m_cornerRadius->setValue(12); m_hoverDiameter->setValue(20); m_shadowSize->setValue(28);
+    m_shadowOffsetY->setValue(6); m_shadowStrength->setValue(18); m_hoverDuration->setValue(100); m_focusDuration->setValue(180);
     markAsChanged();
 }
 

@@ -12,8 +12,8 @@ Item {
 
     implicitWidth: ShellMetrics.statusCenterWidth
     implicitHeight: ShellMetrics.statusCenterHeight
-    Layout.minimumWidth: 620 * MeoTheme.globalScale
-    Layout.minimumHeight: 460 * MeoTheme.globalScale
+    Layout.minimumWidth: 320 * MeoTheme.globalScale
+    Layout.minimumHeight: 360 * MeoTheme.globalScale
 
     FrostedSurface {
         anchors.fill: parent
@@ -51,6 +51,7 @@ Item {
                 spacing: MeoTheme.space16
 
                 MeoMotionSurface {
+                    visible: root.width >= 620 * MeoTheme.globalScale
                     Layout.preferredWidth: 292 * MeoTheme.globalScale
                     Layout.fillHeight: true
                     color: MeoTheme.surfaceContainer
@@ -63,6 +64,12 @@ Item {
                         selectedDate: root.currentDateTime
                         displayDate: root.currentDateTime
                     }
+                }
+
+                MeoDivider {
+                    visible: root.width >= 620 * MeoTheme.globalScale
+                    Layout.fillHeight: true
+                    orientation: "vertical"
                 }
 
                 NotificationCenterView {

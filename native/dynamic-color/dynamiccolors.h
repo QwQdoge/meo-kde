@@ -20,4 +20,13 @@ public:
     // groups without inventing a second HSL palette.
     static bool writeScheme(const QString &path, const QString &name,
                             const ColorScheme &scheme, QString *error);
+
+    // Projects the generated scheme into kdeglobals and emits KDE's palette
+    // notification. Merely changing General/ColorScheme is insufficient:
+    // native KDE/Qt consumers read the concrete Colors:* groups from
+    // kdeglobals, and Plasma's CLI intentionally skips an already-selected
+    // scheme even when its file contents changed.
+    static bool applyScheme(const QString &path, const QString &name,
+                            const QColor &accent, bool notifySession,
+                            bool *changed, QString *error);
 };

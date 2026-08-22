@@ -1,6 +1,7 @@
 [General]
 ColorScheme=MeoLight
 Name=Meo Desktop
+accentColorFromWallpaper=true
 font=Roboto,10,-1,5,50,0,0,0,0,0
 menuFont=Roboto,10,-1,5,50,0,0,0,0,0
 smallestReadableFont=Roboto,8,-1,5,50,0,0,0,0,0
@@ -10,6 +11,7 @@ toolBarFont=Roboto,10,-1,5,50,0,0,0,0,0
 LookAndFeelPackage=org.meo.desktop
 SingleClick=false
 ShowDeleteCommand=false
+widgetStyle=Meo
 
 [Icons]
 Theme=MeoSymbols

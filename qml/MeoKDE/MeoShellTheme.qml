@@ -13,6 +13,7 @@ QtObject {
     property color accentColor: Kirigami.Theme.highlightColor
     property color backgroundColor: Kirigami.Theme.backgroundColor
     property font systemFont: Kirigami.Theme.defaultFont
+    property int platformShortDuration: Kirigami.Units.shortDuration
     readonly property bool darkMode: luminance(backgroundColor) < 0.48
     readonly property real systemFontPixels: systemFont.pixelSize > 0
                                               ? systemFont.pixelSize
@@ -35,6 +36,12 @@ QtObject {
         MeoTheme.isDarkMode = darkMode
         MeoTheme.fontFamily = systemFont.family
         MeoTheme.fontScale = Math.max(0.85, Math.min(1.5, systemFontPixels / 14))
+        // Kirigami already applies KDE's AnimationDurationFactor. Bridge that
+        // platform preference into shared MeoUI motion tokens instead of
+        // maintaining a second, contradictory animation switch.
+        MeoTheme.reduceMotion = platformShortDuration <= 0
+        MeoTheme.motionScale = MeoTheme.reduceMotion
+                ? 0 : Math.max(0.25, Math.min(4, platformShortDuration / 100))
         const generated = scheme()
         if (generated && generated.primary && generated.onSurface)
             MeoTheme.applyDynamicColorScheme(generated)
@@ -45,5 +52,6 @@ QtObject {
     onAccentColorChanged: sync()
     onBackgroundColorChanged: sync()
     onSystemFontChanged: sync()
+    onPlatformShortDurationChanged: sync()
     Component.onCompleted: sync()
 }

@@ -1,5 +1,6 @@
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui)
 find_package(KF6Config REQUIRED)
+find_package(Krdb REQUIRED)
 
 add_library(meo-dynamic-color-core STATIC
     dynamiccolors.cpp
@@ -9,8 +10,10 @@ set_target_properties(meo-dynamic-color-core PROPERTIES POSITION_INDEPENDENT_COD
 add_library(Meo::DynamicColorCore ALIAS meo-dynamic-color-core)
 target_link_libraries(meo-dynamic-color-core PUBLIC
     Qt6::Core
+    Qt6::DBus
     Qt6::Gui
     KF6::ConfigCore
+    PW::krdb
     Meo::MaterialColorUtilities
 )
 target_include_directories(meo-dynamic-color-core PUBLIC

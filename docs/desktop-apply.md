@@ -11,7 +11,7 @@ Run from this repository after validation:
 
 ```bash
 MEOUI_PROJECT_ROOT=/home/shekong/Projects/meo-ui \
-  setup/apply-meo-desktop.sh --apply --reset-layout --no-update-meoui
+  setup/apply-meo-desktop.sh --apply --reset-layout
 ```
 
 `--reset-layout` is the explicit one-step path that replaces an existing panel
@@ -35,6 +35,16 @@ the helper writes every section from that file explicitly because Plasma's
 Look-and-Feel application only projects a subset of custom KWin groups into
 `kdedefaults`. The `--kwin-only` repair path makes a backup and updates those
 persistent values without applying the rest of the theme or restarting KWin.
+
+An explicit `--apply` also derives the light or dark `MeoDynamic` scheme from
+the active wallpaper accent with Material Color Utilities/HCT. The generator
+projects the complete KDE `Colors:*`, window-manager, disabled/inactive, and
+Meo Material role groups into `kdeglobals`, then emits KDE's standard palette
+notification. It enables the user watcher so later wallpaper/accent changes
+refresh the Dock, native Qt applications, window decoration, MeoUI, and an
+already selected Meo input-method presentation together. The watcher is
+guarded by `--follow-meo`, so switching to a non-Meo colour scheme stops this
+automatic application instead of taking ownership back.
 
 Before writing any user file the script verifies the Plasma version, Kickoff,
 Global Menu, System Tray, Icons-Only Task Manager, public Clock/Calendar/Notification
@@ -61,8 +71,12 @@ standard task-manager widget configuration UI.
 To inspect the actions without changing the desktop, run:
 
 ```bash
-setup/apply-meo-desktop.sh --dry-run --no-update-meoui
+setup/apply-meo-desktop.sh --dry-run
 ```
+
+The installer builds the current sibling MeoUI checkout without network or Git
+mutation. Pass `--update-meoui` only when you explicitly want a fast-forward
+update from `origin/main` before the build.
 
 For the editable single/dual panel profile and status-bar settings, see
 [`shell-configuration.md`](shell-configuration.md).
@@ -72,6 +86,13 @@ To recover the latest backup:
 ```bash
 setup/reset-meo-desktop.sh
 ```
+
+The reset restores both configuration and any same-name runtime assets that
+existed before installation. It falls back to Breeze only when no prior
+`kdeglobals` was available, so recovery does not overwrite the user's previous
+theme choice. It also stops/disables the installed watcher before removing its
+unit, restores its previous enabled/active state when applicable, and reloads
+the restored Fcitx/IBus presentation without changing input engines.
 
 KWin discovers the new native decoration on the next normal Plasma login; the
 installer deliberately does not restart a live compositor.

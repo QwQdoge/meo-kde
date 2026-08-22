@@ -14,8 +14,8 @@ Item {
 
     implicitWidth: 440 * MeoTheme.globalScale
     implicitHeight: ShellMetrics.quickSettingsHeight
-    Layout.minimumWidth: 360 * MeoTheme.globalScale
-    Layout.minimumHeight: 420 * MeoTheme.globalScale
+    Layout.minimumWidth: 280 * MeoTheme.globalScale
+    Layout.minimumHeight: 360 * MeoTheme.globalScale
 
     FrostedSurface {
         anchors.fill: parent

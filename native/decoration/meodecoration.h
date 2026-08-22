@@ -28,6 +28,7 @@ struct ConfigSettings {
     int hoverInDuration = 100;
     int hoverOutDuration = 80;
     int focusTransitionDuration = 180;
+    int rippleDuration = 180;
     bool alignTitleCenter = true;
     bool squareMaximized = true;
     bool enableAccentTint = false;

@@ -5,11 +5,13 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meoui_import="${MEOUI_IMPORT_ROOT:-/home/shekong/Projects/meo-ui/out/build/release}"
 meoui_source="${MEOUI_SOURCE_DIR:-/home/shekong/Projects/meo-ui}"
 system_import="${repo_root}/out/build/system/qml"
-evidence_root="${MEO_KDE_EVIDENCE_ROOT:-/home/shekong/Projects/outputs/evidence/meo-kde}"
+validation_run_id="${MEO_KDE_VALIDATION_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+evidence_root="${MEO_KDE_EVIDENCE_ROOT:-${repo_root}/artifacts/validation/${validation_run_id}}"
 log_root="${evidence_root}/logs"
 mkdir -p "${log_root}"
 log_file="${log_root}/validate.log"
 : > "${log_file}"
+printf 'Validation evidence: %s\n' "${evidence_root}" | tee -a "${log_file}"
 
 run() {
   printf '+ ' | tee -a "${log_file}"
@@ -41,6 +43,8 @@ run cmake --build "${repo_root}/out/build/application-style" --parallel
 run ctest --test-dir "${repo_root}/out/build/application-style" --output-on-failure
 run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
   -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
+run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/meoui-shell-components-smoke.qml"
 
 while IFS= read -r metadata; do
   run python -m json.tool "${metadata}"

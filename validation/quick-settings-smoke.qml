@@ -9,7 +9,8 @@ import MeoUI 1.0
 Window {
     id: window
 
-    width: 480
+    readonly property bool compact: Qt.application.arguments.indexOf("--compact") !== -1
+    width: compact ? 320 : 480
     height: 760
     visible: true
     color: MeoTheme.background

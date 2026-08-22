@@ -59,6 +59,11 @@ input_helper="${MEO_INPUT_METHOD_HELPER:-}"
 if [ -z "${input_helper}" ] && command -v meo-input-method >/dev/null 2>&1; then
   input_helper="$(command -v meo-input-method)"
 fi
+dynamic_color_helper="${MEO_DYNAMIC_COLORS_HELPER:-}"
+if [ -z "${dynamic_color_helper}" ] && command -v meo-dynamic-colors >/dev/null 2>&1; then
+  dynamic_color_helper="$(command -v meo-dynamic-colors)"
+fi
+enable_dynamic_watcher="${MEO_ENABLE_DYNAMIC_COLOR_WATCHER:-1}"
 
 resolve_kwin_defaults() {
   local candidate
@@ -132,6 +137,20 @@ if [ "${reset_layout}" -eq 1 ]; then
   run plasma-apply-lookandfeel -a org.meo.desktop --resetLayout
 else
   run plasma-apply-lookandfeel -a org.meo.desktop
+fi
+
+# Look-and-Feel establishes the canonical light mode. Derive and select the
+# complete Material HCT scheme immediately so native KDE controls, the Dock,
+# window decoration and MeoUI start from the same accent source.
+if [ -n "${dynamic_color_helper}" ]; then
+  run "${dynamic_color_helper}" --apply
+fi
+
+# `meo-desktop-apply` is the user's explicit activation action. Keep subsequent
+# wallpaper/accent changes synchronized without restarting Plasma or KWin.
+if [ "${enable_dynamic_watcher}" = 1 ] && command -v systemctl >/dev/null 2>&1 \
+    && systemctl --user cat meo-dynamic-colors.path >/dev/null 2>&1; then
+  run systemctl --user enable --now meo-dynamic-colors.path
 fi
 
 # Persist the complete canonical KWin profile after Look-and-Feel activation.

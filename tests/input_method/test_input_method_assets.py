@@ -3,7 +3,6 @@ from __future__ import annotations
 import configparser
 import os
 from pathlib import Path
-import struct
 import subprocess
 import tempfile
 import unittest
@@ -52,28 +51,57 @@ class InputMethodAssetsTests(unittest.TestCase):
                     return f"#{red:02x}{green:02x}{blue:02x}"
 
                 colors = {
-                    "normal": role("Colors:Window", "ForegroundNormal"),
-                    "selected": role("Colors:Selection", "BackgroundAlternate"),
-                    "selected_text": role("Colors:Window", "ForegroundNormal"),
-                    "panel": role("Colors:Window", "BackgroundAlternate"),
+                    key: role("MeoMaterial", key)
+                    for key in (
+                        "surfaceContainer",
+                        "onSurface",
+                        "primary",
+                        "onPrimary",
+                        "primaryContainer",
+                        "onPrimaryContainer",
+                        "secondaryContainer",
+                        "onSecondaryContainer",
+                        "onSurfaceVariant",
+                        "outline",
+                    )
                 }
                 theme_root = ROOT / "themes/input-method/fcitx5" / theme_name
                 config = configparser.ConfigParser(interpolation=None)
                 config.read(theme_root / "theme.conf", encoding="utf-8")
                 panel = config["InputPanel"]
-                self.assertEqual(panel["NormalColor"], colors["normal"])
-                self.assertEqual(panel["HighlightCandidateColor"], colors["selected_text"])
-                self.assertEqual(config["InputPanel/Background"]["Image"], "panel.png")
-                self.assertEqual(config["InputPanel/Highlight"]["Image"], "highlight.png")
+                self.assertEqual(panel["NormalColor"], colors["onSurface"])
+                self.assertEqual(panel["HighlightColor"], colors["onPrimary"])
+                self.assertEqual(panel["HighlightBackgroundColor"], colors["primary"])
+                self.assertEqual(
+                    panel["HighlightCandidateColor"], colors["onSecondaryContainer"]
+                )
+                self.assertEqual(
+                    panel["CandidateLabelColor"], colors["onSurfaceVariant"]
+                )
+                self.assertEqual(config["InputPanel/Background"]["Image"], "panel.svg")
+                self.assertEqual(config["InputPanel/Highlight"]["Image"], "highlight.svg")
+                self.assertEqual(config["InputPanel/PrevPage"]["Image"], "prev.svg")
+                self.assertEqual(config["InputPanel/NextPage"]["Image"], "next.svg")
+                self.assertEqual(config["Menu"]["NormalColor"], colors["onSurface"])
+                self.assertEqual(
+                    config["Menu"]["HighlightCandidateColor"],
+                    colors["onPrimaryContainer"],
+                )
+                self.assertEqual(config["Menu/Separator"]["Color"], colors["outline"])
                 self.assertNotIn("AccentColorField", config)
 
                 panel_svg = ET.parse(theme_root / "panel.svg").getroot()
                 highlight_svg = ET.parse(theme_root / "highlight.svg").getroot()
+                menu_svg = ET.parse(theme_root / "menu-highlight.svg").getroot()
                 panel_rect = next(iter(panel_svg))
                 highlight_rect = next(iter(highlight_svg))
-                self.assertEqual(panel_rect.attrib["fill"], colors["panel"])
-                self.assertNotIn("stroke", panel_rect.attrib)
-                self.assertEqual(highlight_rect.attrib["fill"], colors["selected"])
+                menu_rect = next(iter(menu_svg))
+                self.assertEqual(panel_rect.attrib["fill"], colors["surfaceContainer"])
+                self.assertEqual(panel_rect.attrib["stroke"], colors["outline"])
+                self.assertEqual(
+                    highlight_rect.attrib["fill"], colors["secondaryContainer"]
+                )
+                self.assertEqual(menu_rect.attrib["fill"], colors["primaryContainer"])
                 outer_radius = float(panel_rect.attrib["rx"])
                 inner_radius = float(highlight_rect.attrib["rx"])
                 self.assertEqual(outer_radius, 24)
@@ -92,19 +120,19 @@ class InputMethodAssetsTests(unittest.TestCase):
                 self.assertEqual(popup_height, 49)
                 self.assertEqual(selected_height, 35)
 
-                for image, dimensions in (("panel.png", (50, 50)), ("highlight.png", (36, 36))):
-                    with (theme_root / image).open("rb") as stream:
-                        self.assertEqual(stream.read(8), b"\x89PNG\r\n\x1a\n")
-                        stream.read(8)
-                        self.assertEqual(struct.unpack(">II", stream.read(8)), dimensions)
+                for image in ("prev.svg", "next.svg", "check.svg", "submenu.svg"):
+                    path = next(iter(ET.parse(theme_root / image).getroot()))
+                    self.assertEqual(path.attrib["stroke"], colors["onSurfaceVariant"])
 
     def test_ibus_template_uses_semantic_roles(self) -> None:
         template = (ROOT / "themes/input-method/ibus/gtk.css.in").read_text(encoding="utf-8")
         for role in (
-            "@MEO_SURFACE@",
             "@MEO_SURFACE_CONTAINER@",
             "@MEO_ON_SURFACE@",
             "@MEO_PRIMARY@",
+            "@MEO_ON_PRIMARY@",
+            "@MEO_PRIMARY_CONTAINER@",
+            "@MEO_ON_PRIMARY_CONTAINER@",
             "@MEO_SECONDARY_CONTAINER@",
             "@MEO_ON_SECONDARY_CONTAINER@",
             "@MEO_OUTLINE@",
@@ -117,6 +145,10 @@ class InputMethodAssetsTests(unittest.TestCase):
         self.assertIn("border-radius: 24px;", template)
         self.assertIn("border-radius: 17px;", template)
         self.assertIn("padding: 7px;", template)
+        self.assertIn("background-color: @meo_primary_container;", template)
+        self.assertIn("color: @meo_on_primary_container;", template)
+        self.assertIn("background-color: @meo_primary;", template)
+        self.assertIn("color: @meo_on_primary;", template)
         self.assertNotIn("transition:", template)
         self.assertNotIn("animation:", template)
         self.assertNotRegex(template, r"#[0-9a-fA-F]{6}")
@@ -138,14 +170,24 @@ class InputMethodAssetsTests(unittest.TestCase):
             return f"#{red:02x}{green:02x}{blue:02x}"
 
         values = {
-            "@MEO_SURFACE@": hex_role("Colors:Window", "BackgroundNormal"),
-            "@MEO_SURFACE_CONTAINER@": hex_role("Colors:Window", "BackgroundAlternate"),
-            "@MEO_ON_SURFACE@": hex_role("Colors:Window", "ForegroundNormal"),
-            "@MEO_PRIMARY@": hex_role("Colors:Selection", "BackgroundNormal"),
-            "@MEO_SECONDARY_CONTAINER@": hex_role("Colors:Selection", "BackgroundAlternate"),
-            "@MEO_ON_SECONDARY_CONTAINER@": hex_role("Colors:Window", "ForegroundNormal"),
-            "@MEO_OUTLINE@": hex_role("Colors:Window", "ForegroundInactive"),
-            "@MEO_ON_SURFACE_VARIANT@": hex_role("Colors:Window", "ForegroundInactive"),
+            "@MEO_SURFACE_CONTAINER@": hex_role("MeoMaterial", "surfaceContainer"),
+            "@MEO_ON_SURFACE@": hex_role("MeoMaterial", "onSurface"),
+            "@MEO_PRIMARY@": hex_role("MeoMaterial", "primary"),
+            "@MEO_ON_PRIMARY@": hex_role("MeoMaterial", "onPrimary"),
+            "@MEO_PRIMARY_CONTAINER@": hex_role("MeoMaterial", "primaryContainer"),
+            "@MEO_ON_PRIMARY_CONTAINER@": hex_role(
+                "MeoMaterial", "onPrimaryContainer"
+            ),
+            "@MEO_SECONDARY_CONTAINER@": hex_role(
+                "MeoMaterial", "secondaryContainer"
+            ),
+            "@MEO_ON_SECONDARY_CONTAINER@": hex_role(
+                "MeoMaterial", "onSecondaryContainer"
+            ),
+            "@MEO_OUTLINE@": hex_role("MeoMaterial", "outline"),
+            "@MEO_ON_SURFACE_VARIANT@": hex_role(
+                "MeoMaterial", "onSurfaceVariant"
+            ),
         }
         rendered = (ROOT / "themes/input-method/ibus/gtk.css.in").read_text(encoding="utf-8")
         for token, value in values.items():
@@ -158,6 +200,12 @@ class InputMethodAssetsTests(unittest.TestCase):
         subprocess.run(["bash", "-n", str(helper)], check=True)
         with tempfile.TemporaryDirectory() as temp_dir:
             temporary = Path(temp_dir)
+            fake_bin = temporary / "bin"
+            fake_bin.mkdir()
+            for name in ("ibus-daemon", "gsettings", "fcitx5-remote", "pgrep"):
+                command = fake_bin / name
+                command.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+                command.chmod(0o755)
             environment = os.environ | {
                 "XDG_CONFIG_HOME": str(temporary / "config"),
                 "XDG_DATA_HOME": str(temporary / "data"),
@@ -165,6 +213,7 @@ class InputMethodAssetsTests(unittest.TestCase):
                 "MEO_INPUT_METHOD_RESOURCE_ROOT": str(ROOT / "themes/input-method"),
                 "MEO_INPUT_METHOD_COLOR_SCHEME_ROOT": str(ROOT / "themes/color-schemes"),
                 "MEO_INPUT_METHOD_COLOR_SCHEME": "MeoDark",
+                "PATH": f"{fake_bin}:/usr/bin:/bin",
             }
             result = subprocess.run(
                 ["bash", str(helper), "--enable", "ibus", "--dry-run"],
@@ -198,9 +247,18 @@ class InputMethodAssetsTests(unittest.TestCase):
             remote = fake_bin / "fcitx5-remote"
             remote.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
             remote.chmod(0o755)
+            pgrep = fake_bin / "pgrep"
+            pgrep.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+            pgrep.chmod(0o755)
             environment = os.environ | {
                 "XDG_CONFIG_HOME": str(temporary / "config"),
                 "XDG_DATA_HOME": str(temporary / "data"),
+                "XDG_CONFIG_DIRS": str(temporary / "empty-config"),
+                "XDG_DATA_DIRS": str(temporary / "empty-data"),
+                "MEO_INPUT_METHOD_COLOR_SCHEME_ROOT": str(
+                    ROOT / "themes/color-schemes"
+                ),
+                "MEO_INPUT_METHOD_COLOR_SCHEME": "MeoDark",
                 "PATH": f"{fake_bin}:{os.environ['PATH']}",
             }
             subprocess.run(
@@ -213,8 +271,14 @@ class InputMethodAssetsTests(unittest.TestCase):
             self.assertIn("Font=User Font 13", rendered)
             self.assertIn("WheelForPaging=False", rendered)
             self.assertIn("UseAccentColor=True", rendered)
-            self.assertIn("Theme=MeoInputMethod-Light", rendered)
-            self.assertIn("DarkTheme=MeoInputMethod-Dark", rendered)
+            self.assertIn("Theme=MeoInputMethod-Dynamic", rendered)
+            self.assertIn("DarkTheme=MeoInputMethod-Dynamic", rendered)
+            self.assertTrue(
+                (
+                    temporary
+                    / "data/fcitx5/themes/MeoInputMethod-Dynamic/theme.conf"
+                ).is_file()
+            )
             self.assertNotIn("[ClassicUI]", rendered)
 
     def test_package_and_mode_switch_expose_the_integration(self) -> None:

@@ -28,15 +28,16 @@ backup_root="${state_root}/backups/${timestamp}"
 dry_run=0
 reset_layout=0
 apply_theme=0
-refresh_meoui=1
+refresh_meoui=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dry-run) dry_run=1 ;;
     --apply) apply_theme=1 ;;
     --reset-layout) reset_layout=1; apply_theme=1 ;;
+    --update-meoui) refresh_meoui=1 ;;
     --no-update-meoui) refresh_meoui=0 ;;
-    *) echo "Usage: $0 [--dry-run] [--apply] [--reset-layout] [--no-update-meoui]" >&2; exit 2 ;;
+    *) echo "Usage: $0 [--dry-run] [--apply] [--reset-layout] [--update-meoui]" >&2; exit 2 ;;
   esac
   shift
 done
@@ -145,11 +146,11 @@ prepare_meoui() {
       exit 1
     fi
     if [ -n "$(git -C "${meoui_project_root}" status --porcelain)" ]; then
-      echo "MeoUI has local changes; refusing to overwrite them. Commit/stash them or use --no-update-meoui." >&2
+      echo "MeoUI has local changes; refusing the requested update. Omit --update-meoui to build the checkout as-is." >&2
       exit 1
     fi
-    # A fast-forward-only update keeps the project folder authoritative while
-    # never discarding a developer's local history.
+    # Network and sibling-worktree mutation are explicit. A fast-forward-only
+    # update never discards a developer's local history.
     run git -C "${meoui_project_root}" fetch --prune origin
     run git -C "${meoui_project_root}" merge --ff-only origin/main
   fi
@@ -195,13 +196,105 @@ else
 fi
 run cmake --build "${native_build_root}" --parallel
 
-run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
+run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${user_plugin_root}/styles" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
+
+# Preserve every named runtime path that this installer replaces or retires.
+# reset-meo-desktop can then restore an older Meo build instead of leaving a
+# half-uninstalled desktop or deleting a pre-existing same-name asset.
+runtime_backups=(
+  "${data_root}/plasma/look-and-feel/org.meo.desktop|data/plasma/look-and-feel/org.meo.desktop"
+  "${data_root}/plasma/desktoptheme/Meo|data/plasma/desktoptheme/Meo"
+  "${data_root}/plasma/desktoptheme/MeoLight|data/plasma/desktoptheme/MeoLight"
+  "${data_root}/plasma/desktoptheme/MeoDark|data/plasma/desktoptheme/MeoDark"
+  "${data_root}/plasma/plasmoids/org.meo.shelf|data/plasma/plasmoids/org.meo.shelf"
+  "${data_root}/plasma/plasmoids/org.meo.topbar|data/plasma/plasmoids/org.meo.topbar"
+  "${data_root}/plasma/plasmoids/org.meo.timecenter|data/plasma/plasmoids/org.meo.timecenter"
+  "${data_root}/plasma/plasmoids/org.meo.toptasks|data/plasma/plasmoids/org.meo.toptasks"
+  "${data_root}/plasma/plasmoids/org.meo.launcher|data/plasma/plasmoids/org.meo.launcher"
+  "${data_root}/plasma/plasmoids/org.meo.quicksettings|data/plasma/plasmoids/org.meo.quicksettings"
+  "${data_root}/icons/Meo|data/icons/Meo"
+  "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
+  "${data_root}/icons/MeoSymbolsDark|data/icons/MeoSymbolsDark"
+  "${data_root}/color-schemes/MeoLight.colors|data/color-schemes/MeoLight.colors"
+  "${data_root}/color-schemes/MeoDark.colors|data/color-schemes/MeoDark.colors"
+  "${data_root}/color-schemes/MeoDynamicLight.colors|data/color-schemes/MeoDynamicLight.colors"
+  "${data_root}/color-schemes/MeoDynamicDark.colors|data/color-schemes/MeoDynamicDark.colors"
+  "${data_root}/wallpapers/MeoArch|data/wallpapers/MeoArch"
+  "${data_root}/fonts/meo|data/fonts/meo"
+  "${data_root}/meo-kde|data/meo-kde"
+  "${data_root}/fcitx5/themes/MeoInputMethod-Light|data/fcitx5/themes/MeoInputMethod-Light"
+  "${data_root}/fcitx5/themes/MeoInputMethod-Dark|data/fcitx5/themes/MeoInputMethod-Dark"
+  "${data_root}/fcitx5/themes/MeoInputMethod-Dynamic|data/fcitx5/themes/MeoInputMethod-Dynamic"
+  "${data_root}/themes/MeoInputMethod|data/themes/MeoInputMethod"
+  "${qml_root}/MeoKDE|qml/MeoKDE"
+  "${qml_root}/MeoUI|qml/MeoUI"
+  "${qml_root}/Meo/System|qml/Meo/System"
+  "${user_plugin_root}/org.kde.kdecoration3/org.meo.decoration.so|plugins/org.kde.kdecoration3/org.meo.decoration.so"
+  "${user_plugin_root}/org.kde.kdecoration3.kcm/kcm_meodecoration.so|plugins/org.kde.kdecoration3.kcm/kcm_meodecoration.so"
+  "${user_plugin_root}/styles/meostyle.so|plugins/styles/meostyle.so"
+  "${user_plugin_root}/org.kde.kdecoration3/org.meo.chromebreeze.so|plugins/org.kde.kdecoration3/org.meo.chromebreeze.so"
+  "${user_plugin_root}/kwin/effects/plugins/org.meo.windowcorners.so|plugins/kwin/effects/plugins/org.meo.windowcorners.so"
+  "${local_bin_root}/meo-dynamic-colors|bin/meo-dynamic-colors"
+  "${local_bin_root}/meo-input-method|bin/meo-input-method"
+  "${local_bin_root}/meo-desktop-layout|bin/meo-desktop-layout"
+  "${local_bin_root}/meo-desktop-apply|bin/meo-desktop-apply"
+  "${config_root}/fontconfig/conf.d/50-meo-fonts.conf|config/fontconfig/conf.d/50-meo-fonts.conf"
+  "${config_root}/environment.d/90-meo-kde.conf|config/environment.d/90-meo-kde.conf"
+  "${config_root}/systemd/user/meo-dynamic-colors.service|config/systemd/user/meo-dynamic-colors.service"
+  "${config_root}/systemd/user/meo-dynamic-colors.path|config/systemd/user/meo-dynamic-colors.path"
+  "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-chrome-breeze.conf|config/systemd/user/plasma-kwin_wayland.service.d/50-meo-chrome-breeze.conf"
+  "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-native-plugins.conf|config/systemd/user/plasma-kwin_wayland.service.d/50-meo-native-plugins.conf"
+)
+for runtime_backup in "${runtime_backups[@]}"; do
+  runtime_source="${runtime_backup%%|*}"
+  runtime_relative="${runtime_backup#*|}"
+  if [ -e "${runtime_source}" ] || [ -L "${runtime_source}" ]; then
+    run mkdir -p "${backup_root}/runtime/$(dirname "${runtime_relative}")"
+    run cp -a "${runtime_source}" "${backup_root}/runtime/${runtime_relative}"
+  fi
+done
+run touch "${backup_root}/runtime-backup-v1"
+
+if [ "${dry_run}" -eq 0 ] && command -v systemctl >/dev/null 2>&1; then
+  systemctl --user is-enabled meo-dynamic-colors.path > "${backup_root}/dynamic-color-path-enabled" 2>/dev/null || true
+  systemctl --user is-active meo-dynamic-colors.path > "${backup_root}/dynamic-color-path-active" 2>/dev/null || true
+fi
 
 for config in kdeglobals kwinrc plasmarc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
   if [ -e "${config_root}/${config}" ]; then
     run cp -a "${config_root}/${config}" "${backup_root}/${config}"
   fi
 done
+
+# Applying the desktop may opt an already-running input framework into Meo's
+# presentation. Preserve that framework's actual state separately from KDE
+# config so reset never leaves it pointing at a removed theme.
+if [ "${apply_theme}" -eq 1 ]; then
+  input_state_root="${backup_root}/input-method"
+  if command -v fcitx5-remote >/dev/null 2>&1 \
+      && fcitx5-remote --check >/dev/null 2>&1; then
+    run mkdir -p "${input_state_root}"
+    run touch "${input_state_root}/fcitx5-selected"
+    if [ -f "${config_root}/fcitx5/conf/classicui.conf" ]; then
+      run cp -a "${config_root}/fcitx5/conf/classicui.conf" \
+        "${input_state_root}/classicui.conf"
+    else
+      run touch "${input_state_root}/classicui.conf-absent"
+    fi
+  elif command -v pgrep >/dev/null 2>&1 && pgrep -x ibus-daemon >/dev/null 2>&1 \
+      && command -v gsettings >/dev/null 2>&1; then
+    if [ "${dry_run}" -eq 0 ]; then
+      mkdir -p "${input_state_root}"
+      touch "${input_state_root}/ibus-selected"
+      gsettings get org.freedesktop.ibus.panel use-custom-theme \
+        > "${input_state_root}/ibus-use-custom-theme"
+      gsettings get org.freedesktop.ibus.panel custom-theme \
+        > "${input_state_root}/ibus-custom-theme"
+    else
+      echo "Would preserve IBus panel theme settings in ${input_state_root}"
+    fi
+  fi
+fi
 
 # The profile is deliberately user-editable. Keep an existing profile intact
 # across source updates; first install gets the dual-panel MD3 default.
@@ -294,6 +387,10 @@ done
 run install -Dm644 "${repo_root}/themes/input-method/ibus/gtk.css.in" "${data_root}/meo-kde/input-method/ibus/gtk.css.in"
 run install -Dm644 "${repo_root}/themes/input-method/ibus/index.theme" "${data_root}/meo-kde/input-method/ibus/index.theme"
 run install -Dm0755 "${native_build_root}/dynamic-color/meo-dynamic-colors" "${local_bin_root}/meo-dynamic-colors"
+# Install the Qt Widgets style beside the user's other Qt plugins. Selection is
+# persisted through kdeglobals/environment.d and takes effect for new processes
+# without restarting the current Plasma or KWin session.
+run install -Dm0755 "${native_build_root}/qt-plugins/styles/meostyle.so" "${user_plugin_root}/styles/meostyle.so"
 # Install the independent native decoration. KWin owns every window action;
 # this module supplies only visual geometry and caption-button rendering.
 run install -Dm0755 "${native_build_root}/bin/org.kde.kdecoration3/org.meo.decoration.so" "${user_plugin_root}/org.kde.kdecoration3/org.meo.decoration.so"
@@ -321,9 +418,8 @@ if command -v systemctl >/dev/null 2>&1; then
   run mkdir -p "${config_root}/systemd/user/plasma-kwin_wayland.service.d"
   run rm -f "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-chrome-breeze.conf"
   run cp -a "${repo_root}/defaults/systemd/50-meo-native-plugins.conf" "${config_root}/systemd/user/plasma-kwin_wayland.service.d/50-meo-native-plugins.conf"
-  # The dynamic-color watcher is installed but deliberately left disabled.
-  # It only starts after the user explicitly enables it, so applying Meo does
-  # not alter the current color scheme behind their back.
+  # Installation alone leaves the watcher state unchanged. The explicit
+  # --apply action below enables it after taking the backup above.
   run cp -a "${repo_root}/defaults/systemd/meo-dynamic-colors.service" "${config_root}/systemd/user/meo-dynamic-colors.service"
   run cp -a "${repo_root}/defaults/systemd/meo-dynamic-colors.path" "${config_root}/systemd/user/meo-dynamic-colors.path"
   run systemctl --user daemon-reload
@@ -347,6 +443,7 @@ if [ "${apply_theme}" -eq 1 ]; then
     apply_arguments+=(--dry-run)
   fi
   run env MEO_INPUT_METHOD_HELPER="${repo_root}/tools/input-method/meo-input-method.sh" \
+    MEO_DYNAMIC_COLORS_HELPER="${native_build_root}/dynamic-color/meo-dynamic-colors" \
     MEO_KWIN_DEFAULTS="${repo_root}/defaults/kwin/kwinrc" \
     "${repo_root}/tools/theme/apply-meo-desktop.sh" "${apply_arguments[@]}"
 else

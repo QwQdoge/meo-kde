@@ -1,8 +1,9 @@
 [kdeglobals][KDE]
-widgetStyle=Breeze
+widgetStyle=Meo
 
 [kdeglobals][General]
 ColorScheme=MeoLight
+accentColorFromWallpaper=true
 font=Roboto,10,-1,5,50,0,0,0,0,0,Regular
 menuFont=Roboto,10,-1,5,50,0,0,0,0,0,Regular
 smallestReadableFont=Roboto,8,-1,5,50,0,0,0,0,0,Regular
@@ -13,9 +14,6 @@ Theme=MeoSymbols
 
 [plasmarc][Theme]
 name=MeoLight
-
-[plasmarc][General]
-AccentColorFromWallpaper=true
 
 [Wallpaper]
 Image=/usr/share/wallpapers/MeoArch/installer_background.png

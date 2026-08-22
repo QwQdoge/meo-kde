@@ -2,9 +2,7 @@
 Description=Watch KDE accent configuration for Meo Material 3 colors
 
 [Path]
-PathExists=%h/.config/plasma-org.kde.plasma.desktop-appletsrc
 PathChanged=%h/.config/plasma-org.kde.plasma.desktop-appletsrc
-PathChanged=%h/.config/kdeglobals
 Unit=meo-dynamic-colors.service
 
 [Install]

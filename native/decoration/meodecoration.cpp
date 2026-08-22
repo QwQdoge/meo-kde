@@ -14,11 +14,19 @@
 #include <QFontMetrics>
 #include <QGuiApplication>
 #include <QImage>
-#include <QDebug>
 #include <QVariantAnimation>
 #include <QtMath>
 
 namespace MeoDecoration {
+
+namespace {
+
+int scaledAnimationDuration(int duration, qreal factor)
+{
+    return qBound(0, qRound(duration * factor), 4000);
+}
+
+} // namespace
 
 K_PLUGIN_CLASS_WITH_JSON(Decoration, "metadata.json")
 
@@ -43,6 +51,14 @@ bool Decoration::init()
     createButtons();
     updateLayout();
     updateShadow();
+
+    if (const auto decorationSettings = settings()) {
+        connect(decorationSettings.get(), &KDecoration3::DecorationSettings::fontChanged, this, [this]() {
+            loadConfig();
+            updateLayout();
+            update();
+        });
+    }
 
     if (window()) {
         connect(window(), &KDecoration3::DecoratedWindow::activeChanged, this, [this]() {
@@ -72,7 +88,8 @@ void Decoration::loadConfig()
     // 32 logical pixels matches Breeze and Chrome's system titlebar. A tall
     // system font may raise the computed height, but never past 34px.
     const int requestedTitlebarHeight = group.readEntry("TitleBarHeight", 32);
-    const int minimumForFont = QFontMetrics(QGuiApplication::font()).height() + 8;
+    const QFont titleFont = settings() ? settings()->font() : QGuiApplication::font();
+    const int minimumForFont = QFontMetrics(titleFont).height() + 8;
     m_config.titleBarHeight = qBound(30, qMax(requestedTitlebarHeight, minimumForFont), 34);
     m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 12), 48);
     m_config.buttonDiameter = qBound(16, group.readEntry("ButtonDiameter", 20), 32);
@@ -83,9 +100,16 @@ void Decoration::loadConfig()
     m_config.shadowIntensity = qBound(0.0, group.readEntry("ShadowIntensity", 0.18), 1.0);
     m_config.shadowRadius = qBound(0, group.readEntry("ShadowRadius", 28), 64);
     m_config.shadowOffsetY = qBound(-m_config.shadowRadius, group.readEntry("ShadowOffsetY", 6), m_config.shadowRadius);
-    m_config.hoverInDuration = qBound(0, group.readEntry("HoverInDuration", 100), 300);
-    m_config.hoverOutDuration = qBound(0, group.readEntry("HoverOutDuration", 80), 300);
-    m_config.focusTransitionDuration = qBound(0, group.readEntry("FocusTransitionDuration", 180), 400);
+    const KConfigGroup animationGroup(KSharedConfig::openConfig("kdeglobals"), "KDE");
+    const qreal animationFactor = qBound<qreal>(0.0,
+        animationGroup.readEntry("AnimationDurationFactor", 1.0), 10.0);
+    m_config.hoverInDuration = scaledAnimationDuration(
+        qBound(0, group.readEntry("HoverInDuration", 100), 300), animationFactor);
+    m_config.hoverOutDuration = scaledAnimationDuration(
+        qBound(0, group.readEntry("HoverOutDuration", 80), 300), animationFactor);
+    m_config.focusTransitionDuration = scaledAnimationDuration(
+        qBound(0, group.readEntry("FocusTransitionDuration", 180), 400), animationFactor);
+    m_config.rippleDuration = scaledAnimationDuration(180, animationFactor);
     m_config.alignTitleCenter = group.readEntry("AlignTitleCenter", true);
     m_config.squareMaximized = group.readEntry("SquareMaximized", true);
     m_config.enableAccentTint = group.readEntry("EnableAccentTint", false);
@@ -111,8 +135,6 @@ void Decoration::updateLayout()
     if (m_rightButtonGroup) {
         qreal groupW = m_rightButtonGroup->geometry().width();
         qreal groupH = m_rightButtonGroup->geometry().height();
-        qInfo() << "Meo decoration button layout" << m_rightButtonGroup->buttons().size()
-                << "geometry" << m_rightButtonGroup->geometry() << "title" << headerH << "width" << w;
         qreal x = w - groupW - m_config.buttonRightMargin;
         qreal y = (headerH - groupH) / 2.0;
         m_rightButtonGroup->setPos(QPointF(x, qMax(0.0, y)));
@@ -151,8 +173,6 @@ void Decoration::createButtons()
         }
     }
     m_rightButtonGroup->setSpacing(m_config.buttonSpacing);
-    qInfo() << "Meo decoration created buttons" << m_rightButtonGroup->buttons().size()
-            << "geometry" << m_rightButtonGroup->geometry();
 }
 
 void Decoration::updateShadow()
@@ -232,6 +252,11 @@ qreal Decoration::captionTitleOpacity() const
 void Decoration::updateFocusAnimation(bool active)
 {
     m_focusAnimation->stop();
+    if (m_config.focusTransitionDuration <= 0) {
+        m_focusProgress = active ? 1.0 : 0.0;
+        update();
+        return;
+    }
     m_focusAnimation->setDuration(m_config.focusTransitionDuration);
     m_focusAnimation->setStartValue(m_focusProgress);
     m_focusAnimation->setEndValue(active ? 1.0 : 0.0);
@@ -301,9 +326,7 @@ void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
             QColor captionColor = titleTextColor();
             captionColor.setAlphaF(captionTitleOpacity());
             painter->setPen(captionColor);
-            QFont titleFont = QGuiApplication::font();
-            titleFont.setPixelSize(13);
-            titleFont.setWeight(QFont::Normal);
+            const QFont titleFont = settings() ? settings()->font() : QGuiApplication::font();
             painter->setFont(titleFont);
 
             QFontMetrics fm(titleFont);

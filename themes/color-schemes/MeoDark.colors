@@ -139,6 +139,18 @@ shadeSortColumn=true
 [KDE]
 contrast=4
 
+[MeoMaterial]
+surfaceContainer=31,29,36
+onSurface=230,224,233
+primary=208,188,255
+onPrimary=56,30,114
+primaryContainer=79,55,139
+onPrimaryContainer=234,221,255
+secondaryContainer=74,68,88
+onSecondaryContainer=232,222,248
+onSurfaceVariant=202,196,208
+outline=147,143,153
+
 [WM]
 activeBackground=31,29,36
 activeBlend=208,188,255

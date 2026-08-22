@@ -6,8 +6,9 @@ import MeoUI 1.0
 Window {
     id: window
 
-    width: 900
-    height: 580
+    readonly property bool compact: Qt.application.arguments.indexOf("--compact") !== -1
+    width: compact ? 360 : 900
+    height: compact ? 520 : 580
     visible: true
     color: MeoTheme.background
 
@@ -21,8 +22,8 @@ Window {
 
     TimeCenter.TimeNotificationCenter {
         anchors.centerIn: parent
-        width: 820
-        height: 540
+        width: window.compact ? 336 : 820
+        height: window.compact ? 496 : 540
         notifications: null
         currentDateTime: new Date(2026, 7, 18, 17, 28)
         use24HourClock: true

@@ -6,8 +6,8 @@
  * MeoInputMethod GTK theme.  Keep this template role-based: colours belong to
  * Meo's color scheme, not to a second hard-coded GTK palette.
  */
-@define-color theme_bg_color @MEO_SURFACE@;
-@define-color theme_base_color @MEO_SURFACE@;
+@define-color theme_bg_color @MEO_SURFACE_CONTAINER@;
+@define-color theme_base_color @MEO_SURFACE_CONTAINER@;
 @define-color theme_fg_color @MEO_ON_SURFACE@;
 @define-color theme_selected_bg_color @MEO_SECONDARY_CONTAINER@;
 @define-color theme_selected_fg_color @MEO_ON_SECONDARY_CONTAINER@;
@@ -16,6 +16,9 @@
 
 @define-color meo_surface_container @MEO_SURFACE_CONTAINER@;
 @define-color meo_primary @MEO_PRIMARY@;
+@define-color meo_on_primary @MEO_ON_PRIMARY@;
+@define-color meo_primary_container @MEO_PRIMARY_CONTAINER@;
+@define-color meo_on_primary_container @MEO_ON_PRIMARY_CONTAINER@;
 @define-color meo_secondary_container @MEO_SECONDARY_CONTAINER@;
 @define-color meo_on_secondary_container @MEO_ON_SECONDARY_CONTAINER@;
 @define-color meo_outline @MEO_OUTLINE@;
@@ -23,7 +26,7 @@
 #IBusCandidate {
     background-color: @meo_surface_container;
     color: @theme_fg_color;
-    border: 0;
+    border: 1px solid @meo_outline;
     border-radius: 24px;
     box-shadow: 0 4px 12px alpha(@theme_fg_color, 0.18);
     padding: 7px;
@@ -45,11 +48,21 @@
 }
 
 #IBusCandidate button:hover {
-    background-color: alpha(@meo_primary, 0.08);
+    background-color: @meo_primary_container;
+    color: @meo_on_primary_container;
+}
+
+#IBusCandidate button:hover label {
+    color: @meo_on_primary_container;
 }
 
 #IBusCandidate button:active {
-    background-color: alpha(@meo_primary, 0.12);
+    background-color: @meo_primary;
+    color: @meo_on_primary;
+}
+
+#IBusCandidate button:active label {
+    color: @meo_on_primary;
 }
 
 #IBusCandidate separator {

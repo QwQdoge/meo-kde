@@ -5,7 +5,8 @@ PartOf=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/meo-dynamic-colors --apply
+ExecStart=%h/.local/bin/meo-dynamic-colors --follow-meo --apply
+ExecStartPost=%h/.local/bin/meo-input-method --sync --quiet
 
 [Install]
 WantedBy=graphical-session.target

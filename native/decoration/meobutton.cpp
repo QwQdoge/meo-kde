@@ -46,7 +46,7 @@ Button::Button(KDecoration3::DecorationButtonType type, Decoration *decoration, 
         update();
     });
     m_rippleAnimation = new QVariantAnimation(this);
-    m_rippleAnimation->setDuration(180);
+    m_rippleAnimation->setDuration(decoration ? decoration->config().rippleDuration : 180);
     m_rippleAnimation->setEasingCurve(QEasingCurve::OutCubic);
     connect(m_rippleAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         m_rippleProgress = value.toReal();
@@ -77,6 +77,11 @@ bool Button::event(QEvent *event)
 void Button::animateHover(qreal target, int duration)
 {
     m_hoverAnimation->stop();
+    if (duration <= 0) {
+        m_hoverProgress = target;
+        update();
+        return;
+    }
     m_hoverAnimation->setDuration(duration);
     m_hoverAnimation->setStartValue(m_hoverProgress);
     m_hoverAnimation->setEndValue(target);
@@ -87,6 +92,11 @@ void Button::beginRipple(const QPointF &position)
 {
     m_rippleOrigin = position;
     m_rippleAnimation->stop();
+    if (m_rippleAnimation->duration() <= 0) {
+        m_rippleProgress = 1.0;
+        update();
+        return;
+    }
     m_rippleAnimation->setStartValue(0.0);
     m_rippleAnimation->setEndValue(1.0);
     m_rippleAnimation->start();

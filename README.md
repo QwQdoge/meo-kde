@@ -6,8 +6,10 @@ look-and-feel package, MD3 adaptive colour bridge, bundled fonts and Arch
 packaging. The generic component library remains in the separate `meo-ui`
 project.
 
-The copy under `meo-arch-os-workspace/meo-desktop` is an ISO integration
-snapshot. Update it with:
+The ArchISO copy under
+`meo-arch-os-workspace/meoarch-os/airootfs/opt/meo-desktop` is generated
+staging, not source authority. Rebuild it through the workspace-owned sync and
+provenance workflow with:
 
 ```bash
 scripts/sync-to-workspace.sh /home/shekong/Projects/meo-arch-os-workspace
@@ -28,9 +30,9 @@ run:
 setup/apply-meo-desktop.sh --apply --reset-layout
 ```
 
-The update is fast-forward only: the script refuses to overwrite local MeoUI
-changes. Use `--no-update-meoui` when intentionally working offline or with a
-local MeoUI edit. The module is installed under the user QML import path, so
+The sibling MeoUI checkout is built as-is by default. Pass `--update-meoui`
+only when an explicit fast-forward-only fetch and merge is wanted; the script
+refuses to overwrite local MeoUI changes. The module is installed under the user QML import path, so
 MeoKDE components continue to resolve `import MeoUI 1.0` at runtime.
 
 To install, apply, and rebuild the native KDE Plasma layout (including the
@@ -64,6 +66,9 @@ configuration is changed.
 
 - MeoUI owns generic MD3 tokens and controls.
 - MeoKDE maps the active Plasma palette/accent into MeoUI dynamic colour roles.
+- The HCT generator materializes that palette for KDE applications, the native
+  Dock/window stack, MeoUI, and selected Meo Fcitx/IBus presentations; it does
+  not override a colour scheme after the user switches away from Meo.
 - Plasma/KWin remain the source of truth for windows, tasks, network, audio,
   power and session state.
 - Compatible Fcitx 5 and IBus engines retain their real backends while their
@@ -73,3 +78,9 @@ configuration is changed.
   Symbols Rounded is bundled for MeoUI icons.
 - Missing system backends are hidden or delegated to upstream Plasma; the shell
   never presents a local fake toggle.
+
+Native Qt Widgets use the Meo style over KDE's Breeze metrics and the live
+`QPalette`. LibreOffice is routed through its KF6 VCL backend so it can consume
+the KDE palette; VCL remains LibreOffice's renderer, so blanket QStyle coverage
+is intentionally not claimed. See
+[`native/application-style/README.md`](native/application-style/README.md).
