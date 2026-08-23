@@ -40,6 +40,9 @@ PlasmoidItem {
         if (Plasmoid.configuration.quickTileSizes === legacyQuickTileSizes)
             Plasmoid.configuration.quickTileSizes = pillQuickTileSizes
     }
+    onExpandedChanged: if (!root.expanded && root.fullRepresentationItem
+                           && root.fullRepresentationItem.prepareToClose)
+                           root.fullRepresentationItem.prepareToClose()
 
     compactRepresentation: Item {
         id: compactRoot
@@ -61,9 +64,13 @@ PlasmoidItem {
     fullRepresentation: QuickSettingsCenter {
         tileOrder: Plasmoid.configuration.quickTileOrder
         tileSizes: Plasmoid.configuration.quickTileSizes
-        onTileLayoutChanged: function(order, sizes) {
+        tileVisibility: Plasmoid.configuration.quickTileVisibility
+        tileDensity: Plasmoid.configuration.quickTileDensity
+        onTileLayoutChanged: function(order, sizes, visibility, density) {
             Plasmoid.configuration.quickTileOrder = order
             Plasmoid.configuration.quickTileSizes = sizes
+            Plasmoid.configuration.quickTileVisibility = visibility
+            Plasmoid.configuration.quickTileDensity = density
         }
     }
 }

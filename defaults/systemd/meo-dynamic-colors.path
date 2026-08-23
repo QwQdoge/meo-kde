@@ -1,8 +1,14 @@
 [Unit]
-Description=Watch KDE accent configuration for Meo Material 3 colors
+Description=Watch Meo dynamic color source configuration
 
 [Path]
 PathChanged=%h/.config/plasma-org.kde.plasma.desktop-appletsrc
+# KDE accent is the default source and can be changed outside Meo Settings.
+PathChanged=%h/.config/kdeglobals
+# This file changes only after an explicit Meo source selection. Watching it
+# keeps a manually edited source configuration coherent without inventing a
+# second palette service.
+PathChanged=%h/.config/meo-dynamic-colorsrc
 Unit=meo-dynamic-colors.service
 
 [Install]

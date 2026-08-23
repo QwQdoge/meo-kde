@@ -20,8 +20,8 @@ PlasmoidItem {
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     Plasmoid.title: qsTr("Meo Time and Notifications")
     toolTipMainText: qsTr("Meo Time and Notifications")
-    toolTipSubText: notifications.unreadNotificationsCount > 0
-                    ? qsTr("%1 unread notifications").arg(notifications.unreadNotificationsCount)
+    toolTipSubText: notificationModel.unreadNotificationsCount > 0
+                    ? qsTr("%1 unread notifications").arg(notificationModel.unreadNotificationsCount)
                     : qsTr("Calendar and notifications")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
@@ -36,7 +36,7 @@ PlasmoidItem {
     Component.onCompleted: MeoShellTheme.sync()
     onExpandedChanged: function() {
         if (root.expanded)
-            notifications.lastRead = clock.dateTime
+            notificationModel.lastRead = clock.dateTime
     }
 
     PlasmaClock.Clock {
@@ -45,7 +45,7 @@ PlasmoidItem {
     }
 
     NotificationManager.Notifications {
-        id: notifications
+        id: notificationModel
         limit: 50
         showNotifications: true
         showJobs: true
@@ -62,9 +62,9 @@ PlasmoidItem {
 
     compactRepresentation: TimeNotificationButton {
         currentDateTime: clock.dateTime
-        unreadCount: notifications.unreadNotificationsCount
-        activeJobsCount: notifications.activeJobsCount
-        jobsPercentage: notifications.jobsPercentage
+        unreadCount: notificationModel.unreadNotificationsCount
+        activeJobsCount: notificationModel.activeJobsCount
+        jobsPercentage: notificationModel.jobsPercentage
         inhibited: NotificationManager.Server.inhibited
         textScale: root.localTextScale
         showDate: Plasmoid.configuration.showDate
@@ -74,7 +74,7 @@ PlasmoidItem {
     }
 
     fullRepresentation: TimeNotificationCenter {
-        notifications: root.notifications
+        notifications: notificationModel
         currentDateTime: clock.dateTime
         use24HourClock: Plasmoid.configuration.use24HourClock
     }

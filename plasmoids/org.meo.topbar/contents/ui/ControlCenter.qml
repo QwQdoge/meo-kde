@@ -12,6 +12,19 @@ Item {
     // during a live applet update.  The current layout uses two independent
     // surfaces, but this fallback must not fail while Plasma rebinds models.
     property var notifications: null
+
+    function openMeoSettings() {
+        if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+            Qt.openUrlExternally("systemsettings:")
+    }
+
+    function openMeoBluetoothSettings() {
+        if (Qt.openUrlExternally("applications:org.meo.settings.bluetooth.desktop"))
+            return
+        if (Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+            return
+        Qt.openUrlExternally("systemsettings:kcm_bluetooth")
+    }
     property date currentDateTime: new Date()
 
     implicitWidth: 1120 * MeoTheme.globalScale
@@ -42,9 +55,12 @@ Item {
 
                 QuickSettingsHome {
                     anchors.fill: parent
-                    onWifiDetailsRequested: Qt.openUrlExternally("systemsettings:")
-                    onBluetoothDetailsRequested: Qt.openUrlExternally("systemsettings:")
-                    onPowerDetailsRequested: Qt.openUrlExternally("systemsettings:")
+                    // This legacy combined surface is still supported, but its
+                    // daily settings handoff goes to Meo Settings first. KDE
+                    // System Settings is only the no-Meo-install fallback.
+                    onWifiDetailsRequested: root.openMeoSettings()
+                    onBluetoothDetailsRequested: root.openMeoBluetoothSettings()
+                    onPowerDetailsRequested: root.openMeoSettings()
                     onPowerRequested: powerMenu.open()
                 }
             }
@@ -67,7 +83,10 @@ Item {
                         notifications: root.notifications
                         currentDateTime: root.currentDateTime
                         showTitle: false
-                        onSettingsRequested: Qt.openUrlExternally("systemsettings:kcm_notifications")
+                        onSettingsRequested: {
+                            if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+                                Qt.openUrlExternally("systemsettings:kcm_notifications")
+                        }
                     }
                 }
             }

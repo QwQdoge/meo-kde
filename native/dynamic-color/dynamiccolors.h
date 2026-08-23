@@ -28,5 +28,6 @@ public:
     // scheme even when its file contents changed.
     static bool applyScheme(const QString &path, const QString &name,
                             const QColor &accent, bool notifySession,
-                            bool *changed, QString *error);
+                            bool *changed, QString *error,
+                            const QString &sourceId = {});
 };

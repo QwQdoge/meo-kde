@@ -102,6 +102,10 @@ SystemStateHub::SystemStateHub(QObject *parent)
         refreshBluetoothConnections();
         refreshBluetoothState();
     });
+    // BluezQt deliberately does not schedule initialization from init().
+    // Without this, a live BlueZ adapter is permanently reported unavailable
+    // by every Quick Settings Bluetooth surface.
+    bluezInit->start();
 
     auto *deviceNotifier = Solid::DeviceNotifier::instance();
     connect(deviceNotifier, &Solid::DeviceNotifier::deviceAdded, this, [this] { refreshBattery(); });
@@ -540,6 +544,18 @@ void SystemStateHub::toggleBluetoothDevice(const QString &address)
         setOperationError(tr("Bluetooth device is no longer available."));
         return;
     }
+
+    // Quick Settings is intentionally a low-risk fast path.  A new pairing
+    // may require a PIN, passkey, numeric comparison, or service
+    // authorization, all of which need the Settings process's dedicated
+    // BlueZ Agent1 flow.  Never let a stale or third-party QML caller turn a
+    // simple toggle into a hidden pair/trust/connect transaction here.
+    if (!device->isPaired()) {
+        setOperationError(tr("Pair new devices in Meo Settings."));
+        refreshBluetoothState();
+        return;
+    }
+
     setBluetoothBusy(true);
     if (device->isConnected()) {
         auto *call = device->disconnectFromDevice();
@@ -566,37 +582,7 @@ void SystemStateHub::toggleBluetoothDevice(const QString &address)
                     refreshBluetoothState();
                 });
     };
-    if (device->isPaired()) {
-        connectDevice();
-        return;
-    }
-
-    auto *pairCall = device->pair();
-    connect(pairCall, &BluezQt::PendingCall::finished, this,
-            [this, device, connectDevice](BluezQt::PendingCall *finishedCall) {
-                if (finishedCall->error() != BluezQt::PendingCall::NoError
-                    && finishedCall->error() != BluezQt::PendingCall::AlreadyExists) {
-                    setOperationError(finishedCall->errorText());
-                    setBluetoothBusy(false);
-                    refreshBluetoothState();
-                    return;
-                }
-                if (!device->isTrusted()) {
-                    auto *trustCall = device->setTrusted(true);
-                    connect(trustCall, &BluezQt::PendingCall::finished, this,
-                            [this, connectDevice](BluezQt::PendingCall *trustFinished) {
-                                if (trustFinished->error() != BluezQt::PendingCall::NoError) {
-                                    setOperationError(trustFinished->errorText());
-                                    setBluetoothBusy(false);
-                                    refreshBluetoothState();
-                                    return;
-                                }
-                                connectDevice();
-                            });
-                    return;
-                }
-                connectDevice();
-            });
+    connectDevice();
 }
 
 void SystemStateHub::forgetBluetoothDevice(const QString &address)

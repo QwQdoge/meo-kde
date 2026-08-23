@@ -5,6 +5,8 @@ find_package(Krdb REQUIRED)
 add_library(meo-dynamic-color-core STATIC
     dynamiccolors.cpp
     dynamiccolors.h
+    dynamiccolorsource.cpp
+    dynamiccolorsource.h
 )
 set_target_properties(meo-dynamic-color-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_library(Meo::DynamicColorCore ALIAS meo-dynamic-color-core)

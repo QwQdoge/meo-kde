@@ -46,5 +46,13 @@
       <label>Quick Settings tile grid spans.</label>
       <default>wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2</default>
     </entry>
+    <entry name="quickTileVisibility" type="String">
+      <label>Visible Quick Settings tiles.</label>
+      <default>wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot</default>
+    </entry>
+    <entry name="quickTileDensity" type="String">
+      <label>Quick Settings tile presentation density: compact, comfortable, or spacious.</label>
+      <default>comfortable</default>
+    </entry>
   </group>
 </kcfg>

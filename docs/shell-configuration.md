@@ -77,3 +77,45 @@ Use24HourClock=true
 The quick-settings and time/notification applets have separate **Configure**
 dialogs. The profile remains preferable when making repeatable or packaged
 deployments.
+
+## Control Center
+
+The Quick Settings gear opens **Meo Settings** through the desktop ID
+`org.meo.settings.desktop`; it does not use KDE System Settings as the normal
+Meo entry point. If the desktop entry cannot be opened, the applet falls back
+to `systemsettings:` rather than assuming a `meo-settings` binary is present.
+
+For a packaged Meo desktop, the package that installs `org.meo.topbar` must
+also require the package that installs `meo-settings` and
+`/usr/share/applications/org.meo.settings.desktop`. The Settings **Control
+Center** page edits the unique active `org.meo.topbar` applet through Plasma
+Shell. It persists the applet's `Appearance/quickTileOrder`,
+`quickTileSizes`, `quickTileVisibility`, and `quickTileDensity` values, then
+reloads that exact applet. It never guesses an applet ID or rewrites Plasma's
+configuration file directly.
+
+`quickTileVisibility` defaults to every supported tile, so upgrading preserves
+the current surface. `quickTileDensity` accepts `compact`, `comfortable`, or
+`spacious`; it affects only the Meo Quick Settings tile presentation.
+
+## Bluetooth from Quick Settings
+
+The Quick Settings Bluetooth tile is the fast path for turning the adapter on
+or off, discovery, connecting or disconnecting an already paired device, and
+forgetting a paired device. Those actions stay bound to the live BlueZ-backed
+Meo system model; opening the full settings page does not substitute a fake
+Bluetooth state.
+
+Pairing is intentionally not initiated by tapping an unpaired device in the
+compact popup. PIN, passkey, numeric-comparison, and authorization prompts
+need the full Bluetooth flow. The row and the Bluetooth page’s settings button
+open `org.meo.settings.bluetooth.desktop` first, which launches **Meo
+Settings** directly on its Bluetooth route. If that dedicated launcher is not
+available, the top bar tries the normal `org.meo.settings.desktop` launcher;
+only if neither Meo Settings launcher can open does it fall back to
+`systemsettings:kcm_bluetooth`.
+
+The installed Meo desktop must provide both Settings desktop entries alongside
+the top bar, either in the same package or through a declared dependency. This
+fallback order is intentional: KDE System Settings is a recovery path for an
+incomplete installation, not the normal Bluetooth management surface.

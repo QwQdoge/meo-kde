@@ -1,4 +1,5 @@
 #include "dynamiccolors.h"
+#include "dynamiccolorsource.h"
 
 #include <KConfigGroup>
 #include <KSharedConfig>
@@ -62,10 +63,18 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("meo-dynamic-colors"));
     QCommandLineParser parser;
-    parser.setApplicationDescription(QStringLiteral("Generate a Material 3 KDE color scheme from the active KDE accent color."));
+    parser.setApplicationDescription(QStringLiteral("Generate a Material 3 KDE color scheme from a chosen Meo color source."));
     parser.addHelpOption();
     QCommandLineOption accentOption({"a", "accent"},
-                                     "Use an explicit KDE seed color (#RRGGBB or R,G,B).", "color");
+                                     "Use an explicit manual seed color (#RRGGBB or R,G,B).", "color");
+    QCommandLineOption sourceOption({"s", "source"},
+                                     "Seed source: accent, wallpaper, or manual. Defaults to the remembered source.",
+                                     "source");
+    QCommandLineOption wallpaperOption("wallpaper",
+                                       "Use this local image instead of the configured wallpaper (wallpaper source only).",
+                                       "path");
+    QCommandLineOption rememberSourceOption("remember-source",
+                                            "Save this source choice for future Meo dynamic color refreshes.");
     QCommandLineOption outputOption({"o", "output-dir"},
                                      "Directory for generated KDE .colors files.", "path");
     QCommandLineOption contrastOption("contrast",
@@ -75,6 +84,9 @@ int main(int argc, char *argv[])
                                     "Apply only while the active KDE scheme belongs to Meo.");
     QCommandLineOption darkOption("dark", "Generate/select the dark scheme.");
     parser.addOption(accentOption);
+    parser.addOption(sourceOption);
+    parser.addOption(wallpaperOption);
+    parser.addOption(rememberSourceOption);
     parser.addOption(outputOption);
     parser.addOption(contrastOption);
     parser.addOption(applyOption);
@@ -95,9 +107,43 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    const QColor accent = parser.isSet(accentOption) ? parseColor(parser.value(accentOption)) : configuredAccent();
-    if (!accent.isValid()) {
+    const QColor explicitManualColor = parser.isSet(accentOption)
+        ? parseColor(parser.value(accentOption)) : QColor();
+    if (parser.isSet(accentOption) && !explicitManualColor.isValid()) {
         QTextStream(stderr) << "--accent must be #RRGGBB or R,G,B" << Qt::endl;
+        return 2;
+    }
+    QString requestedSource = parser.isSet(sourceOption) ? parser.value(sourceOption) : QString();
+    if (!parser.isSet(sourceOption) && parser.isSet(accentOption)) {
+        // Preserve the historical `--accent` behavior while making the source
+        // explicit for diagnostics and optional persistence.
+        requestedSource = QStringLiteral("manual");
+    }
+    if (parser.isSet(wallpaperOption)
+        && requestedSource.compare(QStringLiteral("wallpaper"), Qt::CaseInsensitive) != 0) {
+        QTextStream(stderr) << "--wallpaper requires --source wallpaper" << Qt::endl;
+        return 2;
+    }
+    if (parser.isSet(sourceOption)
+        && !DynamicColorSource::isSupportedMode(requestedSource)) {
+        QTextStream(stderr) << "--source must be accent, wallpaper, or manual" << Qt::endl;
+        return 2;
+    }
+    if (parser.isSet(sourceOption)
+        && requestedSource.compare(QStringLiteral("manual"), Qt::CaseInsensitive) != 0
+        && parser.isSet(accentOption)) {
+        QTextStream(stderr) << "--accent is only valid with --source manual" << Qt::endl;
+        return 2;
+    }
+
+    QColor accent;
+    QString resolvedSource;
+    QString resolvedWallpaper;
+    QString sourceError;
+    if (!DynamicColorSource::resolve(requestedSource, configuredAccent(), explicitManualColor,
+                                     parser.value(wallpaperOption), &accent, &resolvedSource,
+                                     &resolvedWallpaper, &sourceError)) {
+        QTextStream(stderr) << sourceError << Qt::endl;
         return 2;
     }
     const bool dark = parser.isSet(darkOption) || (!parser.isSet(darkOption) && isDarkScheme());
@@ -114,13 +160,27 @@ int main(int argc, char *argv[])
     }
 
     if (parser.isSet(applyOption)) {
-        if (!DynamicColors::applyScheme(schemePath, name, accent, true, nullptr, &error)) {
+        if (!DynamicColors::applyScheme(schemePath, name, accent, true, nullptr, &error,
+                                        resolvedSource)) {
             QTextStream(stderr) << error << Qt::endl;
             return 1;
         }
     }
-    QTextStream(stdout) << "MEO_DYNAMIC_COLORS accent=" << accent.name(QColor::HexRgb)
-                        << " scheme=" << name << " contrast=" << contrast << Qt::endl;
+    if (parser.isSet(rememberSourceOption)
+        && !DynamicColorSource::persist(resolvedSource,
+                                        resolvedSource == QLatin1String("manual") ? accent : QColor(),
+                                        &error)) {
+        QTextStream(stderr) << error << Qt::endl;
+        return 1;
+    }
+    QTextStream output(stdout);
+    output << "MEO_DYNAMIC_COLORS source=" << resolvedSource
+           << " accent=" << accent.name(QColor::HexRgb)
+           << " scheme=" << name << " contrast=" << contrast;
+    if (!resolvedWallpaper.isEmpty()) {
+        output << " wallpaper=" << resolvedWallpaper;
+    }
+    output << Qt::endl;
     // krdb schedules its launch-environment update for the next event-loop
     // turn. Match plasma-apply-colorscheme so that update is not dropped.
     QTimer::singleShot(0, &app, [&app]() { app.exit(0); });

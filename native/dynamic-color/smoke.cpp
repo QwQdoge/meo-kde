@@ -1,13 +1,16 @@
 #include "dynamiccolors.h"
+#include "dynamiccolorsource.h"
 
 #include <KConfig>
 #include <KConfigGroup>
 #include <KSharedConfig>
 #include <QFile>
 #include <QGuiApplication>
+#include <QImage>
 #include <QTemporaryDir>
 #include <QTextStream>
 #include <QTimer>
+#include <QUrl>
 
 namespace {
 bool hasColor(const DynamicColors::ColorScheme &scheme, const QString &role, const QString &expected)
@@ -57,6 +60,55 @@ int main(int argc, char *argv[])
         if (!initialGlobals.sync()) {
             return 1;
         }
+    }
+
+    // Source selection is deliberately testable without a real Plasma
+    // session.  The wallpaper resolver reads one configured local image, and
+    // persisted manual choice never becomes a second palette algorithm.
+    const QString wallpaperPath = configDirectory.filePath(QStringLiteral("wallpaper.png"));
+    QImage wallpaper(16, 16, QImage::Format_RGBA8888);
+    wallpaper.fill(QColor(QStringLiteral("#4285f4")));
+    if (!wallpaper.save(wallpaperPath)) {
+        return 1;
+    }
+    {
+        KConfig desktop(configDirectory.filePath(QStringLiteral("plasma-org.kde.plasma.desktop-appletsrc")),
+                        KConfig::SimpleConfig);
+        KConfigGroup containments(&desktop, QStringLiteral("Containments"));
+        KConfigGroup containment(&containments, QStringLiteral("1"));
+        containment.writeEntry("wallpaperplugin", QStringLiteral("org.kde.image"));
+        KConfigGroup wallpaperGroup(&containment,
+                                     QStringLiteral("/Wallpaper/org.kde.image/General"));
+        wallpaperGroup.writeEntry("Image", QUrl::fromLocalFile(wallpaperPath).toString());
+        if (!desktop.sync()) {
+            return 1;
+        }
+    }
+    QString sourceError;
+    if (DynamicColorSource::configuredWallpaperPath(&sourceError) != wallpaperPath
+        || DynamicColorSource::seedFromWallpaper(wallpaperPath, &sourceError)
+               != QColor(QStringLiteral("#4285f4"))
+        || !DynamicColorSource::persist(QStringLiteral("manual"), QColor(QStringLiteral("#6750a4")),
+                                        &sourceError)
+        || DynamicColorSource::configuredMode() != QStringLiteral("manual")
+        || DynamicColorSource::configuredManualColor() != QColor(QStringLiteral("#6750a4"))) {
+        QTextStream(stderr) << "Dynamic color source storage/resolution failed: " << sourceError << Qt::endl;
+        return 1;
+    }
+    QColor resolvedSeed;
+    QString resolvedSource;
+    QString resolvedWallpaper;
+    if (!DynamicColorSource::resolve(QString(), QColor(QStringLiteral("#ff0000")), QColor(), QString(),
+                                     &resolvedSeed, &resolvedSource, &resolvedWallpaper, &sourceError)
+        || resolvedSource != QStringLiteral("manual")
+        || resolvedSeed != QColor(QStringLiteral("#6750a4"))
+        || !DynamicColorSource::resolve(QStringLiteral("wallpaper"), QColor(), QColor(), QString(),
+                                        &resolvedSeed, &resolvedSource, &resolvedWallpaper, &sourceError)
+        || resolvedSource != QStringLiteral("wallpaper")
+        || resolvedSeed != QColor(QStringLiteral("#4285f4"))
+        || resolvedWallpaper != wallpaperPath) {
+        QTextStream(stderr) << "Dynamic color source did not resolve a stable seed: " << sourceError << Qt::endl;
+        return 1;
     }
     const QColor seed = QColor::fromRgb(0x67, 0x50, 0xa4);
     const auto light = DynamicColors::schemeFor(seed, false);
@@ -183,7 +235,7 @@ int main(int argc, char *argv[])
                                     .readEntry(QStringLiteral("BackgroundAlternate"), QString());
     changed = false;
     if (!DynamicColors::applyScheme(path, QStringLiteral("MeoDynamicLight"), secondSeed,
-                                    false, &changed, &error)
+                                    false, &changed, &error, QStringLiteral("wallpaper"))
         || !changed) {
         return 1;
     }
@@ -191,6 +243,11 @@ int main(int argc, char *argv[])
     if (KConfigGroup(&globals, QStringLiteral("Colors:Window"))
             .readEntry(QStringLiteral("BackgroundAlternate"), QString()) == firstWindow) {
         QTextStream(stderr) << "A second wallpaper seed did not update concrete KDE colors." << Qt::endl;
+        return 1;
+    }
+    if (KConfigGroup(&globals, QStringLiteral("General"))
+            .readEntry(QStringLiteral("MeoDynamicColorSource"), QString()) != QStringLiteral("wallpaper")) {
+        QTextStream(stderr) << "Applied scheme did not retain dynamic source metadata." << Qt::endl;
         return 1;
     }
     QTextStream(stdout) << "MEO_DYNAMIC_COLORS_SMOKE primary="

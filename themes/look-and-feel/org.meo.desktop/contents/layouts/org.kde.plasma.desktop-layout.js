@@ -39,6 +39,8 @@ quickSettings.writeConfig("batteryDisplay", 2)
 quickSettings.writeConfig("showDate", true)
 quickSettings.writeConfig("showNotifications", true)
 quickSettings.writeConfig("use24HourClock", true)
+quickSettings.writeConfig("quickTileVisibility", "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot")
+quickSettings.writeConfig("quickTileDensity", "comfortable")
 quickSettings.reloadConfig()
 var timeCenter = topPanel.addWidget("org.meo.timecenter")
 timeCenter.currentConfigGroup = ["Appearance"]

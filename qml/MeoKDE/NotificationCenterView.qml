@@ -169,11 +169,33 @@ Item {
             ListView {
                 id: notificationList
                 anchors.fill: parent
-                visible: count > 0
+                visible: opacity > 0
+                enabled: count > 0
+                opacity: count > 0 ? 1 : 0
                 clip: true
                 spacing: MeoTheme.space8
                 boundsBehavior: Flickable.StopAtBounds
+                reuseItems: true
+                cacheBuffer: Math.max(height, 320 * MeoTheme.globalScale)
                 model: root.notifications
+                Behavior on opacity {
+                    NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                }
+                add: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "scale"; from: 0.985; to: 1; duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                    }
+                }
+                remove: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; to: 0; duration: MeoMotion.stateChange; easing.type: Easing.InCubic }
+                        NumberAnimation { property: "scale"; to: 0.985; duration: MeoMotion.stateChange; easing.type: Easing.InCubic }
+                    }
+                }
+                displaced: Transition {
+                    NumberAnimation { properties: "x,y"; duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                }
 
                 delegate: MeoMotionSurface {
                     id: notificationCard
@@ -211,6 +233,11 @@ Item {
                     readonly property var effectiveTime: updated || created
                     property bool replyExpanded: false
 
+                    ListView.onReused: {
+                        replyExpanded = false
+                        replyField.clear()
+                    }
+
                     function submitReply() {
                         if (!root.notifications || !root.notifications.reply || replyField.text.trim() === "")
                             return
@@ -225,6 +252,9 @@ Item {
                     color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
                     radius: MeoTheme.shapeLarge
                     elevation: 0
+                    Behavior on implicitHeight {
+                        NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                    }
                     activeFocusOnTab: hasDefaultAction
                     Accessible.role: Accessible.ListItem
                     Accessible.name: summary !== "" ? summary : applicationName
@@ -443,7 +473,9 @@ Item {
 
             PopupEmptyState {
                 anchors.fill: parent
-                visible: notificationList.count === 0
+                visible: opacity > 0
+                enabled: notificationList.count === 0
+                opacity: notificationList.count === 0 ? 1 : 0
                 iconName: NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications_none"
                 title: NotificationManager.Server.inhibited ? qsTr("Do Not Disturb is on") : qsTr("You’re all caught up")
                 description: NotificationManager.Server.inhibited
@@ -451,6 +483,9 @@ Item {
                              : qsTr("New notifications and background jobs will appear here.")
                 actionText: root.showSettingsAction ? qsTr("Notification settings") : ""
                 onActionRequested: root.settingsRequested()
+                Behavior on opacity {
+                    NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                }
             }
         }
     }

@@ -426,7 +426,8 @@ bool DynamicColors::writeScheme(const QString &path, const QString &name,
 
 bool DynamicColors::applyScheme(const QString &path, const QString &name,
                                 const QColor &accent, bool notifySession,
-                                bool *changed, QString *error)
+                                bool *changed, QString *error,
+                                const QString &sourceId)
 {
     if (changed) {
         *changed = false;
@@ -537,6 +538,12 @@ bool DynamicColors::applyScheme(const QString &path, const QString &name,
     dirty = writeIfChanged(general, QStringLiteral("ColorScheme"), name, writeFlags) || dirty;
     dirty = writeIfChanged(general, QStringLiteral("ColorSchemeHash"), hash, writeFlags) || dirty;
     dirty = writeIfChanged(general, QStringLiteral("AccentColor"), encodedAccent, writeFlags) || dirty;
+    if (!sourceId.isEmpty()) {
+        dirty = writeIfChanged(general, QStringLiteral("MeoDynamicColorSource"), sourceId, writeFlags)
+            || dirty;
+        dirty = writeIfChanged(general, QStringLiteral("MeoDynamicColorSeed"), encodedAccent, writeFlags)
+            || dirty;
+    }
 
     if (!dirty) {
         return true;

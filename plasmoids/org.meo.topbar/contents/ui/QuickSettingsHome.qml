@@ -13,13 +13,16 @@ QQC2.ScrollView {
     signal audioDetailsRequested()
     signal powerDetailsRequested()
     signal powerRequested()
-    signal tileLayoutChanged(string order, string sizes)
+    signal tileLayoutChanged(string order, string sizes, string visibility, string density)
 
     property string tileOrder: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
     property string tileSizes: "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
+    property string tileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
+    property string tileDensity: "comfortable"
     property bool editMode: false
     property bool displayExpanded: false
     property bool audioExpanded: false
+    property bool tileModelReady: false
 
     implicitWidth: ShellMetrics.quickSettingsWidth
     implicitHeight: ShellMetrics.quickSettingsHeight
@@ -29,19 +32,41 @@ QQC2.ScrollView {
     QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AsNeeded
 
     readonly property var validTileIds: ["wifi", "bluetooth", "focus", "nightLight", "keepAwake", "powerMode", "microphone", "audioDevices", "display", "screenshot"]
+    readonly property string defaultTileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
+    readonly property real tileDensityScale: tileDensity === "compact" ? 0.86
+                                                   : (tileDensity === "spacious" ? 1.14 : 1.0)
+
+    function visibleTileIds() {
+        const result = []
+        const seen = {}
+        for (const id of tileVisibility.split(",")) {
+            if (validTileIds.indexOf(id) >= 0 && !seen[id]) {
+                result.push(id)
+                seen[id] = true
+            }
+        }
+        return result.length > 0 ? result : validTileIds
+    }
+
+    function normalizedTileDensity() {
+        return tileDensity === "compact" || tileDensity === "spacious" ? tileDensity : "comfortable"
+    }
 
     function rebuildTiles() {
         tileModel.clear()
         const requested = tileOrder.split(",")
         const sizes = {}
+        const visible = {}
         for (const entry of tileSizes.split(",")) {
             const fields = entry.split(":")
             if (fields.length === 2)
                 sizes[fields[0]] = Number(fields[1]) === 2 ? 2 : 1
         }
+        for (const id of visibleTileIds())
+            visible[id] = true
         const added = {}
         for (const id of requested.concat(validTileIds)) {
-            if (validTileIds.indexOf(id) < 0 || added[id])
+            if (validTileIds.indexOf(id) < 0 || added[id] || !visible[id])
                 continue
             tileModel.append({ "tileId": id, "tileSpan": sizes[id] || 2 })
             added[id] = true
@@ -51,12 +76,44 @@ QQC2.ScrollView {
     function saveTiles() {
         const order = []
         const sizes = []
+        const visibility = []
+        const seen = {}
+        const configuredSizes = {}
+        for (const entry of tileSizes.split(",")) {
+            const fields = entry.split(":")
+            if (fields.length === 2)
+                configuredSizes[fields[0]] = Number(fields[1]) === 1 ? 1 : 2
+        }
         for (let index = 0; index < tileModel.count; ++index) {
             const tile = tileModel.get(index)
             order.push(tile.tileId)
             sizes.push(tile.tileId + ":" + tile.tileSpan)
+            visibility.push(tile.tileId)
+            configuredSizes[tile.tileId] = tile.tileSpan
+            seen[tile.tileId] = true
         }
-        tileLayoutChanged(order.join(","), sizes.join(","))
+        for (const id of tileOrder.split(",").concat(validTileIds)) {
+            if (validTileIds.indexOf(id) < 0 || seen[id])
+                continue
+            order.push(id)
+            sizes.push(id + ":" + (configuredSizes[id] || 2))
+            seen[id] = true
+        }
+        tileLayoutChanged(order.join(","), sizes.join(","), visibility.join(","), normalizedTileDensity())
+    }
+
+    function scheduleSaveTiles() {
+        saveTilesTimer.restart()
+    }
+
+    function prepareToClose() {
+        editMode = false
+        displayExpanded = false
+        audioExpanded = false
+        if (saveTilesTimer.running) {
+            saveTilesTimer.stop()
+            saveTiles()
+        }
     }
 
     function bluetoothSubtitle() {
@@ -151,9 +208,22 @@ QQC2.ScrollView {
         else if (id === "audioDevices") root.audioDetailsRequested()
     }
 
-    Component.onCompleted: rebuildTiles()
+    onTileOrderChanged: if (tileModelReady) rebuildTiles()
+    onTileSizesChanged: if (tileModelReady) rebuildTiles()
+    onTileVisibilityChanged: if (tileModelReady) rebuildTiles()
+
+    Component.onCompleted: {
+        tileModelReady = true
+        rebuildTiles()
+    }
 
     ListModel { id: tileModel }
+
+    Timer {
+        id: saveTilesTimer
+        interval: 180
+        onTriggered: root.saveTiles()
+    }
 
     ColumnLayout {
         id: contentColumn
@@ -234,12 +304,22 @@ QQC2.ScrollView {
         }
 
         MeoMotionSurface {
+            readonly property bool shown: root.audioExpanded && SystemState.audioAvailable
             Layout.fillWidth: true
-            visible: root.audioExpanded && SystemState.audioAvailable
-            implicitHeight: audioAdvanced.implicitHeight + 2 * MeoTheme.space12
+            visible: implicitHeight > 0 || opacity > 0
+            enabled: shown
+            clip: true
+            opacity: shown ? 1 : 0
+            implicitHeight: shown ? audioAdvanced.implicitHeight + 2 * MeoTheme.space12 : 0
             radius: MeoTheme.shapeLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
+            Behavior on opacity {
+                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+            }
+            Behavior on implicitHeight {
+                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+            }
             ColumnLayout {
                 id: audioAdvanced
                 anchors.fill: parent
@@ -292,7 +372,8 @@ QQC2.ScrollView {
                     required property int tileSpan
                     Layout.columnSpan: tileSpan
                     Layout.fillWidth: true
-                    Layout.preferredHeight: (tileSpan === 2 ? 72 : 96) * MeoTheme.globalScale
+                    implicitHeight: (tileSpan === 2 ? 72 : 96) * root.tileDensityScale * MeoTheme.globalScale
+                    Layout.preferredHeight: implicitHeight
 
                     DropArea {
                         anchors.fill: parent
@@ -301,7 +382,7 @@ QQC2.ScrollView {
                             const from = drag.source ? drag.source.modelIndex : -1
                             if (from >= 0 && from !== tileSlot.index) {
                                 tileModel.move(from, tileSlot.index, 1)
-                                root.saveTiles()
+                                root.scheduleSaveTiles()
                             }
                         }
                     }
@@ -321,20 +402,39 @@ QQC2.ScrollView {
                         onDetailsRequested: root.requestDetails(tileSlot.tileId)
                         onResizeRequested: {
                             tileModel.setProperty(tileSlot.index, "tileSpan", tileSlot.tileSpan === 2 ? 1 : 2)
-                            root.saveTiles()
+                            root.scheduleSaveTiles()
                         }
+                    }
+
+                    Behavior on x {
+                        NumberAnimation { duration: root.editMode ? MeoMotion.stateChange : 0; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on y {
+                        NumberAnimation { duration: root.editMode ? MeoMotion.stateChange : 0; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on implicitHeight {
+                        NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
                     }
                 }
             }
         }
 
         MeoMotionSurface {
-            visible: Media.available
+            visible: implicitHeight > 0 || opacity > 0
+            enabled: Media.available
             Layout.fillWidth: true
-            implicitHeight: 72 * MeoTheme.globalScale
+            clip: true
+            opacity: Media.available ? 1 : 0
+            implicitHeight: Media.available ? 72 * MeoTheme.globalScale : 0
             radius: MeoTheme.shapeLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
+            Behavior on opacity {
+                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+            }
+            Behavior on implicitHeight {
+                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+            }
 
             RowLayout {
                 anchors.fill: parent
@@ -407,11 +507,20 @@ QQC2.ScrollView {
                 onClicked: {
                     root.tileOrder = "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
                     root.tileSizes = "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
-                    root.rebuildTiles(); root.saveTiles()
+                    root.tileVisibility = root.defaultTileVisibility
+                    root.tileDensity = "comfortable"
+                    root.rebuildTiles(); root.scheduleSaveTiles()
                 }
             }
             MeoIconButton { type: "standard"; size: "m"; icon.name: "lock"; Accessible.name: qsTr("Lock screen"); onClicked: Platform.lockScreen() }
-            MeoIconButton { type: "standard"; size: "m"; icon.name: "settings"; Accessible.name: qsTr("System Settings"); onClicked: Qt.openUrlExternally("systemsettings:") }
+            MeoIconButton {
+                type: "standard"; size: "m"; icon.name: "settings"
+                Accessible.name: qsTr("Meo Settings")
+                onClicked: {
+                    if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+                        Qt.openUrlExternally("systemsettings:")
+                }
+            }
             MeoIconButton { type: "standard"; size: "m"; icon.name: "power_settings_new"; Accessible.name: qsTr("Power"); onClicked: root.powerRequested() }
             MeoIconButton {
                 type: root.editMode ? "filled" : "standard"; size: "m"; icon.name: root.editMode ? "check" : "edit"

@@ -56,11 +56,15 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('MeoMonthCalendar', status_center)
         self.assertIn('NotificationCenterView', status_center)
+        self.assertIn('applications:org.meo.settings.desktop', status_center)
         self.assertIn('ListView', notification_center)
         self.assertIn('MeoTheme.surfaceContainerHigh', notification_center)
         self.assertIn('org.kde.notificationmanager', time_main)
         self.assertIn('org.kde.plasma.clock', time_main)
         self.assertIn('NotificationManager.Notifications', time_main)
+        self.assertIn('id: notificationModel', time_main)
+        self.assertIn('notifications: notificationModel', time_main)
+        self.assertNotIn('notifications: root.notifications', time_main)
         self.assertIn('QuickSettingsCenter', quick_main)
         self.assertNotIn('TimeNotificationButton', quick_main)
         self.assertIn('SystemState.', quick_settings)
@@ -76,6 +80,17 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('resumeJob', notification_center)
         self.assertIn('killJob', notification_center)
         self.assertIn('MeoProgressBar', notification_center)
+        self.assertIn('add: Transition', notification_center)
+        self.assertIn('remove: Transition', notification_center)
+        self.assertIn('displaced: Transition', notification_center)
+        self.assertIn('ListView.onReused', notification_center)
+        self.assertIn('Behavior on implicitHeight', notification_center)
+        self.assertIn('pushExit: Transition', quick_center)
+        self.assertIn('popEnter: Transition', quick_center)
+        self.assertIn('prepareToClose()', quick_center)
+        self.assertIn('fullRepresentationItem.prepareToClose()', quick_main)
+        self.assertIn('scheduleSaveTiles()', quick_settings)
+        self.assertIn('interval: 180', quick_settings)
         self.assertIn('relativeTime', notification_center)
         self.assertIn('use24HourClock', status_center)
         self.assertIn('onBluetoothDetailsRequested: stack.push(bluetoothPageComponent)', quick_center)
@@ -105,9 +120,30 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('SystemState.audioDevice', home)
         self.assertIn("quickTileOrder", config)
         self.assertIn("quickTileSizes", config)
+        self.assertIn("quickTileVisibility", config)
+        self.assertIn("quickTileDensity", config)
         self.assertIn("tileLayoutChanged", center)
         self.assertIn("Plasmoid.configuration.quickTileOrder", main)
+        self.assertIn("Plasmoid.configuration.quickTileVisibility", main)
+        self.assertIn("Plasmoid.configuration.quickTileDensity", main)
+        self.assertIn('applications:org.meo.settings.desktop', home)
+        self.assertIn('Qt.openUrlExternally("systemsettings:")', home)
         self.assertIn("root.availableWidth < 320 * MeoTheme.globalScale ? 2 : 4", home)
+
+    def test_control_center_settings_contract_keeps_the_meo_applet_authoritative(self):
+        schema = (TOPBAR.parent / "config/main.xml").read_text(encoding="utf-8")
+        home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
+        layout = LAYOUT.read_text(encoding="utf-8")
+        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
+
+        self.assertIn('name="quickTileVisibility"', schema)
+        self.assertIn('name="quickTileDensity"', schema)
+        self.assertIn('quickSettings.writeConfig("quickTileVisibility"', layout)
+        self.assertIn('quickSettings.writeConfig("quickTileDensity", "comfortable")', layout)
+        self.assertIn("function visibleTileIds()", home)
+        self.assertIn("tileDensityScale", home)
+        self.assertIn("quickTileVisibility", documentation)
+        self.assertIn("org.meo.settings.desktop", documentation)
 
     def test_status_and_quick_settings_have_compact_width_contracts(self):
         status = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
@@ -126,6 +162,51 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('qsTr("Mute output")', home)
         self.assertIn('accessibleName: qsTr("Microphone volume")', home)
         self.assertIn('qsTr("Mute microphone")', home)
+
+    def test_bluetooth_quick_settings_uses_meo_for_full_pairing_before_kde_fallback(self):
+        bluetooth_page = (TOPBAR / "BluetoothPage.qml").read_text(encoding="utf-8")
+        legacy_center = (TOPBAR / "ControlCenter.qml").read_text(encoding="utf-8")
+        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
+
+        # Keep immediate controls attached to the live state hub, but never
+        # let an unpaired-device tap silently start a pairing conversation in
+        # the compact popup.
+        self.assertIn('SystemState.bluetoothEnabled = checked', bluetooth_page)
+        self.assertIn('SystemState.startBluetoothDiscovery()', bluetooth_page)
+        self.assertIn('SystemState.stopBluetoothDiscovery()', bluetooth_page)
+        self.assertIn('SystemState.toggleBluetoothDevice(modelData.address)', bluetooth_page)
+        self.assertIn('SystemState.forgetBluetoothDevice(modelData.address)', bluetooth_page)
+        self.assertIn('if (!modelData.paired)', bluetooth_page)
+        self.assertIn('root.openMeoBluetoothSettings()', bluetooth_page)
+
+        # The dedicated deep-link launcher is first choice. The generic Meo
+        # launcher remains a package-compatibility fallback, with the KDE KCM
+        # reachable only when neither Meo launcher exists.
+        dedicated_launcher = 'applications:org.meo.settings.bluetooth.desktop'
+        generic_launcher = 'applications:org.meo.settings.desktop'
+        kde_fallback = 'systemsettings:kcm_bluetooth'
+        self.assertIn(dedicated_launcher, bluetooth_page)
+        self.assertIn(generic_launcher, bluetooth_page)
+        self.assertIn(kde_fallback, bluetooth_page)
+        self.assertLess(bluetooth_page.index(dedicated_launcher), bluetooth_page.index(generic_launcher))
+        self.assertLess(bluetooth_page.index(generic_launcher), bluetooth_page.index(kde_fallback))
+        self.assertIn('onBluetoothDetailsRequested: root.openMeoBluetoothSettings()', legacy_center)
+        self.assertIn('org.meo.settings.bluetooth.desktop', documentation)
+        self.assertIn('KDE System Settings is a recovery path', documentation)
+
+    def test_system_state_bluetooth_fast_path_never_pairs_or_auto_trusts(self):
+        source = (REPO_ROOT / "native/system/systemstatehub.cpp").read_text(encoding="utf-8")
+        start = source.index("void SystemStateHub::toggleBluetoothDevice")
+        end = source.index("void SystemStateHub::forgetBluetoothDevice", start)
+        toggle = source[start:end]
+
+        # A menu toggle may connect and disconnect an existing pairing, but
+        # cannot turn a stale QML call into a security-sensitive pairing or
+        # persistent trust change.  Pairing belongs to Meo Settings' agent.
+        self.assertIn('Pair new devices in Meo Settings.', toggle)
+        self.assertNotIn('device->pair()', toggle)
+        self.assertNotIn('setTrusted(true)', toggle)
+        self.assertIn('bluezInit->start()', source)
 
     def test_meoui_update_is_explicit_opt_in(self):
         source = INSTALLER.read_text(encoding="utf-8")

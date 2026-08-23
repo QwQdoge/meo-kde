@@ -15,6 +15,11 @@ QtObject {
     property font systemFont: Kirigami.Theme.defaultFont
     property int platformShortDuration: Kirigami.Units.shortDuration
     readonly property bool darkMode: luminance(backgroundColor) < 0.48
+    // Exposed for applications that need to prove the shared color table was
+    // installed before presenting their first system-facing screen.
+    readonly property bool ready: MeoTheme.colorSchemeMode === "dynamic"
+                                  && MeoTheme.dynamicColorsAvailable
+                                  && MeoTheme.hasCompleteColorScheme(MeoTheme.dynamicColorScheme)
     readonly property real systemFontPixels: systemFont.pixelSize > 0
                                               ? systemFont.pixelSize
                                               : Math.max(1, systemFont.pointSize * 96 / 72)
@@ -43,8 +48,8 @@ QtObject {
         MeoTheme.motionScale = MeoTheme.reduceMotion
                 ? 0 : Math.max(0.25, Math.min(4, platformShortDuration / 100))
         const generated = scheme()
-        if (generated && generated.primary && generated.onSurface)
-            MeoTheme.applyDynamicColorScheme(generated)
+        if (generated)
+            MeoTheme.applyDynamicColorScheme(generated, MaterialColors.sourceId())
         else
             MeoTheme.clearDynamicColorScheme()
     }

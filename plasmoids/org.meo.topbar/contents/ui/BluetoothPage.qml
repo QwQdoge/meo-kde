@@ -10,6 +10,19 @@ Item {
     implicitWidth: ShellMetrics.quickSettingsWidth
     implicitHeight: ShellMetrics.quickSettingsHeight
 
+    // The compact surface is deliberately limited to already-authorized
+    // operations.  A pairing request can involve a PIN, passkey, numeric
+    // comparison, or an authorization prompt, so it belongs to the primary
+    // Meo Settings Bluetooth flow rather than being implicitly started by a
+    // Quick Settings tile tap.
+    function openMeoBluetoothSettings() {
+        if (Qt.openUrlExternally("applications:org.meo.settings.bluetooth.desktop"))
+            return
+        if (Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+            return
+        Qt.openUrlExternally("systemsettings:kcm_bluetooth")
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: ShellMetrics.popupItemSpacing
@@ -40,6 +53,13 @@ Item {
                             if (SystemState.bluetoothDiscovering) SystemState.stopBluetoothDiscovery()
                             else SystemState.startBluetoothDiscovery()
                         }
+                    }
+                    MeoIconButton {
+                        type: "standard"
+                        size: "m"
+                        icon.name: "settings"
+                        Accessible.name: qsTr("Open Bluetooth in Meo Settings")
+                        onClicked: root.openMeoBluetoothSettings()
                     }
                 }
             }
@@ -87,7 +107,8 @@ Item {
                     supportingText: modelData.connected
                                     ? (modelData.batteryAvailable
                                        ? qsTr("Connected · %1%").arg(modelData.batteryPercent) : qsTr("Connected"))
-                                    : (modelData.paired ? qsTr("Paired") : qsTr("Available"))
+                                    : (modelData.paired ? qsTr("Paired")
+                                                        : qsTr("Available · Set up in Meo Settings"))
                     leadingIcon: modelData.icon
                     selected: modelData.connected
                     interactive: !SystemState.bluetoothBusy
@@ -105,7 +126,13 @@ Item {
                             }
                         }
                     }
-                    onClicked: SystemState.toggleBluetoothDevice(modelData.address)
+                    onClicked: {
+                        if (!modelData.paired) {
+                            root.openMeoBluetoothSettings()
+                            return
+                        }
+                        SystemState.toggleBluetoothDevice(modelData.address)
+                    }
                 }
             }
 
@@ -120,12 +147,12 @@ Item {
                              : (!SystemState.bluetoothEnabled
                                 ? qsTr("Turn on Bluetooth to connect accessories.")
                                 : qsTr("Put the device in pairing mode, then search again."))
-                actionText: !SystemState.bluetoothAvailable ? qsTr("Bluetooth Settings")
+                actionText: !SystemState.bluetoothAvailable ? qsTr("Open Bluetooth in Meo Settings")
                             : (!SystemState.bluetoothEnabled ? qsTr("Turn on Bluetooth")
                                                             : (SystemState.bluetoothDiscovering ? "" : qsTr("Find devices")))
                 onActionRequested: {
                     if (!SystemState.bluetoothAvailable)
-                        Qt.openUrlExternally("systemsettings:kcm_bluetooth")
+                        root.openMeoBluetoothSettings()
                     else if (!SystemState.bluetoothEnabled)
                         SystemState.bluetoothEnabled = true
                     else

@@ -1,5 +1,5 @@
 [Unit]
-Description=Generate Meo KDE Material 3 colors from the active KDE accent
+Description=Generate Meo KDE Material 3 colors from the selected color source
 After=graphical-session.target
 PartOf=graphical-session.target
 

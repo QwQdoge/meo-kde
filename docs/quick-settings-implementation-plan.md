@@ -57,7 +57,13 @@ light, power profiles, keep-awake, screen locking, MPRIS playback and KDE
 session power actions, microphone controls, audio output/input selection and
 Plasma NotificationManager Do Not Disturb. The native surfaces explicitly do
 not claim support for EAP, WEP, certificate workflows, a custom BlueZ pairing
-agent, hotspot, VPN profile editing or WWAN. Those remain in upstream
+agent, hotspot, VPN profile editing or WWAN. The compact Bluetooth popup does
+not start a pairing request for an unpaired device: it opens the dedicated
+Meo Settings Bluetooth launcher first, then the normal Meo Settings launcher,
+and uses the KDE Bluetooth KCM only if neither Meo launcher is available.
+This keeps authentication prompts in the full settings flow instead of
+silently assigning them to the top-bar process. EAP, WEP, certificate
+workflows, hotspot, VPN profile editing and WWAN remain in upstream
 Plasma/System Settings until a stable public interface is available.
 
 The native Plasma System Tray remains present. The explicit panel-profile

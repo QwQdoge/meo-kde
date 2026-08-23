@@ -65,7 +65,10 @@ QQC2.Popup {
                 notifications: notificationModel
                 currentDateTime: clock.dateTime
                 showTitle: false
-                onSettingsRequested: Qt.openUrlExternally("systemsettings:kcm_notifications")
+                onSettingsRequested: {
+                    if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+                        Qt.openUrlExternally("systemsettings:kcm_notifications")
+                }
             }
         }
     }

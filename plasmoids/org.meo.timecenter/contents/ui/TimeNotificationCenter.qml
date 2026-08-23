@@ -77,7 +77,10 @@ Item {
                     Layout.fillHeight: true
                     notifications: root.notifications
                     currentDateTime: root.currentDateTime
-                    onSettingsRequested: Qt.openUrlExternally("systemsettings:kcm_notifications")
+                    onSettingsRequested: {
+                        if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
+                            Qt.openUrlExternally("systemsettings:kcm_notifications")
+                    }
                 }
             }
         }
