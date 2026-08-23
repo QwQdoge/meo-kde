@@ -1,5 +1,0 @@
-module MeoKDE
-singleton MeoShellTheme 1.0 MeoShellTheme.qml
-singleton ShellMetrics 1.0 ShellMetrics.qml
-singleton MeoMotion 1.0 MeoMotion.qml
-FrostedSurface 1.0 FrostedSurface.qml

@@ -1,8 +1,0 @@
-[Theme]
-name=MeoLight
-
-[General]
-AccentColorFromWallpaper=true
-
-[Wallpapers]
-usersWallpapers=/usr/share/wallpapers/MeoArch/installer_background.png
