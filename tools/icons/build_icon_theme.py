@@ -168,6 +168,17 @@ def build_variant(mapping: dict, theme: Path, config: dict[str, object]) -> dict
         destination.symlink_to(target_path.name)
         written[alias] = destination
         aliases += 1
+    # Git does not retain empty directories. Keep every directory declared by
+    # index.theme materialized in fresh source archives, but never install a
+    # placeholder where generated SVG content exists.
+    for relative in (*[Path("scalable") / group for group in THEME_DIRS],
+                     *[Path("symbolic") / group for group in SYMBOLIC_DIRS]):
+        directory = theme / relative
+        placeholder = directory / ".gitkeep"
+        if any(path.name != ".gitkeep" for path in directory.iterdir()):
+            placeholder.unlink(missing_ok=True)
+        else:
+            placeholder.write_text("Keeps the declared icon-theme directory in source archives.\n", encoding="utf-8")
     licenses = theme / "LICENSES"
     licenses.mkdir(parents=True, exist_ok=True)
     license_source = ROOT / "assets/licenses/Material-Symbols-Apache-2.0.txt"
