@@ -13,6 +13,7 @@ QQC2.ScrollView {
     signal audioDetailsRequested()
     signal powerDetailsRequested()
     signal powerRequested()
+    signal editRequested()
     signal tileLayoutChanged(string order, string sizes, string visibility, string density)
 
     property string tileOrder: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
@@ -45,7 +46,9 @@ QQC2.ScrollView {
                 seen[id] = true
             }
         }
-        return result.length > 0 ? result : validTileIds
+        // An empty persisted visibility list is intentional and must remain
+        // empty until the user adds tiles again in the editor.
+        return result
     }
 
     function normalizedTileDensity() {
@@ -523,9 +526,9 @@ QQC2.ScrollView {
             }
             MeoIconButton { type: "standard"; size: "m"; icon.name: "power_settings_new"; Accessible.name: qsTr("Power"); onClicked: root.powerRequested() }
             MeoIconButton {
-                type: root.editMode ? "filled" : "standard"; size: "m"; icon.name: root.editMode ? "check" : "edit"
-                Accessible.name: root.editMode ? qsTr("Finish editing") : qsTr("Edit quick settings")
-                onClicked: root.editMode = !root.editMode
+                type: "standard"; size: "m"; icon.name: "edit"
+                Accessible.name: qsTr("Edit quick settings")
+                onClicked: root.editRequested()
             }
         }
     }

@@ -841,15 +841,15 @@ void SystemStateHub::refreshBluetoothConnections()
     for (const auto &adapter : m_bluetoothManager.adapters()) {
         if (adapter) {
             connect(adapter.data(), &BluezQt::Adapter::poweredChanged, this,
-                    [this](bool) { refreshBluetoothState(); }, Qt::UniqueConnection);
+                    &SystemStateHub::refreshBluetoothState, Qt::UniqueConnection);
             connect(adapter.data(), &BluezQt::Adapter::discoveringChanged, this,
-                    [this](bool) { refreshBluetoothState(); }, Qt::UniqueConnection);
+                    &SystemStateHub::refreshBluetoothState, Qt::UniqueConnection);
             connect(adapter.data(), &BluezQt::Adapter::deviceAdded, this,
-                    [this](const BluezQt::DevicePtr &) { refreshBluetoothState(); }, Qt::UniqueConnection);
+                    &SystemStateHub::refreshBluetoothState, Qt::UniqueConnection);
             connect(adapter.data(), &BluezQt::Adapter::deviceChanged, this,
-                    [this](const BluezQt::DevicePtr &) { refreshBluetoothState(); }, Qt::UniqueConnection);
+                    &SystemStateHub::refreshBluetoothState, Qt::UniqueConnection);
             connect(adapter.data(), &BluezQt::Adapter::deviceRemoved, this,
-                    [this](const BluezQt::DevicePtr &) { refreshBluetoothState(); }, Qt::UniqueConnection);
+                    &SystemStateHub::refreshBluetoothState, Qt::UniqueConnection);
         }
     }
 }

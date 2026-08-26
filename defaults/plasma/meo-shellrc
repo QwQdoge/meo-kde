@@ -13,9 +13,10 @@ ShowGlobalMenu=true
 # The application icons beside the controls belong to KDE's native System
 # Tray/StatusNotifier area. Do not add a second task manager to the top panel.
 ShowTopAppTasks=false
-TopPanelHeight=40
-# Native Plasma Icons-Only Task Manager in a compact floating Dock.
-DockHeight=56
+TopPanelHeight=32
+# Native Plasma Icons-Only Task Manager in a Material You floating Dock.
+# 64 dp leaves an intentional 8 dp breathing margin around 48 dp task cells.
+DockHeight=64
 
 [StatusBar]
 TextScalePercent=100

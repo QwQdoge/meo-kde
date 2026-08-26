@@ -45,8 +45,8 @@ panel_mode="$(read_value Panels Mode dual)"
 show_system_tray="$(read_value Panels ShowSystemTray true)"
 show_global_menu="$(read_value Panels ShowGlobalMenu true)"
 show_top_app_tasks="$(read_value Panels ShowTopAppTasks false)"
-top_panel_height="$(read_value Panels TopPanelHeight 40)"
-dock_height="$(read_value Panels DockHeight 56)"
+top_panel_height="$(read_value Panels TopPanelHeight 32)"
+dock_height="$(read_value Panels DockHeight 64)"
 text_scale_percent="$(read_value StatusBar TextScalePercent 100)"
 show_network="$(read_value StatusBar ShowNetwork true)"
 show_bluetooth="$(read_value StatusBar ShowBluetooth true)"
@@ -213,6 +213,12 @@ if (!top) {
     top.location = "top";
 }
 top.height = ${top_panel_height};
+if (top.height !== ${top_panel_height}) {
+    throw new Error(
+        "Meo top panel " + top.id + " height was clamped to " + top.height
+        + "; requested ${top_panel_height}. Install a panel background with a compatible minimum drawing height first."
+    );
+}
 top.hiding = "none";
 top.floating = false;
 markManaged(top, "top");

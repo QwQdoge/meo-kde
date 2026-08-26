@@ -15,6 +15,8 @@ Item {
     signal tileLayoutChanged(string order, string sizes, string visibility, string density)
 
     function prepareToClose() {
+        if (stack.currentItem && stack.currentItem.prepareToClose)
+            stack.currentItem.prepareToClose()
         if (stack.depth > 1)
             stack.pop(null, QQC2.StackView.Immediate)
         if (stack.currentItem && stack.currentItem.prepareToClose)
@@ -49,6 +51,12 @@ Item {
                 onAudioDetailsRequested: stack.push(audioPageComponent)
                 onPowerDetailsRequested: stack.push(powerPageComponent)
                 onPowerRequested: powerMenu.open()
+                onEditRequested: stack.push(editorPageComponent, {
+                                                "tileOrder": root.tileOrder,
+                                                "tileSizes": root.tileSizes,
+                                                "tileVisibility": root.tileVisibility,
+                                                "tileDensity": root.tileDensity
+                                            })
             }
             pushEnter: Transition {
                 NumberAnimation {
@@ -117,6 +125,23 @@ Item {
     Component { id: bluetoothPageComponent; BluetoothPage { onBackRequested: stack.pop() } }
     Component { id: audioPageComponent; AudioPage { onBackRequested: stack.pop() } }
     Component { id: powerPageComponent; PowerPage { onBackRequested: stack.pop() } }
+    Component {
+        id: editorPageComponent
+
+        QuickSettingsEditor {
+            onTileLayoutChanged: function(order, sizes, visibility, density) {
+                root.tileOrder = order
+                root.tileSizes = sizes
+                root.tileVisibility = visibility
+                root.tileDensity = density
+                root.tileLayoutChanged(order, sizes, visibility, density)
+            }
+            onBackRequested: {
+                prepareToClose()
+                stack.pop()
+            }
+        }
+    }
 
     Sessions.SessionManagement {
         id: sessionManagement

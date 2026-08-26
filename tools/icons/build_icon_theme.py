@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -34,13 +36,19 @@ THEMES = {
         "fallback_color": "#fcfcfc",
     },
 }
-REPORT = ROOT / "build/icon-coverage.json"
-REPORT_MD = ROOT / "build/icon-coverage.md"
-MANIFEST = ROOT / "build/icon-generation-manifest.json"
 MANIFEST_MD = ROOT / "docs/icons/GENERATED_ICON_MANIFEST.md"
 UPSTREAM = "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/{name}/materialsymbolsrounded/{name}_24px.svg"
 THEME_DIRS = ("actions", "apps", "categories", "devices", "emblems", "emotes", "mimetypes", "places", "status", "panel")
 SYMBOLIC_DIRS = ("actions", "devices", "places", "status")
+
+
+def default_output_dir() -> Path:
+    output_root = Path(os.environ.get("MEO_OUTPUT_ROOT", "/home/shekong/Projects/outputs"))
+    run_id = os.environ.get(
+        "MEO_KDE_ICON_RUN_ID",
+        datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ") + "-icon-theme",
+    )
+    return output_root / "meo-kde" / "validation" / run_id
 
 
 def load_mapping() -> dict:
@@ -229,11 +237,12 @@ def validate() -> list[str]:
     return issues
 
 
-def write_report(result: dict, issues: list[str]) -> None:
-    REPORT.parent.mkdir(parents=True, exist_ok=True)
+def write_report(result: dict, issues: list[str], report: Path, report_md: Path) -> None:
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report_md.parent.mkdir(parents=True, exist_ok=True)
     data = {**result, "validation_issues": issues}
-    REPORT.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    REPORT_MD.write_text(
+    report.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    report_md.write_text(
         "# MeoSymbols core coverage\n\n"
         f"- Native Material Symbols: {result['native']}\n"
         f"- Aliases: {result['aliases']}\n"
@@ -243,7 +252,7 @@ def write_report(result: dict, issues: list[str]) -> None:
     )
 
 
-def write_manifest(mapping: dict) -> None:
+def write_manifest(mapping: dict, manifest: Path) -> None:
     """Publish the exact generated-icon inventory for design review and packaging."""
     entries: list[dict[str, object]] = []
     for group, icons in mapping["icons"].items():
@@ -277,8 +286,8 @@ def write_manifest(mapping: dict) -> None:
         "policy": "System semantics only; third-party application brands are excluded.",
         "entries": entries,
     }
-    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
-    MANIFEST.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     lines = [
         "# MeoSymbols generated icon manifest",
         "",
@@ -307,7 +316,13 @@ def main() -> int:
     parser.add_argument("--clean", action="store_true")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--report", action="store_true")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="directory for generated validation reports; defaults to global MeoKDE outputs",
+    )
     args = parser.parse_args()
+    output_dir = args.output_dir or default_output_dir()
     mapping = load_mapping()
     if args.clean:
         for config in THEMES.values():
@@ -325,10 +340,13 @@ def main() -> int:
         return 0
     result = build(mapping)
     issues = validate()
-    write_report(result, issues)
-    write_manifest(mapping)
+    report = output_dir / "metrics" / "icon-coverage.json"
+    report_md = output_dir / "reports" / "icon-coverage.md"
+    manifest = output_dir / "metrics" / "icon-generation-manifest.json"
+    write_report(result, issues, report, report_md)
+    write_manifest(mapping, manifest)
     if args.report:
-        print(REPORT_MD.read_text(encoding="utf-8"), end="")
+        print(report_md.read_text(encoding="utf-8"), end="")
     if result["missing"] or issues:
         print("\n".join(result["missing"] + issues), file=sys.stderr)
         return 1

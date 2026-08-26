@@ -1,5 +1,6 @@
 import configparser
 import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -61,6 +62,18 @@ class MeoColorSchemeTests(unittest.TestCase):
                 self.assertIn('id="current-color-scheme"', svg, relative)
                 self.assertIn("ColorScheme-Background", svg, relative)
                 self.assertIn('fill="currentColor"', svg, relative)
+
+    def test_generated_task_frames_are_current(self):
+        subprocess.run(
+            ["python", str(ROOT / "tools/theme/build_task_frames.py"), "--check"],
+            check=True,
+        )
+
+    def test_generated_floating_dock_assets_are_current(self):
+        subprocess.run(
+            ["python", str(ROOT / "tools/theme/build_floating_dock_assets.py"), "--check"],
+            check=True,
+        )
 
 if __name__ == "__main__":
     unittest.main()

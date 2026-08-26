@@ -41,9 +41,47 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('bottomPanel.floating = true', source)
         self.assertIn('bottomPanel.hiding = "autohide"', source)
         self.assertIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertIn('bottomPanel.height = 56', source)
+        self.assertIn('bottomPanel.height = 64', source)
         self.assertNotIn('writeConfig("maxStripes"', source)
         self.assertNotIn('org.meo.shelf', source)
+
+    def test_top_panel_uses_the_compact_32px_baseline_everywhere(self):
+        layout = LAYOUT.read_text(encoding="utf-8")
+        profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
+        helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
+        metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
+        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
+
+        self.assertIn("topPanel.height = 32", layout)
+        self.assertIn("TopPanelHeight=32", profile)
+        self.assertIn("read_value Panels TopPanelHeight 32", helper)
+        self.assertIn("Meo top panel", helper)
+        self.assertIn("height was clamped", helper)
+        self.assertIn("topBarHeight: 32 * MeoTheme.globalScale", metrics)
+        self.assertIn("TopPanelHeight=32", documentation)
+        self.assertIn("false success", documentation)
+
+    def test_panel_frame_keeps_a_compact_top_and_large_bottom_dock_variant(self):
+        assets = (
+            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/panel-background.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/panel-background.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/panel-background.svg",
+        )
+        generator = (REPO_ROOT / "tools/theme/build_floating_dock_assets.py").read_text(encoding="utf-8")
+
+        self.assertIn('compact_frame = frame_paths("", 16)', generator)
+        self.assertIn('north_frame = frame_paths("north", 16)', generator)
+        self.assertIn('south_frame = frame_paths("south", 28)', generator)
+        for asset in assets:
+            source = asset.read_text(encoding="utf-8")
+            self.assertIn('id="top" d="M32 16h2v16h-2z"', source)
+            self.assertIn('id="north-top" d="M32 16h2v16h-2z"', source)
+            self.assertIn('id="south-top" d="M32 4h2v28h-2z"', source)
+            self.assertIn('id="north-bottom" d="M32 34h2v16h-2z"', source)
+            self.assertIn('id="south-bottom" d="M32 34h2v28h-2z"', source)
+            self.assertIn('id="north-hint-top-margin"', source)
+            self.assertIn('id="south-hint-top-margin"', source)
 
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
@@ -65,6 +103,8 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('id: notificationModel', time_main)
         self.assertIn('notifications: notificationModel', time_main)
         self.assertNotIn('notifications: root.notifications', time_main)
+        self.assertIn('compactRepresentation: TimeNotificationButton', time_main)
+        self.assertIn('Layout.minimumWidth: 0', time_main)
         self.assertIn('QuickSettingsCenter', quick_main)
         self.assertNotIn('TimeNotificationButton', quick_main)
         self.assertIn('SystemState.', quick_settings)
@@ -219,7 +259,7 @@ class DesktopLayoutTests(unittest.TestCase):
         smoke = (REPO_ROOT / "validation/meoui-shell-components-smoke.qml").read_text(encoding="utf-8")
 
         self.assertIn("meoui-shell-components-smoke.qml", validator)
-        self.assertIn('artifacts/validation/${validation_run_id}', validator)
+        self.assertIn('${output_root}/meo-kde/validation/${validation_run_id}', validator)
         self.assertIn("MeoStatusCenter", smoke)
 
     def test_reset_removes_every_named_runtime_installed_by_setup(self):
@@ -300,16 +340,36 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
         self.assertNotIn('oneWidget(top, "org.meo.toptasks")', source)
 
-    def test_bottom_dock_matches_meoui_shelf_metric_without_custom_task_skin(self):
+    def test_bottom_dock_keeps_native_tasks_with_md3_task_frames(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
         helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
         metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
 
-        self.assertIn("DockHeight=56", profile)
-        self.assertIn("shelfPanelHeight: 56 * MeoTheme.globalScale", metrics)
+        self.assertIn("DockHeight=64", profile)
+        self.assertIn("shelfPanelHeight: 64 * MeoTheme.globalScale", metrics)
         self.assertNotIn('writeConfig("maxStripes"', helper)
-        self.assertFalse((REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/tasks.svg").exists())
-        self.assertFalse((REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/tasks.svg").exists())
+        expected_fallbacks = {
+            "MeoLight": ("#1c1b1f", "#6750a4", "#b3261e"),
+            "MeoDark": ("#e6e0e9", "#d0bcff", "#ffb4ab"),
+        }
+        required_frames = (
+            "normal", "normal-hover", "focus", "focus-hover",
+            "minimized", "minimized-hover", "attention", "attention-hover",
+            "progress", "launcher-hover",
+        )
+        required_parts = (
+            "center", "top", "left", "right", "topleft", "topright",
+            "bottomleft", "bottomright", "bottom",
+        )
+        for mode, fallbacks in expected_fallbacks.items():
+            task_frame = (REPO_ROOT / f"themes/desktoptheme/{mode}/widgets/tasks.svg").read_text(encoding="utf-8")
+            for fallback in fallbacks:
+                self.assertIn(fallback, task_frame)
+            for frame in required_frames:
+                for part in required_parts:
+                    self.assertIn(f'id="{frame}-{part}"', task_frame)
+            self.assertIn('ColorScheme-ButtonFocus', task_frame)
+            self.assertIn('id="group-expander-bottom"', task_frame)
 
     def test_installer_preflights_rounding_without_package_manager_mutation(self):
         source = INSTALLER.read_text(encoding="utf-8")

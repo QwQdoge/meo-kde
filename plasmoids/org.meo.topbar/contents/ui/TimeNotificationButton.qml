@@ -17,7 +17,7 @@ QQC2.AbstractButton {
     signal statusCenterRequested()
 
     implicitWidth: contentItem.implicitWidth + leftPadding + rightPadding
-    implicitHeight: 32 * MeoTheme.globalScale
+    implicitHeight: ShellMetrics.compactTopControlHeight
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
     Accessible.name: qsTr("Time, calendar, and notifications")

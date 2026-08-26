@@ -24,5 +24,5 @@ MeoSymbols does not replace branded third-party application launchers. Shelf
 and launcher application identities continue to use the `.desktop` icon they
 already expose; only semantic system controls are owned by this theme.
 
-Build and runtime evidence is written to `build/` and the shared
-`outputs/evidence/meo-kde/` directory.
+Build cache is local and disposable. Runtime evidence is written to
+`/home/shekong/Projects/outputs/meo-kde/validation/<UTC-run-id>/`.

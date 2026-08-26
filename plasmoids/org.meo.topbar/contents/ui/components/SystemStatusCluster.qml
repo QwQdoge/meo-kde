@@ -20,7 +20,7 @@ QQC2.AbstractButton {
     // Keep the compact trigger visually present when idle.  A transparent
     // hit area made the cluster read like orphaned tray icons and hid its MD3
     // rounded boundary in the panel.
-    implicitHeight: 32 * MeoTheme.globalScale
+    implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
     Accessible.name: qsTr("System status")

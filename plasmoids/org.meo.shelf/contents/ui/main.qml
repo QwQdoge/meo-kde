@@ -276,5 +276,6 @@ PlasmoidItem {
     // Launcher Popup Surface
     LauncherPopup {
         id: launcherPopup
+        shellApplet: root
     }
 }

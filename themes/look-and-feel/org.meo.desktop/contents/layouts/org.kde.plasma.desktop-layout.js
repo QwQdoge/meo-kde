@@ -8,7 +8,10 @@
 // quick-settings surface.
 var topPanel = new Panel
 topPanel.location = "top"
-topPanel.height = 40
+// Keep the initial panel aligned with the compact Meo status controls. Plasma
+// adds its own framing around this value, so the former 40 px request produced
+// an unnecessarily tall top bar on a 1x output.
+topPanel.height = 32
 topPanel.floating = false
 topPanel.hiding = "none"
 topPanel.currentConfigGroup = ["MeoShell"]
@@ -56,7 +59,7 @@ timeCenter.reloadConfig()
 // an application needs the space.
 var bottomPanel = new Panel
 bottomPanel.location = "bottom"
-bottomPanel.height = 56
+bottomPanel.height = 64
 bottomPanel.floating = true
 bottomPanel.hiding = "autohide"
 bottomPanel.lengthMode = "fit"

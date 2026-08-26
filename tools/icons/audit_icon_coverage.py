@@ -2,15 +2,36 @@
 """Report semantic icon references used by Meo source and KDE settings modules."""
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 MAPPING = ROOT / "icons/mappings/icons.yaml"
-OUT = ROOT / "build/icon-usage-audit.json"
+
+
+def default_output_path() -> Path:
+    output_root = Path(os.environ.get("MEO_OUTPUT_ROOT", "/home/shekong/Projects/outputs"))
+    run_id = os.environ.get(
+        "MEO_KDE_VALIDATION_RUN_ID",
+        datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ") + "-icon-audit",
+    )
+    return output_root / "meo-kde" / "validation" / run_id / "metrics" / "icon-usage-audit.json"
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--output",
+    type=Path,
+    help="JSON output path; defaults to the canonical MeoKDE validation directory.",
+)
+arguments = parser.parse_args()
+OUT = arguments.output or default_output_path()
 
 mapping = yaml.safe_load(MAPPING.read_text(encoding="utf-8"))
 known = {name for group in mapping["icons"].values() for name in group} | set(mapping.get("aliases", {}))

@@ -320,7 +320,7 @@ if [ "${profile_version}" -lt 2 ] && [ -f "${config_root}/meo-shellrc" ]; then
       && [ "${legacy_dock_height}" = 68 ]; then
     run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key ShowSystemTray --type bool true
     run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key ShowTopAppTasks --type bool false
-    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockHeight 56
+    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockHeight 64
     run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key TopAppTaskLimit --delete ''
   fi
 fi

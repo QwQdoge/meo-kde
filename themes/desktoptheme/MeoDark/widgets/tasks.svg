@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="528" viewBox="0 0 96 528">
+  <style id="current-color-scheme" type="text/css">
+    .ColorScheme-Text { color: #e6e0e9; }
+    .ColorScheme-ButtonFocus { color: #d0bcff; }
+    .ColorScheme-NeutralText { color: #ffb4ab; }
+  </style>
+  <g class="ColorScheme-Text" fill="currentColor">
+    <rect id="normal-center" x="16" y="16" width="16" height="16" opacity="0"/>
+    <rect id="normal-top" x="16" y="0" width="16" height="16" opacity="0"/>
+    <rect id="normal-left" x="0" y="16" width="16" height="16" opacity="0"/>
+    <rect id="normal-right" x="32" y="16" width="16" height="16" opacity="0"/>
+    <path id="normal-topleft" d="M16 0A16 16 0 0 0 0 16H16Z" opacity="0"/>
+    <path id="normal-topright" d="M32 0A16 16 0 0 1 48 16H32Z" opacity="0"/>
+    <path id="normal-bottomleft" d="M0 32A16 16 0 0 0 16 48V32Z" opacity="0"/>
+    <path id="normal-bottomright" d="M32 32V48A16 16 0 0 0 48 32Z" opacity="0"/>
+    <g id="normal-bottom">
+      <rect x="16" y="32" width="16" height="16" opacity="0"/>
+      <rect x="20" y="43" width="8" height="3" rx="1.5" opacity="0.72"/>
+    </g>
+  </g>
+  <g class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect id="focus-center" x="16" y="64" width="16" height="16" opacity="0.18"/>
+    <rect id="focus-top" x="16" y="48" width="16" height="16" opacity="0.18"/>
+    <rect id="focus-left" x="0" y="64" width="16" height="16" opacity="0.18"/>
+    <rect id="focus-right" x="32" y="64" width="16" height="16" opacity="0.18"/>
+    <path id="focus-topleft" d="M16 48A16 16 0 0 0 0 64H16Z" opacity="0.18"/>
+    <path id="focus-topright" d="M32 48A16 16 0 0 1 48 64H32Z" opacity="0.18"/>
+    <path id="focus-bottomleft" d="M0 80A16 16 0 0 0 16 96V80Z" opacity="0.18"/>
+    <path id="focus-bottomright" d="M32 80V96A16 16 0 0 0 48 80Z" opacity="0.18"/>
+    <g id="focus-bottom">
+      <rect x="16" y="80" width="16" height="16" opacity="0.18"/>
+      <rect x="16" y="91" width="16" height="3" rx="1.5" opacity="0.96"/>
+    </g>
+  </g>
+  <g class="ColorScheme-Text" fill="currentColor">
+    <rect id="minimized-center" x="16" y="112" width="16" height="16" opacity="0"/>
+    <rect id="minimized-top" x="16" y="96" width="16" height="16" opacity="0"/>
+    <rect id="minimized-left" x="0" y="112" width="16" height="16" opacity="0"/>
+    <rect id="minimized-right" x="32" y="112" width="16" height="16" opacity="0"/>
+    <path id="minimized-topleft" d="M16 96A16 16 0 0 0 0 112H16Z" opacity="0"/>
+    <path id="minimized-topright" d="M32 96A16 16 0 0 1 48 112H32Z" opacity="0"/>
+    <path id="minimized-bottomleft" d="M0 128A16 16 0 0 0 16 144V128Z" opacity="0"/>
+    <path id="minimized-bottomright" d="M32 128V144A16 16 0 0 0 48 128Z" opacity="0"/>
+    <g id="minimized-bottom">
+      <rect x="16" y="128" width="16" height="16" opacity="0"/>
+      <rect x="21" y="140" width="6" height="2" rx="1" opacity="0.40"/>
+    </g>
+  </g>
+  <g class="ColorScheme-NeutralText" fill="currentColor">
+    <rect id="attention-center" x="16" y="160" width="16" height="16" opacity="0.20"/>
+    <rect id="attention-top" x="16" y="144" width="16" height="16" opacity="0.20"/>
+    <rect id="attention-left" x="0" y="160" width="16" height="16" opacity="0.20"/>
+    <rect id="attention-right" x="32" y="160" width="16" height="16" opacity="0.20"/>
+    <path id="attention-topleft" d="M16 144A16 16 0 0 0 0 160H16Z" opacity="0.20"/>
+    <path id="attention-topright" d="M32 144A16 16 0 0 1 48 160H32Z" opacity="0.20"/>
+    <path id="attention-bottomleft" d="M0 176A16 16 0 0 0 16 192V176Z" opacity="0.20"/>
+    <path id="attention-bottomright" d="M32 176V192A16 16 0 0 0 48 176Z" opacity="0.20"/>
+    <g id="attention-bottom">
+      <rect x="16" y="176" width="16" height="16" opacity="0.20"/>
+      <rect x="16" y="187" width="16" height="3" rx="1.5" opacity="0.96"/>
+    </g>
+  </g>
+  <g class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect id="progress-center" x="16" y="208" width="16" height="16" opacity="0.12"/>
+    <rect id="progress-top" x="16" y="192" width="16" height="16" opacity="0.12"/>
+    <rect id="progress-left" x="0" y="208" width="16" height="16" opacity="0.12"/>
+    <rect id="progress-right" x="32" y="208" width="16" height="16" opacity="0.12"/>
+    <path id="progress-topleft" d="M16 192A16 16 0 0 0 0 208H16Z" opacity="0.12"/>
+    <path id="progress-topright" d="M32 192A16 16 0 0 1 48 208H32Z" opacity="0.12"/>
+    <path id="progress-bottomleft" d="M0 224A16 16 0 0 0 16 240V224Z" opacity="0.12"/>
+    <path id="progress-bottomright" d="M32 224V240A16 16 0 0 0 48 224Z" opacity="0.12"/>
+    <rect id="progress-bottom" x="16" y="224" width="16" height="16" opacity="0.12"/>
+  </g>
+  <g class="ColorScheme-Text" fill="currentColor">
+    <rect id="normal-hover-center" x="16" y="256" width="16" height="16" opacity="0.10"/>
+    <rect id="normal-hover-top" x="16" y="240" width="16" height="16" opacity="0.10"/>
+    <rect id="normal-hover-left" x="0" y="256" width="16" height="16" opacity="0.10"/>
+    <rect id="normal-hover-right" x="32" y="256" width="16" height="16" opacity="0.10"/>
+    <path id="normal-hover-topleft" d="M16 240A16 16 0 0 0 0 256H16Z" opacity="0.10"/>
+    <path id="normal-hover-topright" d="M32 240A16 16 0 0 1 48 256H32Z" opacity="0.10"/>
+    <path id="normal-hover-bottomleft" d="M0 272A16 16 0 0 0 16 288V272Z" opacity="0.10"/>
+    <path id="normal-hover-bottomright" d="M32 272V288A16 16 0 0 0 48 272Z" opacity="0.10"/>
+    <g id="normal-hover-bottom">
+      <rect x="16" y="272" width="16" height="16" opacity="0.10"/>
+      <rect x="20" y="283" width="8" height="3" rx="1.5" opacity="0.82"/>
+    </g>
+  </g>
+  <g class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect id="focus-hover-center" x="16" y="304" width="16" height="16" opacity="0.24"/>
+    <rect id="focus-hover-top" x="16" y="288" width="16" height="16" opacity="0.24"/>
+    <rect id="focus-hover-left" x="0" y="304" width="16" height="16" opacity="0.24"/>
+    <rect id="focus-hover-right" x="32" y="304" width="16" height="16" opacity="0.24"/>
+    <path id="focus-hover-topleft" d="M16 288A16 16 0 0 0 0 304H16Z" opacity="0.24"/>
+    <path id="focus-hover-topright" d="M32 288A16 16 0 0 1 48 304H32Z" opacity="0.24"/>
+    <path id="focus-hover-bottomleft" d="M0 320A16 16 0 0 0 16 336V320Z" opacity="0.24"/>
+    <path id="focus-hover-bottomright" d="M32 320V336A16 16 0 0 0 48 320Z" opacity="0.24"/>
+    <g id="focus-hover-bottom">
+      <rect x="16" y="320" width="16" height="16" opacity="0.24"/>
+      <rect x="16" y="331" width="16" height="3" rx="1.5" opacity="0.96"/>
+    </g>
+  </g>
+  <g class="ColorScheme-Text" fill="currentColor">
+    <rect id="minimized-hover-center" x="16" y="352" width="16" height="16" opacity="0.10"/>
+    <rect id="minimized-hover-top" x="16" y="336" width="16" height="16" opacity="0.10"/>
+    <rect id="minimized-hover-left" x="0" y="352" width="16" height="16" opacity="0.10"/>
+    <rect id="minimized-hover-right" x="32" y="352" width="16" height="16" opacity="0.10"/>
+    <path id="minimized-hover-topleft" d="M16 336A16 16 0 0 0 0 352H16Z" opacity="0.10"/>
+    <path id="minimized-hover-topright" d="M32 336A16 16 0 0 1 48 352H32Z" opacity="0.10"/>
+    <path id="minimized-hover-bottomleft" d="M0 368A16 16 0 0 0 16 384V368Z" opacity="0.10"/>
+    <path id="minimized-hover-bottomright" d="M32 368V384A16 16 0 0 0 48 368Z" opacity="0.10"/>
+    <g id="minimized-hover-bottom">
+      <rect x="16" y="368" width="16" height="16" opacity="0.10"/>
+      <rect x="21" y="380" width="6" height="2" rx="1" opacity="0.56"/>
+    </g>
+  </g>
+  <g class="ColorScheme-NeutralText" fill="currentColor">
+    <rect id="attention-hover-center" x="16" y="400" width="16" height="16" opacity="0.26"/>
+    <rect id="attention-hover-top" x="16" y="384" width="16" height="16" opacity="0.26"/>
+    <rect id="attention-hover-left" x="0" y="400" width="16" height="16" opacity="0.26"/>
+    <rect id="attention-hover-right" x="32" y="400" width="16" height="16" opacity="0.26"/>
+    <path id="attention-hover-topleft" d="M16 384A16 16 0 0 0 0 400H16Z" opacity="0.26"/>
+    <path id="attention-hover-topright" d="M32 384A16 16 0 0 1 48 400H32Z" opacity="0.26"/>
+    <path id="attention-hover-bottomleft" d="M0 416A16 16 0 0 0 16 432V416Z" opacity="0.26"/>
+    <path id="attention-hover-bottomright" d="M32 416V432A16 16 0 0 0 48 416Z" opacity="0.26"/>
+    <g id="attention-hover-bottom">
+      <rect x="16" y="416" width="16" height="16" opacity="0.26"/>
+      <rect x="16" y="427" width="16" height="3" rx="1.5" opacity="0.96"/>
+    </g>
+  </g>
+  <g class="ColorScheme-Text" fill="currentColor">
+    <rect id="launcher-hover-center" x="16" y="448" width="16" height="16" opacity="0.10"/>
+    <rect id="launcher-hover-top" x="16" y="432" width="16" height="16" opacity="0.10"/>
+    <rect id="launcher-hover-left" x="0" y="448" width="16" height="16" opacity="0.10"/>
+    <rect id="launcher-hover-right" x="32" y="448" width="16" height="16" opacity="0.10"/>
+    <path id="launcher-hover-topleft" d="M16 432A16 16 0 0 0 0 448H16Z" opacity="0.10"/>
+    <path id="launcher-hover-topright" d="M32 432A16 16 0 0 1 48 448H32Z" opacity="0.10"/>
+    <path id="launcher-hover-bottomleft" d="M0 464A16 16 0 0 0 16 480V464Z" opacity="0.10"/>
+    <path id="launcher-hover-bottomright" d="M32 464V480A16 16 0 0 0 48 464Z" opacity="0.10"/>
+    <rect id="launcher-hover-bottom" x="16" y="464" width="16" height="16" opacity="0.10"/>
+  </g>
+  <g class="ColorScheme-Text" fill="currentColor">
+    <rect id="hover-center" x="16" y="496" width="16" height="16" opacity="0.10"/>
+    <rect id="hover-top" x="16" y="480" width="16" height="16" opacity="0.10"/>
+    <rect id="hover-left" x="0" y="496" width="16" height="16" opacity="0.10"/>
+    <rect id="hover-right" x="32" y="496" width="16" height="16" opacity="0.10"/>
+    <path id="hover-topleft" d="M16 480A16 16 0 0 0 0 496H16Z" opacity="0.10"/>
+    <path id="hover-topright" d="M32 480A16 16 0 0 1 48 496H32Z" opacity="0.10"/>
+    <path id="hover-bottomleft" d="M0 512A16 16 0 0 0 16 528V512Z" opacity="0.10"/>
+    <path id="hover-bottomright" d="M32 512V528A16 16 0 0 0 48 512Z" opacity="0.10"/>
+    <rect id="hover-bottom" x="16" y="512" width="16" height="16" opacity="0.10"/>
+  </g>
+  <g class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect id="group-expander-left" x="58" y="8" width="3" height="8" rx="1.5" opacity="0.72"/>
+    <rect id="group-expander-right" x="66" y="8" width="3" height="8" rx="1.5" opacity="0.72"/>
+    <rect id="group-expander-top" x="58" y="20" width="11" height="3" rx="1.5" opacity="0.72"/>
+    <rect id="group-expander-bottom" x="58" y="28" width="11" height="3" rx="1.5" opacity="0.72"/>
+  </g>
+  <rect id="normal-hint-top-margin" x="70" y="40" width="6" height="6" fill="#ff00ff"/>
+  <rect id="normal-hint-bottom-margin" x="78" y="40" width="6" height="6" fill="#ff00ff"/>
+  <rect id="normal-hint-left-margin" x="70" y="48" width="6" height="6" fill="#ff00ff"/>
+  <rect id="normal-hint-right-margin" x="78" y="48" width="6" height="6" fill="#ff00ff"/>
+  <rect id="hint-stretch-borders" width="1" height="1" fill="#ff00ff"/>
+  <rect id="hint-compose-over-border" x="1" width="1" height="1" fill="#ff00ff"/>
+</svg>

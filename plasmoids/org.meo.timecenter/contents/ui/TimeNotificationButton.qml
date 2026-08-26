@@ -19,11 +19,11 @@ QQC2.AbstractButton {
 
     implicitWidth: timeContent.implicitWidth + leftPadding + rightPadding
     // The top panel is intentionally compact.  Keep time, date and the
-    // notification affordance on a single baseline so they cannot visually
-    // collide at 32–40 px panel heights or high fractional scale factors.
-    implicitHeight: 32 * MeoTheme.globalScale
-    leftPadding: MeoTheme.space8
-    rightPadding: MeoTheme.space8
+    // notification affordance on a single baseline in the compact 32 dp
+    // panel while retaining a small vertical breathing margin.
+    implicitHeight: 28 * MeoTheme.globalScale
+    leftPadding: MeoTheme.space4
+    rightPadding: MeoTheme.space4
     Accessible.name: qsTr("Time, calendar, and notifications")
     Accessible.description: inhibited
                             ? qsTr("Do Not Disturb is on")
@@ -64,7 +64,7 @@ QQC2.AbstractButton {
 
     contentItem: RowLayout {
         id: timeContent
-        spacing: MeoTheme.space4 + MeoTheme.space2
+        spacing: MeoTheme.space4
 
         RowLayout {
             spacing: MeoTheme.space4

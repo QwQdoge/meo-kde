@@ -1,23 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="66" height="66" viewBox="0 0 66 66">
   <style id="current-color-scheme" type="text/css">
     .ColorScheme-Background { color: #fffbfe; }
-    .ColorScheme-Text { color: #1c1b1f; }
   </style>
-  <g fill="currentColor" class="ColorScheme-Background" fill-opacity="0.82">
-    <path id="center" d="M22 22h22v22H22z"/>
-    <path id="top" d="M22 4h22v18H22z"/>
-    <path id="bottom" d="M22 44h22v18H22z"/>
-    <path id="left" d="M4 22h18v22H4z"/>
-    <path id="right" d="M44 22h18v22H44z"/>
-    <path id="topleft" d="M22 4C12 4 4 12 4 22h18z"/>
-    <path id="topright" d="M44 4c10 0 18 8 18 18H44z"/>
-    <path id="bottomleft" d="M4 44c0 10 8 18 18 18V44z"/>
-    <path id="bottomright" d="M44 62c10 0 18-8 18-18H44z"/>
+  <g class="ColorScheme-Background" fill="currentColor" fill-opacity="0.92">
+    <path id="center" d="M32 32h2v2h-2z"/>
+    <path id="top" d="M32 16h2v16h-2z"/>
+    <path id="bottom" d="M32 34h2v16h-2z"/>
+    <path id="left" d="M16 32h16v2H16z"/>
+    <path id="right" d="M34 32h16v2h-16z"/>
+    <path id="topleft" d="M32 16A16 16 0 0 0 16 32h16z"/>
+    <path id="topright" d="M34 16a16 16 0 0 1 16 16H34z"/>
+    <path id="bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
+    <path id="bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
+    <path id="north-center" d="M32 32h2v2h-2z"/>
+    <path id="north-top" d="M32 16h2v16h-2z"/>
+    <path id="north-bottom" d="M32 34h2v16h-2z"/>
+    <path id="north-left" d="M16 32h16v2H16z"/>
+    <path id="north-right" d="M34 32h16v2h-16z"/>
+    <path id="north-topleft" d="M32 16A16 16 0 0 0 16 32h16z"/>
+    <path id="north-topright" d="M34 16a16 16 0 0 1 16 16H34z"/>
+    <path id="north-bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
+    <path id="north-bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
+    <path id="south-center" d="M32 32h2v2h-2z"/>
+    <path id="south-top" d="M32 4h2v28h-2z"/>
+    <path id="south-bottom" d="M32 34h2v28h-2z"/>
+    <path id="south-left" d="M4 32h28v2H4z"/>
+    <path id="south-right" d="M34 32h28v2h-28z"/>
+    <path id="south-topleft" d="M32 4A28 28 0 0 0 4 32h28z"/>
+    <path id="south-topright" d="M34 4a28 28 0 0 1 28 28H34z"/>
+    <path id="south-bottomleft" d="M4 34a28 28 0 0 0 28 28V34z"/>
+    <path id="south-bottomright" d="M34 62a28 28 0 0 0 28-28H34z"/>
   </g>
   <rect id="hint-top-margin" x="31" y="18" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-left-margin" x="18" y="31" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-right-margin" x="44" y="31" width="4" height="4" fill="#ff00ff"/>
+  <rect id="north-hint-top-margin" x="31" y="18" width="4" height="4" fill="#ff00ff"/>
+  <rect id="north-hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>
+  <rect id="north-hint-left-margin" x="18" y="31" width="4" height="4" fill="#ff00ff"/>
+  <rect id="north-hint-right-margin" x="44" y="31" width="4" height="4" fill="#ff00ff"/>
+  <rect id="south-hint-top-margin" x="31" y="18" width="4" height="4" fill="#ff00ff"/>
+  <rect id="south-hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>
+  <rect id="south-hint-left-margin" x="18" y="31" width="4" height="4" fill="#ff00ff"/>
+  <rect id="south-hint-right-margin" x="44" y="31" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-stretch-borders" x="0" y="0" width="1" height="1" fill="#ff00ff"/>
   <rect id="hint-compose-over-border" x="1" y="0" width="1" height="1" fill="#ff00ff"/>
 </svg>

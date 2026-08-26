@@ -26,7 +26,10 @@ PlasmoidItem {
     preferredRepresentation: compactRepresentation
     switchWidth: 0
     switchHeight: 0
-    Layout.minimumWidth: compactWidth
+    // Let Plasma recalculate this compact trigger from the live content.  A
+    // retained minimum width is what made the clock allocation drift after
+    // panel reloads.
+    Layout.minimumWidth: 0
     Layout.preferredWidth: compactWidth
     Layout.maximumWidth: compactWidth
     Layout.minimumHeight: compactHeight

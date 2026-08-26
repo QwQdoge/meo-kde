@@ -5,8 +5,9 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meoui_import="${MEOUI_IMPORT_ROOT:-/home/shekong/Projects/meo-ui/out/build/release}"
 meoui_source="${MEOUI_SOURCE_DIR:-/home/shekong/Projects/meo-ui}"
 system_import="${repo_root}/out/build/system/qml"
-validation_run_id="${MEO_KDE_VALIDATION_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
-evidence_root="${MEO_KDE_EVIDENCE_ROOT:-${repo_root}/artifacts/validation/${validation_run_id}}"
+validation_run_id="${MEO_KDE_VALIDATION_RUN_ID:-$(date -u +%Y-%m-%dT%H%M%SZ)-validate}"
+output_root="${MEO_OUTPUT_ROOT:-/home/shekong/Projects/outputs}"
+evidence_root="${MEO_KDE_EVIDENCE_ROOT:-${output_root}/meo-kde/validation/${validation_run_id}}"
 log_root="${evidence_root}/logs"
 mkdir -p "${log_root}"
 log_file="${log_root}/validate.log"
@@ -30,7 +31,8 @@ run bash -n "${repo_root}/tools/shell/apply-meo-panel-layout.sh"
 run python -m configparser "${repo_root}/themes/icons/MeoSymbols/index.theme"
 run python "${repo_root}/tools/icons/build_icon_theme.py" --check
 run python -m unittest discover -s "${repo_root}/tests/icons" -p 'test_*.py'
-run python "${repo_root}/tools/icons/audit_icon_coverage.py"
+run python "${repo_root}/tools/icons/audit_icon_coverage.py" \
+  --output "${evidence_root}/metrics/icon-usage-audit.json"
 run python -m unittest discover -s "${repo_root}/tests/theme" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/input_method" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/shell" -p 'test_*.py'
@@ -45,6 +47,11 @@ run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml
   -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
 run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
   -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/meoui-shell-components-smoke.qml"
+for desktop_theme in MeoLight MeoDark; do
+  run env QT_QPA_PLATFORM=offscreen qml6 -I /usr/lib/qt6/qml -f \
+    "${repo_root}/validation/native-dock-frame-smoke.qml" -- \
+    "--theme-root=${repo_root}/themes/desktoptheme/${desktop_theme}"
+done
 
 while IFS= read -r metadata; do
   run python -m json.tool "${metadata}"

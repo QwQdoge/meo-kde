@@ -18,6 +18,10 @@ untouched, keeps exactly one Meo quick-settings applet and one Meo
 time/notification applet, and keeps one native System Tray unless it is
 explicitly disabled below. Existing tray visibility choices are preserved;
 only controls already owned by Meo are removed from its requested compact items.
+The helper also verifies the requested top-panel height after Plasma applies
+it. If the active desktop theme clamps that value because its panel frame is
+too large, it stops with an error instead of reporting a false success; deploy
+the matching Meo desktop theme before trying again.
 
 ## Panels
 
@@ -32,8 +36,10 @@ ShowGlobalMenu=true
 # Optional second task manager beside the menu; off because application tray
 # icons already appear beside the Meo controls and the Dock owns window tasks.
 ShowTopAppTasks=false
-TopPanelHeight=40
-DockHeight=56
+# Compact top bar; Plasma's panel frame supplies the remaining visual margin.
+TopPanelHeight=32
+# 64 dp Dock: 48 dp task targets with an 8 dp breathing margin.
+DockHeight=64
 ```
 
 - `Mode` is `dual` or `single`.
@@ -49,9 +55,14 @@ DockHeight=56
   Dock remains the primary task manager for pinned launchers, window actions
   and autohide behavior.
 - `TopPanelHeight` accepts `32`–`96` pixels.
-- `DockHeight` accepts `40`–`112` pixels. The compact default is `56` pixels.
-  In `dual` mode the dock remains the native Plasma
-  Icons-Only Task Manager, stays on one row, and is auto-hidden.
+- `DockHeight` accepts `40`–`112` pixels. The Pixel/GNOME-like Material
+  default is `64` pixels: 48 dp task targets inside an elevated floating
+  surface. In `dual` mode the dock remains the native Plasma Icons-Only Task
+  Manager, stays on one row, and is auto-hidden.
+- Existing `~/.config/meo-shellrc` profiles are intentionally preserved. To
+  opt an existing desktop into the 64 dp default, set `DockHeight=64` in that
+  file and explicitly run the panel-layout helper above; normal theme updates
+  never rebuild a user's live panels.
 
 ## Status bar
 
