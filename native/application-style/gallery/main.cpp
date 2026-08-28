@@ -32,7 +32,11 @@ int main(int argc, char *argv[])
     auto *layout = new QVBoxLayout(central);
     auto *controls = new QGroupBox(QStringLiteral("Core controls"));
     auto *form = new QFormLayout(controls);
-    form->addRow(new QPushButton(QStringLiteral("Primary action")));
+    auto *primaryAction = new QPushButton(QStringLiteral("Primary action"));
+    primaryAction->setDefault(true);
+    form->addRow(primaryAction);
+    auto *secondaryAction = new QPushButton(QStringLiteral("Secondary action"));
+    form->addRow(secondaryAction);
     form->addRow(new QCheckBox(QStringLiteral("Checkbox")));
     form->addRow(new QRadioButton(QStringLiteral("Radio button")));
     form->addRow(QStringLiteral("Text field"), new QLineEdit(QStringLiteral("Meo")));

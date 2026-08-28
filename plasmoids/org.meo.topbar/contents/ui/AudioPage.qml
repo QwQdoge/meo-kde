@@ -70,7 +70,7 @@ QQC2.ScrollView {
             Layout.fillWidth: true
             visible: SystemState.audioAvailable
             implicitHeight: outputControls.implicitHeight + 2 * MeoTheme.space12
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
             RowLayout {
@@ -143,7 +143,7 @@ QQC2.ScrollView {
             Layout.fillWidth: true
             visible: SystemState.microphoneAvailable
             implicitHeight: inputControls.implicitHeight + 2 * MeoTheme.space12
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
             RowLayout {

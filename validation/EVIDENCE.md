@@ -1,5 +1,15 @@
 # Evidence location
 
+Authentication and notification acceptance uses the production QML surfaces:
+
+- `authentication-dialog-smoke.qml` loads the PolicyKit dialog with a fake,
+  non-secret backend and can capture the actual MeoUI-composed surface.
+- `notification-center-smoke.qml` covers normal, background-job and critical
+  states on the real `NotificationCenterView`.
+- The Arch/Plasma VM remains authoritative for PolicyKit/PAM success, failure,
+  timeout, multi-identity, parent-window activation and single-agent systemd
+  lifecycle; see `docs/AUTHENTICATION_AND_NOTIFICATIONS.md`.
+
 Generated evidence is stored outside production source at:
 
 `/home/shekong/Projects/outputs/meo-kde/validation/<UTC-run-id>/`

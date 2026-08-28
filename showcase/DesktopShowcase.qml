@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
 import MeoUI 1.0
+import MeoKDE 1.0
 
 Window {
     id: window
@@ -29,7 +30,8 @@ Window {
         MeoTheme.isDarkMode = false
         MeoTheme.fontFamily = roboto.name
         MeoTheme.fontFamilyBrand = comfortaa.name
-        MeoTheme.applyDynamicColorScheme({
+        const scheme = JSON.parse(JSON.stringify(MeoTheme.fallbackLightColorScheme))
+        const showcaseOverrides = {
             "primary": "#9b405f", "onPrimary": "#ffffff",
             "primaryContainer": "#ffd9e2", "onPrimaryContainer": "#3f001c",
             "secondary": "#76565e", "onSecondary": "#ffffff",
@@ -45,8 +47,12 @@ Window {
             "surfaceContainerHighest": "#f1dfe2",
             "error": "#ba1a1a", "onError": "#ffffff",
             "errorContainer": "#ffdad6", "onErrorContainer": "#410002",
-            "inverseSurface": "#382e30", "onInverseSurface": "#ffedef"
-        })
+            "inverseSurface": "#382e30", "onInverseSurface": "#ffedef",
+            "surfaceTint": "#9b405f", "inversePrimary": "#ffb1c8"
+        }
+        for (const role in showcaseOverrides)
+            scheme[role] = showcaseOverrides[role]
+        MeoTheme.applyDynamicColorScheme(scheme, "meo-kde-showcase")
     }
 
     Image {
@@ -66,7 +72,7 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: 44
+        height: ShellMetrics.topBarHeight
         color: MeoTheme.surfaceContainerLow
         opacity: 0.94
         border.color: MeoTheme.outlineVariant
@@ -95,7 +101,7 @@ Window {
             Rectangle {
                 implicitWidth: clock.implicitWidth + 24
                 implicitHeight: 32
-                radius: 16
+                radius: height / 2
                 color: MeoTheme.primaryContainer
                 Text {
                     id: clock
@@ -117,7 +123,7 @@ Window {
         y: 76
         width: 430
         height: 530
-        radius: MeoTheme.shapeExtraLarge
+        radius: ShellMetrics.radiusPopup
         color: MeoTheme.surfaceContainer
         border.color: MeoTheme.outlineVariant
 
@@ -129,7 +135,7 @@ Window {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 52
-                radius: 26
+                radius: height / 2
                 color: MeoTheme.surfaceContainerHighest
                 border.color: MeoTheme.outlineVariant
                 Text { anchors.centerIn: parent; text: "Search apps, files and settings"; color: MeoTheme.onSurfaceVariant; font.family: MeoTheme.fontFamily; font.pixelSize: 14 }
@@ -146,7 +152,7 @@ Window {
                         required property string modelData
                         Layout.fillWidth: true
                         Layout.preferredHeight: 78
-                        radius: 20
+                        radius: ShellMetrics.radiusLarge
                         color: index === 1 ? MeoTheme.primaryContainer : MeoTheme.surfaceContainerHigh
                         Column {
                             anchors.centerIn: parent
@@ -170,7 +176,7 @@ Window {
         anchors.topMargin: 18
         width: 330
         height: 310
-        radius: MeoTheme.shapeExtraLarge
+        radius: ShellMetrics.radiusPopup
         color: MeoTheme.surfaceContainer
         border.color: MeoTheme.outlineVariant
 
@@ -188,7 +194,7 @@ Window {
                         required property string modelData
                         Layout.fillWidth: true
                         Layout.preferredHeight: 54
-                        radius: 27
+                        radius: height / 2
                         color: index === 0 ? MeoTheme.primaryContainer : MeoTheme.surfaceContainerHighest
                         Text { anchors.centerIn: parent; text: modelData; font.family: MeoTheme.fontFamily; font.pixelSize: 14; font.bold: true; color: index === 0 ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant }
                     }
@@ -197,7 +203,7 @@ Window {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
-                radius: 22
+                radius: height / 2
                 color: MeoTheme.surfaceContainerHighest
                 Rectangle { anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom; width: parent.width * 0.72; radius: parent.radius; color: MeoTheme.primaryContainer }
                 Text { anchors.centerIn: parent; text: "Volume 72%"; font.family: MeoTheme.fontFamily; font.pixelSize: 13; color: MeoTheme.onPrimaryContainer }
@@ -212,8 +218,8 @@ Window {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 12
         width: 530
-        height: 64
-        radius: 32
+        height: ShellMetrics.shelfSurfaceHeight
+        radius: height / 2
         color: MeoTheme.surfaceContainer
         border.color: MeoTheme.outlineVariant
         Row {
@@ -223,9 +229,9 @@ Window {
                 model: ["Meo", "Files", "Browser", "OmniStore", "Settings", "Terminal"]
                 delegate: Rectangle {
                     required property string modelData
-                    width: 48
-                    height: 48
-                    radius: 24
+                    width: ShellMetrics.shelfItemSize
+                    height: ShellMetrics.shelfItemSize
+                    radius: height / 2
                     color: index === 3 ? MeoTheme.primaryContainer : "transparent"
                     Text { anchors.centerIn: parent; text: modelData.substring(0, 1); color: index === 3 ? MeoTheme.onPrimaryContainer : MeoTheme.primary; font.family: index === 0 ? MeoTheme.fontFamilyBrand : MeoTheme.fontFamily; font.pixelSize: 18; font.bold: true }
                 }
@@ -243,4 +249,3 @@ Window {
         })
     }
 }
-

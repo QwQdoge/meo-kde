@@ -206,7 +206,7 @@ PlasmoidItem {
 
         background: Rectangle {
             color: MeoTheme.surfaceContainerHighest
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             border.color: MeoTheme.outlineVariant
             border.width: ShellMetrics.panelOutlineWidth
         }
@@ -234,7 +234,7 @@ PlasmoidItem {
 
         background: Rectangle {
             color: MeoTheme.surfaceContainer
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             border.color: MeoTheme.outlineVariant
             border.width: ShellMetrics.panelOutlineWidth
         }

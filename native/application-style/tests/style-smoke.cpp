@@ -16,6 +16,7 @@
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionTab>
+#include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QTabBar>
 #include <QtWidgets/QVBoxLayout>
 
@@ -25,6 +26,9 @@
 namespace {
 
 enum class ControlKind {
+    Button,
+    DefaultButton,
+    ToolButton,
     ComboBox,
     Menu,
     MenuBar,
@@ -125,6 +129,33 @@ QImage renderControl(QStyle *style, ControlKind kind, QStyle::State extraState,
     }
 
     switch (kind) {
+    case ControlKind::Button:
+    case ControlKind::DefaultButton: {
+        QStyleOptionButton option;
+        option.rect = image.rect().adjusted(8, 4, -8, -4);
+        option.palette = palette;
+        option.state = state;
+        option.text = kind == ControlKind::DefaultButton
+            ? QStringLiteral("Default action") : QStringLiteral("Action");
+        if (kind == ControlKind::DefaultButton) {
+            option.features = QStyleOptionButton::DefaultButton;
+        }
+        style->drawPrimitive(QStyle::PE_PanelButtonCommand, &option, &painter);
+        style->drawControl(QStyle::CE_PushButtonLabel, &option, &painter);
+        break;
+    }
+    case ControlKind::ToolButton: {
+        QStyleOptionToolButton option;
+        option.rect = QRect((image.width() - 40) / 2, 4, 40, 40);
+        option.palette = palette;
+        option.state = state | QStyle::State_AutoRaise;
+        option.text = QStringLiteral("T");
+        option.toolButtonStyle = Qt::ToolButtonTextOnly;
+        option.features = QStyleOptionToolButton::None;
+        style->drawPrimitive(QStyle::PE_PanelButtonTool, &option, &painter);
+        style->drawControl(QStyle::CE_ToolButtonLabel, &option, &painter);
+        break;
+    }
     case ControlKind::ComboBox: {
         QStyleOptionComboBox option;
         option.rect = image.rect().adjusted(8, 4, -8, -4);
@@ -319,7 +350,8 @@ private slots:
         const auto style = createMeoStyle();
         QVERIFY(style);
         const QPalette palette = semanticPalette(QColor("#006e2f"));
-        const std::array controls{ControlKind::ComboBox, ControlKind::Menu, ControlKind::MenuBar,
+        const std::array controls{ControlKind::Button, ControlKind::DefaultButton, ControlKind::ToolButton,
+                                  ControlKind::ComboBox, ControlKind::Menu, ControlKind::MenuBar,
                                   ControlKind::Slider, ControlKind::Tab, ControlKind::ScrollBar};
 
         for (const ControlKind control : controls) {
@@ -365,7 +397,8 @@ private slots:
         QVERIFY(style);
         const QPalette violet = semanticPalette(QColor("#6750a4"));
         const QPalette orange = semanticPalette(QColor("#a33d00"), true);
-        const std::array controls{ControlKind::ComboBox, ControlKind::Menu, ControlKind::MenuBar,
+        const std::array controls{ControlKind::Button, ControlKind::DefaultButton, ControlKind::ToolButton,
+                                  ControlKind::ComboBox, ControlKind::Menu, ControlKind::MenuBar,
                                   ControlKind::Slider, ControlKind::Tab, ControlKind::ScrollBar};
 
         for (const ControlKind control : controls) {
@@ -398,6 +431,11 @@ private slots:
         QVERIFY(imageContainsColor(tab, orange.color(QPalette::Active, QPalette::Highlight)));
         QVERIFY(imageContainsColor(pressedScrollBar, orange.color(QPalette::Active, QPalette::Highlight)));
         QVERIFY(imageContainsColor(focusedCombo, orange.color(QPalette::Active, QPalette::Highlight)));
+
+        const QImage defaultButton = renderControl(style.get(), ControlKind::DefaultButton,
+                                                    QStyle::State_None, orange);
+        QVERIFY(imageContainsColor(defaultButton,
+                                   orange.color(QPalette::Active, QPalette::Highlight)));
 
         const QImage disabledCombo = renderControl(style.get(), ControlKind::ComboBox,
                                                     QStyle::State_None, orange, false);

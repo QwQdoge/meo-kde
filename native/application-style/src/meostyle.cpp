@@ -13,6 +13,7 @@
 #include <QtWidgets/QStyleOptionProgressBar>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionTab>
+#include <QtWidgets/QStyleOptionToolButton>
 
 #include <meotokens.h>
 
@@ -20,7 +21,19 @@ namespace {
 
 qreal controlRadius()
 {
-    return Meo::DesignTokens::shapeMedium();
+    return Meo::DesignTokens::controlRadius();
+}
+
+qreal buttonRadius(const QStyleOption *option, bool pressed)
+{
+    const qreal halfHeight = qMax<qreal>(0.0, option->rect.height() / 2.0);
+    if (!pressed) {
+        return halfHeight;
+    }
+    return qMin(halfHeight,
+                qMax(Meo::DesignTokens::controlPressedRadius(),
+                     qMin(Meo::DesignTokens::controlRadius(),
+                          halfHeight - Meo::DesignTokens::space8())));
 }
 
 QPalette::ColorGroup colorGroup(const QStyleOption *option)
@@ -143,12 +156,12 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
     switch (type) {
     case CT_PushButton:
     case CT_ToolButton:
-        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::buttonHeightS())));
+        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
         break;
     case CT_LineEdit:
     case CT_ComboBox:
     case CT_SpinBox:
-        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::buttonHeightS())));
+        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
         break;
     default:
         break;
@@ -165,23 +178,42 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
 
-    if (element == PE_PanelButtonCommand) {
-        const QColor fill = enabled ? MeoStyleHelper::stateLayer(option->palette, group,
-                                                                  QPalette::Button, QPalette::ButtonText,
-                                                                  hover, pressed, focus)
-                                    : option->palette.color(QPalette::Disabled, QPalette::Button);
-        MeoStyleHelper::drawRoundedSurface(painter, option->rect, controlRadius(), fill);
+    if (element == PE_PanelButtonCommand || element == PE_PanelButtonTool) {
+        const auto *button = element == PE_PanelButtonCommand
+            ? qstyleoption_cast<const QStyleOptionButton *>(option) : nullptr;
+        const bool prominent = button && button->features.testFlag(QStyleOptionButton::DefaultButton);
+        const bool flat = (button && button->features.testFlag(QStyleOptionButton::Flat))
+            || (element == PE_PanelButtonTool && option->state.testFlag(State_AutoRaise));
+        const QPalette::ColorRole surfaceRole = prominent ? QPalette::Highlight : QPalette::Button;
+        const QPalette::ColorRole contentRole = prominent ? QPalette::HighlightedText : QPalette::ButtonText;
+        QColor fill = enabled
+            ? MeoStyleHelper::stateLayer(option->palette, group, surfaceRole, contentRole,
+                                          hover, pressed, focus)
+            : option->palette.color(QPalette::Disabled, surfaceRole);
+        if (flat && !hover && !pressed && !focus) {
+            fill = Qt::transparent;
+        }
+        const QColor outline = prominent || flat
+            ? QColor() : option->palette.color(group, QPalette::Midlight);
+        const qreal radius = buttonRadius(option, pressed);
+        MeoStyleHelper::drawRoundedSurface(painter, option->rect, radius, fill, outline);
         if (focus) {
-            MeoStyleHelper::drawFocusRing(painter, option->rect, controlRadius(),
+            MeoStyleHelper::drawFocusRing(painter, option->rect, radius,
                                            option->palette.color(group, QPalette::Highlight));
         }
         return;
     }
 
-    if (element == PE_FrameLineEdit) {
+    // The default action already has a filled accent container and focus
+    // outline.  Suppress platform styles' additional square default frame.
+    if (element == PE_FrameDefaultButton) {
+        return;
+    }
+
+    if (element == PE_FrameLineEdit || element == PE_PanelLineEdit) {
         const QColor outline = option->palette.color(group, focus ? QPalette::Highlight : QPalette::Mid);
         MeoStyleHelper::drawRoundedSurface(painter, option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
-                                            Meo::DesignTokens::shapeSmall(),
+                                            controlRadius(),
                                             option->palette.color(group, QPalette::Base), outline);
         return;
     }
@@ -242,6 +274,23 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
     const bool pressed = option->state.testFlag(State_Sunken);
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
+
+    if (element == CE_PushButtonLabel) {
+        const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option);
+        if (button && button->features.testFlag(QStyleOptionButton::DefaultButton)) {
+            QStyleOptionButton content(*button);
+            QPalette palette = content.palette;
+            for (const QPalette::ColorGroup paletteGroup : {QPalette::Active,
+                                                             QPalette::Inactive,
+                                                             QPalette::Disabled}) {
+                palette.setColor(paletteGroup, QPalette::ButtonText,
+                                 palette.color(paletteGroup, QPalette::HighlightedText));
+            }
+            content.palette = palette;
+            QProxyStyle::drawControl(element, &content, painter, widget);
+            return;
+        }
+    }
 
     if (element == CE_MenuItem || element == CE_MenuBarItem) {
         const auto *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option);

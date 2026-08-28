@@ -16,11 +16,11 @@ class Button;
 
 struct ConfigSettings {
     int titleBarHeight = 32;
-    int cornerRadius = 12;
-    int buttonDiameter = 20;
+    int cornerRadius = 16;
+    int buttonDiameter = 24;
     int buttonHitSize = 32;
-    int buttonSpacing = 0;
-    int buttonRightMargin = 4;
+    int buttonSpacing = 2;
+    int buttonRightMargin = 6;
     bool showButtonBackground = true;
     double shadowIntensity = 0.18;
     int shadowRadius = 28;

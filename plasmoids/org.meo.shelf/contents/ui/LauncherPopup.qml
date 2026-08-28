@@ -163,7 +163,7 @@ QQC2.Popup {
 
                     width: searchResultList.width
                     height: 56 * MeoTheme.globalScale
-                    radius: MeoTheme.shapeMedium
+                    radius: ShellMetrics.radiusControl
                     color: searchResultList.currentIndex === index
                            ? MeoTheme.secondaryContainer
                            : (resultPointer.containsMouse ? MeoTheme.surfaceContainerHigh : "transparent")
@@ -258,7 +258,7 @@ QQC2.Popup {
 
                                 width: recentList.width
                                 height: 52 * MeoTheme.globalScale
-                                radius: MeoTheme.shapeMedium
+                                radius: ShellMetrics.radiusControl
                                 color: recentPointer.containsMouse ? MeoTheme.surfaceContainerHigh : "transparent"
 
                                 RowLayout {

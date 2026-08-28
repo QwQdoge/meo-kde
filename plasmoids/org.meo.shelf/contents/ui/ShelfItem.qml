@@ -120,7 +120,7 @@ Item {
 
         background: Rectangle {
             color: MeoTheme.surfaceContainerHighest
-            radius: MeoTheme.shapeMedium
+            radius: ShellMetrics.radiusControl
             border.color: MeoTheme.outlineVariant
             border.width: ShellMetrics.panelOutlineWidth
         }

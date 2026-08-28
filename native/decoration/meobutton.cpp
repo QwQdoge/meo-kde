@@ -122,7 +122,7 @@ void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     const qreal hoverProgress = isPressed() ? 1.0 : m_hoverProgress;
     QColor interaction = m_decoration->titleTextColor();
 
-    // Keep the 40px input target separate from the 30px interaction shape.
+    // Keep the 32px input slot separate from the 24px interaction shape.
     // Close deliberately uses the same tonal feedback as the other controls.
     if (m_decoration->config().showButtonBackground && hoverProgress > 0.001) {
         interaction.setAlphaF(0.08 * hoverProgress);

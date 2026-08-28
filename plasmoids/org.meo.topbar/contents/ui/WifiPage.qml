@@ -144,6 +144,12 @@ Item {
     WifiPasswordDialog {
         id: passwordDialog
         parent: root
-        onAccepted: function(password) { SystemState.connectWifi(ssid, password) }
+        busy: SystemState.networkBusy
+        errorText: SystemState.operationError
+        connected: SystemState.networkConnected && SystemState.networkName === ssid
+        onAccepted: function(password) {
+            SystemState.clearOperationError()
+            SystemState.connectWifi(ssid, password)
+        }
     }
 }

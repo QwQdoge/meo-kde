@@ -1,6 +1,6 @@
 pkgname=meo-desktop
-pkgver=0.3.0
-pkgrel=2
+pkgver=0.4.0
+pkgrel=1
 pkgdesc="MeoArch KDE Plasma desktop defaults and Meo Qt application style"
 arch=('x86_64')
 url="https://github.com/QwQdoge"
@@ -8,8 +8,11 @@ license=('GPL-3.0-or-later')
 depends=('meoui-qml>=1.0.2' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
          'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'sddm' 'breeze'
          'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
-         'kwin-effect-rounded-corners')
-makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative')
+         'kwin-effect-rounded-corners' 'polkit-qt6' 'kwindowsystem')
+makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative' 'polkit-qt6' 'kwindowsystem')
+provides=('polkit-kde-agent')
+conflicts=('polkit-kde-agent')
+replaces=('polkit-kde-agent')
 optdepends=('omnistore-bin: MeoArch application discovery and package management'
             'fcitx5: Fcitx 5 candidate UI for compatible input engines'
             'fcitx5-configtool: graphical configuration for Fcitx 5 options'

@@ -91,11 +91,11 @@ void Decoration::loadConfig()
     const QFont titleFont = settings() ? settings()->font() : QGuiApplication::font();
     const int minimumForFont = QFontMetrics(titleFont).height() + 8;
     m_config.titleBarHeight = qBound(30, qMax(requestedTitlebarHeight, minimumForFont), 34);
-    m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 12), 48);
-    m_config.buttonDiameter = qBound(16, group.readEntry("ButtonDiameter", 20), 32);
+    m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 16), 48);
+    m_config.buttonDiameter = qBound(16, group.readEntry("ButtonDiameter", 24), 32);
     m_config.buttonHitSize = qBound(26, group.readEntry("ButtonHitSize", 32), 40);
-    m_config.buttonSpacing = qBound(0, group.readEntry("ButtonSpacing", 0), 24);
-    m_config.buttonRightMargin = qBound(0, group.readEntry("ButtonRightMargin", 4), 48);
+    m_config.buttonSpacing = qBound(0, group.readEntry("ButtonSpacing", 2), 24);
+    m_config.buttonRightMargin = qBound(0, group.readEntry("ButtonRightMargin", 6), 48);
     m_config.showButtonBackground = group.readEntry("ShowButtonBackground", true);
     m_config.shadowIntensity = qBound(0.0, group.readEntry("ShadowIntensity", 0.18), 1.0);
     m_config.shadowRadius = qBound(0, group.readEntry("ShadowRadius", 28), 64);

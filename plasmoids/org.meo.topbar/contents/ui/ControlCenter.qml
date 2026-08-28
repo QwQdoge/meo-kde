@@ -40,7 +40,7 @@ Item {
     MeoMotionSurface {
         anchors.fill: parent
         color: MeoTheme.surfaceContainerLow
-        radius: MeoTheme.shapeExtraLarge
+        radius: ShellMetrics.radiusPopup
         elevation: 3
 
         RowLayout {

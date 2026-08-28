@@ -12,7 +12,7 @@ MeoMotionSurface {
 
     visible: text !== ""
     implicitHeight: messageRow.implicitHeight + 2 * MeoTheme.space12
-    radius: MeoTheme.shapeMedium
+    radius: ShellMetrics.radiusControl
     color: tone === "error" ? MeoTheme.errorContainer
           : tone === "warning" ? MeoTheme.tertiaryContainer
           : MeoTheme.secondaryContainer

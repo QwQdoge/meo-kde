@@ -55,7 +55,7 @@ Item {
                     Layout.preferredWidth: 292 * MeoTheme.globalScale
                     Layout.fillHeight: true
                     color: MeoTheme.surfaceContainer
-                    radius: MeoTheme.shapeExtraLarge
+                    radius: ShellMetrics.radiusPopup
                     elevation: 0
 
                     MeoMonthCalendar {

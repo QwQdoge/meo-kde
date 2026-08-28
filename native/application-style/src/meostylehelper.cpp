@@ -51,7 +51,7 @@ void drawFocusRing(QPainter *painter, const QRectF &rect, qreal radius, const QC
 {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
-    QPen pen(color, Meo::DesignTokens::space2());
+    QPen pen(color, Meo::DesignTokens::focusRingWidth());
     painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
     painter->drawRoundedRect(rect.adjusted(1.0, 1.0, -1.0, -1.0), radius, radius);

@@ -34,13 +34,14 @@ QtObject {
     readonly property real appIconSize: 32 * MeoTheme.globalScale
     readonly property real statusIconSize: 24 * MeoTheme.globalScale
 
-    readonly property real radiusWindow: MeoTheme.shapeLarge
-    readonly property real radiusPopup: MeoTheme.shapeExtraLarge
-    readonly property real radiusLarge: MeoTheme.shapeLargeIncreased
-    readonly property real radiusMedium: MeoTheme.shapeLarge
-    readonly property real radiusControl: MeoTheme.shapeMedium
+    readonly property real radiusWindow: MeoTheme.windowRadius
+    readonly property real radiusPopup: MeoTheme.dialogRadius
+    readonly property real radiusLarge: MeoTheme.cardRadius
+    readonly property real radiusMedium: MeoTheme.windowRadius
+    readonly property real radiusControl: MeoTheme.controlRadius
     readonly property real radiusSmall: MeoTheme.shapeSmall
 
     readonly property real desktopHitTarget: 44 * MeoTheme.globalScale
     readonly property real panelOutlineWidth: MeoTheme.strokeWidthThin
+    readonly property real focusRingWidth: MeoTheme.focusRingWidth
 }

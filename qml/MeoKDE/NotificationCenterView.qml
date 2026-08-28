@@ -57,12 +57,42 @@ Item {
         return Qt.formatDate(timestamp, Qt.DefaultLocaleShortDate)
     }
 
+    // Notification bodies may contain freedesktop markup. The shell deliberately
+    // presents a bounded plain-text projection so notifications cannot load
+    // remote content or inject interactive rich-text elements into the center.
+    function plainText(value) {
+        if (value === undefined || value === null)
+            return ""
+        return String(value)
+            .replace(/<br\s*\/?\s*>/gi, "\n")
+            .replace(/<\/(p|div|li)>/gi, "\n")
+            .replace(/<[^>]*>/g, "")
+            .replace(/&nbsp;/gi, " ")
+            .replace(/&amp;/gi, "&")
+            .replace(/&lt;/gi, "<")
+            .replace(/&gt;/gi, ">")
+            .replace(/&quot;/gi, "\"")
+            .replace(/&#39;/gi, "'")
+            .trim()
+    }
+
     function displayBody(body, type, percentage) {
-        if (body !== "")
-            return body
+        const projectedBody = root.plainText(body)
+        if (projectedBody !== "")
+            return projectedBody
         if (type === NotificationManager.Notifications.JobType && percentage >= 0)
             return qsTr("Progress: %1%").arg(percentage)
         return ""
+    }
+
+    function safeIconName(primary, fallback) {
+        const candidate = String(primary || "")
+        if (/^[A-Za-z0-9][A-Za-z0-9._+\-]*$/.test(candidate))
+            return candidate
+        const fallbackCandidate = String(fallback || "")
+        if (/^[A-Za-z0-9][A-Za-z0-9._+\-]*$/.test(fallbackCandidate))
+            return fallbackCandidate
+        return "notifications"
     }
 
     ColumnLayout {
@@ -137,7 +167,7 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: dndMessage.implicitHeight + 2 * MeoTheme.space8
             color: MeoTheme.secondaryContainer
-            radius: MeoTheme.shapeMedium
+            radius: ShellMetrics.radiusControl
             elevation: 0
 
             RowLayout {
@@ -225,16 +255,16 @@ Item {
                     required property var updated
 
                     readonly property var sourceIndex: root.modelIndex(index)
-                    readonly property string displayIcon: iconName !== "" ? iconName
-                                                          : (applicationIconName !== "" ? applicationIconName
-                                                                                       : "notifications")
+                    readonly property string displayIcon: root.safeIconName(iconName, applicationIconName)
                     readonly property bool isJob: type === NotificationManager.Notifications.JobType
                     readonly property bool critical: urgency === NotificationManager.Notifications.CriticalUrgency
                     readonly property var effectiveTime: updated || created
                     property bool replyExpanded: false
+                    property bool bodyExpanded: false
 
                     ListView.onReused: {
                         replyExpanded = false
+                        bodyExpanded = false
                         replyField.clear()
                     }
 
@@ -250,14 +280,14 @@ Item {
                     width: notificationList.width
                     implicitHeight: cardContent.implicitHeight + 2 * MeoTheme.space12
                     color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
-                    radius: MeoTheme.shapeLarge
+                    radius: ShellMetrics.radiusLarge
                     elevation: 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
                     }
                     activeFocusOnTab: hasDefaultAction
                     Accessible.role: Accessible.ListItem
-                    Accessible.name: summary !== "" ? summary : applicationName
+                    Accessible.name: root.plainText(summary !== "" ? summary : applicationName)
                     Accessible.description: root.displayBody(body, type, percentage)
                     Accessible.focusable: hasDefaultAction
                     Accessible.onPressAction: if (hasDefaultAction && root.notifications
@@ -300,14 +330,24 @@ Item {
                             }
                             MeoText {
                                 Layout.fillWidth: true
-                                text: notificationCard.applicationName !== ""
-                                      ? notificationCard.applicationName : qsTr("System")
+                                text: root.plainText(notificationCard.applicationName) !== ""
+                                      ? root.plainText(notificationCard.applicationName) : qsTr("System")
+                                textFormat: Text.PlainText
                                 typeRole: "label"
                                 typeSize: "small"
                                 emphasized: true
                                 elide: Text.ElideRight
                                 color: notificationCard.critical ? MeoTheme.onErrorContainer
                                                                  : MeoTheme.onSurfaceVariant
+                            }
+                            MeoText {
+                                visible: notificationCard.critical
+                                text: qsTr("Critical")
+                                typeRole: "label"
+                                typeSize: "small"
+                                emphasized: true
+                                color: MeoTheme.onErrorContainer
+                                Accessible.name: qsTr("Critical notification")
                             }
                             MeoText {
                                 text: root.relativeTime(notificationCard.effectiveTime)
@@ -338,8 +378,10 @@ Item {
 
                         MeoText {
                             Layout.fillWidth: true
-                            text: notificationCard.summary !== "" ? notificationCard.summary
-                                                                   : notificationCard.applicationName
+                            text: root.plainText(notificationCard.summary !== ""
+                                                 ? notificationCard.summary
+                                                 : notificationCard.applicationName)
+                            textFormat: Text.PlainText
                             typeRole: "body"
                             typeSize: "large"
                             emphasized: true
@@ -355,10 +397,21 @@ Item {
                             typeRole: "body"
                             typeSize: "medium"
                             wrapMode: Text.Wrap
-                            maximumLineCount: 4
+                            textFormat: Text.PlainText
+                            maximumLineCount: notificationCard.bodyExpanded ? 1000 : 4
                             elide: Text.ElideRight
                             color: notificationCard.critical ? MeoTheme.onErrorContainer
                                                              : MeoTheme.onSurfaceVariant
+                        }
+
+                        MeoButton {
+                            visible: root.displayBody(notificationCard.body, notificationCard.type,
+                                                      notificationCard.percentage).length > 180
+                            type: "text"
+                            size: "xs"
+                            text: notificationCard.bodyExpanded ? qsTr("Show less") : qsTr("Show more")
+                            Accessible.name: text
+                            onClicked: notificationCard.bodyExpanded = !notificationCard.bodyExpanded
                         }
 
                         RowLayout {

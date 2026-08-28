@@ -71,7 +71,7 @@ QQC2.ScrollView {
         MeoMotionSurface {
             Layout.fillWidth: true
             implicitHeight: profileColumn.implicitHeight
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
 
@@ -118,7 +118,7 @@ QQC2.ScrollView {
         MeoMotionSurface {
             Layout.fillWidth: true
             implicitHeight: sessionColumn.implicitHeight
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
 

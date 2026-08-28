@@ -418,10 +418,38 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('org.meo.windowcornersEnabled=false', defaults)
         self.assertIn('kwin4_effect_shapecornersEnabled=true', defaults)
         self.assertIn('EnableCompanionEffect=false', defaults)
+        self.assertIn('CornerRadius=16', defaults)
+        self.assertIn('ButtonDiameter=24', defaults)
+        self.assertIn('ButtonSpacing=2', defaults)
+        self.assertIn('Size=16', defaults)
+        self.assertIn('InactiveCornerRadius=16', defaults)
         self.assertIn('kwin4_effect_shapecorners.so', setup)
         self.assertIn('rm -f "${user_plugin_root}/kwin/effects/plugins/org.meo.windowcorners.so"', setup)
         self.assertNotIn('native_build_root}/bin/kwin/effects/plugins/org.meo.windowcorners.so', setup)
         self.assertIn('"${meoui_build_root}"/libmeoui.so*', setup)
+
+    def test_shell_geometry_uses_cross_toolkit_semantic_roles(self):
+        metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
+        mapped_roles = {
+            "radiusWindow": "MeoTheme.windowRadius",
+            "radiusPopup": "MeoTheme.dialogRadius",
+            "radiusLarge": "MeoTheme.cardRadius",
+            "radiusControl": "MeoTheme.controlRadius",
+            "focusRingWidth": "MeoTheme.focusRingWidth",
+        }
+        for role, token in mapped_roles.items():
+            self.assertIn(f"{role}: {token}", metrics)
+
+        surfaces = (
+            REPO_ROOT / "qml/MeoKDE/PopupInlineMessage.qml",
+            REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml",
+            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/ControlCenter.qml",
+            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/QuickSettingsHome.qml",
+            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml",
+        )
+        for surface in surfaces:
+            source = surface.read_text(encoding="utf-8")
+            self.assertNotRegex(source, r"radius:\s*MeoTheme\.shape(?:Medium|Large|ExtraLarge)\b")
 
     def test_every_kwin_profile_matches_the_canonical_defaults(self):
         canonical = configparser.ConfigParser(interpolation=None)

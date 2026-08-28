@@ -36,6 +36,7 @@ run python "${repo_root}/tools/icons/audit_icon_coverage.py" \
 run python -m unittest discover -s "${repo_root}/tests/theme" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/input_method" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/shell" -p 'test_*.py'
+run python -m unittest discover -s "${repo_root}/tests/authentication" -p 'test_*.py'
 run cmake -S "${repo_root}/native/system" -B "${repo_root}/out/build/system" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${repo_root}/out/build/system" --parallel
 run "${repo_root}/out/build/system/meo-system-state-smoke"
@@ -47,6 +48,8 @@ run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml
   -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
 run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
   -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/meoui-shell-components-smoke.qml"
+run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  -I /usr/lib/qt6/qml -f "${repo_root}/validation/authentication-dialog-smoke.qml"
 for desktop_theme in MeoLight MeoDark; do
   run env QT_QPA_PLATFORM=offscreen qml6 -I /usr/lib/qt6/qml -f \
     "${repo_root}/validation/native-dock-frame-smoke.qml" -- \
@@ -59,7 +62,8 @@ done < <(find "${repo_root}/plasmoids" "${repo_root}/themes" -name metadata.json
 
 while IFS= read -r qml_file; do
   run qmllint -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" -I /usr/lib/qt6/qml "${qml_file}"
-done < <(find "${repo_root}/plasmoids" "${repo_root}/qml" -name '*.qml' -type f | sort)
+done < <(find "${repo_root}/plasmoids" "${repo_root}/qml" \
+  "${repo_root}/native/authentication/qml" -name '*.qml' -type f | sort)
 
 while IFS= read -r svg_file; do
   run xmllint --noout "${svg_file}"

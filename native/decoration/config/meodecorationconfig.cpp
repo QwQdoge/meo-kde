@@ -56,9 +56,9 @@ void ConfigWidget::load()
     const KConfigGroup group(KSharedConfig::openConfig(QStringLiteral("kwinrc")), QStringLiteral("org.meo.decoration"));
     m_titlebarHeight->setValue(group.readEntry("TitleBarHeight", 32));
     m_buttonSlot->setValue(group.readEntry("ButtonHitSize", 32));
-    m_buttonSpacing->setValue(group.readEntry("ButtonSpacing", 0));
-    m_cornerRadius->setValue(group.readEntry("CornerRadius", 12));
-    m_hoverDiameter->setValue(group.readEntry("ButtonDiameter", 20));
+    m_buttonSpacing->setValue(group.readEntry("ButtonSpacing", 2));
+    m_cornerRadius->setValue(group.readEntry("CornerRadius", 16));
+    m_hoverDiameter->setValue(group.readEntry("ButtonDiameter", 24));
     m_shadowSize->setValue(group.readEntry("ShadowRadius", 28));
     m_shadowOffsetY->setValue(group.readEntry("ShadowOffsetY", 6));
     m_shadowStrength->setValue(group.readEntry("ShadowIntensity", 0.18) * 100.0);
@@ -72,9 +72,9 @@ void ConfigWidget::writeSettings(bool useDefaults)
     KConfigGroup group(KSharedConfig::openConfig(QStringLiteral("kwinrc")), QStringLiteral("org.meo.decoration"));
     group.writeEntry("TitleBarHeight", useDefaults ? 32 : m_titlebarHeight->value());
     group.writeEntry("ButtonHitSize", useDefaults ? 32 : m_buttonSlot->value());
-    group.writeEntry("ButtonSpacing", useDefaults ? 0 : m_buttonSpacing->value());
-    group.writeEntry("CornerRadius", useDefaults ? 12 : m_cornerRadius->value());
-    group.writeEntry("ButtonDiameter", useDefaults ? 20 : m_hoverDiameter->value());
+    group.writeEntry("ButtonSpacing", useDefaults ? 2 : m_buttonSpacing->value());
+    group.writeEntry("CornerRadius", useDefaults ? 16 : m_cornerRadius->value());
+    group.writeEntry("ButtonDiameter", useDefaults ? 24 : m_hoverDiameter->value());
     group.writeEntry("ShadowRadius", useDefaults ? 28 : m_shadowSize->value());
     group.writeEntry("ShadowOffsetY", useDefaults ? 6 : m_shadowOffsetY->value());
     group.writeEntry("ShadowIntensity", (useDefaults ? 18.0 : m_shadowStrength->value()) / 100.0);
@@ -93,8 +93,8 @@ void ConfigWidget::save()
 
 void ConfigWidget::defaults()
 {
-    m_titlebarHeight->setValue(32); m_buttonSlot->setValue(32); m_buttonSpacing->setValue(0);
-    m_cornerRadius->setValue(12); m_hoverDiameter->setValue(20); m_shadowSize->setValue(28);
+    m_titlebarHeight->setValue(32); m_buttonSlot->setValue(32); m_buttonSpacing->setValue(2);
+    m_cornerRadius->setValue(16); m_hoverDiameter->setValue(24); m_shadowSize->setValue(28);
     m_shadowOffsetY->setValue(6); m_shadowStrength->setValue(18); m_hoverDuration->setValue(100); m_focusDuration->setValue(180);
     markAsChanged();
 }

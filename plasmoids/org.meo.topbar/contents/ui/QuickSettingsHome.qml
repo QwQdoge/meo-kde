@@ -314,7 +314,7 @@ QQC2.ScrollView {
             clip: true
             opacity: shown ? 1 : 0
             implicitHeight: shown ? audioAdvanced.implicitHeight + 2 * MeoTheme.space12 : 0
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
             Behavior on opacity {
@@ -429,7 +429,7 @@ QQC2.ScrollView {
             clip: true
             opacity: Media.available ? 1 : 0
             implicitHeight: Media.available ? 72 * MeoTheme.globalScale : 0
-            radius: MeoTheme.shapeLarge
+            radius: ShellMetrics.radiusLarge
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
             Behavior on opacity {
