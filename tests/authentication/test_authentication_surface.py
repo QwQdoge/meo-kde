@@ -30,8 +30,13 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("m_cookie.fill(QChar(u'\\0'))", source)
         self.assertIn("emit clearResponseRequested()", source)
         self.assertIn("PR_SET_DUMPABLE", main)
+        self.assertIn("setInitialProperties", main)
+        self.assertIn("QSessionManager::RestartNever", main)
+        self.assertNotIn("setContextProperty", main)
+        self.assertNotIn("m_attempts = 0;\n    m_errorText.clear()", source)
         self.assertNotIn('qDebug() << response', source)
         self.assertNotIn('qInfo() << response', source)
+        self.assertIn("projectedDisplayText", source)
 
     def test_agent_preserves_kde_activation_compatibility(self):
         header = (AUTH / "authenticationcontroller.h").read_text(encoding="utf-8")
@@ -82,6 +87,13 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("errorText: SystemState.operationError", page)
         self.assertIn("connected: SystemState.networkConnected", page)
 
+        backend = (REPO_ROOT / "native/system/systemstatehub.cpp").read_text(encoding="utf-8")
+        self.assertIn('QStringLiteral("memory")', backend)
+        self.assertIn("NetworkManager::Device::stateChanged", backend)
+        self.assertIn("connection->save()", backend)
+        self.assertIn("discardTemporaryWifiConnection()", backend)
+        self.assertNotIn('QStringLiteral("persist"), QStringLiteral("disk")', backend)
+
     def test_package_replaces_the_stock_agent_without_double_starting(self):
         pkgbuild = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
         service = (AUTH / "data/plasma-polkit-agent.service").read_text(encoding="utf-8")
@@ -90,6 +102,8 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("provides=('polkit-kde-agent')", pkgbuild)
         self.assertIn("conflicts=('polkit-kde-agent')", pkgbuild)
         self.assertIn("replaces=('polkit-kde-agent')", pkgbuild)
+        self.assertIn("'qt6-base'", pkgbuild)
+        self.assertIn("'qt6-declarative'", pkgbuild)
         self.assertIn("ExecStart=/usr/lib/meo-polkit-agent", service)
         self.assertIn("BusName=org.kde.polkit-kde-authentication-agent-1", service)
         self.assertIn("X-systemd-skip=true", autostart)
@@ -98,13 +112,20 @@ class AuthenticationAgentTests(unittest.TestCase):
         qml = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
 
         self.assertIn("function plainText(value)", qml)
+        self.assertIn("function buttonLabel(value)", qml)
+        self.assertIn("slice(0, 16384)", qml)
         self.assertIn("function safeIconName(primary, fallback)", qml)
+        self.assertIn("slice(0, 4096)", qml)
+        self.assertIn("slice(0, 256)", qml)
         self.assertIn("textFormat: Text.PlainText", qml)
         self.assertIn("bodyExpanded", qml)
         self.assertIn('qsTr("Critical")', qml)
         self.assertIn("MeoButton", qml)
         self.assertIn("MeoIconButton", qml)
         self.assertNotIn("QQC2.Button", qml)
+
+        inline = (REPO_ROOT / "qml/MeoKDE/PopupInlineMessage.qml").read_text(encoding="utf-8")
+        self.assertIn("textFormat: Text.PlainText", inline)
 
 
 if __name__ == "__main__":

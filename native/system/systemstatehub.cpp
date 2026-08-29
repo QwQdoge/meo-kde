@@ -20,6 +20,7 @@
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 #include <QSharedPointer>
+#include <QRegularExpression>
 #include <QUuid>
 #include <QtGlobal>
 
@@ -53,6 +54,13 @@ SystemStateHub::SystemStateHub(QObject *parent)
     , m_bluetoothManager(this)
     , m_audioContext(PulseAudioQt::Context::instance())
 {
+    m_wifiConnectionTimeout.setSingleShot(true);
+    m_wifiConnectionTimeout.setInterval(45 * 1000);
+    connect(&m_wifiConnectionTimeout, &QTimer::timeout, this, [this] {
+        discardTemporaryWifiConnection();
+        finishWifiConnectionAttempt(tr("The Wi-Fi connection timed out. Check the password and try again."));
+    });
+
     auto *networkNotifier = NetworkManager::notifier();
     const auto refreshNetwork = [this] {
         refreshWifiDevice();
@@ -282,6 +290,10 @@ void SystemStateHub::requestWifiScan()
 void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
 {
     clearOperationError();
+    if (m_networkBusy) {
+        setOperationError(tr("Another network operation is still in progress."));
+        return;
+    }
     if (!m_wifiDevice || ssid.isEmpty()) {
         setOperationError(tr("Wi-Fi network is not available."));
         return;
@@ -295,17 +307,17 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
     const auto accessPoint = network->referenceAccessPoint();
 
     if (const auto saved = savedConnectionForSsid(ssid)) {
-        setNetworkBusy(true);
+        startWifiConnectionAttempt(ssid);
         const auto reply = NetworkManager::activateConnection(saved->path(), m_wifiDevice->uni(), accessPoint->uni());
         auto *watcher = new QDBusPendingCallWatcher(reply, this);
         connect(watcher, &QDBusPendingCallWatcher::finished, this,
                 [this, watcher](QDBusPendingCallWatcher *) {
                     const QDBusPendingReply<QDBusObjectPath> result = *watcher;
                     if (result.isError()) {
-                        setOperationError(result.error().message());
+                        finishWifiConnectionAttempt(result.error().message());
+                    } else {
+                        acceptWifiActivation();
                     }
-                    setNetworkBusy(false);
-                    refreshWifiState();
                     watcher->deleteLater();
                 });
         return;
@@ -363,19 +375,19 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
     settings.insert(QStringLiteral("ipv4"), QVariantMap{{QStringLiteral("method"), QStringLiteral("auto")}});
     settings.insert(QStringLiteral("ipv6"), QVariantMap{{QStringLiteral("method"), QStringLiteral("auto")}});
 
-    setNetworkBusy(true);
+    startWifiConnectionAttempt(ssid);
     const auto reply = NetworkManager::addAndActivateConnection2(
         settings, m_wifiDevice->uni(), accessPoint->uni(),
-        QVariantMap{{QStringLiteral("persist"), QStringLiteral("disk")}});
+        QVariantMap{{QStringLiteral("persist"), QStringLiteral("memory")}});
     auto *watcher = new QDBusPendingCallWatcher(reply, this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this,
             [this, watcher](QDBusPendingCallWatcher *) {
                 const QDBusPendingReply<QDBusObjectPath, QDBusObjectPath, QVariantMap> result = *watcher;
                 if (result.isError()) {
-                    setOperationError(result.error().message());
+                    finishWifiConnectionAttempt(result.error().message());
+                } else {
+                    acceptWifiActivation(result.argumentAt<1>().path());
                 }
-                setNetworkBusy(false);
-                refreshWifiState();
                 watcher->deleteLater();
             });
 }
@@ -383,6 +395,10 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
 void SystemStateHub::disconnectWifi()
 {
     clearOperationError();
+    if (m_networkBusy) {
+        setOperationError(tr("Another network operation is still in progress."));
+        return;
+    }
     if (!m_wifiDevice || !m_wifiDevice->activeConnection()) {
         return;
     }
@@ -801,6 +817,10 @@ void SystemStateHub::refreshWifiDevice()
     if (m_wifiDevice) {
         disconnect(m_wifiDevice.data(), nullptr, this, nullptr);
     }
+    if (m_networkBusy && !m_pendingWifiSsid.isEmpty()) {
+        discardTemporaryWifiConnection();
+        finishWifiConnectionAttempt(tr("The Wi-Fi device became unavailable."));
+    }
     m_wifiDevice = next;
     bindWifiDevice();
     Q_EMIT networkChanged();
@@ -826,8 +846,13 @@ void SystemStateHub::bindWifiDevice()
                 }
                 refreshWifiState();
             });
-    connect(m_wifiDevice.data(), &NetworkManager::Device::connectionStateChanged,
-            this, [this] { refreshWifiState(); });
+    connect(m_wifiDevice.data(), &NetworkManager::Device::stateChanged, this,
+            [this](NetworkManager::Device::State state, NetworkManager::Device::State,
+                   NetworkManager::Device::StateChangeReason reason) {
+                m_lastWifiStateReason = reason;
+                refreshWifiState();
+                handleWifiDeviceState(state, reason);
+            });
 }
 
 void SystemStateHub::refreshWifiState()
@@ -932,11 +957,138 @@ void SystemStateHub::setBluetoothBusy(bool busy)
 
 void SystemStateHub::setOperationError(const QString &error)
 {
-    if (m_operationError == error) {
+    QString projected = error.left(1024);
+    projected.remove(QRegularExpression(QStringLiteral(
+        "[\\x{0000}-\\x{0008}\\x{000B}\\x{000C}\\x{000E}-\\x{001F}\\x{007F}\\x{202A}-\\x{202E}\\x{2066}-\\x{2069}]")));
+    if (m_operationError == projected) {
         return;
     }
-    m_operationError = error;
+    m_operationError = projected;
     Q_EMIT operationChanged();
+}
+
+void SystemStateHub::startWifiConnectionAttempt(const QString &ssid)
+{
+    m_pendingWifiSsid = ssid;
+    m_temporaryWifiConnectionPath.clear();
+    m_wifiActivationAccepted = false;
+    m_wifiConnectionTimeout.start();
+    setNetworkBusy(true);
+    refreshWifiState();
+}
+
+void SystemStateHub::acceptWifiActivation(const QString &temporaryConnectionPath)
+{
+    if (!m_networkBusy || m_pendingWifiSsid.isEmpty()) {
+        return;
+    }
+    m_temporaryWifiConnectionPath = temporaryConnectionPath;
+    m_wifiActivationAccepted = true;
+    if (m_wifiDevice) {
+        handleWifiDeviceState(m_wifiDevice->state(), m_lastWifiStateReason);
+    }
+}
+
+void SystemStateHub::handleWifiDeviceState(NetworkManager::Device::State state,
+                                           NetworkManager::Device::StateChangeReason reason)
+{
+    if (!m_networkBusy || !m_wifiActivationAccepted || m_pendingWifiSsid.isEmpty()) {
+        return;
+    }
+
+    if (state == NetworkManager::Device::Failed) {
+        const QString error = wifiFailureMessage(reason);
+        discardTemporaryWifiConnection();
+        finishWifiConnectionAttempt(error);
+        return;
+    }
+    if (state != NetworkManager::Device::Activated || !m_wifiDevice) {
+        return;
+    }
+
+    const auto accessPoint = m_wifiDevice->activeAccessPoint();
+    if (!accessPoint || accessPoint->ssid() != m_pendingWifiSsid) {
+        return;
+    }
+    if (m_temporaryWifiConnectionPath.isEmpty()) {
+        finishWifiConnectionAttempt();
+        return;
+    }
+
+    // Stop consuming state changes while the successfully activated in-memory
+    // profile is committed. A failed password is therefore never saved.
+    m_wifiActivationAccepted = false;
+    const auto connection = NetworkManager::findConnection(m_temporaryWifiConnectionPath);
+    if (!connection) {
+        finishWifiConnectionAttempt(tr("Connected, but the Wi-Fi profile could not be saved."));
+        return;
+    }
+    const auto reply = connection->save();
+    auto *watcher = new QDBusPendingCallWatcher(reply, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this,
+            [this, watcher](QDBusPendingCallWatcher *) {
+                const QDBusPendingReply<> result = *watcher;
+                finishWifiConnectionAttempt(result.isError()
+                    ? tr("Connected, but the Wi-Fi profile could not be saved: %1")
+                          .arg(result.error().message())
+                    : QString());
+                watcher->deleteLater();
+            });
+}
+
+void SystemStateHub::finishWifiConnectionAttempt(const QString &error)
+{
+    m_wifiConnectionTimeout.stop();
+    m_pendingWifiSsid.clear();
+    m_temporaryWifiConnectionPath.clear();
+    m_wifiActivationAccepted = false;
+    if (!error.isEmpty()) {
+        setOperationError(error);
+    }
+    setNetworkBusy(false);
+    refreshWifiState();
+}
+
+void SystemStateHub::discardTemporaryWifiConnection()
+{
+    if (m_temporaryWifiConnectionPath.isEmpty()) {
+        return;
+    }
+    const auto connection = NetworkManager::findConnection(m_temporaryWifiConnectionPath);
+    if (connection) {
+        const auto reply = connection->remove();
+        auto *watcher = new QDBusPendingCallWatcher(reply, this);
+        connect(watcher, &QDBusPendingCallWatcher::finished, watcher,
+                &QObject::deleteLater);
+    }
+    m_temporaryWifiConnectionPath.clear();
+}
+
+QString SystemStateHub::wifiFailureMessage(NetworkManager::Device::StateChangeReason reason) const
+{
+    switch (reason) {
+    case NetworkManager::Device::NoSecretsReason:
+    case NetworkManager::Device::AuthSupplicantDisconnectReason:
+    case NetworkManager::Device::AuthSupplicantConfigFailedReason:
+    case NetworkManager::Device::AuthSupplicantFailedReason:
+    case NetworkManager::Device::AuthSupplicantTimeoutReason:
+        return tr("The Wi-Fi password was rejected. Check it and try again.");
+    case NetworkManager::Device::SsidNotFound:
+        return tr("The Wi-Fi network is no longer visible.");
+    case NetworkManager::Device::ConfigFailedReason:
+    case NetworkManager::Device::ConfigUnavailableReason:
+    case NetworkManager::Device::ConfigExpiredReason:
+        return tr("NetworkManager could not apply this Wi-Fi configuration.");
+    case NetworkManager::Device::DhcpStartFailedReason:
+    case NetworkManager::Device::DhcpErrorReason:
+    case NetworkManager::Device::DhcpFailedReason:
+        return tr("The Wi-Fi network did not provide a usable IP address.");
+    case NetworkManager::Device::DeviceRemovedReason:
+    case NetworkManager::Device::NowUnmanagedReason:
+        return tr("The Wi-Fi device became unavailable.");
+    default:
+        return tr("Could not connect to the Wi-Fi network.");
+    }
 }
 
 NetworkManager::Connection::Ptr SystemStateHub::savedConnectionForSsid(const QString &ssid) const

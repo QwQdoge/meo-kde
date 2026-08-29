@@ -36,7 +36,9 @@ PolicyKit authentication agent alongside it.
 
 The Wi-Fi password prompt uses the same secret-handling rules at the QML
 boundary and only forwards the password to the existing `Meo.System` network
-backend.
+backend. New profiles remain in memory while NetworkManager authenticates;
+they are saved only after the device reaches the activated state, and discarded
+on rejection, failure or timeout.
 
 ## Notifications
 

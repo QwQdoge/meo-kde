@@ -36,7 +36,8 @@ MeoMotionPopup {
         passwordField.clear()
         passwordField.passwordVisible = false
     }
-    onConnectedChanged: if (root.connected && root.opened) root.close()
+    onConnectedChanged: if (root.connected && !root.busy && root.opened) root.close()
+    onBusyChanged: if (root.connected && !root.busy && root.opened) root.close()
     contentItem: ColumnLayout {
         spacing: MeoTheme.space16
 
@@ -104,7 +105,7 @@ MeoMotionPopup {
             label: qsTr("Password")
             isPassword: true
             leadingIcon: "key"
-            helperText: qsTr("The password is used only to connect to this network.")
+            helperText: qsTr("The password is saved by NetworkManager only after the connection succeeds.")
             enabled: !root.busy
             Accessible.description: helperText
             onAccepted: root.submit()

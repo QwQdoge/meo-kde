@@ -63,7 +63,7 @@ Item {
     function plainText(value) {
         if (value === undefined || value === null)
             return ""
-        return String(value)
+        return String(value).slice(0, 16384)
             .replace(/<br\s*\/?\s*>/gi, "\n")
             .replace(/<\/(p|div|li)>/gi, "\n")
             .replace(/<[^>]*>/g, "")
@@ -73,7 +73,17 @@ Item {
             .replace(/&gt;/gi, ">")
             .replace(/&quot;/gi, "\"")
             .replace(/&#39;/gi, "'")
+            .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+            .replace(/[\u202A-\u202E\u2066-\u2069]/g, "")
+            .slice(0, 4096)
             .trim()
+    }
+
+    function buttonLabel(value) {
+        // MeoButton deliberately owns its typography. Remove angle brackets
+        // as well as markup before passing untrusted notification labels to it,
+        // so Qt's AutoText heuristic cannot reinterpret decoded entities.
+        return root.plainText(value).replace(/[<>]/g, "")
     }
 
     function displayBody(body, type, percentage) {
@@ -86,10 +96,10 @@ Item {
     }
 
     function safeIconName(primary, fallback) {
-        const candidate = String(primary || "")
+        const candidate = String(primary || "").slice(0, 256)
         if (/^[A-Za-z0-9][A-Za-z0-9._+\-]*$/.test(candidate))
             return candidate
-        const fallbackCandidate = String(fallback || "")
+        const fallbackCandidate = String(fallback || "").slice(0, 256)
         if (/^[A-Za-z0-9][A-Za-z0-9._+\-]*$/.test(fallbackCandidate))
             return fallbackCandidate
         return "notifications"
@@ -361,7 +371,8 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 icon.name: "settings"
-                                Accessible.name: qsTr("Configure notifications from %1").arg(notificationCard.applicationName)
+                                Accessible.name: qsTr("Configure notifications from %1")
+                                                 .arg(root.plainText(notificationCard.applicationName))
                                 onClicked: if (root.notifications && root.notifications.configure)
                                                root.notifications.configure(notificationCard.sourceIndex)
                             }
@@ -447,8 +458,9 @@ Item {
                                     required property string modelData
                                     type: index === 0 ? "tonal" : "text"
                                     size: "s"
-                                    text: notificationCard.actionLabels && index < notificationCard.actionLabels.length
-                                          ? notificationCard.actionLabels[index] : modelData
+                                    text: root.buttonLabel(notificationCard.actionLabels
+                                                           && index < notificationCard.actionLabels.length
+                                                          ? notificationCard.actionLabels[index] : modelData)
                                     onClicked: if (root.notifications && root.notifications.invokeAction)
                                                    root.notifications.invokeAction(notificationCard.sourceIndex, modelData)
                                 }
@@ -459,7 +471,7 @@ Item {
                                 type: notificationCard.replyExpanded ? "tonal" : "text"
                                 size: "s"
                                 text: notificationCard.replyActionLabel !== ""
-                                      ? notificationCard.replyActionLabel : qsTr("Reply")
+                                      ? root.buttonLabel(notificationCard.replyActionLabel) : qsTr("Reply")
                                 onClicked: {
                                     notificationCard.replyExpanded = !notificationCard.replyExpanded
                                     if (notificationCard.replyExpanded)
@@ -504,7 +516,8 @@ Item {
                                 size: "s"
                                 type: "outlined"
                                 placeholder: notificationCard.replyPlaceholderText !== ""
-                                             ? notificationCard.replyPlaceholderText : qsTr("Write a reply")
+                                             ? root.plainText(notificationCard.replyPlaceholderText)
+                                             : qsTr("Write a reply")
                                 Accessible.name: placeholder
                                 onAccepted: notificationCard.submitReply()
                             }
@@ -514,7 +527,7 @@ Item {
                                 size: "s"
                                 enabled: replyField.text.trim() !== ""
                                 text: notificationCard.replySubmitButtonText !== ""
-                                      ? notificationCard.replySubmitButtonText : qsTr("Send")
+                                      ? root.buttonLabel(notificationCard.replySubmitButtonText) : qsTr("Send")
                                 onClicked: notificationCard.submitReply()
                             }
                         }

@@ -36,6 +36,7 @@ MeoMotionSurface {
         MeoText {
             Layout.fillWidth: true
             text: root.text
+            textFormat: Text.PlainText
             typeRole: "body"
             typeSize: "small"
             color: root.tone === "error" ? MeoTheme.onErrorContainer

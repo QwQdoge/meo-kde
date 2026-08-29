@@ -5,9 +5,21 @@
 #include <KWindowSystem>
 
 #include <QDBusConnection>
+#include <QRegularExpression>
 #include <QWindow>
 
 #include <unistd.h>
+
+namespace
+{
+QString projectedDisplayText(const QString &value, qsizetype maximumLength)
+{
+    QString projected = value.left(maximumLength);
+    projected.remove(QRegularExpression(QStringLiteral(
+        "[\\x{0000}-\\x{0008}\\x{000B}\\x{000C}\\x{000E}-\\x{001F}\\x{007F}\\x{202A}-\\x{202E}\\x{2066}-\\x{2069}]")));
+    return projected;
+}
+}
 
 AuthenticationController::AuthenticationController(QObject *parent)
     : PolkitQt1::Agent::Listener(parent)
@@ -62,8 +74,8 @@ void AuthenticationController::initiateAuthentication(
         return;
     }
 
-    m_actionId = actionId.left(512);
-    m_message = message.left(2048);
+    m_actionId = projectedDisplayText(actionId, 512);
+    m_message = projectedDisplayText(message, 2048);
     m_requesterLabel = labelForAction(m_actionId);
     m_cookie = cookie;
     m_result = result;
@@ -121,7 +133,7 @@ void AuthenticationController::beginSession()
 
     connect(m_session, &PolkitQt1::Agent::Session::request, this,
             [this](const QString &request, bool echo) {
-                m_prompt = request.left(512);
+                m_prompt = projectedDisplayText(request, 512);
                 m_echoResponse = echo;
                 m_busy = false;
                 m_infoText.clear();
@@ -131,12 +143,12 @@ void AuthenticationController::beginSession()
             });
     connect(m_session, &PolkitQt1::Agent::Session::showError, this,
             [this](const QString &text) {
-                m_errorText = text.left(1024);
+                m_errorText = projectedDisplayText(text, 1024);
                 emit stateChanged();
             });
     connect(m_session, &PolkitQt1::Agent::Session::showInfo, this,
             [this](const QString &text) {
-                m_infoText = text.left(1024);
+                m_infoText = projectedDisplayText(text, 1024);
                 emit stateChanged();
             });
     connect(m_session, &PolkitQt1::Agent::Session::completed, this,
@@ -206,7 +218,6 @@ void AuthenticationController::selectIdentity(int index)
         m_session.clear();
     }
     m_selectedIdentityIndex = index;
-    m_attempts = 0;
     m_errorText.clear();
     emit identitiesChanged();
     emit clearResponseRequested();
@@ -315,7 +326,7 @@ void AuthenticationController::applyWindowContext()
 
 QString AuthenticationController::displayNameForIdentity(const PolkitQt1::Identity &identity) const
 {
-    QString value = identity.toString().left(256);
+    QString value = projectedDisplayText(identity.toString(), 256);
     if (value.startsWith(QStringLiteral("unix-user:")))
         value.remove(0, 10);
     return value.isEmpty() ? tr("Administrator") : value;

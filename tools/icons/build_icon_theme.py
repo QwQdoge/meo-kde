@@ -14,8 +14,6 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
-import yaml
-
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
 
@@ -52,6 +50,8 @@ def default_output_dir() -> Path:
 
 
 def load_mapping() -> dict:
+    import yaml
+
     with MAPPING.open(encoding="utf-8") as handle:
         return yaml.safe_load(handle)
 
@@ -121,8 +121,16 @@ def directory_section(path: str, context: str) -> str:
 
 
 def write_index(theme: Path, config: dict[str, object]) -> None:
-    scalable = [f"scalable/{name}" for name in THEME_DIRS]
-    symbolic = [f"symbolic/{name}" for name in SYMBOLIC_DIRS]
+    scalable_names = [
+        name for name in THEME_DIRS
+        if any((theme / "scalable" / name).iterdir())
+    ]
+    symbolic_names = [
+        name for name in SYMBOLIC_DIRS
+        if any((theme / "symbolic" / name).iterdir())
+    ]
+    scalable = [f"scalable/{name}" for name in scalable_names]
+    symbolic = [f"symbolic/{name}" for name in symbolic_names]
     content = [
         "[Icon Theme]",
         f"Name={config['name']}",
@@ -137,9 +145,9 @@ def write_index(theme: Path, config: dict[str, object]) -> None:
         "devices": "Devices", "emblems": "Emblems", "emotes": "Emotes",
         "mimetypes": "MimeTypes", "places": "Places", "status": "Status", "panel": "Status",
     }
-    for name in THEME_DIRS:
+    for name in scalable_names:
         content.append(directory_section(f"scalable/{name}", contexts[name]))
-    for name in SYMBOLIC_DIRS:
+    for name in symbolic_names:
         content.append(directory_section(f"symbolic/{name}", contexts[name]))
     (theme / "index.theme").write_text("\n".join(content), encoding="utf-8")
 
@@ -323,7 +331,6 @@ def main() -> int:
     )
     args = parser.parse_args()
     output_dir = args.output_dir or default_output_dir()
-    mapping = load_mapping()
     if args.clean:
         for config in THEMES.values():
             shutil.rmtree(config["path"], ignore_errors=True)
@@ -338,6 +345,7 @@ def main() -> int:
             print("\n".join(issues), file=sys.stderr)
             return 1
         return 0
+    mapping = load_mapping()
     result = build(mapping)
     issues = validate()
     report = output_dir / "metrics" / "icon-coverage.json"

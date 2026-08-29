@@ -4,7 +4,7 @@ Comment=Material Symbols Rounded system icon theme for Meo Desktop
 Inherits=breeze-dark,breeze,hicolor
 Example=folder
 FollowsColorScheme=false
-Directories=scalable/actions,scalable/apps,scalable/categories,scalable/devices,scalable/emblems,scalable/emotes,scalable/mimetypes,scalable/places,scalable/status,scalable/panel,symbolic/actions,symbolic/devices,symbolic/places,symbolic/status
+Directories=scalable/actions,scalable/categories,scalable/devices,scalable/places,scalable/status,symbolic/actions,symbolic/devices,symbolic/places,symbolic/status
 
 [scalable/actions]
 Size=24
@@ -12,14 +12,6 @@ MinSize=16
 MaxSize=64
 Type=Scalable
 Context=Actions
-
-
-[scalable/apps]
-Size=24
-MinSize=16
-MaxSize=64
-Type=Scalable
-Context=Applications
 
 
 [scalable/categories]
@@ -38,30 +30,6 @@ Type=Scalable
 Context=Devices
 
 
-[scalable/emblems]
-Size=24
-MinSize=16
-MaxSize=64
-Type=Scalable
-Context=Emblems
-
-
-[scalable/emotes]
-Size=24
-MinSize=16
-MaxSize=64
-Type=Scalable
-Context=Emotes
-
-
-[scalable/mimetypes]
-Size=24
-MinSize=16
-MaxSize=64
-Type=Scalable
-Context=MimeTypes
-
-
 [scalable/places]
 Size=24
 MinSize=16
@@ -71,14 +39,6 @@ Context=Places
 
 
 [scalable/status]
-Size=24
-MinSize=16
-MaxSize=64
-Type=Scalable
-Context=Status
-
-
-[scalable/panel]
 Size=24
 MinSize=16
 MaxSize=64

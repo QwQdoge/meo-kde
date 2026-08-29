@@ -7,7 +7,7 @@ import MeoKDE 1.0
 Window {
     id: root
 
-    property var backend: (typeof authorization !== "undefined") ? authorization : null
+    property var backend: null
 
     width: Math.round(480 * MeoTheme.globalScale)
     height: Math.round(Math.max(480 * MeoTheme.globalScale,

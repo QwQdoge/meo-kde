@@ -12,6 +12,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QTimer>
 #include <QVariantList>
 
 class SystemStateHub final : public QObject
@@ -127,6 +128,13 @@ private:
     void setNetworkBusy(bool busy);
     void setBluetoothBusy(bool busy);
     void setOperationError(const QString &error);
+    void startWifiConnectionAttempt(const QString &ssid);
+    void acceptWifiActivation(const QString &temporaryConnectionPath = {});
+    void handleWifiDeviceState(NetworkManager::Device::State state,
+                               NetworkManager::Device::StateChangeReason reason);
+    void finishWifiConnectionAttempt(const QString &error = {});
+    void discardTemporaryWifiConnection();
+    QString wifiFailureMessage(NetworkManager::Device::StateChangeReason reason) const;
     NetworkManager::Connection::Ptr savedConnectionForSsid(const QString &ssid) const;
     QString securityLabel(NetworkManager::WirelessSecurityType security) const;
     QString bluetoothMaterialIcon(const BluezQt::DevicePtr &device) const;
@@ -134,6 +142,11 @@ private:
     NetworkManager::WirelessDevice::Ptr m_wifiDevice;
     bool m_wifiScanning = false;
     bool m_networkBusy = false;
+    bool m_wifiActivationAccepted = false;
+    NetworkManager::Device::StateChangeReason m_lastWifiStateReason = NetworkManager::Device::NoReason;
+    QString m_pendingWifiSsid;
+    QString m_temporaryWifiConnectionPath;
+    QTimer m_wifiConnectionTimeout;
     BluezQt::Manager m_bluetoothManager;
     bool m_bluetoothBusy = false;
     Solid::Device m_batteryDevice;

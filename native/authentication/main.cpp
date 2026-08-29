@@ -5,7 +5,8 @@
 #include <QDBusReply>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
+#include <QSessionManager>
+#include <QVariant>
 #include <QWindow>
 
 #ifdef __linux__
@@ -22,6 +23,11 @@ int main(int argc, char **argv)
     app.setApplicationName(QStringLiteral("meo-polkit-agent"));
     app.setOrganizationName(QStringLiteral("MeoArch"));
     app.setQuitOnLastWindowClosed(false);
+    const auto disableSessionRestart = [](QSessionManager &manager) {
+        manager.setRestartHint(QSessionManager::RestartNever);
+    };
+    QObject::connect(&app, &QGuiApplication::commitDataRequest, disableSessionRestart);
+    QObject::connect(&app, &QGuiApplication::saveStateRequest, disableSessionRestart);
 
     auto *busInterface = QDBusConnection::sessionBus().interface();
     if (!busInterface) {
@@ -40,7 +46,9 @@ int main(int argc, char **argv)
 
     AuthenticationController controller;
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty(QStringLiteral("authorization"), &controller);
+    engine.setInitialProperties({
+        {QStringLiteral("backend"), QVariant::fromValue(static_cast<QObject *>(&controller))},
+    });
     engine.load(QUrl(QStringLiteral("qrc:/qml/AuthenticationDialog.qml")));
     if (engine.rootObjects().isEmpty())
         return 1;
