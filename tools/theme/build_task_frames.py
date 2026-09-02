@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 class ThemeTarget:
     path: Path
     text: str
+    background: str
     focus: str
     attention: str
 
@@ -22,22 +23,29 @@ TARGETS = (
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoLight/widgets/tasks.svg",
         text="#1c1b1f",
+        background="#fffbfe",
         focus="#6750a4",
         attention="#b3261e",
     ),
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoDark/widgets/tasks.svg",
         text="#e6e0e9",
+        background="#141218",
         focus="#d0bcff",
         attention="#ffb4ab",
     ),
 )
 
 SIZE = 48
-# Match MeoTheme.shapeLarge. The 48 dp native task target keeps a full
-# Material state layer while the icon stays a native Plasma/KDE icon.
-CORNER = 16
-CENTER = SIZE - 2 * CORNER
+# The task manager gives each launcher a 48 dp hit target. Do not paint that
+# entire target: touching full-size circles read as a row of pill cells instead
+# of one calm floating surface with separate app icons. Keep a 3 dp transparent
+# gutter and render a 42 dp circular icon well inside. A 1 dp centre patch
+# remains because KSvg's FrameSvg needs a non-zero stretch region.
+WELL_INSET = 3
+WELL_SIZE = SIZE - 2 * WELL_INSET
+CORNER = (WELL_SIZE - 1) / 2
+CENTER = 1
 
 
 @dataclass(frozen=True)
@@ -45,6 +53,7 @@ class Indicator:
     width: int
     height: int
     opacity: str
+    color_class: str
 
 
 def frame(
@@ -54,39 +63,41 @@ def frame(
     opacity: str,
     indicator: Indicator | None = None,
 ) -> list[str]:
-    center_x = CORNER
-    center_y = y + CORNER
-    right_x = CORNER + CENTER
-    bottom_y = y + CORNER + CENTER
+    left_x = WELL_INSET
+    top_y = y + WELL_INSET
+    center_x = left_x + CORNER
+    center_y = top_y + CORNER
+    right_x = center_x + CENTER
+    bottom_y = center_y + CENTER
+    well_right = left_x + WELL_SIZE
+    well_bottom = top_y + WELL_SIZE
     lines = [f'  <g class="{color_class}" fill="currentColor">']
     lines.extend(
         (
             f'    <rect id="{name}-center" x="{center_x}" y="{center_y}" width="{CENTER}" height="{CENTER}" opacity="{opacity}"/>',
-            f'    <rect id="{name}-top" x="{center_x}" y="{y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>',
-            f'    <rect id="{name}-left" x="0" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
+            f'    <rect id="{name}-top" x="{center_x}" y="{top_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>',
+            f'    <rect id="{name}-left" x="{left_x}" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
             f'    <rect id="{name}-right" x="{right_x}" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
-            f'    <path id="{name}-topleft" d="M{CORNER} {y}A{CORNER} {CORNER} 0 0 0 0 {center_y}H{CORNER}Z" opacity="{opacity}"/>',
-            f'    <path id="{name}-topright" d="M{right_x} {y}A{CORNER} {CORNER} 0 0 1 {SIZE} {center_y}H{right_x}Z" opacity="{opacity}"/>',
-            f'    <path id="{name}-bottomleft" d="M0 {bottom_y}A{CORNER} {CORNER} 0 0 0 {CORNER} {y + SIZE}V{bottom_y}Z" opacity="{opacity}"/>',
-            f'    <path id="{name}-bottomright" d="M{right_x} {bottom_y}V{y + SIZE}A{CORNER} {CORNER} 0 0 0 {SIZE} {bottom_y}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-topleft" d="M{center_x} {top_y}A{CORNER} {CORNER} 0 0 0 {left_x} {center_y}H{center_x}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-topright" d="M{right_x} {top_y}A{CORNER} {CORNER} 0 0 1 {well_right} {center_y}H{right_x}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-bottomleft" d="M{left_x} {bottom_y}A{CORNER} {CORNER} 0 0 0 {center_x} {well_bottom}V{bottom_y}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-bottomright" d="M{right_x} {bottom_y}V{well_bottom}A{CORNER} {CORNER} 0 0 0 {well_right} {bottom_y}Z" opacity="{opacity}"/>',
         )
     )
+    lines.append(
+        f'    <rect id="{name}-bottom" x="{center_x}" y="{bottom_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>'
+    )
+    lines.append("  </g>")
     if indicator:
         indicator_x = (SIZE - indicator.width) // 2
-        indicator_y = y + SIZE - indicator.height - 2
-        lines.append(f'    <g id="{name}-bottom">')
-        lines.append(
-            f'      <rect x="{center_x}" y="{bottom_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>'
+        indicator_y = y + WELL_INSET + WELL_SIZE - indicator.height - 3
+        lines.extend(
+            (
+                f'  <g id="{name}-indicator" class="{indicator.color_class}" fill="currentColor">',
+                f'    <rect x="{indicator_x}" y="{indicator_y}" width="{indicator.width}" height="{indicator.height}" rx="{indicator.height / 2:g}" opacity="{indicator.opacity}"/>',
+                "  </g>",
+            )
         )
-        lines.append(
-            f'      <rect x="{indicator_x}" y="{indicator_y}" width="{indicator.width}" height="{indicator.height}" rx="{indicator.height / 2:g}" opacity="{indicator.opacity}"/>'
-        )
-        lines.append("    </g>")
-    else:
-        lines.append(
-            f'    <rect id="{name}-bottom" x="{center_x}" y="{bottom_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>'
-        )
-    lines.append("  </g>")
     return lines
 
 
@@ -96,29 +107,31 @@ def render(target: ThemeTarget) -> str:
     # frame. Keep each semantic state visible in that path: a generic hover
     # frame alone would erase the active or running indicator.
     states = (
-        # Non-active running app: no bubble, only a restrained running marker.
-        ("normal", "ColorScheme-Text", "0", Indicator(8, 3, "0.72")),
-        # Active app: Pixel-style primary state layer plus a wider indicator.
-        ("focus", "ColorScheme-ButtonFocus", "0.18", Indicator(16, 3, "0.96")),
-        # Minimized apps remain discoverable without competing with the active task.
-        ("minimized", "ColorScheme-Text", "0", Indicator(6, 2, "0.40")),
-        ("attention", "ColorScheme-NeutralText", "0.20", Indicator(16, 3, "0.96")),
+        # Application artwork owns its selected circle/Pixel/squircle shape.
+        # Native Task Manager frames are interaction layers only; opaque task
+        # wells would create a second plate behind every generated app icon.
+        ("normal", "ColorScheme-Background", "0", None),
+        ("focus", "ColorScheme-Background", "0", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
+        # Minimized apps remain discoverable through their marker without a plate.
+        ("minimized", "ColorScheme-Background", "0", Indicator(5, 2, "0.46", "ColorScheme-ButtonFocus")),
+        ("attention", "ColorScheme-NeutralText", "0.14", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
         # Progress is painted in a clipped overlay by the native task manager.
         ("progress", "ColorScheme-ButtonFocus", "0.12", None),
         # Per-state hover frames preserve the corresponding active/running cue.
-        ("normal-hover", "ColorScheme-Text", "0.10", Indicator(8, 3, "0.82")),
-        ("focus-hover", "ColorScheme-ButtonFocus", "0.24", Indicator(16, 3, "0.96")),
-        ("minimized-hover", "ColorScheme-Text", "0.10", Indicator(6, 2, "0.56")),
-        ("attention-hover", "ColorScheme-NeutralText", "0.26", Indicator(16, 3, "0.96")),
+        ("normal-hover", "ColorScheme-Background", "0.10", None),
+        ("focus-hover", "ColorScheme-Background", "0.12", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
+        ("minimized-hover", "ColorScheme-Background", "0.08", Indicator(5, 2, "0.58", "ColorScheme-ButtonFocus")),
+        ("attention-hover", "ColorScheme-NeutralText", "0.18", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
         # Pure pinned launchers use an empty base prefix; give only hover feedback.
-        ("launcher-hover", "ColorScheme-Text", "0.10", None),
+        ("launcher-hover", "ColorScheme-Background", "0.10", None),
         # Safe fallback for future/native task states that do not have a variant.
-        ("hover", "ColorScheme-Text", "0.10", None),
+        ("hover", "ColorScheme-Background", "0.10", None),
     )
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="96" height="{SIZE * len(states)}" viewBox="0 0 96 {SIZE * len(states)}">',
         '  <style id="current-color-scheme" type="text/css">',
         f'    .ColorScheme-Text {{ color: {target.text}; }}',
+        f'    .ColorScheme-Background {{ color: {target.background}; }}',
         f'    .ColorScheme-ButtonFocus {{ color: {target.focus}; }}',
         f'    .ColorScheme-NeutralText {{ color: {target.attention}; }}',
         '  </style>',

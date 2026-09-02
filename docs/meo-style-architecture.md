@@ -25,9 +25,13 @@ changes.
 - KWin effects own window-level rounding and compositor behavior.
 - Plasma packages/Plasmoids own the shell.
 
-The initial implementation uses Fusion as a compatibility base for controls
-not yet custom-painted. This keeps KDE widget geometry and accessibility
-semantics intact while P0 coverage expands.
+MeoStyle prefers Breeze as its KDE compatibility base and keeps it responsible
+for behaviour that is not explicitly visual: text/icon layout, mnemonics,
+keyboard navigation, popup placement, hit testing and platform style hints.
+Fusion is only the portable last-resort base when Breeze is unavailable.
+Standard default-delegate item views are custom-painted through the public
+QStyle path; applications with their own delegates remain responsible for
+their delegate visuals.
 
 ## Installation
 

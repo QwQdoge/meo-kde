@@ -41,6 +41,23 @@ class MeoColorSchemeTests(unittest.TestCase):
             values[name] = parser["Colors:Window"]["BackgroundNormal"]
         self.assertNotEqual(values["MeoLight"], values["MeoDark"])
 
+    def test_window_chrome_and_panel_share_the_dynamic_surface(self):
+        """Avoid a visible tonal seam where a window meets the top panel."""
+        for name in ("MeoLight", "MeoDark"):
+            parser = configparser.ConfigParser(interpolation=None)
+            parser.read(SCHEMES / f"{name}.colors", encoding="utf-8")
+            self.assertEqual(
+                parser["Colors:Header"]["BackgroundNormal"],
+                parser["Colors:Window"]["BackgroundNormal"],
+                name,
+            )
+
+        generator = (ROOT / "native/dynamic-color/dynamiccolors.cpp").read_text(encoding="utf-8")
+        header_start = generator.index('writeColorSet(config, QStringLiteral("Colors:Header")')
+        header_end = generator.index('writeInactiveHeader(config, scheme);', header_start)
+        header_mapping = generator[header_start:header_end]
+        self.assertIn('role(scheme, QStringLiteral("surface"))', header_mapping)
+
     def test_plasma_surfaces_follow_the_active_system_scheme(self):
         for name in ("MeoLight", "MeoDark"):
             root = DESKTOP_THEMES / name

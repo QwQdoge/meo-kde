@@ -42,11 +42,12 @@ read_value() {
 }
 
 panel_mode="$(read_value Panels Mode dual)"
+dock_implementation="$(read_value Panels DockImplementation standalone)"
 show_system_tray="$(read_value Panels ShowSystemTray true)"
 show_global_menu="$(read_value Panels ShowGlobalMenu true)"
 show_top_app_tasks="$(read_value Panels ShowTopAppTasks false)"
 top_panel_height="$(read_value Panels TopPanelHeight 32)"
-dock_height="$(read_value Panels DockHeight 64)"
+dock_height="$(read_value Panels DockHeight 80)"
 text_scale_percent="$(read_value StatusBar TextScalePercent 100)"
 show_network="$(read_value StatusBar ShowNetwork true)"
 show_bluetooth="$(read_value StatusBar ShowBluetooth true)"
@@ -59,6 +60,10 @@ use_24_hour_clock="$(read_value StatusBar Use24HourClock true)"
 case "${panel_mode}" in
   single|dual) ;;
   *) echo "Panels/Mode must be single or dual, found: ${panel_mode}" >&2; exit 1 ;;
+esac
+case "${dock_implementation}" in
+  standalone|native) ;;
+  *) echo "Panels/DockImplementation must be standalone or native, found: ${dock_implementation}" >&2; exit 1 ;;
 esac
 for boolean in show_system_tray show_global_menu show_top_app_tasks show_network show_bluetooth show_volume show_date show_notifications use_24_hour_clock; do
   case "${!boolean,,}" in
@@ -270,7 +275,7 @@ top.writeConfig("AppletOrder", topOrder.join(";"));
 top.reloadConfig();
 
 var dock = firstPanel("bottom");
-if ("${panel_mode}" === "dual") {
+if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
     if (!dock) {
         dock = new Panel;
         dock.location = "bottom";
@@ -293,8 +298,8 @@ if ("${panel_mode}" === "dual") {
 EOF
 
 if [ "${dry_run}" -eq 1 ]; then
-  printf 'Would apply Meo panel profile from %s: mode=%s tray=%s global-menu=%s top-app-tasks=%s top=%s dock=%s text=%s battery=%s\n' \
-    "${config_file}" "${panel_mode}" "${show_system_tray}" "${show_global_menu}" "${show_top_app_tasks}" "${top_panel_height}" "${dock_height}" "${text_scale_percent}" "${battery_display}"
+  printf 'Would apply Meo panel profile from %s: mode=%s dock-implementation=%s tray=%s global-menu=%s top-app-tasks=%s top=%s dock=%s text=%s battery=%s\n' \
+    "${config_file}" "${panel_mode}" "${dock_implementation}" "${show_system_tray}" "${show_global_menu}" "${show_top_app_tasks}" "${top_panel_height}" "${dock_height}" "${text_scale_percent}" "${battery_display}"
   exit 0
 fi
 
@@ -304,4 +309,4 @@ busctl --user call \
     org.kde.PlasmaShell \
     evaluateScript \
     s "${plasma_script}" >/dev/null
-echo "Applied Meo panel profile: mode=${panel_mode}, system tray=${show_system_tray}."
+echo "Applied Meo panel profile: mode=${panel_mode}, dock=${dock_implementation}, system tray=${show_system_tray}."

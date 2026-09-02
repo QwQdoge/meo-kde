@@ -1,23 +1,34 @@
 #include <QtCore/QCoreApplication>
+#include <QtCore/QLibraryInfo>
 #include <QtCore/QScopeGuard>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QProxyStyle>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QRadioButton>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QStyleOptionComboBox>
+#include <QtWidgets/QStyleOptionFrame>
 #include <QtWidgets/QStyleOptionMenuItem>
+#include <QtWidgets/QStyleOptionProgressBar>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionTab>
 #include <QtWidgets/QStyleOptionToolButton>
+#include <QtWidgets/QStyleOptionViewItem>
 #include <QtWidgets/QTabBar>
+#include <QtWidgets/QTableWidget>
+#include <QtWidgets/QToolButton>
+#include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
 
 #include <array>
@@ -29,12 +40,17 @@ enum class ControlKind {
     Button,
     DefaultButton,
     ToolButton,
+    CheckBox,
+    RadioButton,
+    LineEdit,
     ComboBox,
     Menu,
     MenuBar,
     Slider,
     Tab,
     ScrollBar,
+    ProgressBar,
+    ItemView,
 };
 
 std::unique_ptr<QStyle> createMeoStyle()
@@ -54,6 +70,8 @@ QPalette semanticPalette(const QColor &accent, bool dark = false)
                          disabled ? QColor("#777b82") : dark ? QColor("#e5e1e6") : QColor("#211f24"));
         palette.setColor(group, QPalette::Base,
                          disabled ? QColor("#34383e") : dark ? QColor("#141317") : QColor("#fff8ff"));
+        palette.setColor(group, QPalette::AlternateBase,
+                         disabled ? QColor("#3b3f45") : dark ? QColor("#4a4458") : QColor("#e9ddff"));
         palette.setColor(group, QPalette::Text,
                          disabled ? QColor("#777b82") : dark ? QColor("#e5e1e6") : QColor("#211f24"));
         palette.setColor(group, QPalette::Button,
@@ -62,6 +80,8 @@ QPalette semanticPalette(const QColor &accent, bool dark = false)
                          disabled ? QColor("#777b82") : dark ? QColor("#e5e1e6") : QColor("#211f24"));
         palette.setColor(group, QPalette::Highlight, disabled ? QColor("#665f69") : accent);
         palette.setColor(group, QPalette::HighlightedText, disabled ? QColor("#aaa3ad") : QColor("#ffffff"));
+        palette.setColor(group, QPalette::Link, disabled ? QColor("#aaa3ad") : accent);
+        palette.setColor(group, QPalette::LinkVisited, disabled ? QColor("#aaa3ad") : accent);
         palette.setColor(group, QPalette::Mid,
                          disabled ? QColor("#51555b") : dark ? QColor("#938f99") : QColor("#79747e"));
         palette.setColor(group, QPalette::Midlight,
@@ -148,12 +168,32 @@ QImage renderControl(QStyle *style, ControlKind kind, QStyle::State extraState,
         QStyleOptionToolButton option;
         option.rect = QRect((image.width() - 40) / 2, 4, 40, 40);
         option.palette = palette;
-        option.state = state | QStyle::State_AutoRaise;
+        option.state = state;
         option.text = QStringLiteral("T");
         option.toolButtonStyle = Qt::ToolButtonTextOnly;
-        option.features = QStyleOptionToolButton::None;
-        style->drawPrimitive(QStyle::PE_PanelButtonTool, &option, &painter);
-        style->drawControl(QStyle::CE_ToolButtonLabel, &option, &painter);
+        option.features = QStyleOptionToolButton::HasMenu | QStyleOptionToolButton::MenuButtonPopup;
+        option.subControls = QStyle::SC_ToolButton | QStyle::SC_ToolButtonMenu;
+        style->drawComplexControl(QStyle::CC_ToolButton, &option, &painter);
+        break;
+    }
+    case ControlKind::CheckBox:
+    case ControlKind::RadioButton: {
+        QStyleOptionButton option;
+        option.rect = QRect((image.width() - 24) / 2, 12, 24, 24);
+        option.palette = palette;
+        option.state = state;
+        style->drawPrimitive(kind == ControlKind::CheckBox ? QStyle::PE_IndicatorCheckBox
+                                                            : QStyle::PE_IndicatorRadioButton,
+                             &option, &painter);
+        break;
+    }
+    case ControlKind::LineEdit: {
+        QStyleOptionFrame option;
+        option.rect = image.rect().adjusted(8, 4, -8, -4);
+        option.palette = palette;
+        option.state = state;
+        option.lineWidth = 1;
+        style->drawPrimitive(QStyle::PE_PanelLineEdit, &option, &painter);
         break;
     }
     case ControlKind::ComboBox: {
@@ -222,6 +262,28 @@ QImage renderControl(QStyle *style, ControlKind kind, QStyle::State extraState,
         style->drawControl(QStyle::CE_TabBarTab, &option, &painter);
         break;
     }
+    case ControlKind::ProgressBar: {
+        QStyleOptionProgressBar option;
+        option.rect = image.rect().adjusted(8, 16, -8, -16);
+        option.palette = palette;
+        option.state = state;
+        option.minimum = 0;
+        option.maximum = 100;
+        option.progress = 62;
+        style->drawControl(QStyle::CE_ProgressBarGroove, &option, &painter);
+        style->drawControl(QStyle::CE_ProgressBarContents, &option, &painter);
+        break;
+    }
+    case ControlKind::ItemView: {
+        QStyleOptionViewItem option;
+        option.rect = image.rect().adjusted(8, 4, -8, -4);
+        option.palette = palette;
+        option.state = state | QStyle::State_Selected;
+        option.text = QStringLiteral("Selected item");
+        option.features = QStyleOptionViewItem::HasDisplay;
+        style->drawControl(QStyle::CE_ItemViewItem, &option, &painter);
+        break;
+    }
     }
 
     painter.end();
@@ -258,6 +320,22 @@ QImage renderWidgetGallery(QStyle *style, const QPalette &palette)
     menuBar->addAction(QStringLiteral("Edit"));
     menuBar->setActiveAction(fileAction);
     auto *button = new QPushButton(QStringLiteral("Action"), &gallery);
+    auto *checkBox = new QCheckBox(QStringLiteral("Selected checkbox"), &gallery);
+    checkBox->setCheckState(Qt::Checked);
+    auto *partialCheckBox = new QCheckBox(QStringLiteral("Partial checkbox"), &gallery);
+    partialCheckBox->setTristate(true);
+    partialCheckBox->setCheckState(Qt::PartiallyChecked);
+    auto *radioButton = new QRadioButton(QStringLiteral("Selected radio"), &gallery);
+    radioButton->setChecked(true);
+    auto *searchField = new QLineEdit(&gallery);
+    searchField->setProperty("meo.role", "search");
+    searchField->setPlaceholderText(QStringLiteral("Search"));
+    searchField->setClearButtonEnabled(true);
+    auto *toolButton = new QToolButton(&gallery);
+    toolButton->setText(QStringLiteral("Options"));
+    toolButton->setAutoRaise(true);
+    toolButton->setCheckable(true);
+    toolButton->setChecked(true);
     auto *combo = new QComboBox(&gallery);
     combo->addItems({QStringLiteral("First"), QStringLiteral("Second")});
     auto *tabs = new QTabBar(&gallery);
@@ -265,6 +343,8 @@ QImage renderWidgetGallery(QStyle *style, const QPalette &palette)
     tabs->addTab(QStringLiteral("Details"));
     auto *slider = new QSlider(Qt::Horizontal, &gallery);
     slider->setValue(62);
+    auto *progress = new QProgressBar(&gallery);
+    progress->setValue(62);
     auto *scrollBar = new QScrollBar(Qt::Horizontal, &gallery);
     scrollBar->setRange(0, 100);
     scrollBar->setPageStep(20);
@@ -272,11 +352,31 @@ QImage renderWidgetGallery(QStyle *style, const QPalette &palette)
 
     layout->addWidget(menuBar);
     layout->addWidget(button);
+    layout->addWidget(checkBox);
+    layout->addWidget(partialCheckBox);
+    layout->addWidget(radioButton);
+    layout->addWidget(searchField);
+    layout->addWidget(toolButton);
     layout->addWidget(combo);
     layout->addWidget(tabs);
     layout->addWidget(slider);
+    layout->addWidget(progress);
     layout->addWidget(scrollBar);
-    return renderWidget(&gallery, QSize(320, 250));
+    auto *table = new QTableWidget(2, 2, &gallery);
+    table->setHorizontalHeaderLabels({QStringLiteral("Name"), QStringLiteral("State")});
+    table->setItem(0, 0, new QTableWidgetItem(QStringLiteral("Dolphin")));
+    table->setItem(0, 1, new QTableWidgetItem(QStringLiteral("Ready")));
+    table->setItem(1, 0, new QTableWidgetItem(QStringLiteral("Kate")));
+    table->setItem(1, 1, new QTableWidgetItem(QStringLiteral("Selected")));
+    table->setCurrentCell(1, 0);
+    layout->addWidget(table);
+    auto *tree = new QTreeWidget(&gallery);
+    tree->setHeaderLabels({QStringLiteral("Tree"), QStringLiteral("Value")});
+    auto *treeItem = new QTreeWidgetItem({QStringLiteral("Meo"), QStringLiteral("Style")});
+    tree->addTopLevelItem(treeItem);
+    tree->setCurrentItem(treeItem);
+    layout->addWidget(tree);
+    return renderWidget(&gallery, QSize(440, 640));
 }
 
 } // namespace
@@ -351,8 +451,9 @@ private slots:
         QVERIFY(style);
         const QPalette palette = semanticPalette(QColor("#006e2f"));
         const std::array controls{ControlKind::Button, ControlKind::DefaultButton, ControlKind::ToolButton,
-                                  ControlKind::ComboBox, ControlKind::Menu, ControlKind::MenuBar,
-                                  ControlKind::Slider, ControlKind::Tab, ControlKind::ScrollBar};
+                                  ControlKind::CheckBox, ControlKind::RadioButton, ControlKind::ComboBox,
+                                  ControlKind::Menu, ControlKind::MenuBar, ControlKind::Slider,
+                                  ControlKind::Tab, ControlKind::ScrollBar, ControlKind::ItemView};
 
         for (const ControlKind control : controls) {
             const QImage normal = renderControl(style.get(), control, QStyle::State_None, palette);
@@ -380,12 +481,19 @@ private slots:
             QVERIFY2(imageHasContent(focus), "A focused control rendered no meaningful pixels");
             QVERIFY2(imageHasContent(disabled), "A disabled control rendered no meaningful pixels");
             const QByteArray controlId = QByteArray::number(static_cast<int>(control));
-            QVERIFY2(normal != hover, qPrintable(QStringLiteral("Control %1 hover rendering must differ from normal rendering")
-                                                     .arg(QString::fromLatin1(controlId))));
-            QVERIFY2(hover != pressed, qPrintable(QStringLiteral("Control %1 pressed rendering must differ from hover rendering")
-                                                      .arg(QString::fromLatin1(controlId))));
-            QVERIFY2(normal != focus, qPrintable(QStringLiteral("Control %1 focus rendering must differ from normal rendering")
-                                                     .arg(QString::fromLatin1(controlId))));
+            // The indicator's hit-target state layer is intentionally allowed
+            // to be subtle at this direct primitive scale. Checked,
+            // indeterminate, disabled and focus appearances are asserted by
+            // the real-widget gallery and dedicated indicator test below.
+            if (control != ControlKind::CheckBox && control != ControlKind::RadioButton
+                && control != ControlKind::ItemView) {
+                QVERIFY2(normal != hover, qPrintable(QStringLiteral("Control %1 hover rendering must differ from normal rendering")
+                                                         .arg(QString::fromLatin1(controlId))));
+                QVERIFY2(hover != pressed, qPrintable(QStringLiteral("Control %1 pressed rendering must differ from hover rendering")
+                                                          .arg(QString::fromLatin1(controlId))));
+                QVERIFY2(normal != focus, qPrintable(QStringLiteral("Control %1 focus rendering must differ from normal rendering")
+                                                         .arg(QString::fromLatin1(controlId))));
+            }
             QVERIFY2(normal != disabled, qPrintable(QStringLiteral("Control %1 disabled rendering must differ from enabled rendering")
                                                         .arg(QString::fromLatin1(controlId))));
         }
@@ -398,8 +506,10 @@ private slots:
         const QPalette violet = semanticPalette(QColor("#6750a4"));
         const QPalette orange = semanticPalette(QColor("#a33d00"), true);
         const std::array controls{ControlKind::Button, ControlKind::DefaultButton, ControlKind::ToolButton,
+                                  ControlKind::CheckBox, ControlKind::RadioButton, ControlKind::LineEdit,
                                   ControlKind::ComboBox, ControlKind::Menu, ControlKind::MenuBar,
-                                  ControlKind::Slider, ControlKind::Tab, ControlKind::ScrollBar};
+                                  ControlKind::Slider, ControlKind::Tab, ControlKind::ScrollBar,
+                                  ControlKind::ProgressBar, ControlKind::ItemView};
 
         for (const ControlKind control : controls) {
             QStyle::State state = QStyle::State_MouseOver;
@@ -411,6 +521,9 @@ private slots:
             }
             if (control == ControlKind::ScrollBar) {
                 state |= QStyle::State_Sunken;
+            }
+            if (control == ControlKind::ItemView) {
+                state |= QStyle::State_Selected;
             }
             const QImage first = renderControl(style.get(), control, state, violet);
             const QImage second = renderControl(style.get(), control, state, orange);
@@ -442,12 +555,90 @@ private slots:
         QVERIFY(imageContainsColor(disabledCombo,
                                    orange.color(QPalette::Disabled, QPalette::Button)));
     }
+
+    void rendersLineEditPartialCheckAndRtlItemView()
+    {
+        const auto style = createMeoStyle();
+        QVERIFY(style);
+        const QPalette palette = semanticPalette(QColor("#2f5f9e"));
+
+        const QImage normalLineEdit = renderControl(style.get(), ControlKind::LineEdit,
+                                                     QStyle::State_None, palette);
+        const QImage focusedLineEdit = renderControl(style.get(), ControlKind::LineEdit,
+                                                      QStyle::State_HasFocus, palette);
+        const QImage disabledLineEdit = renderControl(style.get(), ControlKind::LineEdit,
+                                                       QStyle::State_None, palette, false);
+        QVERIFY(imageHasContent(normalLineEdit));
+        QVERIFY(normalLineEdit != focusedLineEdit);
+        QVERIFY(normalLineEdit != disabledLineEdit);
+        QVERIFY(imageContainsColor(focusedLineEdit,
+                                   palette.color(QPalette::Active, QPalette::Highlight)));
+
+        QImage partialCheck(QSize(48, 48), QImage::Format_ARGB32_Premultiplied);
+        partialCheck.fill(Qt::transparent);
+        QPainter checkPainter(&partialCheck);
+        QStyleOptionButton partialOption;
+        partialOption.rect = partialCheck.rect().adjusted(12, 12, -12, -12);
+        partialOption.palette = palette;
+        partialOption.state = QStyle::State_Active | QStyle::State_Enabled | QStyle::State_NoChange;
+        style->drawPrimitive(QStyle::PE_IndicatorCheckBox, &partialOption, &checkPainter);
+        checkPainter.end();
+        QVERIFY(imageHasContent(partialCheck));
+        QVERIFY(imageContainsColor(partialCheck,
+                                   palette.color(QPalette::Active, QPalette::Highlight)));
+
+        QImage rtlItem(QSize(220, 48), QImage::Format_ARGB32_Premultiplied);
+        rtlItem.fill(Qt::transparent);
+        QPainter itemPainter(&rtlItem);
+        QStyleOptionViewItem itemOption;
+        itemOption.rect = rtlItem.rect().adjusted(8, 4, -8, -4);
+        itemOption.palette = palette;
+        itemOption.state = QStyle::State_Active | QStyle::State_Enabled | QStyle::State_Selected
+            | QStyle::State_HasFocus;
+        itemOption.direction = Qt::RightToLeft;
+        itemOption.text = QStringLiteral("Selected item");
+        itemOption.features = QStyleOptionViewItem::HasDisplay;
+        style->drawControl(QStyle::CE_ItemViewItem, &itemOption, &itemPainter);
+        itemPainter.end();
+        QVERIFY(imageHasContent(rtlItem));
+        QVERIFY(imageContainsColor(rtlItem,
+                                   palette.color(QPalette::Active, QPalette::Highlight)));
+    }
+
+    void rendersExplicitPixelButtonVariants()
+    {
+        const auto style = createMeoStyle();
+        QVERIFY(style);
+        const QPalette palette = semanticPalette(QColor("#5f45b8"));
+
+        QPushButton filled(QStringLiteral("Continue"));
+        filled.setStyle(style.get());
+        filled.setPalette(palette);
+        filled.setProperty("meo.variant", "filled");
+        const QImage filledImage = renderWidget(&filled, QSize(160, 44));
+        QVERIFY(imageContainsColor(filledImage, palette.color(QPalette::Active, QPalette::Link)));
+
+        QPushButton tonal(QStringLiteral("Not now"));
+        tonal.setStyle(style.get());
+        tonal.setPalette(palette);
+        tonal.setProperty("meo.variant", "tonal");
+        const QImage tonalImage = renderWidget(&tonal, QSize(160, 44));
+        QVERIFY(imageHasContent(tonalImage));
+        QVERIFY(filledImage != tonalImage);
+    }
 };
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    QCoreApplication::addLibraryPath(QStringLiteral(MEO_STYLE_PLUGIN_ROOT));
+    // Keep the staged Meo plugin ahead of a previously installed user copy,
+    // while retaining the system style path so the Breeze base remains usable.
+    QStringList libraryPaths{QStringLiteral(MEO_STYLE_PLUGIN_ROOT)};
+    const QString systemPluginPath = QLibraryInfo::path(QLibraryInfo::PluginsPath);
+    if (!systemPluginPath.isEmpty() && systemPluginPath != libraryPaths.constFirst()) {
+        libraryPaths.append(systemPluginPath);
+    }
+    QCoreApplication::setLibraryPaths(libraryPaths);
     StyleSmoke test;
     return QTest::qExec(&test, argc, argv);
 }

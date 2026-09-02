@@ -53,22 +53,11 @@ timeCenter.writeConfig("showNotifications", true)
 timeCenter.writeConfig("use24HourClock", true)
 timeCenter.reloadConfig()
 
-// Bottom application Dock. Icons-Only Task Manager remains the source of
-// truth for pinned launchers, grouping, previews, window actions and per-user
-// task settings. Autohide reveals it from the screen bottom and retracts once
-// an application needs the space.
-var bottomPanel = new Panel
-bottomPanel.location = "bottom"
-bottomPanel.height = 64
-bottomPanel.floating = true
-bottomPanel.hiding = "autohide"
-bottomPanel.lengthMode = "fit"
-bottomPanel.alignment = "center"
-bottomPanel.currentConfigGroup = ["MeoShell"]
-bottomPanel.writeConfig("Managed", true)
-bottomPanel.writeConfig("Role", "dock")
-
-bottomPanel.addWidget("org.kde.plasma.icontasks")
+// org.meo.dock starts as an independent Layer Shell surface. It owns the
+// floating capsule geometry, rounded blur region and continuous magnification
+// input, while KDE TaskManager remains the source of real launchers/windows.
+// A native Icons-Only Task Manager panel remains available through
+// Panels/DockImplementation=native for recovery and compatibility.
 
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())

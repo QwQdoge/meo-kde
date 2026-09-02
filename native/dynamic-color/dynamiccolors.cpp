@@ -176,7 +176,7 @@ void writeInactiveHeader(KConfig &config, const DynamicColors::ColorScheme &sche
     KConfigGroup header(&config, QStringLiteral("Colors:Header"));
     KConfigGroup inactive(&header, QStringLiteral("Inactive"));
     writeColorEntries(inactive, scheme,
-                      role(scheme, QStringLiteral("surfaceContainerLow")),
+                      role(scheme, QStringLiteral("surface")),
                       role(scheme, QStringLiteral("surfaceContainer")),
                       role(scheme, QStringLiteral("onSurfaceVariant")),
                       role(scheme, QStringLiteral("outline")),
@@ -221,6 +221,8 @@ void writeMaterialRoles(KConfig &config, const DynamicColors::ColorScheme &schem
              QStringLiteral("onPrimaryContainer"),
              QStringLiteral("secondaryContainer"),
              QStringLiteral("onSecondaryContainer"),
+             QStringLiteral("tertiaryContainer"),
+             QStringLiteral("onTertiaryContainer"),
              QStringLiteral("onSurfaceVariant"),
              QStringLiteral("outline"),
          }) {
@@ -354,8 +356,12 @@ bool DynamicColors::writeScheme(const QString &path, const QString &name,
                       role(scheme, QStringLiteral("onSurfaceVariant")),
                       role(scheme, QStringLiteral("primary")));
         writeColorSet(config, QStringLiteral("Colors:Header"), scheme,
+                      // The Plasma panel background and Meo decoration must
+                      // meet without a tonal seam when a normal window
+                      // touches the top edge. Map both to the same dynamic
+                      // surface; elevated controls retain surfaceContainer.
+                      role(scheme, QStringLiteral("surface")),
                       role(scheme, QStringLiteral("surfaceContainer")),
-                      role(scheme, QStringLiteral("surfaceContainerHigh")),
                       role(scheme, QStringLiteral("onSurface")),
                       role(scheme, QStringLiteral("onSurfaceVariant")),
                       role(scheme, QStringLiteral("primary")));

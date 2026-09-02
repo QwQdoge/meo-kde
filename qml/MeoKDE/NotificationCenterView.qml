@@ -290,7 +290,10 @@ Item {
                     width: notificationList.width
                     implicitHeight: cardContent.implicitHeight + 2 * MeoTheme.space12
                     color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
-                    radius: ShellMetrics.radiusLarge
+                    // Notification cards share the popup's expressive corner
+                    // token, so they morph with the same MeoUI shape scale as
+                    // the surrounding status surface.
+                    radius: ShellMetrics.radiusPopup
                     elevation: 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }

@@ -119,8 +119,8 @@ exit 1
         theme.read(root / "theme.conf", encoding="utf-8")
         panel = theme["InputPanel"]
         self.assertEqual(panel["NormalColor"], roles["onSurface"])
-        self.assertEqual(panel["HighlightColor"], roles["onPrimary"])
-        self.assertEqual(panel["HighlightBackgroundColor"], roles["primary"])
+        self.assertEqual(panel["HighlightColor"], roles["onSecondaryContainer"])
+        self.assertEqual(panel["HighlightBackgroundColor"], roles["secondaryContainer"])
         self.assertEqual(panel["HighlightCandidateColor"], roles["onSecondaryContainer"])
         self.assertEqual(panel["CandidateLabelColor"], roles["onSurfaceVariant"])
         self.assertEqual(theme["InputPanel/PrevPage"]["Image"], "prev.svg")

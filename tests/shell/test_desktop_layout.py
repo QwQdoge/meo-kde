@@ -35,15 +35,26 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
         self.assertIn('timeCenter.writeConfig("showDate", true)', source)
 
-    def test_bottom_dock_is_native_and_auto_hides(self):
+    def test_default_dock_is_an_independent_layer_shell_surface(self):
         source = LAYOUT.read_text(encoding="utf-8")
 
-        self.assertIn('bottomPanel.floating = true', source)
-        self.assertIn('bottomPanel.hiding = "autohide"', source)
-        self.assertIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertIn('bottomPanel.height = 64', source)
-        self.assertNotIn('writeConfig("maxStripes"', source)
+        self.assertIn('org.meo.dock', source)
+        self.assertIn('independent Layer Shell surface', source)
+        self.assertNotIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
         self.assertNotIn('org.meo.shelf', source)
+
+    def test_dock_does_not_draw_an_opaque_plate_behind_application_icons(self):
+        delegate = (REPO_ROOT / "native/dock/qml/DockIconDelegate.qml").read_text(
+            encoding="utf-8"
+        )
+        preview = (REPO_ROOT / "native/dock/qml/DockPreviewIcon.qml").read_text(
+            encoding="utf-8"
+        )
+
+        for source in (delegate, preview):
+            self.assertIn(': "transparent"', source)
+            self.assertIn("border.width: 0", source)
+            self.assertIn("width: 44 * MeoTheme.globalScale", source)
 
     def test_top_panel_uses_the_compact_32px_baseline_everywhere(self):
         layout = LAYOUT.read_text(encoding="utf-8")
@@ -72,16 +83,20 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('compact_frame = frame_paths("", 16)', generator)
         self.assertIn('north_frame = frame_paths("north", 16)', generator)
-        self.assertIn('south_frame = frame_paths("south", 28)', generator)
+        self.assertIn('south_frame = frame_paths("south", 32)', generator)
+        self.assertIn('surface_opacity="0.68"', generator)
+        self.assertIn('surface_opacity="0.58"', generator)
         for asset in assets:
             source = asset.read_text(encoding="utf-8")
             self.assertIn('id="top" d="M32 16h2v16h-2z"', source)
             self.assertIn('id="north-top" d="M32 16h2v16h-2z"', source)
-            self.assertIn('id="south-top" d="M32 4h2v28h-2z"', source)
+            self.assertIn('id="south-top" d="M32 0h2v32h-2z"', source)
             self.assertIn('id="north-bottom" d="M32 34h2v16h-2z"', source)
-            self.assertIn('id="south-bottom" d="M32 34h2v28h-2z"', source)
+            self.assertIn('id="south-bottom" d="M32 34h2v32h-2z"', source)
             self.assertIn('id="north-hint-top-margin"', source)
             self.assertIn('id="south-hint-top-margin"', source)
+            expected_opacity = "0.58" if "/translucent/" in str(asset) else "0.68"
+            self.assertIn(f'fill-opacity="{expected_opacity}"', source)
 
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
@@ -147,6 +162,8 @@ class DesktopLayoutTests(unittest.TestCase):
         config = (REPO_ROOT / "plasmoids/org.meo.topbar/contents/config/main.xml").read_text(encoding="utf-8")
 
         self.assertIn("MeoQuickSettingsTile", home)
+        self.assertIn('visualStyle: "pixel"', home)
+        self.assertIn("ShellMetrics.quickSettingsTileHeight", home)
         self.assertIn("MeoQuickControlSlider", home)
         self.assertIn("DropArea", home)
         self.assertIn("tileModel.move", home)
@@ -340,13 +357,15 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
         self.assertNotIn('oneWidget(top, "org.meo.toptasks")', source)
 
-    def test_bottom_dock_keeps_native_tasks_with_md3_task_frames(self):
+    def test_bottom_dock_keeps_native_task_frames_as_a_fallback(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
         helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
         metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
 
-        self.assertIn("DockHeight=64", profile)
-        self.assertIn("shelfPanelHeight: 64 * MeoTheme.globalScale", metrics)
+        self.assertIn("DockHeight=80", profile)
+        self.assertIn("DockImplementation=standalone", profile)
+        self.assertIn("shelfPanelHeight: 80 * MeoTheme.globalScale", metrics)
+        self.assertIn('"${dock_implementation}" === "native"', helper)
         self.assertNotIn('writeConfig("maxStripes"', helper)
         expected_fallbacks = {
             "MeoLight": ("#1c1b1f", "#6750a4", "#b3261e"),
@@ -369,7 +388,16 @@ class DesktopLayoutTests(unittest.TestCase):
                 for part in required_parts:
                     self.assertIn(f'id="{frame}-{part}"', task_frame)
             self.assertIn('ColorScheme-ButtonFocus', task_frame)
+            self.assertIn('ColorScheme-Background', task_frame)
+            self.assertIn('A20.5 20.5', task_frame)
+            self.assertIn('id="focus-indicator"', task_frame)
+            self.assertNotIn('id="normal-indicator"', task_frame)
             self.assertIn('id="group-expander-bottom"', task_frame)
+            self.assertIn('id="normal-center"', task_frame)
+            self.assertIn('id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"', task_frame)
+            self.assertIn('id="normal-hover-center"', task_frame)
+            self.assertIn('opacity="0.10"', task_frame)
+            self.assertNotIn('opacity="0.94"', task_frame)
 
     def test_installer_preflights_rounding_without_package_manager_mutation(self):
         source = INSTALLER.read_text(encoding="utf-8")

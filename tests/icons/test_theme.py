@@ -6,8 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 THEMES = {
-    "MeoSymbols": "#232629",
-    "MeoSymbolsDark": "#fcfcfc",
+    "MeoSymbols": {"system": "#232629"},
+    "MeoSymbolsDark": {"system": "#fcfcfc"},
 }
 
 
@@ -35,8 +35,14 @@ class MeoSymbolsThemeTests(unittest.TestCase):
             for relative in expected:
                 self.assertTrue((theme / "scalable" / relative).is_file(), f"{theme_name}/{relative}")
 
+    def test_system_theme_never_declares_application_brand_assets(self):
+        for theme_name in THEMES:
+            theme = ROOT / "themes" / "icons" / theme_name
+            index = (theme / "index.theme").read_text(encoding="utf-8")
+            self.assertNotIn("scalable/apps", index)
+
     def test_svg_assets_are_safe_and_theme_colored(self):
-        for theme_name, fallback_color in THEMES.items():
+        for theme_name, colors in THEMES.items():
             theme = ROOT / "themes" / "icons" / theme_name
             for svg in theme.rglob("*.svg"):
                 if svg.is_symlink():
@@ -48,7 +54,7 @@ class MeoSymbolsThemeTests(unittest.TestCase):
                 self.assertIn('id="current-color-scheme"', payload, svg)
                 self.assertIn('class="colorscheme-text"', payload, svg)
                 self.assertIn('fill="currentcolor"', payload, svg)
-                self.assertIn(fallback_color, payload, svg)
+                self.assertIn(colors["system"], payload, svg)
                 self.assertNotIn("<script", payload)
                 self.assertNotIn("data:image", payload)
                 payload_without_namespace = payload.replace("http://www.w3.org/2000/svg", "")

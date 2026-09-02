@@ -1,8 +1,9 @@
 # MeoSymbols phase-one report
 
-This phase implements the system icon theme only: System Settings categories,
-small toolbar/panel/status icons, quick-settings semantics and basic places.
-Third-party app logos are intentionally excluded.
+The icon theme implements System Settings categories, small toolbar/panel/status
+icons, quick-settings semantics, and places. Application identities are
+handled separately by Meo Application Icon Studio, which preserves original
+local app branding in unique user-local hicolor assets.
 
 ## Verified coverage
 
@@ -20,9 +21,11 @@ KDE palette substitution. The mode switch selects the matching icon variant.
 
 ## Scope boundary
 
-MeoSymbols does not replace branded third-party application launchers. Shelf
-and launcher application identities continue to use the `.desktop` icon they
-already expose; only semantic system controls are owned by this theme.
+MeoSymbols is a system-semantic theme only. Application Icon Studio leaves the
+global KDE icon theme unchanged and updates only selected applications' local
+`.desktop` `Icon=` values to unique `org.meo.iconstudio.app.*` names. This
+prevents collisions with Wi‑Fi, microphone, volume, battery, and other shared
+KDE icon names while allowing app marks to retain their visual identity.
 
 Build cache is local and disposable. Runtime evidence is written to
 `/home/shekong/Projects/outputs/meo-kde/validation/<UTC-run-id>/`.

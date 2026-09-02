@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/QwQdoge/kde-plasma6-widgets",
+    "upstreamRepository": "https://github.com/MCC45TR/kde-plasma6-widgets",
+    "path": "third_party/kde-plasma6-widgets",
+    "license": "GPL-3.0"
+  },
+  "visualModule": {
+    "uri": "MeoUI",
+    "version": "1.0",
+    "installPath": "/usr/lib/qt6/qml/MeoUI",
+    "rule": "Widgets import MeoUI 1.0 and never duplicate MD3 tokens or a Meo.UI compatibility module."
+  },
+  "phase": "one",
+  "widgets": [
+    { "sourceDirectory": "weather", "pluginId": "com.mcc45tr.mweather", "displayName": "Weather" },
+    { "sourceDirectory": "calendar", "pluginId": "com.mcc45tr.mcalendar", "displayName": "Calendar" },
+    { "sourceDirectory": "digital-clock", "pluginId": "com.mcc45tr.digitalclock", "displayName": "Digital Clock" },
+    { "sourceDirectory": "music-player", "pluginId": "com.mcc45tr.musicplayer", "displayName": "Music Player" },
+    { "sourceDirectory": "battery", "pluginId": "com.mcc45tr.battery", "displayName": "Battery" },
+    { "sourceDirectory": "notes", "pluginId": "com.mcc45tr.notes", "displayName": "Notes" },
+    { "sourceDirectory": "system-monitor", "pluginId": "com.mcc45tr.systemmonitor", "displayName": "System Monitor" },
+    { "sourceDirectory": "photos", "pluginId": "com.mcc45tr.photos", "displayName": "Photos" }
+  ],
+  "excluded": ["launcher", "control-center"],
+  "packagingGate": "A widget is not installable until its MeoUI adapter contract and visual tests are complete."
+}

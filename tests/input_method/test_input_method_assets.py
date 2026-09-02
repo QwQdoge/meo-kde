@@ -70,8 +70,8 @@ class InputMethodAssetsTests(unittest.TestCase):
                 config.read(theme_root / "theme.conf", encoding="utf-8")
                 panel = config["InputPanel"]
                 self.assertEqual(panel["NormalColor"], colors["onSurface"])
-                self.assertEqual(panel["HighlightColor"], colors["onPrimary"])
-                self.assertEqual(panel["HighlightBackgroundColor"], colors["primary"])
+                self.assertEqual(panel["HighlightColor"], colors["onSecondaryContainer"])
+                self.assertEqual(panel["HighlightBackgroundColor"], colors["secondaryContainer"])
                 self.assertEqual(
                     panel["HighlightCandidateColor"], colors["onSecondaryContainer"]
                 )

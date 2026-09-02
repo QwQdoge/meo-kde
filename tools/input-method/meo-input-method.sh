@@ -294,8 +294,11 @@ ScaleWithDPI=True
 
 [InputPanel]
 NormalColor=${meo_on_surface}
-HighlightColor=${meo_on_primary}
-HighlightBackgroundColor=${meo_primary}
+# The candidate SVG is secondaryContainer.  Keep the text/background pair
+# aligned with that rendered asset instead of combining a primary foreground
+# with a secondary surface after every dynamic-color update.
+HighlightColor=${meo_on_secondary_container}
+HighlightBackgroundColor=${meo_secondary_container}
 HighlightCandidateColor=${meo_on_secondary_container}
 CandidateLabelColor=${meo_on_surface_variant}
 HighlightCandidateLabelColor=${meo_on_secondary_container}

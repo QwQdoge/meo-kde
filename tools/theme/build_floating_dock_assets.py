@@ -22,22 +22,24 @@ TARGETS = (
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
         background="#fffbfe",
-        surface_opacity="0.92",
+        # The normal frame is also used by a top panel. Keep it visibly
+        # translucent instead of turning the floating Dock opaque.
+        surface_opacity="0.68",
     ),
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoDark/widgets/panel-background.svg",
         background="#141218",
-        surface_opacity="0.92",
+        surface_opacity="0.68",
     ),
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/panel-background.svg",
         background="#fffbfe",
-        surface_opacity="0.84",
+        surface_opacity="0.58",
     ),
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/panel-background.svg",
         background="#141218",
-        surface_opacity="0.84",
+        surface_opacity="0.58",
     ),
 )
 
@@ -76,14 +78,14 @@ def frame_margin_hints(prefix: str) -> tuple[str, ...]:
 def render(target: ThemeTarget) -> str:
     # Plasma clamps a panel to the unprefixed FrameSvg's minimum drawing size
     # before it resolves its edge prefix.  Keep that fallback at 32 dp so a
-    # compact top panel can be restored.  The bottom edge has an explicit 28 dp
+    # compact top panel can be restored. The bottom edge has an explicit 32 dp
     # variant, preserving the large rounded silhouette used by the floating Dock.
     # The north variant avoids falling back to a bottom-oriented frame while the
     # panel changes location.  Surface colors stay in the semantic Background
     # role, so dynamic Material colors remain seam-free across the slices.
     compact_frame = frame_paths("", 16)
     north_frame = frame_paths("north", 16)
-    south_frame = frame_paths("south", 28)
+    south_frame = frame_paths("south", 32)
     compact_hints = frame_margin_hints("")
     north_hints = frame_margin_hints("north")
     south_hints = frame_margin_hints("south")

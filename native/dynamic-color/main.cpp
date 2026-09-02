@@ -8,6 +8,7 @@
 #include <QCommandLineParser>
 #include <QDir>
 #include <QGuiApplication>
+#include <QProcess>
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QTimer>
@@ -53,6 +54,30 @@ QString activeColorScheme()
 {
     const auto globals = KSharedConfig::openConfig(QStringLiteral("kdeglobals"));
     return KConfigGroup(globals, "General").readEntry("ColorScheme", QString());
+}
+
+QString refreshManagedApplicationIcons()
+{
+    const QString studio = QStandardPaths::findExecutable(QStringLiteral("meo-app-icon-studio"));
+    if (studio.isEmpty()) {
+        return QStringLiteral("unavailable");
+    }
+
+    QProcess process;
+    process.setProcessChannelMode(QProcess::SeparateChannels);
+    process.start(studio, {QStringLiteral("--apply"), QStringLiteral("--managed-only")});
+    if (!process.waitForStarted(3000)) {
+        return QStringLiteral("start-failed");
+    }
+    if (!process.waitForFinished(45000)) {
+        process.kill();
+        process.waitForFinished(3000);
+        return QStringLiteral("timed-out");
+    }
+    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
+        return QStringLiteral("failed");
+    }
+    return QStringLiteral("updated");
 }
 }
 
@@ -159,12 +184,16 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    QString applicationIconStatus;
     if (parser.isSet(applyOption)) {
         if (!DynamicColors::applyScheme(schemePath, name, accent, true, nullptr, &error,
                                         resolvedSource)) {
             QTextStream(stderr) << error << Qt::endl;
             return 1;
         }
+        // Icons are private hicolor assets. A refresh failure must never
+        // affect a desktop color scheme that has already been applied.
+        applicationIconStatus = refreshManagedApplicationIcons();
     }
     if (parser.isSet(rememberSourceOption)
         && !DynamicColorSource::persist(resolvedSource,
@@ -177,6 +206,9 @@ int main(int argc, char *argv[])
     output << "MEO_DYNAMIC_COLORS source=" << resolvedSource
            << " accent=" << accent.name(QColor::HexRgb)
            << " scheme=" << name << " contrast=" << contrast;
+    if (!applicationIconStatus.isEmpty()) {
+        output << " app_icons=" << applicationIconStatus;
+    }
     if (!resolvedWallpaper.isEmpty()) {
         output << " wallpaper=" << resolvedWallpaper;
     }

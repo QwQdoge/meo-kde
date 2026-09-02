@@ -2,7 +2,7 @@
   <style id="current-color-scheme" type="text/css">
     .ColorScheme-Background { color: #141218; }
   </style>
-  <g class="ColorScheme-Background" fill="currentColor" fill-opacity="0.84">
+  <g class="ColorScheme-Background" fill="currentColor" fill-opacity="0.58">
     <path id="center" d="M32 32h2v2h-2z"/>
     <path id="top" d="M32 16h2v16h-2z"/>
     <path id="bottom" d="M32 34h2v16h-2z"/>
@@ -22,14 +22,14 @@
     <path id="north-bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
     <path id="north-bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
     <path id="south-center" d="M32 32h2v2h-2z"/>
-    <path id="south-top" d="M32 4h2v28h-2z"/>
-    <path id="south-bottom" d="M32 34h2v28h-2z"/>
-    <path id="south-left" d="M4 32h28v2H4z"/>
-    <path id="south-right" d="M34 32h28v2h-28z"/>
-    <path id="south-topleft" d="M32 4A28 28 0 0 0 4 32h28z"/>
-    <path id="south-topright" d="M34 4a28 28 0 0 1 28 28H34z"/>
-    <path id="south-bottomleft" d="M4 34a28 28 0 0 0 28 28V34z"/>
-    <path id="south-bottomright" d="M34 62a28 28 0 0 0 28-28H34z"/>
+    <path id="south-top" d="M32 0h2v32h-2z"/>
+    <path id="south-bottom" d="M32 34h2v32h-2z"/>
+    <path id="south-left" d="M0 32h32v2H0z"/>
+    <path id="south-right" d="M34 32h32v2h-32z"/>
+    <path id="south-topleft" d="M32 0A32 32 0 0 0 0 32h32z"/>
+    <path id="south-topright" d="M34 0a32 32 0 0 1 32 32H34z"/>
+    <path id="south-bottomleft" d="M0 34a32 32 0 0 0 32 32V34z"/>
+    <path id="south-bottomright" d="M34 66a32 32 0 0 0 32-32H34z"/>
   </g>
   <rect id="hint-top-margin" x="31" y="18" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>

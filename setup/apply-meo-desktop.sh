@@ -196,7 +196,7 @@ else
 fi
 run cmake --build "${native_build_root}" --parallel
 
-run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${user_plugin_root}/styles" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
+run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${config_root}/autostart" "${user_plugin_root}/styles" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
 
 # Preserve every named runtime path that this installer replaces or retires.
 # reset-meo-desktop can then restore an older Meo build instead of leaving a
@@ -238,6 +238,9 @@ runtime_backups=(
   "${local_bin_root}/meo-input-method|bin/meo-input-method"
   "${local_bin_root}/meo-desktop-layout|bin/meo-desktop-layout"
   "${local_bin_root}/meo-desktop-apply|bin/meo-desktop-apply"
+  "${local_bin_root}/meo-app-icon-studio|bin/meo-app-icon-studio"
+  "${local_bin_root}/meo-dock|bin/meo-dock"
+  "${config_root}/autostart/org.meo.dock.desktop|config/autostart/org.meo.dock.desktop"
   "${config_root}/fontconfig/conf.d/50-meo-fonts.conf|config/fontconfig/conf.d/50-meo-fonts.conf"
   "${config_root}/environment.d/90-meo-kde.conf|config/environment.d/90-meo-kde.conf"
   "${config_root}/systemd/user/meo-dynamic-colors.service|config/systemd/user/meo-dynamic-colors.service"
@@ -378,6 +381,9 @@ run cp -a "${repo_root}/qml/MeoKDE/." "${qml_root}/MeoKDE/"
 run install -Dm755 "${repo_root}/tools/input-method/meo-input-method.sh" "${local_bin_root}/meo-input-method"
 run install -Dm755 "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "${local_bin_root}/meo-desktop-layout"
 run install -Dm755 "${repo_root}/tools/theme/apply-meo-desktop.sh" "${local_bin_root}/meo-desktop-apply"
+run install -Dm755 "${repo_root}/tools/icons/app_icon_studio.py" "${local_bin_root}/meo-app-icon-studio"
+run install -Dm0755 "${native_build_root}/dock/meo-dock" "${local_bin_root}/meo-dock"
+run install -Dm0644 "${repo_root}/data/autostart/org.meo.dock.desktop" "${config_root}/autostart/org.meo.dock.desktop"
 run install -Dm644 "${repo_root}/defaults/kwin/kwinrc" "${data_root}/meo-kde/defaults/kwinrc"
 run mkdir -p "${data_root}/fcitx5/themes"
 for input_theme in MeoInputMethod-Light MeoInputMethod-Dark; do

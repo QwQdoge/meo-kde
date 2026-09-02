@@ -13,6 +13,7 @@ set(MEOUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../meo-ui" CACHE PATH
 add_subdirectory(third_party/material-color-utilities)
 add_subdirectory(dynamic-color)
 add_subdirectory(system)
+add_subdirectory(dock)
 add_subdirectory(authentication)
 add_subdirectory(decoration)
 if(MEO_BUILD_APPLICATION_STYLE)

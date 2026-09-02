@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Meo Dock
+Comment=Material You application dock for Meo Desktop
+Exec=meo-dock
+Icon=meoarch-logo
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=1
+X-KDE-StartupNotify=false

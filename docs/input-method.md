@@ -17,8 +17,12 @@ is never selected or replaced by `--sync`.
 The static framework skins mirror MeoUI's MD3 shape and spacing tokens: the
 candidate surface uses a 24-pixel capsule asset, the selected item uses a
 17-pixel capsule asset, and the visible inset is 7 pixels. Page buttons and the
-Classic UI menu use matching vector icons, container pairs, and outline roles;
-the dark fallback therefore does not inherit the default light menu. Fcitx's
+Classic UI menu use matching vector icons, container pairs, and outline roles.
+The selected candidate always pairs `secondaryContainer` with
+`onSecondaryContainer`, including after a dynamic-colour refresh; the menu
+uses the corresponding primary-container pair. This prevents the candidate
+SVG and its text role from drifting apart when the wallpaper seed changes.
+The dark fallback therefore does not inherit the default light menu. Fcitx's
 margin names are easy to misread: `ContentMargin` is popup padding,
 `TextMargin` spaces each candidate, while `Highlight/Margin` expands the
 highlight around the measured text rectangle. It is therefore 8 pixels of

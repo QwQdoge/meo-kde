@@ -1,8 +1,9 @@
 # MeoSymbols generated icon manifest
 
-This is the review list for every generated system icon. Source geometry is
+This is the review list for every generated Meo icon. Source geometry is
 Google Material Symbols Rounded under Apache-2.0; aliases add no new SVG.
-Third-party application brands are intentionally excluded.
+Application identities are not emitted here; Meo Application Icon Studio
+uses unique user-local hicolor assets instead.
 
 - Variants: `MeoSymbols` (light) and `MeoSymbolsDark` (dark)
 - Material mappings: 193

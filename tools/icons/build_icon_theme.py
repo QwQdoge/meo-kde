@@ -36,7 +36,7 @@ THEMES = {
 }
 MANIFEST_MD = ROOT / "docs/icons/GENERATED_ICON_MANIFEST.md"
 UPSTREAM = "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/{name}/materialsymbolsrounded/{name}_24px.svg"
-THEME_DIRS = ("actions", "apps", "categories", "devices", "emblems", "emotes", "mimetypes", "places", "status", "panel")
+THEME_DIRS = ("actions", "categories", "devices", "emblems", "emotes", "mimetypes", "places", "status", "panel")
 SYMBOLIC_DIRS = ("actions", "devices", "places", "status")
 
 
@@ -57,7 +57,17 @@ def load_mapping() -> dict:
 
 
 def material_names(mapping: dict) -> set[str]:
-    return {name for entries in mapping["icons"].values() for name in entries.values()}
+    return {name for entries in system_icon_groups(mapping).values() for name in entries.values()}
+
+
+def system_icon_groups(mapping: dict) -> dict:
+    """Exclude app brand names from the system-symbol build.
+
+    Application identities are rendered into unique hicolor names and
+    user-local desktop entries by app_icon_studio.py. Keeping them out of the
+    global icon theme avoids generic glyph replacement and name collisions.
+    """
+    return {group: entries for group, entries in mapping["icons"].items() if group != "apps"}
 
 
 def fetch_assets(mapping: dict) -> list[str]:
@@ -76,11 +86,31 @@ def fetch_assets(mapping: dict) -> list[str]:
     return failures
 
 
-def normalize_svg(source: Path, destination: Path, fallback_color: str) -> None:
+def normalize_svg(
+    source: Path,
+    destination: Path,
+    fallback_color: str,
+    color_class: str = "ColorScheme-Text",
+) -> None:
     tree = ET.parse(source)
     root = tree.getroot()
-    if root.tag.rsplit("}", 1)[-1] != "svg" or not root.get("viewBox"):
+    if root.tag.rsplit("}", 1)[-1] != "svg":
         raise ValueError(f"invalid SVG root or viewBox: {source}")
+    if not root.get("viewBox"):
+        # A small number of Material Symbols are published as 24x24 SVGs with
+        # width/height but without a viewBox. KDE needs a scalable viewBox for
+        # Dock and launcher rendering, so preserve the source coordinate space
+        # before stripping fixed dimensions below.
+        width = root.get("width", "").removesuffix("px")
+        height = root.get("height", "").removesuffix("px")
+        try:
+            width_value = float(width)
+            height_value = float(height)
+        except ValueError as error:
+            raise ValueError(f"invalid SVG root or viewBox: {source}") from error
+        if width_value <= 0 or height_value <= 0:
+            raise ValueError(f"invalid SVG root or viewBox: {source}")
+        root.set("viewBox", f"0 0 {width_value:g} {height_value:g}")
     for element in root.iter():
         local_name = element.tag.rsplit("}", 1)[-1].lower()
         if local_name in {"script", "image", "foreignobject"}:
@@ -104,11 +134,11 @@ def normalize_svg(source: Path, destination: Path, fallback_color: str) -> None:
         f"{{{SVG_NS}}}style",
         {"type": "text/css", "id": "current-color-scheme"},
     )
-    style.text = f".ColorScheme-Text {{ color:{fallback_color}; }}"
+    style.text = f".{color_class} {{ color:{fallback_color}; }}"
     colored_geometry = ET.SubElement(
         root,
         f"{{{SVG_NS}}}g",
-        {"class": "ColorScheme-Text", "fill": "currentColor"},
+        {"class": color_class, "fill": "currentColor"},
     )
     for child in original_children:
         colored_geometry.append(child)
@@ -161,14 +191,19 @@ def build_variant(mapping: dict, theme: Path, config: dict[str, object]) -> dict
         (theme / "symbolic" / group).mkdir(parents=True, exist_ok=True)
     written: dict[str, Path] = {}
     missing: list[str] = []
-    for group, entries in mapping["icons"].items():
+    for group, entries in system_icon_groups(mapping).items():
         for semantic, material in entries.items():
             source = SOURCE_ROOT / f"{material}.svg"
             destination = theme / "scalable" / group / f"{semantic}.svg"
             if not source.exists():
                 missing.append(f"{semantic} -> {material}")
                 continue
-            normalize_svg(source, destination, str(config["fallback_color"]))
+            normalize_svg(
+                source,
+                destination,
+                str(config["fallback_color"]),
+                "ColorScheme-Text",
+            )
             written[semantic] = destination
             if group in SYMBOLIC_DIRS:
                 symbolic = theme / "symbolic" / group / f"{semantic}-symbolic.svg"
@@ -251,7 +286,7 @@ def write_report(result: dict, issues: list[str], report: Path, report_md: Path)
     data = {**result, "validation_issues": issues}
     report.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     report_md.write_text(
-        "# MeoSymbols core coverage\n\n"
+        "# MeoSymbols coverage\n\n"
         f"- Native Material Symbols: {result['native']}\n"
         f"- Aliases: {result['aliases']}\n"
         f"- Missing mappings: {len(result['missing'])}\n"
@@ -263,7 +298,7 @@ def write_report(result: dict, issues: list[str], report: Path, report_md: Path)
 def write_manifest(mapping: dict, manifest: Path) -> None:
     """Publish the exact generated-icon inventory for design review and packaging."""
     entries: list[dict[str, object]] = []
-    for group, icons in mapping["icons"].items():
+    for group, icons in system_icon_groups(mapping).items():
         for semantic, material in sorted(icons.items()):
             paths = [f"scalable/{group}/{semantic}.svg"]
             if group in SYMBOLIC_DIRS:
@@ -291,7 +326,10 @@ def write_manifest(mapping: dict, manifest: Path) -> None:
         "theme_variants": ["MeoSymbols", "MeoSymbolsDark"],
         "style": "Material Symbols Rounded",
         "license": "Apache-2.0",
-        "policy": "System semantics only; third-party application brands are excluded.",
+        "policy": (
+            "System semantics only. Application identities are generated as "
+            "unique user-local hicolor assets by Meo Application Icon Studio."
+        ),
         "entries": entries,
     }
     manifest.parent.mkdir(parents=True, exist_ok=True)
@@ -299,9 +337,10 @@ def write_manifest(mapping: dict, manifest: Path) -> None:
     lines = [
         "# MeoSymbols generated icon manifest",
         "",
-        "This is the review list for every generated system icon. Source geometry is",
+        "This is the review list for every generated Meo icon. Source geometry is",
         "Google Material Symbols Rounded under Apache-2.0; aliases add no new SVG.",
-        "Third-party application brands are intentionally excluded.",
+        "Application identities are not emitted here; Meo Application Icon Studio",
+        "uses unique user-local hicolor assets instead.",
         "",
         "- Variants: `MeoSymbols` (light) and `MeoSymbolsDark` (dark)",
         f"- Material mappings: {sum(1 for entry in entries if entry['kind'] == 'material')}",
@@ -330,6 +369,7 @@ def main() -> int:
         help="directory for generated validation reports; defaults to global MeoKDE outputs",
     )
     args = parser.parse_args()
+    mapping = load_mapping()
     output_dir = args.output_dir or default_output_dir()
     if args.clean:
         for config in THEMES.values():
@@ -345,7 +385,6 @@ def main() -> int:
             print("\n".join(issues), file=sys.stderr)
             return 1
         return 0
-    mapping = load_mapping()
     result = build(mapping)
     issues = validate()
     report = output_dir / "metrics" / "icon-coverage.json"

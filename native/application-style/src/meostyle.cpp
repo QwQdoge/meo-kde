@@ -14,6 +14,8 @@
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionTab>
 #include <QtWidgets/QStyleOptionToolButton>
+#include <QtWidgets/QStyleOptionViewItem>
+#include <QtWidgets/QWidget>
 
 #include <meotokens.h>
 
@@ -34,6 +36,40 @@ qreal buttonRadius(const QStyleOption *option, bool pressed)
                 qMax(Meo::DesignTokens::controlPressedRadius(),
                      qMin(Meo::DesignTokens::controlRadius(),
                           halfHeight - Meo::DesignTokens::space8())));
+}
+
+enum class ButtonVisual {
+    Filled,
+    Tonal,
+    Text,
+};
+
+ButtonVisual buttonVisual(const QStyleOptionButton *button, const QWidget *widget)
+{
+    const QString variant = widget ? widget->property("meo.variant").toString().toLower()
+                                   : QString();
+    if (variant == QLatin1String("filled")) {
+        return ButtonVisual::Filled;
+    }
+    if (variant == QLatin1String("text") || (button && button->features.testFlag(QStyleOptionButton::Flat))) {
+        return ButtonVisual::Text;
+    }
+    if (button && button->features.testFlag(QStyleOptionButton::DefaultButton)) {
+        return ButtonVisual::Filled;
+    }
+    return ButtonVisual::Tonal;
+}
+
+QColor primaryColor(const QPalette &palette, QPalette::ColorGroup group)
+{
+    const QColor link = palette.color(group, QPalette::Link);
+    return link.isValid() ? link : palette.color(group, QPalette::Highlight);
+}
+
+QColor tonalContainerColor(const QPalette &palette, QPalette::ColorGroup group)
+{
+    const QColor alternate = palette.color(group, QPalette::AlternateBase);
+    return alternate.isValid() ? alternate : palette.color(group, QPalette::Button);
 }
 
 QPalette::ColorGroup colorGroup(const QStyleOption *option)
@@ -106,6 +142,35 @@ QRectF sliderActiveTrack(const QRectF &track, const QPointF &handleCenter,
         active.setBottom(qBound(track.top(), handleCenter.y(), track.bottom()));
     }
     return active;
+}
+
+void drawItemViewSurface(const QStyleOption *option, QPainter *painter)
+{
+    const bool selected = option->state.testFlag(QStyle::State_Selected);
+    const bool hover = option->state.testFlag(QStyle::State_MouseOver);
+    const bool pressed = option->state.testFlag(QStyle::State_Sunken);
+    const bool focused = option->state.testFlag(QStyle::State_HasFocus);
+    const bool enabled = option->state.testFlag(QStyle::State_Enabled);
+    if (!selected && !hover && !pressed && !focused) {
+        return;
+    }
+
+    const QPalette::ColorGroup group = !enabled ? QPalette::Disabled
+        : option->state.testFlag(QStyle::State_Active) ? QPalette::Active : QPalette::Inactive;
+    const QColor surface = tonalContainerColor(option->palette, group);
+    const QColor accent = primaryColor(option->palette, group);
+    const qreal selectionOpacity = selected ? 0.18 : 0.0;
+    const qreal stateOpacity = pressed ? Meo::DesignTokens::stateOpacityPressed()
+                                       : focused ? Meo::DesignTokens::stateOpacityFocus()
+                                                 : hover ? Meo::DesignTokens::stateOpacityHover() : 0.0;
+    const QColor fill = enabled
+        ? MeoStyleHelper::blend(surface, accent, qMin<qreal>(0.30, selectionOpacity + stateOpacity))
+        : option->palette.color(QPalette::Disabled, QPalette::AlternateBase);
+    const QRectF itemRect = option->rect.adjusted(1.0, 1.0, -1.0, -1.0);
+    MeoStyleHelper::drawRoundedSurface(painter, itemRect, Meo::DesignTokens::shapeSmall(), fill);
+    if (focused) {
+        MeoStyleHelper::drawFocusRing(painter, itemRect, Meo::DesignTokens::shapeSmall(), accent);
+    }
 }
 
 } // namespace
@@ -181,25 +246,36 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     if (element == PE_PanelButtonCommand || element == PE_PanelButtonTool) {
         const auto *button = element == PE_PanelButtonCommand
             ? qstyleoption_cast<const QStyleOptionButton *>(option) : nullptr;
-        const bool prominent = button && button->features.testFlag(QStyleOptionButton::DefaultButton);
-        const bool flat = (button && button->features.testFlag(QStyleOptionButton::Flat))
-            || (element == PE_PanelButtonTool && option->state.testFlag(State_AutoRaise));
-        const QPalette::ColorRole surfaceRole = prominent ? QPalette::Highlight : QPalette::Button;
-        const QPalette::ColorRole contentRole = prominent ? QPalette::HighlightedText : QPalette::ButtonText;
+        const auto *toolButton = element == PE_PanelButtonTool
+            ? qstyleoption_cast<const QStyleOptionToolButton *>(option) : nullptr;
+        const bool checked = option->state.testFlag(State_On);
+        const ButtonVisual visual = button ? buttonVisual(button, widget)
+            : (checked ? ButtonVisual::Tonal : ButtonVisual::Text);
+        const bool textButton = visual == ButtonVisual::Text
+            || (toolButton && option->state.testFlag(State_AutoRaise) && !checked);
+        const QColor surface = visual == ButtonVisual::Filled
+            ? primaryColor(option->palette, group)
+            : tonalContainerColor(option->palette, group);
+        const QColor content = visual == ButtonVisual::Filled
+            ? option->palette.color(group, QPalette::HighlightedText)
+            : visual == ButtonVisual::Text ? primaryColor(option->palette, group)
+                                            : option->palette.color(group, QPalette::Text);
         QColor fill = enabled
-            ? MeoStyleHelper::stateLayer(option->palette, group, surfaceRole, contentRole,
-                                          hover, pressed, focus)
-            : option->palette.color(QPalette::Disabled, surfaceRole);
-        if (flat && !hover && !pressed && !focus) {
+            ? MeoStyleHelper::blend(surface, content,
+                                    pressed ? Meo::DesignTokens::stateOpacityPressed()
+                                            : focus ? Meo::DesignTokens::stateOpacityFocus()
+                                                    : hover ? Meo::DesignTokens::stateOpacityHover() : 0.0)
+            : option->palette.color(QPalette::Disabled,
+                                    visual == ButtonVisual::Filled ? QPalette::Highlight : QPalette::AlternateBase);
+        if (textButton && enabled && !hover && !pressed && !focus) {
             fill = Qt::transparent;
         }
-        const QColor outline = prominent || flat
-            ? QColor() : option->palette.color(group, QPalette::Midlight);
+        const QColor outline;
         const qreal radius = buttonRadius(option, pressed);
         MeoStyleHelper::drawRoundedSurface(painter, option->rect, radius, fill, outline);
         if (focus) {
             MeoStyleHelper::drawFocusRing(painter, option->rect, radius,
-                                           option->palette.color(group, QPalette::Highlight));
+                                           primaryColor(option->palette, group));
         }
         return;
     }
@@ -211,10 +287,15 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     }
 
     if (element == PE_FrameLineEdit || element == PE_PanelLineEdit) {
-        const QColor outline = option->palette.color(group, focus ? QPalette::Highlight : QPalette::Mid);
+        const bool searchField = widget && widget->property("meo.role").toString() == QLatin1String("search");
+        const qreal radius = searchField ? option->rect.height() / 2.0 : controlRadius();
+        const QColor outline;
         MeoStyleHelper::drawRoundedSurface(painter, option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
-                                            controlRadius(),
-                                            option->palette.color(group, QPalette::Base), outline);
+                                            radius, tonalContainerColor(option->palette, group), outline);
+        if (focus) {
+            MeoStyleHelper::drawFocusRing(painter, option->rect, radius,
+                                           primaryColor(option->palette, group));
+        }
         return;
     }
 
@@ -229,15 +310,23 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
         return;
     }
 
-    if (element == PE_IndicatorCheckBox || element == PE_IndicatorRadioButton) {
+    if (element == PE_IndicatorCheckBox || element == PE_IndicatorRadioButton
+        || element == PE_IndicatorItemViewItemCheck) {
         const QRectF indicator = option->rect.adjusted(1.0, 1.0, -1.0, -1.0);
         const bool checked = option->state.testFlag(State_On);
         const bool partial = option->state.testFlag(State_NoChange);
-        const QColor primary = option->palette.color(group, QPalette::Highlight);
+        const QColor primary = primaryColor(option->palette, group);
         const QColor outline = option->palette.color(group, QPalette::Mid);
+        const QColor indicatorSurface = enabled
+            ? MeoStyleHelper::stateLayer(option->palette, group,
+                                          checked || partial ? QPalette::Link : QPalette::AlternateBase,
+                                          checked || partial ? QPalette::HighlightedText : QPalette::Text,
+                                          hover, pressed, focus)
+            : option->palette.color(QPalette::Disabled,
+                                    checked || partial ? QPalette::Highlight : QPalette::AlternateBase);
         if (element == PE_IndicatorRadioButton) {
             MeoStyleHelper::drawRoundedSurface(painter, indicator, indicator.width() / 2.0,
-                                                checked ? primary : option->palette.color(group, QPalette::Base), outline);
+                                                indicatorSurface, outline);
             if (checked) {
                 MeoStyleHelper::drawRoundedSurface(painter, indicator.adjusted(5.0, 5.0, -5.0, -5.0),
                                                     indicator.width() / 2.0,
@@ -245,7 +334,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
             }
         } else {
             MeoStyleHelper::drawRoundedSurface(painter, indicator, Meo::DesignTokens::shapeExtraSmall(),
-                                                checked || partial ? primary : option->palette.color(group, QPalette::Base),
+                                                indicatorSurface,
                                                 checked || partial ? primary : outline);
             if (checked) {
                 MeoStyleHelper::drawCheckMark(painter, indicator,
@@ -256,10 +345,21 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
                                   option->palette.color(group, QPalette::HighlightedText));
             }
         }
+        if (enabled && (hover || pressed)) {
+            QColor interactionRing = primary;
+            interactionRing.setAlphaF(pressed ? 0.60 : 0.35);
+            MeoStyleHelper::drawFocusRing(painter, option->rect.adjusted(-1.0, -1.0, 1.0, 1.0),
+                                           controlRadius(), interactionRing);
+        }
         if (focus) {
             MeoStyleHelper::drawFocusRing(painter, option->rect.adjusted(-2.0, -2.0, 2.0, 2.0),
                                            controlRadius(), primary);
         }
+        return;
+    }
+
+    if (element == PE_PanelItemViewItem) {
+        drawItemViewSurface(option, painter);
         return;
     }
 
@@ -277,14 +377,19 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
 
     if (element == CE_PushButtonLabel) {
         const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option);
-        if (button && button->features.testFlag(QStyleOptionButton::DefaultButton)) {
+        if (button) {
             QStyleOptionButton content(*button);
             QPalette palette = content.palette;
+            const ButtonVisual visual = buttonVisual(button, widget);
             for (const QPalette::ColorGroup paletteGroup : {QPalette::Active,
                                                              QPalette::Inactive,
                                                              QPalette::Disabled}) {
-                palette.setColor(paletteGroup, QPalette::ButtonText,
-                                 palette.color(paletteGroup, QPalette::HighlightedText));
+                const QColor foreground = visual == ButtonVisual::Filled
+                    ? palette.color(paletteGroup, QPalette::HighlightedText)
+                    : visual == ButtonVisual::Text
+                        ? primaryColor(palette, paletteGroup)
+                        : palette.color(paletteGroup, QPalette::Text);
+                palette.setColor(paletteGroup, QPalette::ButtonText, foreground);
             }
             content.palette = palette;
             QProxyStyle::drawControl(element, &content, painter, widget);
@@ -301,9 +406,10 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
 
         const bool selected = option->state.testFlag(State_Selected);
         if (selected || hover || pressed || focus) {
-            const QColor surface = option->palette.color(group,
-                element == CE_MenuBarItem ? QPalette::Button : QPalette::Window);
-            const QColor accent = option->palette.color(group, QPalette::Highlight);
+            const QColor surface = element == CE_MenuBarItem
+                ? tonalContainerColor(option->palette, group)
+                : option->palette.color(group, QPalette::Window);
+            const QColor accent = primaryColor(option->palette, group);
             const qreal opacity = pressed ? Meo::DesignTokens::stateOpacityPressed()
                                           : focus ? Meo::DesignTokens::stateOpacityFocus()
                                                   : Meo::DesignTokens::stateOpacityHover();
@@ -341,8 +447,8 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
         }
 
         const bool selected = option->state.testFlag(State_Selected);
-        const QPalette::ColorRole surfaceRole = selected ? QPalette::Button : QPalette::Window;
-        const QPalette::ColorRole contentRole = selected ? QPalette::ButtonText : QPalette::WindowText;
+        const QPalette::ColorRole surfaceRole = selected ? QPalette::AlternateBase : QPalette::Window;
+        const QPalette::ColorRole contentRole = selected ? QPalette::Text : QPalette::WindowText;
         const QColor fill = enabled
             ? MeoStyleHelper::stateLayer(option->palette, group, surfaceRole, contentRole, hover, pressed, focus)
             : option->palette.color(QPalette::Disabled, surfaceRole);
@@ -372,12 +478,28 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                 break;
             }
             MeoStyleHelper::drawRoundedSurface(painter, indicator, thickness / 2.0,
-                                                option->palette.color(group, QPalette::Highlight));
+                                                primaryColor(option->palette, group));
         }
         if (focus) {
             MeoStyleHelper::drawFocusRing(painter, tabRect, Meo::DesignTokens::shapeSmall(),
-                                           option->palette.color(group, QPalette::Highlight));
+                                           primaryColor(option->palette, group));
         }
+        return;
+    }
+
+    if (element == CE_ItemViewItem) {
+        const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option);
+        if (!item) {
+            QProxyStyle::drawControl(element, option, painter, widget);
+            return;
+        }
+
+        // QStyledItemDelegate continues to own icon/text/check geometry.  Remove
+        // only the platform selection rectangle after drawing Meo's state layer.
+        drawItemViewSurface(item, painter);
+        QStyleOptionViewItem content(*item);
+        content.state &= ~(State_Selected | State_MouseOver | State_Sunken | State_HasFocus);
+        QProxyStyle::drawControl(element, &content, painter, widget);
         return;
     }
 
@@ -394,7 +516,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             QRectF fill = option->rect;
             fill.setWidth(fill.width() * ratio);
             MeoStyleHelper::drawRoundedSurface(painter, fill, fill.height() / 2.0,
-                                                option->palette.color(colorGroup(option), QPalette::Highlight));
+                                                primaryColor(option->palette, colorGroup(option)));
         }
         return;
     }
@@ -417,19 +539,19 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             return;
         }
 
-        const QPalette::ColorRole surfaceRole = combo->editable ? QPalette::Base : QPalette::Button;
-        const QPalette::ColorRole contentRole = combo->editable ? QPalette::Text : QPalette::ButtonText;
+        const QPalette::ColorRole surfaceRole = QPalette::AlternateBase;
+        const QPalette::ColorRole contentRole = QPalette::Text;
         if (combo->frame && option->subControls.testFlag(SC_ComboBoxFrame)) {
             const QColor fill = enabled
                 ? MeoStyleHelper::stateLayer(option->palette, group, surfaceRole, contentRole,
                                               hover, pressed, focus)
                 : option->palette.color(QPalette::Disabled, surfaceRole);
-            const QColor outline = option->palette.color(group, focus ? QPalette::Highlight : QPalette::Mid);
+            const QColor outline;
             MeoStyleHelper::drawRoundedSurface(painter, option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
                                                 controlRadius(), fill, outline);
             if (focus) {
                 MeoStyleHelper::drawFocusRing(painter, option->rect, controlRadius(),
-                                               option->palette.color(group, QPalette::Highlight));
+                                               primaryColor(option->palette, group));
             }
         }
 
@@ -437,6 +559,32 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             const QRect arrowRect = subControlRect(CC_ComboBox, combo, SC_ComboBoxArrow, widget);
             MeoStyleHelper::drawChevron(painter, arrowRect,
                                          option->palette.color(group, contentRole), Qt::DownArrow);
+        }
+        return;
+    }
+
+    if (control == CC_ToolButton) {
+        const auto *toolButton = qstyleoption_cast<const QStyleOptionToolButton *>(option);
+        if (!toolButton) {
+            QProxyStyle::drawComplexControl(control, option, painter, widget);
+            return;
+        }
+
+        // Keep Qt/Breeze's label, icon, shortcut and menu-arrow layout while
+        // applying the Meo container to both ordinary and split tool buttons.
+        drawPrimitive(PE_PanelButtonTool, toolButton, painter, widget);
+        QStyleOptionToolButton label(*toolButton);
+        QProxyStyle::drawControl(CE_ToolButtonLabel, &label, painter, widget);
+
+        if (toolButton->features.testFlag(QStyleOptionToolButton::MenuButtonPopup)) {
+            const QRect menuRect = subControlRect(CC_ToolButton, toolButton, SC_ToolButtonMenu, widget);
+            if (!menuRect.isEmpty()) {
+                painter->save();
+                painter->setPen(QPen(toolButton->palette.color(group, QPalette::Midlight), 1.0));
+                const int x = toolButton->direction == Qt::RightToLeft ? menuRect.right() : menuRect.left();
+                painter->drawLine(x, option->rect.top() + 4, x, option->rect.bottom() - 4);
+                painter->restore();
+            }
         }
         return;
     }
@@ -464,7 +612,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
                                                 sliderActiveTrack(track, handleRect.center(), slider->orientation,
                                                                   slider->upsideDown),
                                                 Meo::DesignTokens::space2(),
-                                                option->palette.color(group, QPalette::Highlight));
+                                                primaryColor(option->palette, group));
         }
 
         if (option->subControls.testFlag(SC_SliderHandle)) {
@@ -476,18 +624,18 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
                                                            Meo::DesignTokens::space4(),
                                                            Meo::DesignTokens::space4());
                 const QColor layer = MeoStyleHelper::blend(option->palette.color(group, QPalette::Window),
-                                                            option->palette.color(group, QPalette::Highlight),
+                                                            primaryColor(option->palette, group),
                                                             pressed ? Meo::DesignTokens::stateOpacityPressed()
                                                                     : focus ? Meo::DesignTokens::stateOpacityFocus()
                                                                             : Meo::DesignTokens::stateOpacityHover());
                 MeoStyleHelper::drawRoundedSurface(painter, stateLayer, stateLayer.width() / 2.0, layer);
             }
             MeoStyleHelper::drawRoundedSurface(painter, handle, handle.width() / 2.0,
-                                                option->palette.color(group, QPalette::Highlight));
+                                                primaryColor(option->palette, group));
             if (focus) {
                 MeoStyleHelper::drawFocusRing(painter, handle.adjusted(-2.0, -2.0, 2.0, 2.0),
                                                handle.width() / 2.0,
-                                               option->palette.color(group, QPalette::Highlight));
+                                               primaryColor(option->palette, group));
             }
         }
         return;
@@ -547,7 +695,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             const bool sliderActive = option->activeSubControls.testFlag(SC_ScrollBarSlider);
             const QColor thumb = enabled
                 ? (pressed && sliderActive
-                       ? option->palette.color(group, QPalette::Highlight)
+                       ? primaryColor(option->palette, group)
                        : MeoStyleHelper::stateLayer(option->palette, group, QPalette::Mid,
                                                     QPalette::Text, sliderActive || hover, false, focus))
                 : option->palette.color(QPalette::Disabled, QPalette::Mid);
@@ -557,7 +705,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             if (focus) {
                 MeoStyleHelper::drawFocusRing(painter, thumbRect,
                                                qMin(thumbRect.width(), thumbRect.height()) / 2.0,
-                                               option->palette.color(group, QPalette::Highlight));
+                                               primaryColor(option->palette, group));
             }
         }
         return;

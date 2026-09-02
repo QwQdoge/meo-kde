@@ -3,9 +3,11 @@
 ProfileVersion=3
 
 [Panels]
-# dual: Meo top bar plus a separate auto-hidden bottom dock (default)
+# dual: Meo top bar plus a separate bottom dock (default)
 # single: one top panel; no bottom dock
 Mode=dual
+# standalone: org.meo.dock Layer Shell surface; native: Plasma panel fallback
+DockImplementation=standalone
 ShowSystemTray=true
 # Display the active window's native KDE global menu (File, Edit, View, Help)
 # beside the launcher. This is not the task manager or the bottom dock.
@@ -14,9 +16,9 @@ ShowGlobalMenu=true
 # Tray/StatusNotifier area. Do not add a second task manager to the top panel.
 ShowTopAppTasks=false
 TopPanelHeight=32
-# Native Plasma Icons-Only Task Manager in a Material You floating Dock.
-# 64 dp leaves an intentional 8 dp breathing margin around 48 dp task cells.
-DockHeight=64
+# Plasma panel fallback height. The standalone Dock owns its own 76 dp capsule
+# and a larger transparent input window so magnified icons are never clipped.
+DockHeight=80
 
 [StatusBar]
 TextScalePercent=100

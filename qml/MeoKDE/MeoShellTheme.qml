@@ -1,7 +1,7 @@
 pragma Singleton
 import QtQuick
 import org.kde.kirigami as Kirigami
-import Meo.System 1.0
+import Meo.System 1.0 as MeoSystem
 import MeoUI 1.0
 
 QtObject {
@@ -33,8 +33,16 @@ QtObject {
                 + 0.0722 * linear(color.b)
     }
 
-    function scheme() {
-        return MaterialColors.schemeFor(accentColor, darkMode)
+    function materialProvider() {
+        // Development/offscreen consumers can load the QML module before its
+        // optional native plugin is present. Never call an unresolved
+        // singleton and never synthesize a partial RGB palette as fallback.
+        return typeof MeoSystem.MaterialColors === "undefined"
+                ? null : MeoSystem.MaterialColors
+    }
+
+    function scheme(provider) {
+        return provider ? provider.schemeFor(accentColor, darkMode) : null
     }
 
     function sync() {
@@ -47,9 +55,10 @@ QtObject {
         MeoTheme.reduceMotion = platformShortDuration <= 0
         MeoTheme.motionScale = MeoTheme.reduceMotion
                 ? 0 : Math.max(0.25, Math.min(4, platformShortDuration / 100))
-        const generated = scheme()
-        if (generated)
-            MeoTheme.applyDynamicColorScheme(generated, MaterialColors.sourceId())
+        const provider = materialProvider()
+        const generated = scheme(provider)
+        if (generated && provider)
+            MeoTheme.applyDynamicColorScheme(generated, provider.sourceId())
         else
             MeoTheme.clearDynamicColorScheme()
     }

@@ -144,6 +144,118 @@ icons:
     user-trash-full: delete_forever
     network-server: dns
     network-workgroup: lan
+  # Retired application-glyph inventory. The system-theme builder explicitly
+  # excludes this group: application identities now come from the original
+  # local app icon through Meo Application Icon Studio, which emits unique
+  # user-local hicolor assets instead of generic Material glyphs.
+  apps:
+    Alacritty: terminal
+    alcom: terminal
+    animeko: movie
+    antigravity: terminal
+    antigravity-ide: terminal
+    ark: folder_open
+    blender: draw
+    btop: monitor
+    btrfs-assistant: hard_drive
+    cachy-update-blue: restart_alt
+    org.cachyos.hello: home
+    org.cachyos.KernelManager: memory
+    cachyos-pi: apps
+    chatgpt: lightbulb
+    clash-verge: vpn_key
+    claude-desktop: auto_awesome
+    CMakeSetup: terminal
+    com.visualstudio.code.oss: code
+    discord: groups
+    plasmadiscover: apps
+    org.kde.dolphin: folder_open
+    com.github.wwmm.easyeffects: audio_file
+    filelight: hard_drive
+    firefox: travel_explore
+    google-chrome: travel_explore
+    io.github.benjamimgois.goverlay: stadia_controller
+    gwenview: imagesmode
+    haruna: movie
+    heroic: stadia_controller
+    hmcl-bin: stadia_controller
+    org.kde.iconexplorer: image
+    hwinfo: monitor
+    kate: description
+    accessories-calculator: calculate
+    kdeconnect: smartphone
+    partitionmanager: hard_drive
+    kfind: search
+    utilities-terminal: terminal
+    kwalletmanager: security
+    kwrite: description
+    libreoffice-startcenter: description
+    libreoffice-base: storage
+    libreoffice-calc: table_chart
+    libreoffice-draw: draw
+    libreoffice-impress: slideshow
+    libreoffice-math: calculate
+    libreoffice-writer: description
+    LimineSnapperSync: restart_alt
+    localsend: share
+    net.lutris.Lutris: stadia_controller
+    org.gnome.Meld: compare_arrows
+    kmenuedit: menu
+    micro: description
+    minecraft: stadia_controller
+    minecraft-launcher: stadia_controller
+    mpv: movie
+    mscore: music_note
+    nvidia-settings: settings
+    com.obsproject.Studio: videocam
+    obsidian: note_add
+    okular: description
+    java17-openjdk: terminal
+    java21-openjdk: terminal
+    virtualbox: desktop_windows
+    org.prismlauncher.PrismLauncher: stadia_controller
+    com.vysp3r.ProtonPlus: stadia_controller
+    wine: settings
+    net.davidotek.pupgui2: stadia_controller
+    org.rncbc.qpwgraph: account_tree
+    qq: groups
+    org.kde.qrca: qr_code_2
+    assistant: help
+    QtProject-qtcreator: code
+    qdbusviewer: terminal
+    linguist: language
+    qv4l2: videocam
+    qvidcap: videocam
+    designer: draw
+    virt-viewer: desktop_windows
+    org.cachyos.scx-manager: settings
+    scrcpy: smartphone
+    com.shellyorg.shelly: settings
+    solaar: mouse
+    spectacle: photo_camera
+    spotify-client: headphones
+    steam: stadia_controller
+    utilities-system-monitor: monitor
+    todesk: desktop_windows
+    unityhub: terminal
+    unityhub-unity-editor: code
+    gvim: description
+    virt-manager: desktop_windows
+    vlc: movie
+    org.pulseaudio.pavucontrol: volume_up
+    vrcx: groups
+    winetricks: settings
+    dev.zed.Zed: code
+    # Locally generated Steam launcher entries use the game id as their icon.
+    # One shared original glyph keeps those titles legible without copying game
+    # artwork or relying on an arbitrary package icon.
+    steam_icon_1325860: stadia_controller
+    steam_icon_2073850: stadia_controller
+    steam_icon_4747510: stadia_controller
+    steam_icon_730: stadia_controller
+    steam_icon_461040: stadia_controller
+    steam_icon_438100: stadia_controller
+    steam_icon_431960: wallpaper
   categories:
     preferences-system: settings
     preferences-desktop: tune

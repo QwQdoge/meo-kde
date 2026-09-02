@@ -10,6 +10,8 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QIcon, QImage, QPainter, QPalette
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
 ICONS = (
     "preferences-system", "preferences-desktop-color", "preferences-system-network",
     "preferences-system-bluetooth", "preferences-system-power-management", "list-add",
@@ -20,6 +22,11 @@ ICONS = (
     "battery-100", "battery-charging", "notifications", "notifications-disabled",
     "folder", "folder-open", "folder-remote", "user-home", "user-trash-empty",
     "computer-laptop", "smartphone", "scanner", "system-lock-screen", "system-shutdown",
+    # Curated application layer: review these in the same circular-well context
+    # used by the native Dock, rather than judging the raw SVG paths in isolation.
+    "org.kde.dolphin", "utilities-terminal", "google-chrome", "firefox", "chatgpt",
+    "claude-desktop", "com.visualstudio.code.oss", "obsidian", "spotify-client",
+    "steam", "org.prismlauncher.PrismLauncher", "spectacle", "libreoffice-writer",
 )
 
 
@@ -50,6 +57,7 @@ def main() -> int:
     palette.setColor(QPalette.Window, background)
     palette.setColor(QPalette.Base, background)
     app.setPalette(palette)
+    QIcon.setThemeSearchPaths([str(ROOT / "themes" / "icons"), *QIcon.themeSearchPaths()])
     QIcon.setThemeName("MeoSymbolsDark" if dark else "MeoSymbols")
 
     columns = 5
@@ -76,6 +84,12 @@ def main() -> int:
             empty.append(name)
             continue
         pixmap = icon.pixmap(QSize(48, 48))
+        # Match the pale circular app wells of the Dock so contrast and visual
+        # weight are reviewed at the size users actually see.
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor("#e9e1f2" if dark else "#f2ecf8"))
+        painter.drawEllipse(left + (cell_width - 64) // 2, top + 4, 64, 64)
+        painter.setPen(foreground)
         painter.drawPixmap(left + (cell_width - 48) // 2, top + 12, pixmap)
         painter.drawText(left + 8, top + 70, cell_width - 16, 34, Qt.AlignHCenter | Qt.AlignTop, name)
     painter.end()

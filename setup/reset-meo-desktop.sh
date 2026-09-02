@@ -78,6 +78,13 @@ if command -v systemctl >/dev/null 2>&1 \
   fi
 fi
 
+# Ask the standalone Dock to exit through its narrow D-Bus control before its
+# executable is removed. Do not kill unrelated taskbar or Plasma processes.
+if command -v busctl >/dev/null 2>&1 \
+    && busctl --user status org.meo.Dock >/dev/null 2>&1; then
+  run busctl --user call org.meo.Dock /Dock org.meo.Dock Quit
+fi
+
 for config in kdeglobals kwinrc plasmarc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
   if [ -f "${backup_root}/${config}" ]; then
     run cp -a "${backup_root}/${config}" "${config_root}/${config}"
@@ -142,6 +149,9 @@ run rm -f "${local_bin_root}/meo-dynamic-colors"
 run rm -f "${local_bin_root}/meo-input-method"
 run rm -f "${local_bin_root}/meo-desktop-layout"
 run rm -f "${local_bin_root}/meo-desktop-apply"
+run rm -f "${local_bin_root}/meo-app-icon-studio"
+run rm -f "${local_bin_root}/meo-dock"
+run rm -f "${config_root}/autostart/org.meo.dock.desktop"
 run rm -f "${config_root}/fontconfig/conf.d/50-meo-fonts.conf"
 run rm -f "${config_root}/environment.d/90-meo-kde.conf"
 run rm -f "${config_root}/systemd/user/meo-dynamic-colors.service"

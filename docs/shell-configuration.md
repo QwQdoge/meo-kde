@@ -30,6 +30,8 @@ the matching Meo desktop theme before trying again.
 # dual: top bar + separate auto-hidden bottom dock
 # single: top bar only
 Mode=dual
+# Independent Layer Shell Dock. Set native for Plasma panel fallback.
+DockImplementation=standalone
 ShowSystemTray=true
 # Active-window KDE global menu next to the launcher (File, Edit, View, Help).
 ShowGlobalMenu=true
@@ -38,11 +40,16 @@ ShowGlobalMenu=true
 ShowTopAppTasks=false
 # Compact top bar; Plasma's panel frame supplies the remaining visual margin.
 TopPanelHeight=32
-# 64 dp Dock: 48 dp task targets with an 8 dp breathing margin.
-DockHeight=64
+# 80 dp Dock: 48 dp task targets with a 16 dp vertical glass margin.
+DockHeight=80
 ```
 
 - `Mode` is `dual` or `single`.
+- `DockImplementation` is `standalone` or `native`. `standalone` runs
+  `org.meo.dock` as a Layer Shell window with a shaped KWin blur region,
+  continuous pointer tracking across icon gaps, and KDE TaskManager-backed
+  launchers/window actions. `native` restores the Plasma Icons-Only Task
+  Manager panel as a compatibility fallback.
 - `ShowSystemTray` is `true` or `false`. The default is `true` so native
   StatusNotifier application icons, input-method state, clipboard and other
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
@@ -55,14 +62,24 @@ DockHeight=64
   Dock remains the primary task manager for pinned launchers, window actions
   and autohide behavior.
 - `TopPanelHeight` accepts `32`–`96` pixels.
-- `DockHeight` accepts `40`–`112` pixels. The Pixel/GNOME-like Material
-  default is `64` pixels: 48 dp task targets inside an elevated floating
-  surface. In `dual` mode the dock remains the native Plasma Icons-Only Task
-  Manager, stays on one row, and is auto-hidden.
+- `DockHeight` accepts `40`–`112` pixels and applies to the `native` fallback.
+  The standalone default uses a 76 dp dynamic-color capsule inside a 108 dp
+  transparent Layer Shell input window. That extra height contains the full
+  magnification curve without clipping; only the rounded capsule enters the
+  KWin blur and contrast regions.
 - Existing `~/.config/meo-shellrc` profiles are intentionally preserved. To
-  opt an existing desktop into the 64 dp default, set `DockHeight=64` in that
+  opt an existing desktop into the 80 dp default, set `DockHeight=80` in that
   file and explicitly run the panel-layout helper above; normal theme updates
   never rebuild a user's live panels.
+
+The top panel and Meo window title bar use the same generated dynamic
+`surface` role. This is deliberately palette-based rather than app-color
+sampling, so the base color follows wallpaper dynamic color changes
+consistently for native and third-party applications. The panel remains a
+32 dp translucent surface on the empty desktop. A per-output attachment
+transition that makes the panel opaque at a window join is not yet a runtime
+signal; it must be added through a KWin state bridge and must ignore fullscreen,
+dialogs, popups, non-active windows, and windows on other outputs.
 
 ## Status bar
 

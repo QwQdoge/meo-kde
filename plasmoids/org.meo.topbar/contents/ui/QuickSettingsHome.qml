@@ -375,7 +375,10 @@ QQC2.ScrollView {
                     required property int tileSpan
                     Layout.columnSpan: tileSpan
                     Layout.fillWidth: true
-                    implicitHeight: (tileSpan === 2 ? 72 : 96) * root.tileDensityScale * MeoTheme.globalScale
+                    // Pixel tiles keep a consistent 80 dp touch height. Wide
+                    // tiles gain information density horizontally instead of
+                    // becoming a different visual language vertically.
+                    implicitHeight: ShellMetrics.quickSettingsTileHeight * root.tileDensityScale
                     Layout.preferredHeight: implicitHeight
 
                     DropArea {
@@ -398,6 +401,7 @@ QQC2.ScrollView {
                         active: root.tileActive(tileSlot.tileId)
                         enabled: root.tileEnabled(tileSlot.tileId)
                         wide: tileSlot.tileSpan === 2
+                        visualStyle: "pixel"
                         detailsEnabled: tileSlot.tileId === "wifi" || tileSlot.tileId === "bluetooth" || tileSlot.tileId === "powerMode" || tileSlot.tileId === "microphone" || tileSlot.tileId === "audioDevices"
                         editMode: root.editMode
                         modelIndex: tileSlot.index
