@@ -33,9 +33,13 @@ Window {
     }
 
     function assertPrefix(frame, expected) {
-        if (frame.usedPrefix !== expected) {
-            throw new Error("Expected " + expected + " frame, got " + frame.usedPrefix)
-        }
+        if (frame.usedPrefix !== expected)
+            fail("Expected " + expected + " frame, got " + frame.usedPrefix)
+    }
+
+    function fail(message) {
+        console.error("MEO_NATIVE_DOCK_FRAME_FAILED", message)
+        Qt.exit(1)
     }
 
     KSvg.FrameSvgItem {
@@ -173,22 +177,22 @@ Window {
             root.assertPrefix(focusHoverFrame, "focus-hover")
             root.assertPrefix(progressFrame, "progress")
             if (!panelFrame.hasElement("center"))
-                throw new Error("Floating Dock panel frame is missing its center element")
+                root.fail("Floating Dock panel frame is missing its center element")
             if (!translucentPanelFrame.hasElement("center"))
-                throw new Error("Translucent floating Dock panel frame is missing its center element")
+                root.fail("Translucent floating Dock panel frame is missing its center element")
             root.assertPrefix(northPanelFrame, "north")
             root.assertPrefix(southPanelFrame, "south")
             root.assertPrefix(translucentPanelFrame, "north")
             if (northPanelFrame.minimumDrawingHeight !== 32)
-                throw new Error("Top panel frame must permit a 32 px height")
+                root.fail("Top panel frame must permit a 32 px height")
             if (translucentPanelFrame.minimumDrawingHeight !== 32)
-                throw new Error("Translucent top panel frame must permit a 32 px height")
+                root.fail("Translucent top panel frame must permit a 32 px height")
             if (southPanelFrame.minimumDrawingHeight !== 56)
-                throw new Error("Bottom Dock frame must retain its 56 px minimum")
+                root.fail("Bottom Dock frame must retain its 56 px minimum")
             if (northPanelFrame.fixedMargins.top !== 4 || northPanelFrame.fixedMargins.bottom !== 4)
-                throw new Error("Top panel frame must retain 4 px content margins")
+                root.fail("Top panel frame must retain 4 px content margins")
             if (southPanelFrame.fixedMargins.top !== 4 || southPanelFrame.fixedMargins.bottom !== 4)
-                throw new Error("Bottom Dock frame must retain 4 px content margins")
+                root.fail("Bottom Dock frame must retain 4 px content margins")
 
             console.warn("MEO_NATIVE_DOCK_FRAME_OK", root.themeRoot)
             if (root.snapshotPath === "") {
@@ -197,7 +201,7 @@ Window {
             }
             root.contentItem.grabToImage(function(result) {
                 if (!result.saveToFile(root.snapshotPath))
-                    throw new Error("Unable to save Dock frame snapshot")
+                    root.fail("Unable to save Dock frame snapshot")
                 Qt.quit()
             })
         }

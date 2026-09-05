@@ -64,8 +64,14 @@ while IFS= read -r metadata; do
   run python -m json.tool "${metadata}"
 done < <(find "${repo_root}/plasmoids" "${repo_root}/themes" -name metadata.json -type f | sort)
 
+qt6_qmllint="${QT6_QMLLINT:-/usr/lib/qt6/bin/qmllint}"
+[ -x "${qt6_qmllint}" ] || {
+  echo "Qt 6 qmllint is required for QML validation: ${qt6_qmllint}" | tee -a "${log_file}" >&2
+  exit 1
+}
+
 while IFS= read -r qml_file; do
-  run qmllint -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" -I /usr/lib/qt6/qml "${qml_file}"
+  run "${qt6_qmllint}" -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" -I /usr/lib/qt6/qml "${qml_file}"
 done < <(find "${repo_root}/plasmoids" "${repo_root}/qml" \
   "${repo_root}/native/authentication/qml" "${repo_root}/native/dock/qml" \
   -name '*.qml' -type f | sort)
