@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="66" height="66" viewBox="0 0 66 66">
   <style id="current-color-scheme" type="text/css">
-    .ColorScheme-Background { color: #fffbfe; }
+    .ColorScheme-ButtonBackground { color: #fffbfe; }
   </style>
-  <g class="ColorScheme-Background" fill="currentColor" fill-opacity="0.58">
+  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.58">
     <path id="center" d="M32 32h2v2h-2z"/>
     <path id="top" d="M32 16h2v16h-2z"/>
     <path id="bottom" d="M32 34h2v16h-2z"/>

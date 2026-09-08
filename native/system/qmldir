@@ -1,2 +1,3 @@
 module Meo.System
 plugin meosystemplugin
+typeinfo plugins.qmltypes

@@ -46,12 +46,13 @@ PlasmoidItem {
 
     compactRepresentation: Item {
         id: compactRoot
-        implicitWidth: systemStatus.implicitWidth + 2 * MeoTheme.space4
+        implicitWidth: systemStatus.implicitWidth
         implicitHeight: ShellMetrics.topBarHeight
 
         SystemStatusCluster {
             id: systemStatus
             anchors.centerIn: parent
+            active: root.expanded
             textScale: root.localTextScale
             showNetwork: Plasmoid.configuration.showNetwork
             showBluetooth: Plasmoid.configuration.showBluetooth

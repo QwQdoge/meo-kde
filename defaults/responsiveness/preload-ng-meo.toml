@@ -1,0 +1,28 @@
+# Optional conservative profile. Preload-NG remains disabled until the user
+# opts in because even idle-priority prefetching consumes memory and storage IO.
+[model]
+cycle = 30
+use_correlation = true
+minsize = 250000
+active_window = 21600
+decay = 0.01
+
+[model.memory]
+memtotal = -3
+memavailable = 92
+
+[system]
+doscan = true
+dopredict = true
+autosave = 3600
+exeprefix = ["!/usr/sbin/", "!/usr/local/sbin/", "/usr/", "/opt/"]
+mapprefix = ["!/proc/", "!/sys/", "!/dev/", "!/tmp/", "!/run/", "/usr/", "/opt/"]
+fanotify = false
+prefetch_backend = "readahead"
+sortstrategy = "block"
+prefetch_concurrency = 1
+policy_cache_ttl = 300
+policy_cache_capacity = 1024
+
+[persistence]
+save_on_shutdown = true

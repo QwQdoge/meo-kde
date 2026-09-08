@@ -96,6 +96,19 @@ Item {
                     trailingComponent: Component {
                         RowLayout {
                             spacing: MeoTheme.space4
+                            MeoIconButton {
+                                visible: modelData.saved && !modelData.connected
+                                icon.name: "delete"
+                                type: "standard"
+                                size: "s"
+                                enabled: !SystemState.networkBusy
+                                Accessible.name: qsTr("Forget %1").arg(modelData.ssid)
+                                onClicked: {
+                                    SystemState.clearOperationError()
+                                    forgetDialog.ssid = modelData.ssid
+                                    forgetDialog.open()
+                                }
+                            }
                             MeoIcon { visible: modelData.secured; icon: "lock"; size: 18; color: MeoTheme.onSurfaceVariant }
                             MeoIcon { visible: modelData.connected; icon: "check"; size: 18; fill: true; color: MeoTheme.primary }
                         }
@@ -131,7 +144,7 @@ Item {
                                                            : (SystemState.wifiScanning ? "" : qsTr("Scan again")))
                 onActionRequested: {
                     if (!SystemState.networkAvailable)
-                        Qt.openUrlExternally("systemsettings:kcm_networkmanagement")
+                        Qt.openUrlExternally("applications:org.meo.settings.wifi.desktop")
                     else if (!SystemState.wirelessEnabled)
                         SystemState.wirelessEnabled = true
                     else
@@ -150,6 +163,55 @@ Item {
         onAccepted: function(password) {
             SystemState.clearOperationError()
             SystemState.connectWifi(ssid, password)
+        }
+    }
+
+    MeoMotionPopup {
+        id: forgetDialog
+        property string ssid: ""
+        parent: root
+        presentation: MeoMotionPopup.Dialog
+        width: Math.min(root.width - 2 * MeoTheme.space16, 360 * MeoTheme.globalScale)
+        x: (root.width - width) / 2
+        y: Math.max(MeoTheme.space16, (root.height - height) / 2)
+        padding: 20 * MeoTheme.globalScale
+
+        contentItem: ColumnLayout {
+            spacing: MeoTheme.space16
+            MeoText {
+                Layout.fillWidth: true
+                text: qsTr("Forget this network?")
+                typeRole: "title"
+                typeSize: "small"
+                emphasized: true
+                wrapMode: Text.WordWrap
+            }
+            MeoText {
+                Layout.fillWidth: true
+                text: qsTr("NetworkManager will remove the saved profile and credentials for %1.").arg(forgetDialog.ssid)
+                typeRole: "body"
+                typeSize: "small"
+                color: MeoTheme.onSurfaceVariant
+                wrapMode: Text.WordWrap
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+                Item { Layout.fillWidth: true }
+                MeoButton {
+                    text: qsTr("Cancel")
+                    type: "text"
+                    onClicked: forgetDialog.close()
+                }
+                MeoButton {
+                    text: qsTr("Forget")
+                    type: "filled"
+                    onClicked: {
+                        SystemState.forgetWifi(forgetDialog.ssid)
+                        forgetDialog.close()
+                    }
+                }
+            }
         }
     }
 }

@@ -2,6 +2,7 @@
 #include "dynamiccolorprovider.h"
 #include "mediacontroller.h"
 #include "platformcontroller.h"
+#include "sessionactionclient.h"
 
 #include <QQmlEngine>
 #include <QQmlExtensionPlugin>
@@ -40,6 +41,13 @@ QObject *mediaProvider(QQmlEngine *, QJSEngine *)
     return controller;
 }
 
+QObject *sessionActionProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *client = new SessionActionClient;
+    QQmlEngine::setObjectOwnership(client, QQmlEngine::CppOwnership);
+    return client;
+}
+
 class MeoSystemPlugin final : public QQmlExtensionPlugin
 {
     Q_OBJECT
@@ -53,6 +61,7 @@ public:
         qmlRegisterSingletonType<PlatformController>(uri, 1, 0, "Platform", platformProvider);
         qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);
+        qmlRegisterSingletonType<SessionActionClient>(uri, 1, 0, "SessionActions", sessionActionProvider);
     }
 };
 }

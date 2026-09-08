@@ -39,8 +39,8 @@ Shapes are shared across all managed applications:
 - **Squircle** and **Rounded square** — alternate masks for users
   who prefer the same app identity with another coherent launcher geometry.
 
-The selected silhouette belongs to the application artwork. Both the native
-and standalone Meo Dock use transparent state layers plus running/attention
+The selected silhouette belongs to the application artwork. The native Plasma
+Dock uses transparent state layers plus running/attention
 indicators instead of drawing another opaque well behind every icon.
 
 The deterministic renderer runs locally. Its editable prompt is saved as a

@@ -8,3 +8,4 @@ OnlyShowIn=KDE;
 NoDisplay=true
 X-KDE-autostart-phase=1
 X-KDE-StartupNotify=false
+X-KDE-Wayland-Interfaces=org_kde_plasma_window_management

@@ -47,12 +47,17 @@ QtObject {
 
     function sync() {
         MeoTheme.isDarkMode = darkMode
+        // Meo Desktop intentionally uses the M3 Expressive spatial scheme.
+        // Effect motion remains critically damped; only scale, position and
+        // bounds receive the controlled spring overshoot.
+        MeoTheme.isExpressive = true
         MeoTheme.fontFamily = systemFont.family
         MeoTheme.fontScale = Math.max(0.85, Math.min(1.5, systemFontPixels / 14))
         // Kirigami already applies KDE's AnimationDurationFactor. Bridge that
         // platform preference into shared MeoUI motion tokens instead of
         // maintaining a second, contradictory animation switch.
         MeoTheme.reduceMotion = platformShortDuration <= 0
+        MeoTheme.isBouncy = !MeoTheme.reduceMotion
         MeoTheme.motionScale = MeoTheme.reduceMotion
                 ? 0 : Math.max(0.25, Math.min(4, platformShortDuration / 100))
         const provider = materialProvider()

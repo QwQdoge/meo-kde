@@ -190,9 +190,9 @@ prepare_meoui
 # failed compiler or missing KDE development dependency therefore leaves the
 # desktop exactly as it was.
 if [ -n "${native_cxx}" ]; then
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}"
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}" -DMEO_BUILD_STANDALONE_DOCK=OFF
 else
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEO_BUILD_STANDALONE_DOCK=OFF
 fi
 run cmake --build "${native_build_root}" --parallel
 
@@ -308,7 +308,7 @@ fi
 # Version 1 briefly replaced the useful native tray with a second top task
 # manager and enlarged the Dock. Migrate only that exact legacy combination;
 # all other user-edited profiles keep their choices untouched.
-profile_version=3
+profile_version=4
 if [ -f "${config_root}/meo-shellrc" ]; then
   profile_version="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion --default 0)"
 fi
@@ -332,6 +332,13 @@ if [ "${profile_version}" -lt 3 ] && [ -f "${config_root}/meo-shellrc" ]; then
   # one deterministic order/config when the user explicitly reapplies the
   # panel profile. Merely installing the update does not rebuild live panels.
   run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 3
+fi
+if [ "${profile_version}" -lt 4 ] && [ -f "${config_root}/meo-shellrc" ]; then
+  # The standalone Layer Shell prototype duplicated Plasma's task manager and
+  # could leave two Docks visible. Version 4 makes KDE's native Icons-Only Task
+  # Manager the sole Dock implementation while retaining Meo theme geometry.
+  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation native
+  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 4
 fi
 
 # Install Look-and-Feel package
@@ -382,8 +389,20 @@ run install -Dm755 "${repo_root}/tools/input-method/meo-input-method.sh" "${loca
 run install -Dm755 "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "${local_bin_root}/meo-desktop-layout"
 run install -Dm755 "${repo_root}/tools/theme/apply-meo-desktop.sh" "${local_bin_root}/meo-desktop-apply"
 run install -Dm755 "${repo_root}/tools/icons/app_icon_studio.py" "${local_bin_root}/meo-app-icon-studio"
-run install -Dm0755 "${native_build_root}/dock/meo-dock" "${local_bin_root}/meo-dock"
-run install -Dm0644 "${repo_root}/data/autostart/org.meo.dock.desktop" "${config_root}/autostart/org.meo.dock.desktop"
+# Retire the old independent Dock after it has been backed up above. KDE's
+# native panel now owns the only task-manager surface and all hover behavior.
+if command -v busctl >/dev/null 2>&1 \
+    && busctl --user status org.meo.Dock >/dev/null 2>&1; then
+  if busctl --user introspect org.meo.Dock /Dock 2>/dev/null | grep -q '[.]Quit'; then
+    run busctl --user call org.meo.Dock /Dock org.meo.Dock Quit
+  elif command -v pkill >/dev/null 2>&1; then
+    # Pre-version-4 previews registered the bus name without exporting Quit.
+    # Match only the retired executable name; never touch plasmashell.
+    run pkill -TERM -x meo-dock
+  fi
+fi
+run rm -f "${local_bin_root}/meo-dock"
+run rm -f "${config_root}/autostart/org.meo.dock.desktop"
 run install -Dm644 "${repo_root}/defaults/kwin/kwinrc" "${data_root}/meo-kde/defaults/kwinrc"
 run mkdir -p "${data_root}/fcitx5/themes"
 for input_theme in MeoInputMethod-Light MeoInputMethod-Dark; do

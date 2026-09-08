@@ -38,7 +38,7 @@ QQC2.ScrollView {
                     size: "m"
                     icon.name: "settings"
                     Accessible.name: qsTr("Open Sound Settings")
-                    onClicked: Qt.openUrlExternally("systemsettings:kcm_pulseaudio")
+                    onClicked: Qt.openUrlExternally("applications:org.meo.settings.sound.desktop")
                 }
             }
         }
@@ -58,7 +58,7 @@ QQC2.ScrollView {
             title: qsTr("Audio is unavailable")
             description: qsTr("Open Sound Settings to check PipeWire or PulseAudio devices.")
             actionText: qsTr("Sound Settings")
-            onActionRequested: Qt.openUrlExternally("systemsettings:kcm_pulseaudio")
+            onActionRequested: Qt.openUrlExternally("applications:org.meo.settings.sound.desktop")
         }
 
         PopupSectionLabel {

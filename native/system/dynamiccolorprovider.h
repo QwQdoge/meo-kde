@@ -7,6 +7,8 @@
 class DynamicColorProvider final : public QObject
 {
     Q_OBJECT
+    Q_CLASSINFO("QML.Element", "MaterialColors")
+    Q_CLASSINFO("QML.Singleton", "true")
 
 public:
     explicit DynamicColorProvider(QObject *parent = nullptr);

@@ -5,17 +5,20 @@ pkgdesc="MeoArch KDE Plasma desktop defaults and Meo Qt application style"
 arch=('x86_64')
 url="https://github.com/QwQdoge"
 license=('GPL-3.0-or-later')
-depends=('meoui-qml>=1.0.2' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
-         'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'sddm' 'breeze'
+depends=('meoui-qml>=1.0.3' 'meo-settings' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
+         'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'plasma-login-manager' 'breeze'
          'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
          'kwin-effect-rounded-corners' 'qt6-base' 'qt6-declarative' 'polkit-qt6' 'kwindowsystem'
-         'kconfig' 'kirigami' 'layer-shell-qt' 'libplasma')
+         'kconfig' 'kirigami' 'libplasma' 'system76-scheduler'
+         'zram-generator' 'dbus-broker-units' 'power-profiles-daemon' 'gamemode')
 makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative' 'polkit-qt6'
-             'kwindowsystem' 'kconfig' 'kirigami' 'layer-shell-qt' 'libplasma')
+             'kwindowsystem' 'kconfig' 'kirigami' 'libplasma')
 provides=('polkit-kde-agent')
 conflicts=('polkit-kde-agent')
 replaces=('polkit-kde-agent')
 optdepends=('omnistore-bin: MeoArch application discovery and package management'
+            'preload-ng: optional learned application prefetching (disabled by default)'
+            'prelockd: optional bounded desktop memory locking (disabled by default)'
             'fcitx5: Fcitx 5 candidate UI for compatible input engines'
             'fcitx5-configtool: graphical configuration for Fcitx 5 options'
             'fcitx5-gtk: Fcitx 5 GTK and XWayland input-method module'
@@ -29,7 +32,8 @@ build() {
   cmake -S "${workspace}/native" -B "${srcdir}/native-build" \
     -DCMAKE_BUILD_TYPE=None \
     -DCMAKE_INSTALL_PREFIX=/usr \
-    -DMEOUI_SOURCE_DIR="${workspace}/../meo-ui"
+    -DMEOUI_SOURCE_DIR="${workspace}/../meo-ui" \
+    -DMEO_BUILD_STANDALONE_DOCK=OFF
   cmake --build "${srcdir}/native-build" --parallel
 }
 
@@ -64,18 +68,16 @@ package() {
     "${pkgdir}/usr/share/meo-desktop/defaults/kwinrc"
   install -Dm755 "${workspace}/tools/shell/apply-meo-panel-layout.sh" \
     "${pkgdir}/usr/bin/meo-desktop-layout"
-  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
-    "${pkgdir}/etc/xdg/autostart/org.meo.dock.desktop"
   install -Dm644 "${workspace}/defaults/plasma/meo-shellrc" \
     "${pkgdir}/etc/xdg/meo-shellrc"
-  install -Dm644 "${workspace}/defaults/sddm/meoarch.conf" \
-    "${pkgdir}/etc/sddm.conf.d/20-meoarch.conf"
-  install -Dm644 "${workspace}/defaults/sddm/theme.conf.user" \
-    "${pkgdir}/usr/share/sddm/themes/breeze/theme.conf.user"
+  # The base image uses Plasma Login Manager.  Legacy SDDM branding is kept
+  # outside this package for an explicit compatibility adapter only.
   install -Dm644 "${workspace}/defaults/system/os-release" \
     "${pkgdir}/etc/os-release"
   install -Dm644 "${workspace}/defaults/kde/kdeglobals" \
     "${pkgdir}/etc/xdg/kdeglobals"
+  install -Dm644 "${workspace}/defaults/kde/kglobalshortcutsrc" \
+    "${pkgdir}/etc/xdg/kglobalshortcutsrc"
   install -Dm644 "${workspace}/defaults/kwin/kwinrc" \
     "${pkgdir}/etc/xdg/kwinrc"
   install -Dm644 "${workspace}/defaults/plasma/plasmarc" \
@@ -84,6 +86,18 @@ package() {
     "${pkgdir}/etc/xdg/plasma-welcomerc"
   install -Dm644 "${workspace}/defaults/environment/90-meo-applications.conf" \
     "${pkgdir}/etc/environment.d/90-meo-applications.conf"
+  install -Dm644 "${workspace}/defaults/responsiveness/zram-generator.conf" \
+    "${pkgdir}/usr/lib/systemd/zram-generator.conf.d/50-meo-desktop.conf"
+  install -Dm644 "${workspace}/defaults/responsiveness/gamemode.ini" \
+    "${pkgdir}/etc/gamemode.ini"
+  install -Dm644 "${workspace}/defaults/responsiveness/cachyos-ananicy.kdl" \
+    "${pkgdir}/etc/system76-scheduler/process-scheduler/meo-cachyos.kdl"
+  install -Dm644 "${workspace}/defaults/responsiveness/preload-ng-meo.toml" \
+    "${pkgdir}/usr/share/meo-desktop/optional/preload-ng.toml"
+  install -Dm644 "${workspace}/defaults/responsiveness/prelockd-meo.conf" \
+    "${pkgdir}/usr/share/meo-desktop/optional/prelockd.conf"
+  install -Dm644 "${workspace}/defaults/systemd/50-meo-responsiveness.preset" \
+    "${pkgdir}/usr/lib/systemd/system-preset/50-meo-responsiveness.preset"
   install -Dm644 "${workspace}/defaults/input-method/fcitx5/conf/classicui.conf" \
     "${pkgdir}/etc/xdg/fcitx5/conf/classicui.conf"
   install -d "${pkgdir}/usr/share/fcitx5/themes"

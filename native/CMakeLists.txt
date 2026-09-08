@@ -7,13 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CTest)
 
 option(MEO_BUILD_APPLICATION_STYLE "Build the Meo Qt Widgets application style" ON)
+option(MEO_BUILD_STANDALONE_DOCK "Build the retired experimental Layer Shell Dock" OFF)
 set(MEOUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../meo-ui" CACHE PATH
     "Path to the MeoUI source tree used for the shared token runtime")
 
 add_subdirectory(third_party/material-color-utilities)
 add_subdirectory(dynamic-color)
 add_subdirectory(system)
-add_subdirectory(dock)
+if(MEO_BUILD_STANDALONE_DOCK)
+    add_subdirectory(dock)
+endif()
 add_subdirectory(authentication)
 add_subdirectory(decoration)
 if(MEO_BUILD_APPLICATION_STYLE)

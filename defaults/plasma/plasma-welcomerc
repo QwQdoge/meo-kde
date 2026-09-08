@@ -1,3 +1,6 @@
 [General]
-LastSeenVersion=6.7.3
-
+# Meo Welcome is the single first-login flow.  Plasma Welcome's documented
+# version gate considers the bundled 6.7.4 release already seen, while this
+# flag also prevents a later Plasma update from presenting a competing wizard.
+LastSeenVersion=6.7.4
+ShowUpdatePage=false

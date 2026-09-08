@@ -53,11 +53,20 @@ timeCenter.writeConfig("showNotifications", true)
 timeCenter.writeConfig("use24HourClock", true)
 timeCenter.reloadConfig()
 
-// org.meo.dock starts as an independent Layer Shell surface. It owns the
-// floating capsule geometry, rounded blur region and continuous magnification
-// input, while KDE TaskManager remains the source of real launchers/windows.
-// A native Icons-Only Task Manager panel remains available through
-// Panels/DockImplementation=native for recovery and compatibility.
+// One native Plasma Dock. Plasma owns the task model, hover feedback, grouping,
+// previews, drag-and-drop and activation; the Meo desktop theme supplies the
+// dynamic Material surface and task frames without a second pointer model.
+var bottomPanel = new Panel
+bottomPanel.location = "bottom"
+bottomPanel.height = 80
+bottomPanel.floating = true
+bottomPanel.hiding = "autohide"
+bottomPanel.lengthMode = "fit"
+bottomPanel.alignment = "center"
+bottomPanel.currentConfigGroup = ["MeoShell"]
+bottomPanel.writeConfig("Managed", true)
+bottomPanel.writeConfig("Role", "dock")
+bottomPanel.addWidget("org.kde.plasma.icontasks")
 
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())

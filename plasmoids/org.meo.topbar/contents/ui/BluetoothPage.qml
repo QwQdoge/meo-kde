@@ -18,9 +18,7 @@ Item {
     function openMeoBluetoothSettings() {
         if (Qt.openUrlExternally("applications:org.meo.settings.bluetooth.desktop"))
             return
-        if (Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-            return
-        Qt.openUrlExternally("systemsettings:kcm_bluetooth")
+        Qt.openUrlExternally("applications:org.meo.settings.desktop")
     }
 
     ColumnLayout {

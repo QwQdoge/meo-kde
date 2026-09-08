@@ -15,6 +15,10 @@ QQC2.AbstractButton {
     property bool showDate: true
     property bool showNotifications: true
     property bool use24HourClock: true
+    property bool active: false
+    readonly property bool hasNotificationState: root.unreadCount > 0
+                                                 || root.activeJobsCount > 0
+                                                 || root.inhibited
     signal statusCenterRequested()
 
     implicitWidth: timeContent.implicitWidth + leftPadding + rightPadding
@@ -35,26 +39,43 @@ QQC2.AbstractButton {
                                   : qsTr("No unread notifications")))
     onClicked: statusCenterRequested()
 
+    MeoSpringValue {
+        id: pressSpring
+        value: 1
+        targetValue: root.down ? 0.94 : 1
+        spring: MeoMotion.fastSpatial
+    }
+
+    transform: Scale {
+        origin.x: root.width / 2
+        origin.y: root.height / 2
+        xScale: pressSpring.value
+        yScale: pressSpring.value
+    }
+
     background: MeoShape {
         id: statusSurface
         type: "pill"
         radius: height / 2
-        color: root.hovered || root.down
-               ? MeoTheme.surfaceContainerHighest
-               : MeoTheme.surfaceContainer
-        strokeColor: MeoTheme.outlineVariant
-        // See the system-status trigger: this keeps a live module handoff
-        // from assigning an undefined value to MeoShape.strokeWidth.
-        strokeWidth: typeof MeoTheme.strokeWidthThin === "number"
-                     ? MeoTheme.strokeWidthThin
-                     : MeoTheme.globalScale
+        color: root.active
+               ? MeoTheme.primaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHighest
+                  : Qt.rgba(0, 0, 0, 0))
+        strokeColor: Qt.rgba(0, 0, 0, 0)
+        strokeWidth: 0
 
-        // MeoUI owns the compact-control interaction treatment, including the
-        // MD3 state layer and clipped ripple.
+        Behavior on color {
+            ColorAnimation {
+                duration: MeoTheme.motionDurationEffectDefault
+                easing.bezierCurve: MeoTheme.motionEasingStandard
+            }
+        }
+
         MeoStateLayer {
             anchors.fill: parent
             radius: statusSurface.radius
-            color: MeoTheme.primary
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
             hovered: root.hovered
             pressed: root.down
             focused: root.activeFocus
@@ -76,7 +97,7 @@ QQC2.AbstractButton {
                 typeSize: "medium"
                 emphasized: true
                 fontScaleOverride: root.textScale
-                color: MeoTheme.onSurface
+                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
             }
 
             MeoText {
@@ -85,12 +106,14 @@ QQC2.AbstractButton {
                 typeRole: "label"
                 typeSize: "small"
                 fontScaleOverride: root.textScale
-                color: MeoTheme.onSurfaceVariant
+                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
             }
         }
 
         Item {
-            visible: root.showNotifications
+            // The clock already opens the combined calendar/notification
+            // center. Keep the bell out of the idle bar unless it has state.
+            visible: root.showNotifications && root.hasNotificationState
             Layout.leftMargin: MeoTheme.space2
             implicitWidth: 24 * MeoTheme.globalScale
             implicitHeight: width
@@ -98,9 +121,13 @@ QQC2.AbstractButton {
             MeoIcon {
                 anchors.centerIn: parent
                 icon: root.inhibited ? "do_not_disturb_on"
-                                     : (root.unreadCount > 0 ? "notifications" : "notifications_none")
+                                     : (root.activeJobsCount > 0 && root.unreadCount === 0
+                                        ? "progress_activity" : "notifications")
                 size: 20
-                color: root.inhibited || root.unreadCount > 0 ? MeoTheme.primary : MeoTheme.onSurface
+                color: root.active
+                       ? MeoTheme.onPrimaryContainer
+                       : (root.inhibited || root.unreadCount > 0
+                          ? MeoTheme.primary : MeoTheme.onSurface)
             }
 
             MeoBadge {

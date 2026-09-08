@@ -12,12 +12,17 @@ Item {
     required property var tasksModel
     required property real pointerX
 
+    signal launchRequested(string applicationId, string applicationName,
+                           var applicationIcon)
+
     readonly property var taskIndex: tasksModel.index(taskRow, 0)
     readonly property string title: tasksModel.data(taskIndex, Qt.DisplayRole) || ""
     readonly property var iconSource: tasksModel.data(taskIndex, Qt.DecorationRole)
     readonly property string appId: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.AppId) || ""
     readonly property url launcherUrl: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.LauncherUrl) || ""
     readonly property bool isActive: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.IsActive) || false
+    readonly property bool isWindow: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.IsWindow) || false
+    readonly property bool isStartup: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.IsStartup) || false
     readonly property bool isLauncher: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.IsLauncher) || false
     readonly property bool hasLauncher: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.HasLauncher) || false
     readonly property bool isMinimized: tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.IsMinimized) || false
@@ -28,24 +33,49 @@ Item {
     readonly property string iconMode: DockConfig.iconModeFor(appId, launcherUrl)
     readonly property real centerInWindow: mapToItem(null, width / 2, 0).x
     readonly property real pointerDistance: Math.abs(centerInWindow - pointerX)
-    property real magnification: pointerX < 0
-                                 ? 1.0
-                                 : 1.0 + 0.34 * Math.exp(
-                                       -Math.pow(pointerDistance / (72 * MeoTheme.globalScale), 2))
+    readonly property real desiredMagnification: pointerX < 0
+                                                  ? 1.0
+                                                  : 1.0 + 0.34 * Math.exp(
+                                                        -Math.pow(pointerDistance / (72 * MeoTheme.globalScale), 2))
+    property bool launchFeedbackActive: false
+
+    MeoSpringValue {
+        id: magnificationSpring
+        value: 1
+        targetValue: root.desiredMagnification
+        spring: MeoMotion.fastSpatial
+        enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
+    }
+
+    MeoSpringValue {
+        id: pressSpring
+        value: 1
+        targetValue: primaryTap.pressed ? 0.92 : 1
+        spring: MeoMotion.fastSpatial
+        enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
+    }
+
+    Timer {
+        id: localLaunchDeadline
+        interval: 1800
+        onTriggered: root.launchFeedbackActive = false
+    }
+
+    onIsWindowChanged: {
+        if (isWindow) {
+            launchFeedbackActive = false
+            localLaunchDeadline.stop()
+        }
+    }
 
     width: 56 * MeoTheme.globalScale
     height: width
-    z: Math.round(magnification * 100)
+    z: Math.round(magnificationSpring.value * 100)
     transform: Scale {
         origin.x: root.width / 2
         origin.y: root.height
-        xScale: root.magnification
-        yScale: root.magnification
-    }
-
-    Behavior on magnification {
-        enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
-        NumberAnimation { duration: MeoMotion.hover; easing.type: Easing.OutCubic }
+        xScale: magnificationSpring.value * pressSpring.value
+        yScale: magnificationSpring.value * pressSpring.value
     }
 
     Rectangle {
@@ -68,6 +98,15 @@ Item {
                  : "transparent"
         border.width: 0
 
+        MeoStateLayer {
+            anchors.fill: parent
+            hovered: hover.hovered
+            pressed: primaryTap.pressed
+            shape: "circle"
+            color: MeoTheme.onSurface
+            z: 2
+        }
+
         Behavior on color {
             enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
             ColorAnimation { duration: MeoMotion.stateChange }
@@ -80,6 +119,7 @@ Item {
             height: width
             source: root.iconSource
             active: root.isActive
+            z: 1
         }
 
         // Pixel monochrome mode is a real app-mark treatment, not only a
@@ -90,6 +130,18 @@ Item {
             visible: root.iconMode === "mono"
             colorization: 1.0
             colorizationColor: MeoTheme.onSurface
+            z: 1
+        }
+
+        MeoLoadingIndicator {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            width: 20 * MeoTheme.globalScale
+            height: width
+            variant: "contained"
+            running: visible
+            visible: root.isStartup || root.launchFeedbackActive
+            z: 4
         }
 
         Rectangle {
@@ -137,8 +189,15 @@ Item {
     HoverHandler { id: hover }
 
     TapHandler {
+        id: primaryTap
         acceptedButtons: Qt.LeftButton
         onTapped: {
+            if (root.isLauncher && !root.isWindow) {
+                root.launchFeedbackActive = true
+                localLaunchDeadline.restart()
+                root.launchRequested(root.appId || root.launcherUrl.toString(),
+                                     root.title, root.iconSource)
+            }
             if (root.isActive && !root.isLauncher)
                 root.tasksModel.requestToggleMinimized(root.taskIndex)
             else

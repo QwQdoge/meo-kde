@@ -64,6 +64,7 @@ PlasmoidItem {
     }
 
     compactRepresentation: TimeNotificationButton {
+        active: root.expanded
         currentDateTime: clock.dateTime
         unreadCount: notificationModel.unreadNotificationsCount
         activeJobsCount: notificationModel.activeJobsCount

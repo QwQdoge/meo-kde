@@ -19,9 +19,22 @@
 
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QCalendar>
+#include <QDate>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QSharedPointer>
 #include <QRegularExpression>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QUuid>
+#include <QUrl>
+#include <QUrlQuery>
 #include <QtGlobal>
 
 #include <algorithm>
@@ -140,6 +153,15 @@ SystemStateHub::SystemStateHub(QObject *parent)
     connect(m_audioContext, &PulseAudioQt::Context::sourceRemoved, this, refreshAudioDevices);
     bindAudioSink();
     bindAudioSource();
+
+    // Calendar preferences are intentionally read-only to the shell.  Meo
+    // Settings/installer own the setting; the shell only projects it beside
+    // the clock.  Rechecking also covers a date rollover without altering
+    // system time or any calendar application's event model.
+    m_calendarRefreshTimer.setInterval(15 * 60 * 1000);
+    connect(&m_calendarRefreshTimer, &QTimer::timeout, this, &SystemStateHub::refreshSecondaryCalendar);
+    m_calendarRefreshTimer.start();
+    refreshSecondaryCalendar();
 }
 
 bool SystemStateHub::networkAvailable() const
@@ -404,6 +426,41 @@ void SystemStateHub::disconnectWifi()
     }
     setNetworkBusy(true);
     const auto reply = NetworkManager::deactivateConnection(m_wifiDevice->activeConnection()->path());
+    auto *watcher = new QDBusPendingCallWatcher(reply, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this,
+            [this, watcher](QDBusPendingCallWatcher *) {
+                const QDBusPendingReply<> result = *watcher;
+                if (result.isError()) {
+                    setOperationError(result.error().message());
+                }
+                setNetworkBusy(false);
+                refreshWifiState();
+                watcher->deleteLater();
+            });
+}
+
+void SystemStateHub::forgetWifi(const QString &ssid)
+{
+    clearOperationError();
+    if (m_networkBusy) {
+        setOperationError(tr("Another network operation is still in progress."));
+        return;
+    }
+    if (ssid.isEmpty()) {
+        return;
+    }
+
+    // NetworkManager remains the owner of saved profiles and credentials.
+    // Only remove a matching, already-saved wireless profile; never alter a
+    // network merely because its SSID is currently visible.
+    const auto saved = savedConnectionForSsid(ssid);
+    if (!saved) {
+        setOperationError(tr("This saved Wi-Fi network is no longer available."));
+        return;
+    }
+
+    setNetworkBusy(true);
+    const auto reply = saved->remove();
     auto *watcher = new QDBusPendingCallWatcher(reply, this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this,
             [this, watcher](QDBusPendingCallWatcher *) {
@@ -800,12 +857,169 @@ QString SystemStateHub::operationError() const
     return m_operationError;
 }
 
+QString SystemStateHub::secondaryCalendarText() const
+{
+    return m_secondaryCalendarText;
+}
+
+QString SystemStateHub::secondaryCalendarState() const
+{
+    return m_secondaryCalendarState;
+}
+
+QString SystemStateHub::secondaryCalendarSource() const
+{
+    return m_secondaryCalendarSource;
+}
+
 void SystemStateHub::clearOperationError()
 {
     if (!m_operationError.isEmpty()) {
         m_operationError.clear();
         Q_EMIT operationChanged();
     }
+}
+
+QString SystemStateHub::calendarConfigValue(const QString &key) const
+{
+    // GenericConfigLocation searches the user configuration first and /etc/xdg
+    // afterwards.  This lets a user later override the installer default
+    // without allowing the shell to write system configuration.
+    const QStringList locations = QStandardPaths::locateAll(
+        QStandardPaths::GenericConfigLocation, QStringLiteral("MeoArch/Calendar.ini"));
+    for (const QString &location : locations) {
+        const QFileInfo info(location);
+        if (!info.isFile() || info.isSymLink())
+            continue;
+        QSettings settings(location, QSettings::IniFormat);
+        settings.beginGroup(QStringLiteral("Calendar"));
+        const QString value = settings.value(key).toString();
+        settings.endGroup();
+        if (!value.isEmpty())
+            return value;
+    }
+    return {};
+}
+
+QString SystemStateHub::hebcalCachePath(const QDate &date) const
+{
+    const QString cacheDirectory = QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation))
+                                       .absoluteFilePath(QStringLiteral("meoarch/hebcal"));
+    return QDir(cacheDirectory).absoluteFilePath(date.toString(Qt::ISODate) + QStringLiteral(".json"));
+}
+
+void SystemStateHub::setSecondaryCalendarResult(const QString &text,
+                                                const QString &state,
+                                                const QString &source)
+{
+    if (m_secondaryCalendarText == text && m_secondaryCalendarState == state
+        && m_secondaryCalendarSource == source)
+        return;
+    m_secondaryCalendarText = text;
+    m_secondaryCalendarState = state;
+    m_secondaryCalendarSource = source;
+    Q_EMIT calendarChanged();
+}
+
+void SystemStateHub::refreshSecondaryCalendar()
+{
+    const QString secondary = calendarConfigValue(QStringLiteral("Secondary"));
+    const QDate today = QDate::currentDate();
+    if (secondary.isEmpty() || secondary == QStringLiteral("none")) {
+        setSecondaryCalendarResult({}, QStringLiteral("disabled"), {});
+        return;
+    }
+    if (secondary == QStringLiteral("buddhist")) {
+        // Buddhist Era is a local display convention: Gregorian date with a
+        // 543-year offset.  It uses no location or online data.
+        setSecondaryCalendarResult(tr("Buddhist Era · %1").arg(today.year() + 543),
+                                   QStringLiteral("ready"), tr("Local display"));
+        return;
+    }
+    if (secondary == QStringLiteral("islamic-civil")) {
+        const QCalendar calendar(QStringLiteral("islamic-civil"));
+        if (!calendar.isValid()) {
+            setSecondaryCalendarResult({}, QStringLiteral("unavailable"),
+                                       tr("Qt Islamic Civil calendar is unavailable"));
+            return;
+        }
+        const auto parts = calendar.partsFromDate(today);
+        setSecondaryCalendarResult(tr("Islamic Civil · %1 %2 %3")
+                                       .arg(parts.day)
+                                       .arg(parts.month)
+                                       .arg(parts.year),
+                                   QStringLiteral("ready"), tr("Local Qt calendar"));
+        return;
+    }
+    if (secondary == QStringLiteral("hebcal")) {
+        if (calendarConfigValue(QStringLiteral("HebcalEnabled")).compare(
+                QStringLiteral("true"), Qt::CaseInsensitive) != 0) {
+            setSecondaryCalendarResult({}, QStringLiteral("needs-online-setup"),
+                                       tr("Hebcal is disabled"));
+            return;
+        }
+        refreshHebcalCalendar(today);
+        return;
+    }
+    setSecondaryCalendarResult({}, QStringLiteral("unavailable"), tr("Unknown calendar preference"));
+}
+
+void SystemStateHub::refreshHebcalCalendar(const QDate &today)
+{
+    const QString cachePath = hebcalCachePath(today);
+    const auto showCached = [this, &cachePath]() -> bool {
+        QFile cache(cachePath);
+        if (!cache.open(QIODevice::ReadOnly))
+            return false;
+        const QJsonObject payload = QJsonDocument::fromJson(cache.readAll()).object();
+        const QString hebrewDate = payload.value(QStringLiteral("hebrew")).toString().trimmed();
+        if (hebrewDate.isEmpty())
+            return false;
+        setSecondaryCalendarResult(tr("Hebrew · %1").arg(hebrewDate), QStringLiteral("cached"),
+                                   tr("Hebcal data cached on this device"));
+        return true;
+    };
+    const bool hasCache = showCached();
+
+    // This request is opt-in, has no device/account/location identifier, and
+    // asks only for today's date conversion in a fixed public language.  The
+    // source is always shown to the user rather than being presented as a
+    // local calculation.
+    QUrl url(QStringLiteral("https://www.hebcal.com/converter"));
+    QUrlQuery query;
+    query.addQueryItem(QStringLiteral("cfg"), QStringLiteral("json"));
+    query.addQueryItem(QStringLiteral("g2h"), QStringLiteral("1"));
+    query.addQueryItem(QStringLiteral("date"), today.toString(Qt::ISODate));
+    query.addQueryItem(QStringLiteral("lg"), QStringLiteral("en"));
+    url.setQuery(query);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("MeoArch-Calendar/1"));
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+    auto *reply = m_calendarNetwork.get(request);
+    QTimer::singleShot(7'000, reply, [reply] {
+        if (reply->isRunning())
+            reply->abort();
+    });
+    connect(reply, &QNetworkReply::finished, this, [this, reply, cachePath, hasCache] {
+        const QJsonObject payload = QJsonDocument::fromJson(reply->readAll()).object();
+        const QString hebrewDate = payload.value(QStringLiteral("hebrew")).toString().trimmed();
+        const bool valid = reply->error() == QNetworkReply::NoError && !hebrewDate.isEmpty();
+        reply->deleteLater();
+        if (!valid) {
+            if (!hasCache)
+                setSecondaryCalendarResult({}, QStringLiteral("unavailable"),
+                                           tr("Hebcal could not be reached and no cached date is available"));
+            return;
+        }
+        QDir().mkpath(QFileInfo(cachePath).dir().absolutePath());
+        QFile cache(cachePath);
+        if (cache.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            cache.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+            cache.write(QJsonDocument(payload).toJson(QJsonDocument::Compact));
+        }
+        setSecondaryCalendarResult(tr("Hebrew · %1").arg(hebrewDate), QStringLiteral("ready"),
+                                   tr("Hebcal online data"));
+    });
 }
 
 void SystemStateHub::refreshWifiDevice()

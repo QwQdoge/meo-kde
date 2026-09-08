@@ -42,7 +42,7 @@ read_value() {
 }
 
 panel_mode="$(read_value Panels Mode dual)"
-dock_implementation="$(read_value Panels DockImplementation standalone)"
+dock_implementation="$(read_value Panels DockImplementation native)"
 show_system_tray="$(read_value Panels ShowSystemTray true)"
 show_global_menu="$(read_value Panels ShowGlobalMenu true)"
 show_top_app_tasks="$(read_value Panels ShowTopAppTasks false)"
@@ -62,8 +62,13 @@ case "${panel_mode}" in
   *) echo "Panels/Mode must be single or dual, found: ${panel_mode}" >&2; exit 1 ;;
 esac
 case "${dock_implementation}" in
-  standalone|native) ;;
-  *) echo "Panels/DockImplementation must be standalone or native, found: ${dock_implementation}" >&2; exit 1 ;;
+  native) ;;
+  standalone)
+    # Compatibility for version-3 profiles: never recreate the retired
+    # Layer Shell Dock or leave the user without a bottom task manager.
+    dock_implementation=native
+    ;;
+  *) echo "Panels/DockImplementation must be native, found: ${dock_implementation}" >&2; exit 1 ;;
 esac
 for boolean in show_system_tray show_global_menu show_top_app_tasks show_network show_bluetooth show_volume show_date show_notifications use_24_hour_clock; do
   case "${!boolean,,}" in
@@ -275,7 +280,7 @@ top.writeConfig("AppletOrder", topOrder.join(";"));
 top.reloadConfig();
 
 var dock = firstPanel("bottom");
-if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
+if ("${panel_mode}" === "dual") {
     if (!dock) {
         dock = new Panel;
         dock.location = "bottom";
@@ -286,6 +291,9 @@ if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
     dock.lengthMode = "fit";
     dock.alignment = "center";
     markManaged(dock, "dock");
+    // Plasma owns task identity, grouping, hover feedback, previews, drag and
+    // window activation. The Meo desktop theme supplies only the MD surface
+    // and task-frame visuals, so there is no second pointer/hover model.
     var dockTasks = oneWidget(dock, "org.kde.plasma.icontasks");
     dockTasks.index = 0;
     dock.reloadConfig();

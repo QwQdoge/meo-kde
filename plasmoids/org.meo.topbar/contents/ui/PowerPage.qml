@@ -43,8 +43,8 @@ QQC2.ScrollView {
                     type: "standard"
                     size: "m"
                     icon.name: "settings"
-                    Accessible.name: qsTr("Open Power Management Settings")
-                    onClicked: Qt.openUrlExternally("systemsettings:kcm_powerdevilprofilesconfig")
+                    Accessible.name: qsTr("Open Power in Meo Settings")
+                    onClicked: Qt.openUrlExternally("applications:org.meo.settings.power.desktop")
                 }
             }
         }
@@ -145,6 +145,19 @@ QQC2.ScrollView {
                         }
                     }
                     onClicked: Platform.keepAwake = !Platform.keepAwake
+                }
+
+                MeoListItem {
+                    Layout.fillWidth: true
+                    isDense: true
+                    headline: qsTr("Automatic sleep")
+                    supportingText: qsTr("Power Management sets the schedule. Applications can temporarily delay sleep when they request it.")
+                    leadingIcon: "bedtime"
+                    trailingComponent: Component {
+                        MeoIcon { icon: "open_in_new"; size: 18; color: MeoTheme.onSurfaceVariant }
+                    }
+                    Accessible.description: qsTr("Open Power in Meo Settings. This does not force or stop any system service.")
+                    onClicked: Qt.openUrlExternally("applications:org.meo.settings.power.desktop")
                 }
 
                 MeoListItem {

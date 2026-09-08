@@ -153,24 +153,27 @@ Item {
         y: Math.max(0, root.height - height - ShellMetrics.popupContentMargin)
 
         QQC2.MenuItem {
-            text: qsTr("Sleep")
+            text: qsTr("Sleep now")
             visible: sessionManagement.canSuspend
             onTriggered: sessionManagement.suspend()
         }
         QQC2.MenuItem {
-            text: qsTr("Restart")
+            text: qsTr("Restart…")
             visible: sessionManagement.canReboot
+            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
             onTriggered: sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt)
         }
         QQC2.MenuItem {
-            text: qsTr("Shut down")
+            text: qsTr("Shut down…")
             visible: sessionManagement.canShutdown
+            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
             onTriggered: sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt)
         }
         QQC2.MenuSeparator {}
         QQC2.MenuItem {
-            text: qsTr("Sign out")
+            text: qsTr("Sign out…")
             visible: sessionManagement.canLogout
+            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
             onTriggered: sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt)
         }
     }

@@ -6,10 +6,13 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QSet>
 #include <QStandardPaths>
+#include <QTimer>
 
 namespace
 {
@@ -50,6 +53,10 @@ QStringList findLauncherList(const KConfigGroup &group)
 DockConfig::DockConfig(QObject *parent)
     : QObject(parent)
 {
+    m_launchBoostTimer = new QTimer(this);
+    m_launchBoostTimer->setSingleShot(true);
+    m_launchBoostTimer->setInterval(1800);
+    connect(m_launchBoostTimer, &QTimer::timeout, this, &DockConfig::endLaunchBoost);
     reload();
 }
 
@@ -140,6 +147,116 @@ void DockConfig::activateLauncherMenu()
         QStringLiteral("org.kde.plasmashell"), QStringLiteral("/PlasmaShell"),
         QStringLiteral("org.kde.PlasmaShell"), QStringLiteral("activateLauncherMenu"));
     QDBusConnection::sessionBus().asyncCall(message);
+}
+
+void DockConfig::setForegroundProcess(quint32 pid)
+{
+    if (pid == 0 || pid == m_lastForegroundPid) {
+        return;
+    }
+    m_lastForegroundPid = pid;
+    QDBusMessage message = QDBusMessage::createMethodCall(
+        QStringLiteral("com.system76.Scheduler"),
+        QStringLiteral("/com/system76/Scheduler"),
+        QStringLiteral("com.system76.Scheduler"),
+        QStringLiteral("SetForegroundProcess"));
+    message.setArguments({QVariant::fromValue(pid)});
+    QDBusConnection::systemBus().asyncCall(message);
+}
+
+void DockConfig::beginLaunchBoost(const QString &applicationId)
+{
+    endLaunchBoost();
+    const quint64 generation = ++m_launchBoostGeneration;
+    m_launchBoostRequested = true;
+    m_launchBoostTimer->start();
+
+    QDBusMessage message = QDBusMessage::createMethodCall(
+        QStringLiteral("org.freedesktop.UPower.PowerProfiles"),
+        QStringLiteral("/org/freedesktop/UPower/PowerProfiles"),
+        QStringLiteral("org.freedesktop.UPower.PowerProfiles"),
+        QStringLiteral("HoldProfile"));
+    message.setArguments({QStringLiteral("performance"),
+                          QStringLiteral("Meo Instant Launch"),
+                          applicationId.left(128)});
+    auto *watcher = new QDBusPendingCallWatcher(
+        QDBusConnection::systemBus().asyncCall(message), this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this,
+            [this, watcher, generation] {
+                const QDBusPendingReply<quint32> reply = *watcher;
+                watcher->deleteLater();
+                if (reply.isError()) {
+                    return;
+                }
+                const quint32 cookie = reply.value();
+                if (!m_launchBoostRequested || generation != m_launchBoostGeneration) {
+                    QDBusMessage release = QDBusMessage::createMethodCall(
+                        QStringLiteral("org.freedesktop.UPower.PowerProfiles"),
+                        QStringLiteral("/org/freedesktop/UPower/PowerProfiles"),
+                        QStringLiteral("org.freedesktop.UPower.PowerProfiles"),
+                        QStringLiteral("ReleaseProfile"));
+                    release.setArguments({QVariant::fromValue(cookie)});
+                    QDBusConnection::systemBus().asyncCall(release);
+                } else {
+                    m_profileHoldCookie = cookie;
+                }
+            });
+}
+
+void DockConfig::endLaunchBoost()
+{
+    m_launchBoostRequested = false;
+    ++m_launchBoostGeneration;
+    if (m_launchBoostTimer) {
+        m_launchBoostTimer->stop();
+    }
+    if (m_profileHoldCookie == 0) {
+        return;
+    }
+    QDBusMessage message = QDBusMessage::createMethodCall(
+        QStringLiteral("org.freedesktop.UPower.PowerProfiles"),
+        QStringLiteral("/org/freedesktop/UPower/PowerProfiles"),
+        QStringLiteral("org.freedesktop.UPower.PowerProfiles"),
+        QStringLiteral("ReleaseProfile"));
+    message.setArguments({QVariant::fromValue(m_profileHoldCookie)});
+    m_profileHoldCookie = 0;
+    QDBusConnection::systemBus().asyncCall(message);
+}
+
+QVariantMap DockConfig::launchGeometryFor(const QString &applicationId) const
+{
+    const QString key = configKeyForApplication(applicationId, {});
+    if (key.isEmpty()) {
+        return {};
+    }
+    const auto config = KSharedConfig::openConfig(QString::fromLatin1(configFile));
+    const KConfigGroup geometryGroup(config, QStringLiteral("LaunchGeometry"));
+    const QRectF geometry = geometryGroup.readEntry(key, QRectF{});
+    if (!geometry.isValid() || geometry.width() < 240 || geometry.height() < 160) {
+        return {};
+    }
+    return {{QStringLiteral("x"), geometry.x()},
+            {QStringLiteral("y"), geometry.y()},
+            {QStringLiteral("width"), geometry.width()},
+            {QStringLiteral("height"), geometry.height()}};
+}
+
+void DockConfig::rememberLaunchGeometry(const QString &applicationId,
+                                        const QRectF &geometry)
+{
+    const QString key = configKeyForApplication(applicationId, {});
+    if (key.isEmpty() || !geometry.isValid()
+        || geometry.width() < 240 || geometry.height() < 160) {
+        return;
+    }
+    auto config = KSharedConfig::openConfig(QString::fromLatin1(configFile));
+    KConfigGroup geometryGroup(config, QStringLiteral("LaunchGeometry"));
+    const QRectF previous = geometryGroup.readEntry(key, QRectF{});
+    if (previous == geometry) {
+        return;
+    }
+    geometryGroup.writeEntry(key, geometry);
+    config->sync();
 }
 
 void DockConfig::reload()

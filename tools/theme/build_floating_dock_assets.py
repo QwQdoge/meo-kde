@@ -81,8 +81,9 @@ def render(target: ThemeTarget) -> str:
     # compact top panel can be restored. The bottom edge has an explicit 32 dp
     # variant, preserving the large rounded silhouette used by the floating Dock.
     # The north variant avoids falling back to a bottom-oriented frame while the
-    # panel changes location.  Surface colors stay in the semantic Background
-    # role, so dynamic Material colors remain seam-free across the slices.
+    # panel changes location. Use KDE's ButtonBackground semantic class because
+    # Meo's HCT projection maps it to surfaceContainerLow. This gives the panel
+    # a visible wallpaper-derived tonal layer without hard-coding the live seed.
     compact_frame = frame_paths("", 16)
     north_frame = frame_paths("north", 16)
     south_frame = frame_paths("south", 32)
@@ -93,9 +94,9 @@ def render(target: ThemeTarget) -> str:
         (
             '<svg xmlns="http://www.w3.org/2000/svg" width="66" height="66" viewBox="0 0 66 66">',
             '  <style id="current-color-scheme" type="text/css">',
-            f'    .ColorScheme-Background {{ color: {target.background}; }}',
+            f'    .ColorScheme-ButtonBackground {{ color: {target.background}; }}',
             '  </style>',
-            f'  <g class="ColorScheme-Background" fill="currentColor" fill-opacity="{target.surface_opacity}">',
+            f'  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="{target.surface_opacity}">',
             *compact_frame,
             *north_frame,
             *south_frame,

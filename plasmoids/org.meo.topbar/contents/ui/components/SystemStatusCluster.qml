@@ -9,17 +9,23 @@ QQC2.AbstractButton {
     id: root
 
     signal quickSettingsRequested()
+    property bool active: false
     property real textScale: 1.0
     property bool showNetwork: true
     property bool showBluetooth: true
     property bool showVolume: true
     // 0 hidden, 1 icon, 2 icon plus percentage, 3 includes charging state.
     property int batteryDisplay: 2
+    readonly property bool bluetoothConnected: {
+        const devices = SystemState.bluetoothDevices
+        for (let index = 0; index < devices.length; ++index) {
+            if (devices[index].connected)
+                return true
+        }
+        return false
+    }
 
     implicitWidth: statusContent.implicitWidth + leftPadding + rightPadding
-    // Keep the compact trigger visually present when idle.  A transparent
-    // hit area made the cluster read like orphaned tray icons and hid its MD3
-    // rounded boundary in the panel.
     implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
@@ -31,28 +37,43 @@ QQC2.AbstractButton {
     ].filter(function(value) { return value !== "" }).join(", ")
     onClicked: quickSettingsRequested()
 
+    MeoSpringValue {
+        id: pressSpring
+        value: 1
+        targetValue: root.down ? 0.94 : 1
+        spring: MeoMotion.fastSpatial
+    }
+
+    transform: Scale {
+        origin.x: root.width / 2
+        origin.y: root.height / 2
+        xScale: pressSpring.value
+        yScale: pressSpring.value
+    }
+
     background: MeoShape {
         id: statusBackground
         type: "pill"
         radius: height / 2
-        color: root.hovered || root.down
-               ? MeoTheme.surfaceContainerHighest
-               : MeoTheme.surfaceContainer
-        strokeColor: MeoTheme.outlineVariant
-        // The installed MeoUI singleton can be older while a live Plasma
-        // session is reloading.  Keep the named thin token when present and
-        // fall back to the already-exported scale token during that handoff.
-        strokeWidth: typeof MeoTheme.strokeWidthThin === "number"
-                     ? MeoTheme.strokeWidthThin
-                     : MeoTheme.globalScale
+        color: root.active
+               ? MeoTheme.primaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHighest
+                  : Qt.rgba(0, 0, 0, 0))
+        strokeColor: Qt.rgba(0, 0, 0, 0)
+        strokeWidth: 0
 
-        // Use the shared MD3 state layer rather than changing the base surface
-        // directly.  This provides a consistent hover, press and ripple cue
-        // without changing the compact trigger's geometry.
+        Behavior on color {
+            ColorAnimation {
+                duration: MeoTheme.motionDurationEffectDefault
+                easing.bezierCurve: MeoTheme.motionEasingStandard
+            }
+        }
+
         MeoStateLayer {
             anchors.fill: parent
             radius: statusBackground.radius
-            color: MeoTheme.primary
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
             hovered: root.hovered
             pressed: root.down
             focused: root.activeFocus
@@ -67,21 +88,23 @@ QQC2.AbstractButton {
             icon: SystemState.wirelessEnabled
                   ? (SystemState.networkConnected ? "wifi" : "wifi_find") : "wifi_off"
             size: 18
-            color: MeoTheme.onSurface
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
         }
         MeoIcon {
-            visible: root.showBluetooth && SystemState.bluetoothAvailable && SystemState.bluetoothEnabled
+            // Bluetooth being merely enabled is not useful persistent status.
+            // Match phone shells by surfacing it only for an active connection.
+            visible: root.showBluetooth && root.bluetoothConnected
             icon: "bluetooth"
             fill: true
             size: 18
-            color: MeoTheme.onSurface
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.primary
         }
         MeoIcon {
             visible: root.showVolume && SystemState.audioAvailable
             icon: SystemState.audioMuted ? "volume_off"
                   : (SystemState.volumePercent < 35 ? "volume_down" : "volume_up")
             size: 18
-            color: MeoTheme.onSurface
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
         }
         RowLayout {
             visible: root.batteryDisplay > 0 && SystemState.batteryAvailable
@@ -89,7 +112,7 @@ QQC2.AbstractButton {
             MeoIcon {
                 icon: SystemState.batteryCharging ? "battery_charging_full" : "battery_full"
                 size: 18
-                color: MeoTheme.onSurface
+                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
             }
             MeoText {
                 visible: root.batteryDisplay >= 2
@@ -100,7 +123,7 @@ QQC2.AbstractButton {
                 typeSize: "small"
                 emphasized: true
                 fontScaleOverride: root.textScale
-                color: MeoTheme.onSurface
+                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
             }
         }
     }

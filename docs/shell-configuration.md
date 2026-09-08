@@ -30,13 +30,13 @@ the matching Meo desktop theme before trying again.
 # dual: top bar + separate auto-hidden bottom dock
 # single: top bar only
 Mode=dual
-# Independent Layer Shell Dock. Set native for Plasma panel fallback.
-DockImplementation=standalone
+# KDE's native Icons-Only Task Manager is the sole Dock implementation.
+DockImplementation=native
 ShowSystemTray=true
 # Active-window KDE global menu next to the launcher (File, Edit, View, Help).
 ShowGlobalMenu=true
 # Optional second task manager beside the menu; off because application tray
-# icons already appear beside the Meo controls and the Dock owns window tasks.
+# icons already appear beside the Meo controls and the bottom Dock owns tasks.
 ShowTopAppTasks=false
 # Compact top bar; Plasma's panel frame supplies the remaining visual margin.
 TopPanelHeight=32
@@ -45,11 +45,10 @@ DockHeight=80
 ```
 
 - `Mode` is `dual` or `single`.
-- `DockImplementation` is `standalone` or `native`. `standalone` runs
-  `org.meo.dock` as a Layer Shell window with a shaped KWin blur region,
-  continuous pointer tracking across icon gaps, and KDE TaskManager-backed
-  launchers/window actions. `native` restores the Plasma Icons-Only Task
-  Manager panel as a compatibility fallback.
+- `DockImplementation` is `native`. Version-3 profiles that still say
+  `standalone` are migrated to the same native path. Plasma owns task identity,
+  hover feedback, grouping, previews, drag-and-drop and window activation;
+  Meo supplies the dynamic-color panel and task-frame appearance.
 - `ShowSystemTray` is `true` or `false`. The default is `true` so native
   StatusNotifier application icons, input-method state, clipboard and other
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
@@ -62,24 +61,46 @@ DockHeight=80
   Dock remains the primary task manager for pinned launchers, window actions
   and autohide behavior.
 - `TopPanelHeight` accepts `32`–`96` pixels.
-- `DockHeight` accepts `40`–`112` pixels and applies to the `native` fallback.
-  The standalone default uses a 76 dp dynamic-color capsule inside a 108 dp
-  transparent Layer Shell input window. That extra height contains the full
-  magnification curve without clipping; only the rounded capsule enters the
-  KWin blur and contrast regions.
+- `DockHeight` accepts `40`–`112` pixels. The 80 dp default leaves a calm
+  Material margin around Plasma's native task targets. The panel theme owns
+  the rounded dynamic-color capsule; no independent Dock window is started.
 - Existing `~/.config/meo-shellrc` profiles are intentionally preserved. To
   opt an existing desktop into the 80 dp default, set `DockHeight=80` in that
   file and explicitly run the panel-layout helper above; normal theme updates
   never rebuild a user's live panels.
 
-The top panel and Meo window title bar use the same generated dynamic
-`surface` role. This is deliberately palette-based rather than app-color
-sampling, so the base color follows wallpaper dynamic color changes
-consistently for native and third-party applications. The panel remains a
-32 dp translucent surface on the empty desktop. A per-output attachment
+The top panel uses the generated dynamic `surfaceContainerLow` role while the
+Meo window title bar uses `surfaceContainer`. This produces a subtle tonal
+layer boundary instead of an opaque or wallpaper-sampled bar; both roles come
+from the same wallpaper HCT scheme and remain consistent across native and
+third-party applications. Quick-settings and time controls are transparent at
+rest, gain a quiet `surfaceContainerHighest` hover surface, and use
+`primaryContainer` only while their popup is open. Bluetooth appears in the
+compact status group only while a device is connected, and the notification
+glyph appears only when it has unread, job, or Do Not Disturb state to convey.
+The controls return through the interruptible M3 Expressive spring when
+released. The panel remains a 32 dp translucent surface on the empty desktop.
+A per-output attachment
 transition that makes the panel opaque at a window join is not yet a runtime
 signal; it must be added through a KWin state bridge and must ignore fullscreen,
 dialogs, popups, non-active windows, and windows on other outputs.
+
+## Window motion
+
+MeoArch uses KWin's upstream Scale effect for open/close motion and its upstream
+Squash effect for minimize/restore. The default open path is a restrained
+`0.94` to `1.0` scale plus opacity over 180 ms; close uses `1.0` to `0.98`.
+Glide and Magic Lamp remain disabled so multiple exclusive effects cannot fight
+for the same window. Interactive rebound belongs to Plasma's Dock and Meo panel controls,
+not to whole windows, and every path still follows KDE's global animation
+duration/reduced-motion preference.
+
+The visual layering and quiet-at-rest interaction were compared against DankMaterialShell commit
+`b9365610c89016279d3b06f0be18c9a1bd6927ad` (MIT): Meo reuses the general
+Material pattern of dynamic surface-container levels, active tonal capsules,
+and edge-aware elevation, but retains Plasma/KWin models and independently
+implemented MeoUI controls. KWin 6.7.4's GPL upstream effects remain the actual
+window-animation implementation; no DMS or third-party KWin code is vendored.
 
 ## Status bar
 
@@ -109,9 +130,9 @@ deployments.
 ## Control Center
 
 The Quick Settings gear opens **Meo Settings** through the desktop ID
-`org.meo.settings.desktop`; it does not use KDE System Settings as the normal
-Meo entry point. If the desktop entry cannot be opened, the applet falls back
-to `systemsettings:` rather than assuming a `meo-settings` binary is present.
+`org.meo.settings.desktop`; it does not switch to another settings shell when
+a Meo desktop entry is missing. A packaged Meo desktop must therefore install
+Meo Settings as part of the same supported experience.
 
 For a packaged Meo desktop, the package that installs `org.meo.topbar` must
 also require the package that installs `meo-settings` and
@@ -137,13 +158,12 @@ Bluetooth state.
 Pairing is intentionally not initiated by tapping an unpaired device in the
 compact popup. PIN, passkey, numeric-comparison, and authorization prompts
 need the full Bluetooth flow. The row and the Bluetooth page’s settings button
-open `org.meo.settings.bluetooth.desktop` first, which launches **Meo
-Settings** directly on its Bluetooth route. If that dedicated launcher is not
-available, the top bar tries the normal `org.meo.settings.desktop` launcher;
-only if neither Meo Settings launcher can open does it fall back to
-`systemsettings:kcm_bluetooth`.
+open `org.meo.settings.bluetooth.desktop`, which launches **Meo Settings**
+directly on its Bluetooth route. The generic Meo Settings entry remains only
+as a compatibility handoff for an incomplete desktop-entry update; it does
+not switch to another settings shell.
 
 The installed Meo desktop must provide both Settings desktop entries alongside
-the top bar, either in the same package or through a declared dependency. This
-fallback order is intentional: KDE System Settings is a recovery path for an
-incomplete installation, not the normal Bluetooth management surface.
+the top bar, either in the same package or through a declared dependency.
+Specialized platform tools remain available only from the explicitly labelled
+Advanced compatibility pages inside Meo Settings.

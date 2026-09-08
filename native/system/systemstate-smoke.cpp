@@ -37,6 +37,9 @@ int main(int argc, char **argv)
                << " activePowerProfile=" << platform.activePowerProfile()
                << " mediaAvailable=" << media.available()
                << " mediaPlayer=" << media.playerName()
+               << " secondaryCalendarState=" << state.secondaryCalendarState()
+               << " secondaryCalendarSource=" << state.secondaryCalendarSource()
+               << " secondaryCalendarText=" << state.secondaryCalendarText()
                << '\n';
         application.quit();
     });

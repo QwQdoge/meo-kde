@@ -1,8 +1,12 @@
 #pragma once
 
 #include <QObject>
+#include <QRectF>
 #include <QStringList>
 #include <QUrl>
+#include <QVariantMap>
+
+class QTimer;
 
 class DockConfig final : public QObject
 {
@@ -27,6 +31,12 @@ public:
     Q_INVOKABLE void setIconModeFor(const QString &appId, const QUrl &launcherUrl,
                                     const QString &mode);
     Q_INVOKABLE void activateLauncherMenu();
+    Q_INVOKABLE void setForegroundProcess(quint32 pid);
+    Q_INVOKABLE void beginLaunchBoost(const QString &applicationId);
+    Q_INVOKABLE void endLaunchBoost();
+    Q_INVOKABLE QVariantMap launchGeometryFor(const QString &applicationId) const;
+    Q_INVOKABLE void rememberLaunchGeometry(const QString &applicationId,
+                                            const QRectF &geometry);
     Q_INVOKABLE void reload();
 
     static bool isSupportedIconMode(const QString &mode);
@@ -48,4 +58,9 @@ private:
     QStringList m_launcherList;
     QString m_globalIconMode = QStringLiteral("original");
     bool m_reduceMotion = false;
+    quint32 m_lastForegroundPid = 0;
+    quint32 m_profileHoldCookie = 0;
+    bool m_launchBoostRequested = false;
+    quint64 m_launchBoostGeneration = 0;
+    QTimer *m_launchBoostTimer = nullptr;
 };

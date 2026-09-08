@@ -35,19 +35,19 @@ run python "${repo_root}/tools/icons/audit_icon_coverage.py" \
   --output "${evidence_root}/metrics/icon-usage-audit.json"
 run python -m unittest discover -s "${repo_root}/tests/theme" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/input_method" -p 'test_*.py'
+run python -m unittest discover -s "${repo_root}/tests/system" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/shell" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/widgets" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/authentication" -p 'test_*.py'
 run cmake -S "${repo_root}/native/system" -B "${repo_root}/out/build/system" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${repo_root}/out/build/system" --parallel
+run test -s "${system_import}/Meo/System/plugins.qmltypes"
 run "${repo_root}/out/build/system/meo-system-state-smoke"
 run cmake -S "${repo_root}/native" -B "${repo_root}/out/build/application-style" \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}"
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}" \
+  -DMEOUI_IMPORT_ROOT_PATH="${meoui_import}" -DMEO_BUILD_STANDALONE_DOCK=OFF
 run cmake --build "${repo_root}/out/build/application-style" --parallel
 run ctest --test-dir "${repo_root}/out/build/application-style" --output-on-failure
-run env QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
-  QML_IMPORT_PATH="${meoui_import}:${repo_root}/qml:/usr/lib/qt6/qml" \
-  "${repo_root}/out/build/application-style/dock/meo-dock" --validate
 run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
   -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
 run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
@@ -71,9 +71,10 @@ qt6_qmllint="${QT6_QMLLINT:-/usr/lib/qt6/bin/qmllint}"
 }
 
 while IFS= read -r qml_file; do
-  run "${qt6_qmllint}" -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" -I /usr/lib/qt6/qml "${qml_file}"
+  run "${qt6_qmllint}" -i "${system_import}/Meo/System/qmldir" \
+    -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" -I /usr/lib/qt6/qml "${qml_file}"
 done < <(find "${repo_root}/plasmoids" "${repo_root}/qml" \
-  "${repo_root}/native/authentication/qml" "${repo_root}/native/dock/qml" \
+  "${repo_root}/native/authentication/qml" \
   -name '*.qml' -type f | sort)
 
 while IFS= read -r svg_file; do

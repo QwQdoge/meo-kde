@@ -28,6 +28,15 @@ BorderActivate=9
 overviewEnabled=true
 org.meo.windowcornersEnabled=false
 kwin4_effect_shapecornersEnabled=true
+scaleEnabled=true
+glideEnabled=false
+squashEnabled=true
+magiclampEnabled=false
+
+[kwinrc][Effect-scale]
+Duration=180
+InScale=0.94
+OutScale=0.98
 
 [kwinrc][TabBox]
 LayoutName=thumbnail_grid
@@ -70,4 +79,4 @@ DisableRoundMaximize=true
 DisableRoundFullScreen=true
 
 [ksplashrc][KSplash]
-Theme=org.kde.breeze.desktop
+Theme=org.meo.desktop

@@ -199,7 +199,7 @@ QQC2.ScrollView {
         else if (id === "powerMode") root.powerDetailsRequested()
         else if (id === "microphone") SystemState.microphoneMuted = !SystemState.microphoneMuted
         else if (id === "audioDevices") root.audioDetailsRequested()
-        else if (id === "display") Qt.openUrlExternally("systemsettings:kcm_kscreen")
+        else if (id === "display") Qt.openUrlExternally("applications:org.meo.settings.display.desktop")
         else if (id === "screenshot") Qt.openUrlExternally("applications:org.kde.spectacle.desktop")
     }
 
@@ -524,8 +524,7 @@ QQC2.ScrollView {
                 type: "standard"; size: "m"; icon.name: "settings"
                 Accessible.name: qsTr("Meo Settings")
                 onClicked: {
-                    if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-                        Qt.openUrlExternally("systemsettings:")
+                    Qt.openUrlExternally("applications:org.meo.settings.desktop")
                 }
             }
             MeoIconButton { type: "standard"; size: "m"; icon.name: "power_settings_new"; Accessible.name: qsTr("Power"); onClicked: root.powerRequested() }

@@ -6,6 +6,8 @@
 class PlatformController final : public QObject
 {
     Q_OBJECT
+    Q_CLASSINFO("QML.Element", "Platform")
+    Q_CLASSINFO("QML.Singleton", "true")
     Q_PROPERTY(bool brightnessAvailable READ brightnessAvailable NOTIFY brightnessChanged)
     Q_PROPERTY(QVariantList brightnessDisplays READ brightnessDisplays NOTIFY brightnessChanged)
     Q_PROPERTY(bool nightLightAvailable READ nightLightAvailable NOTIFY nightLightChanged)

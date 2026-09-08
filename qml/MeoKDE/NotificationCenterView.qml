@@ -19,6 +19,10 @@ Item {
                                        ? notifications.unreadNotificationsCount : 0
     readonly property int activeJobsCount: notifications && typeof notifications.activeJobsCount === "number"
                                            ? notifications.activeJobsCount : 0
+    readonly property int liveNotificationCount: notifications && typeof notifications.activeNotificationsCount === "number"
+                                                 ? notifications.activeNotificationsCount : 0
+    readonly property int historyNotificationCount: notifications && typeof notifications.expiredNotificationsCount === "number"
+                                                    ? notifications.expiredNotificationsCount : 0
 
     signal settingsRequested()
 
@@ -138,6 +142,20 @@ Item {
                     typeSize: "small"
                     color: MeoTheme.onSurfaceVariant
                 }
+
+                MeoText {
+                    visible: root.activeJobsCount === 0
+                             && (root.liveNotificationCount > 0 || root.historyNotificationCount > 0)
+                    text: root.liveNotificationCount > 0 && root.historyNotificationCount > 0
+                          ? qsTr("%1 live · %2 in history").arg(root.liveNotificationCount)
+                                .arg(root.historyNotificationCount)
+                          : (root.liveNotificationCount > 0
+                             ? qsTr("%1 live notification").arg(root.liveNotificationCount)
+                             : qsTr("%1 in history").arg(root.historyNotificationCount))
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.onSurfaceVariant
+                }
             }
 
             Item { visible: !root.showTitle; Layout.fillWidth: true }
@@ -186,10 +204,27 @@ Item {
                 anchors.margins: MeoTheme.space8
                 spacing: MeoTheme.space8
 
-                MeoIcon {
-                    icon: "do_not_disturb_on"
-                    size: 18
-                    color: MeoTheme.onSecondaryContainer
+                Item {
+                    Layout.preferredWidth: 22 * MeoTheme.globalScale
+                    Layout.preferredHeight: Layout.preferredWidth
+                    // A small, non-essential sleeping moon gives Do Not Disturb
+                    // a friendly Pixel-like state cue. The live notification
+                    // server remains the only source of truth for this state.
+                    Text {
+                        id: dndMood
+                        anchors.centerIn: parent
+                        text: "🌙"
+                        font.pixelSize: 18 * MeoTheme.globalScale
+                        Accessible.ignored: true
+                    }
+                    SequentialAnimation on rotation {
+                        running: NotificationManager.Server.inhibited
+                        loops: Animation.Infinite
+                        NumberAnimation { to: -5; duration: MeoMotion.popupOpen; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 5; duration: MeoMotion.stateChange; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 0; duration: MeoMotion.popupClose; easing.type: Easing.InOutSine }
+                        PauseAnimation { duration: 900 }
+                    }
                 }
                 MeoText {
                     Layout.fillWidth: true
@@ -247,6 +282,7 @@ Item {
                     required property string iconName
                     required property string applicationIconName
                     required property bool closable
+                    required property bool expired
                     required property bool configurable
                     required property bool hasDefaultAction
                     required property bool hasReplyAction
@@ -268,6 +304,7 @@ Item {
                     readonly property string displayIcon: root.safeIconName(iconName, applicationIconName)
                     readonly property bool isJob: type === NotificationManager.Notifications.JobType
                     readonly property bool critical: urgency === NotificationManager.Notifications.CriticalUrgency
+                    readonly property bool historical: expired
                     readonly property var effectiveTime: updated || created
                     property bool replyExpanded: false
                     property bool bodyExpanded: false
@@ -302,6 +339,7 @@ Item {
                     Accessible.role: Accessible.ListItem
                     Accessible.name: root.plainText(summary !== "" ? summary : applicationName)
                     Accessible.description: root.displayBody(body, type, percentage)
+                                            + (historical ? qsTr(" Earlier notification.") : "")
                     Accessible.focusable: hasDefaultAction
                     Accessible.onPressAction: if (hasDefaultAction && root.notifications
                                                      && root.notifications.invokeDefaultAction)
@@ -361,6 +399,15 @@ Item {
                                 emphasized: true
                                 color: MeoTheme.onErrorContainer
                                 Accessible.name: qsTr("Critical notification")
+                            }
+                            MeoText {
+                                visible: notificationCard.historical && !notificationCard.critical
+                                text: qsTr("Earlier")
+                                typeRole: "label"
+                                typeSize: "small"
+                                emphasized: true
+                                color: MeoTheme.onSurfaceVariant
+                                Accessible.name: qsTr("Notification history")
                             }
                             MeoText {
                                 text: root.relativeTime(notificationCard.effectiveTime)

@@ -66,8 +66,7 @@ QQC2.Popup {
                 currentDateTime: clock.dateTime
                 showTitle: false
                 onSettingsRequested: {
-                    if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-                        Qt.openUrlExternally("systemsettings:kcm_notifications")
+                    Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")
                 }
             }
         }

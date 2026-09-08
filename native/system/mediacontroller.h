@@ -5,6 +5,8 @@
 class MediaController final : public QObject
 {
     Q_OBJECT
+    Q_CLASSINFO("QML.Element", "Media")
+    Q_CLASSINFO("QML.Singleton", "true")
     Q_PROPERTY(bool available READ available NOTIFY mediaChanged)
     Q_PROPERTY(QString playerName READ playerName NOTIFY mediaChanged)
     Q_PROPERTY(QString title READ title NOTIFY mediaChanged)

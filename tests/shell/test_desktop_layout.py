@@ -35,26 +35,26 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
         self.assertIn('timeCenter.writeConfig("showDate", true)', source)
 
-    def test_default_dock_is_an_independent_layer_shell_surface(self):
+    def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
 
-        self.assertIn('org.meo.dock', source)
-        self.assertIn('independent Layer Shell surface', source)
-        self.assertNotIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
+        self.assertIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
+        self.assertIn('bottomPanel.floating = true', source)
+        self.assertIn('bottomPanel.hiding = "autohide"', source)
+        self.assertIn('bottomPanel.lengthMode = "fit"', source)
+        self.assertNotIn('org.meo.dock', source)
         self.assertNotIn('org.meo.shelf', source)
 
-    def test_dock_does_not_draw_an_opaque_plate_behind_application_icons(self):
-        delegate = (REPO_ROOT / "native/dock/qml/DockIconDelegate.qml").read_text(
-            encoding="utf-8"
-        )
-        preview = (REPO_ROOT / "native/dock/qml/DockPreviewIcon.qml").read_text(
-            encoding="utf-8"
-        )
+    def test_retired_standalone_dock_is_not_built_or_installed_by_default(self):
+        native = (REPO_ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        installer = INSTALLER.read_text(encoding="utf-8")
 
-        for source in (delegate, preview):
-            self.assertIn(': "transparent"', source)
-            self.assertIn("border.width: 0", source)
-            self.assertIn("width: 44 * MeoTheme.globalScale", source)
+        self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the retired experimental Layer Shell Dock" OFF', native)
+        self.assertIn("if(MEO_BUILD_STANDALONE_DOCK)", native)
+        self.assertNotIn('data/autostart/org.meo.dock.desktop', package)
+        self.assertNotIn('native_build_root}/dock/meo-dock', installer)
+        self.assertIn('rm -f "${config_root}/autostart/org.meo.dock.desktop"', installer)
 
     def test_top_panel_uses_the_compact_32px_baseline_everywhere(self):
         layout = LAYOUT.read_text(encoding="utf-8")
@@ -97,6 +97,51 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn('id="south-hint-top-margin"', source)
             expected_opacity = "0.58" if "/translucent/" in str(asset) else "0.68"
             self.assertIn(f'fill-opacity="{expected_opacity}"', source)
+            self.assertIn('class="ColorScheme-ButtonBackground"', source)
+
+    def test_pixel_window_motion_uses_supported_kwin_effects(self):
+        defaults = (REPO_ROOT / "defaults/kwin/kwinrc").read_text(encoding="utf-8")
+        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(
+            encoding="utf-8"
+        )
+
+        for entry in (
+            "scaleEnabled=true",
+            "glideEnabled=false",
+            "squashEnabled=true",
+            "magiclampEnabled=false",
+            "[Effect-scale]",
+            "Duration=180",
+            "InScale=0.94",
+            "OutScale=0.98",
+        ):
+            self.assertIn(entry, defaults)
+        self.assertIn("KWin's upstream Scale effect", documentation)
+        self.assertIn("no DMS or third-party KWin code is vendored", documentation)
+
+    def test_topbar_is_quiet_at_rest_and_tonal_during_interaction(self):
+        quick_main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
+        quick_status = (TOPBAR / "components/SystemStatusCluster.qml").read_text(
+            encoding="utf-8"
+        )
+        time_main = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/main.qml").read_text(
+            encoding="utf-8"
+        )
+        time_button = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationButton.qml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("active: root.expanded", quick_main)
+        self.assertIn("active: root.expanded", time_main)
+        for source in (quick_status, time_button):
+            self.assertIn("MeoSpringValue", source)
+            self.assertIn("targetValue: root.down ? 0.94 : 1", source)
+            self.assertIn("MeoTheme.primaryContainer", source)
+            self.assertIn("MeoTheme.onPrimaryContainer", source)
+            self.assertIn("Qt.rgba(0, 0, 0, 0)", source)
+            self.assertIn("strokeWidth: 0", source)
+        self.assertIn("visible: root.showBluetooth && root.bluetoothConnected", quick_status)
+        self.assertIn("visible: root.showNotifications && root.hasNotificationState", time_button)
 
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
@@ -109,7 +154,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('MeoMonthCalendar', status_center)
         self.assertIn('NotificationCenterView', status_center)
-        self.assertIn('applications:org.meo.settings.desktop', status_center)
+        self.assertIn('applications:org.meo.settings.notifications.desktop', status_center)
         self.assertIn('ListView', notification_center)
         self.assertIn('MeoTheme.surfaceContainerHigh', notification_center)
         self.assertIn('org.kde.notificationmanager', time_main)
@@ -172,7 +217,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("audioExpanded", home)
         self.assertIn("displayExpanded", home)
         self.assertIn('"audioDevices", "display", "screenshot"', home)
-        self.assertIn('Qt.openUrlExternally("systemsettings:kcm_kscreen")', home)
+        self.assertIn('Qt.openUrlExternally("applications:org.meo.settings.display.desktop")', home)
         self.assertIn('Qt.openUrlExternally("applications:org.kde.spectacle.desktop")', home)
         self.assertIn('SystemState.audioDevice', home)
         self.assertIn("quickTileOrder", config)
@@ -184,7 +229,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("Plasmoid.configuration.quickTileVisibility", main)
         self.assertIn("Plasmoid.configuration.quickTileDensity", main)
         self.assertIn('applications:org.meo.settings.desktop', home)
-        self.assertIn('Qt.openUrlExternally("systemsettings:")', home)
+        self.assertNotIn('systemsettings:', home)
         self.assertIn("root.availableWidth < 320 * MeoTheme.globalScale ? 2 : 4", home)
 
     def test_control_center_settings_contract_keeps_the_meo_applet_authoritative(self):
@@ -220,7 +265,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('accessibleName: qsTr("Microphone volume")', home)
         self.assertIn('qsTr("Mute microphone")', home)
 
-    def test_bluetooth_quick_settings_uses_meo_for_full_pairing_before_kde_fallback(self):
+    def test_bluetooth_quick_settings_uses_meo_for_full_pairing(self):
         bluetooth_page = (TOPBAR / "BluetoothPage.qml").read_text(encoding="utf-8")
         legacy_center = (TOPBAR / "ControlCenter.qml").read_text(encoding="utf-8")
         documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
@@ -236,20 +281,19 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('if (!modelData.paired)', bluetooth_page)
         self.assertIn('root.openMeoBluetoothSettings()', bluetooth_page)
 
-        # The dedicated deep-link launcher is first choice. The generic Meo
-        # launcher remains a package-compatibility fallback, with the KDE KCM
-        # reachable only when neither Meo launcher exists.
+        # The dedicated deep-link launcher is the normal Meo route.  A generic
+        # Meo launcher remains available for partial desktop-entry updates;
+        # Quick Settings must never switch visual systems behind the user's
+        # back by opening the legacy System Settings shell.
         dedicated_launcher = 'applications:org.meo.settings.bluetooth.desktop'
         generic_launcher = 'applications:org.meo.settings.desktop'
-        kde_fallback = 'systemsettings:kcm_bluetooth'
         self.assertIn(dedicated_launcher, bluetooth_page)
         self.assertIn(generic_launcher, bluetooth_page)
-        self.assertIn(kde_fallback, bluetooth_page)
+        self.assertNotIn('systemsettings:', bluetooth_page)
         self.assertLess(bluetooth_page.index(dedicated_launcher), bluetooth_page.index(generic_launcher))
-        self.assertLess(bluetooth_page.index(generic_launcher), bluetooth_page.index(kde_fallback))
         self.assertIn('onBluetoothDetailsRequested: root.openMeoBluetoothSettings()', legacy_center)
         self.assertIn('org.meo.settings.bluetooth.desktop', documentation)
-        self.assertIn('KDE System Settings is a recovery path', documentation)
+        self.assertIn('does not switch to another settings shell', documentation)
 
     def test_system_state_bluetooth_fast_path_never_pairs_or_auto_trusts(self):
         source = (REPO_ROOT / "native/system/systemstatehub.cpp").read_text(encoding="utf-8")
@@ -357,15 +401,15 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
         self.assertNotIn('oneWidget(top, "org.meo.toptasks")', source)
 
-    def test_bottom_dock_keeps_native_task_frames_as_a_fallback(self):
+    def test_bottom_dock_uses_native_task_frames_by_default(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
         helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
         metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
 
         self.assertIn("DockHeight=80", profile)
-        self.assertIn("DockImplementation=standalone", profile)
+        self.assertIn("DockImplementation=native", profile)
         self.assertIn("shelfPanelHeight: 80 * MeoTheme.globalScale", metrics)
-        self.assertIn('"${dock_implementation}" === "native"', helper)
+        self.assertIn('if ("${panel_mode}" === "dual")', helper)
         self.assertNotIn('writeConfig("maxStripes"', helper)
         expected_fallbacks = {
             "MeoLight": ("#1c1b1f", "#6750a4", "#b3261e"),
@@ -514,7 +558,7 @@ class DesktopLayoutTests(unittest.TestCase):
         schema = (TOPBAR.parent / "config/main.xml").read_text(encoding="utf-8")
 
         self.assertIn("Mode=dual", profile)
-        self.assertIn("ProfileVersion=3", profile)
+        self.assertIn("ProfileVersion=4", profile)
         self.assertIn("ShowSystemTray=true", profile)
         self.assertIn("ShowGlobalMenu=true", profile)
         self.assertIn("ShowTopAppTasks=false", profile)

@@ -64,10 +64,10 @@ QQC2.Popup {
             radius: ShellMetrics.radiusMedium
             elevation: 3
         }
-        QQC2.MenuItem { text: qsTr("Sleep"); visible: sessionManagement.canSuspend; onTriggered: { sessionManagement.suspend(); quickSettingsPopup.close() } }
-        QQC2.MenuItem { text: qsTr("Restart"); visible: sessionManagement.canReboot; onTriggered: { sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt); quickSettingsPopup.close() } }
-        QQC2.MenuItem { text: qsTr("Shut down"); visible: sessionManagement.canShutdown; onTriggered: { sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt); quickSettingsPopup.close() } }
+        QQC2.MenuItem { text: qsTr("Sleep now"); visible: sessionManagement.canSuspend; onTriggered: { sessionManagement.suspend(); quickSettingsPopup.close() } }
+        QQC2.MenuItem { text: qsTr("Restart…"); visible: sessionManagement.canReboot; Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work."); onTriggered: { sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt); quickSettingsPopup.close() } }
+        QQC2.MenuItem { text: qsTr("Shut down…"); visible: sessionManagement.canShutdown; Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work."); onTriggered: { sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt); quickSettingsPopup.close() } }
         QQC2.MenuSeparator {}
-        QQC2.MenuItem { text: qsTr("Sign out"); visible: sessionManagement.canLogout; onTriggered: { sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt); quickSettingsPopup.close() } }
+        QQC2.MenuItem { text: qsTr("Sign out…"); visible: sessionManagement.canLogout; Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work."); onTriggered: { sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt); quickSettingsPopup.close() } }
     }
 }

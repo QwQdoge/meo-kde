@@ -20,8 +20,10 @@ then the upstream System Tray for application StatusNotifier icons. The MeoUI
 quick-settings and time surfaces remain independent on the right.
 The bottom Dock is upstream Icons-Only Task Manager in Plasma's own auto-hide
 mode, retaining its native pinning, grouping, previews and window menu. The
-Meo top bar keeps two distinct MD3 status surfaces: time/calendar/notifications
-and quick settings. The former uses the public Plasma Clock, Calendar and
+Meo top bar keeps two distinct MD3 interaction targets: time/calendar/notifications
+and quick settings. Their surfaces stay transparent at rest and appear only for
+hover, press, focus, or an open popup, avoiding permanent outlined capsules.
+The former uses the public Plasma Clock, Calendar and
 Notification Manager modules; the latter binds NetworkManagerQt, BluezQt,
 PulseAudioQt, Solid, PowerDevil/KWin D-Bus and KDE session APIs. NetworkManager,
 BlueZ, PipeWire, PowerDevil, notifications, overview and the session lifecycle

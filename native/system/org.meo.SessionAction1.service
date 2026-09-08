@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.meo.SessionAction1
+Exec=/usr/bin/meo-session-actiond

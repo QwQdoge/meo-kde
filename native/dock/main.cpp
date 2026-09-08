@@ -7,7 +7,9 @@
 #include <QImage>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQmlError>
 #include <QQuickWindow>
+#include <QTextStream>
 #include <QTimer>
 
 int main(int argc, char **argv)
@@ -53,6 +55,13 @@ int main(int argc, char **argv)
     }
     DockWindowController windowController;
     QQmlApplicationEngine engine;
+    QObject::connect(&engine, &QQmlEngine::warnings, &engine,
+                     [](const QList<QQmlError> &warnings) {
+                         QTextStream errorStream(stderr);
+                         for (const QQmlError &warning : warnings) {
+                             errorStream << warning.toString() << Qt::endl;
+                         }
+                     });
 #ifdef MEOUI_IMPORT_ROOT_PATH
     engine.addImportPath(QStringLiteral(MEOUI_IMPORT_ROOT_PATH));
 #endif
@@ -64,7 +73,7 @@ int main(int argc, char **argv)
                                              &windowController);
     engine.rootContext()->setContextProperty(QStringLiteral("DockPreviewMode"),
                                              parser.isSet(screenshotOption));
-    engine.load(QUrl(QStringLiteral("qrc:/org/meo/dock/qml/qml/Main.qml")));
+    engine.loadFromModule(QStringLiteral("org.meo.dock"), QStringLiteral("Main"));
     if (engine.rootObjects().isEmpty()) {
         return EXIT_FAILURE;
     }

@@ -77,7 +77,12 @@ class MeoColorSchemeTests(unittest.TestCase):
             ):
                 svg = (root / relative).read_text(encoding="utf-8")
                 self.assertIn('id="current-color-scheme"', svg, relative)
-                self.assertIn("ColorScheme-Background", svg, relative)
+                expected_role = (
+                    "ColorScheme-ButtonBackground"
+                    if relative.endswith("panel-background.svg")
+                    else "ColorScheme-Background"
+                )
+                self.assertIn(expected_role, svg, relative)
                 self.assertIn('fill="currentColor"', svg, relative)
 
     def test_generated_task_frames_are_current(self):

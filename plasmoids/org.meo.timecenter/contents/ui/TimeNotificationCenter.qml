@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import MeoUI 1.0
 import MeoKDE 1.0
+import Meo.System 1.0
 
 Item {
     id: root
@@ -26,7 +27,7 @@ Item {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 64 * MeoTheme.globalScale
+                Layout.preferredHeight: (SystemState.secondaryCalendarText.length > 0 ? 88 : 64) * MeoTheme.globalScale
                 spacing: 0
 
                 MeoText {
@@ -42,6 +43,25 @@ Item {
                     typeRole: "body"
                     typeSize: "medium"
                     color: MeoTheme.onSurfaceVariant
+                }
+
+                MeoText {
+                    visible: SystemState.secondaryCalendarText.length > 0
+                    text: SystemState.secondaryCalendarText
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.onSurfaceVariant
+                    Accessible.name: qsTr("Secondary calendar: %1").arg(SystemState.secondaryCalendarText)
+                }
+
+                MeoText {
+                    visible: SystemState.secondaryCalendarSource.length > 0
+                    text: SystemState.secondaryCalendarSource
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.onSurfaceVariant
+                    opacity: 0.78
+                    Accessible.name: qsTr("Secondary calendar source: %1").arg(SystemState.secondaryCalendarSource)
                 }
             }
 
@@ -78,8 +98,7 @@ Item {
                     notifications: root.notifications
                     currentDateTime: root.currentDateTime
                     onSettingsRequested: {
-                        if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-                            Qt.openUrlExternally("systemsettings:kcm_notifications")
+                        Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")
                     }
                 }
             }

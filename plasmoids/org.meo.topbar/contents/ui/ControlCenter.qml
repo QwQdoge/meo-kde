@@ -14,16 +14,13 @@ Item {
     property var notifications: null
 
     function openMeoSettings() {
-        if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-            Qt.openUrlExternally("systemsettings:")
+        Qt.openUrlExternally("applications:org.meo.settings.desktop")
     }
 
     function openMeoBluetoothSettings() {
         if (Qt.openUrlExternally("applications:org.meo.settings.bluetooth.desktop"))
             return
-        if (Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-            return
-        Qt.openUrlExternally("systemsettings:kcm_bluetooth")
+        Qt.openUrlExternally("applications:org.meo.settings.desktop")
     }
     property date currentDateTime: new Date()
 
@@ -84,8 +81,7 @@ Item {
                         currentDateTime: root.currentDateTime
                         showTitle: false
                         onSettingsRequested: {
-                            if (!Qt.openUrlExternally("applications:org.meo.settings.desktop"))
-                                Qt.openUrlExternally("systemsettings:kcm_notifications")
+                            Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")
                         }
                     }
                 }
@@ -100,24 +96,27 @@ Item {
     QQC2.Menu {
         id: powerMenu
         QQC2.MenuItem {
-            text: qsTr("Sleep")
+            text: qsTr("Sleep now")
             visible: sessionManagement.canSuspend
             onTriggered: sessionManagement.suspend()
         }
         QQC2.MenuItem {
-            text: qsTr("Restart")
+            text: qsTr("Restart…")
             visible: sessionManagement.canReboot
+            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
             onTriggered: sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt)
         }
         QQC2.MenuItem {
-            text: qsTr("Shut down")
+            text: qsTr("Shut down…")
             visible: sessionManagement.canShutdown
+            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
             onTriggered: sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt)
         }
         QQC2.MenuSeparator {}
         QQC2.MenuItem {
-            text: qsTr("Sign out")
+            text: qsTr("Sign out…")
             visible: sessionManagement.canLogout
+            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
             onTriggered: sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt)
         }
     }

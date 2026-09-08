@@ -63,9 +63,10 @@ keyboard selection.
 The layout has a top-left Meta launcher, the active window's native Global Menu
 (for example File, Edit, View and Help), KDE's native application tray icons,
 separate Meo quick-settings and time/notification controls, and a centered
-64 px floating bottom Dock. Its 48 dp native task targets use a Material
+80 px floating bottom Dock. Its native task targets use a Material
 surface and semantic running/active indicators.
-The Dock uses Plasma's `autohide` mode: it retracts when an application needs
+The Dock is KDE Plasma's Icons-Only Task Manager and uses Plasma's `autohide`
+mode: it retracts when an application needs
 the edge and reappears on pointer reveal. Configure pinned applications,
 grouping and preview behavior through the standard task-manager widget
 configuration UI.

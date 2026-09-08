@@ -1,15 +1,20 @@
 pragma Singleton
 import QtQuick
 import org.kde.kirigami as Kirigami
-import MeoUI 1.0
+import MeoUI 1.0 as UI
 
 QtObject {
-    readonly property int press: MeoTheme.reduceMotion ? 0 : Kirigami.Units.veryShortDuration
-    readonly property int hover: MeoTheme.reduceMotion ? 0 : Kirigami.Units.veryShortDuration
-    readonly property int stateChange: MeoTheme.reduceMotion ? 0 : Kirigami.Units.shortDuration
-    readonly property int popupOpen: MeoTheme.reduceMotion ? 0 : Kirigami.Units.longDuration
-    readonly property int popupClose: MeoTheme.reduceMotion ? 0 : Kirigami.Units.shortDuration
-    readonly property int shelfReveal: MeoTheme.reduceMotion ? 0 : Kirigami.Units.longDuration
-    readonly property int shelfHide: MeoTheme.reduceMotion ? 0 : Kirigami.Units.veryLongDuration
-}
+    readonly property int press: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.veryShortDuration
+    readonly property int hover: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.veryShortDuration
+    readonly property int stateChange: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.shortDuration
+    readonly property int popupOpen: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.longDuration
+    readonly property int popupClose: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.shortDuration
+    readonly property int shelfReveal: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.longDuration
+    readonly property int shelfHide: UI.MeoTheme.reduceMotion ? 0 : Kirigami.Units.veryLongDuration
 
+    // Spatial specs proxy the shared analytic springs so shell code can use
+    // one MeoMotion name without flattening expressive motion to a duration.
+    readonly property var fastSpatial: UI.MeoMotion.fastSpatial
+    readonly property var defaultSpatial: UI.MeoMotion.defaultSpatial
+    readonly property var slowSpatial: UI.MeoMotion.slowSpatial
+}

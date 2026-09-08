@@ -82,7 +82,11 @@ fi
 # executable is removed. Do not kill unrelated taskbar or Plasma processes.
 if command -v busctl >/dev/null 2>&1 \
     && busctl --user status org.meo.Dock >/dev/null 2>&1; then
-  run busctl --user call org.meo.Dock /Dock org.meo.Dock Quit
+  if busctl --user introspect org.meo.Dock /Dock 2>/dev/null | grep -q '[.]Quit'; then
+    run busctl --user call org.meo.Dock /Dock org.meo.Dock Quit
+  elif command -v pkill >/dev/null 2>&1; then
+    run pkill -TERM -x meo-dock
+  fi
 fi
 
 for config in kdeglobals kwinrc plasmarc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do

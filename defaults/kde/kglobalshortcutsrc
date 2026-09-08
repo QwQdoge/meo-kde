@@ -1,0 +1,4 @@
+[ksmserver]
+# Opens the session manager's standard prompt.  The active Meo Look-and-Feel
+# owns that prompt, while Plasma still performs the actual session action.
+Log Out=Ctrl+Meta+Delete,Ctrl+Meta+Delete,Open Meo session controls

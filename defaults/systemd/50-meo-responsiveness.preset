@@ -1,0 +1,5 @@
+enable com.system76.Scheduler.service
+enable power-profiles-daemon.service
+disable ananicy-cpp.service
+disable preload-ng.service
+disable prelockd.service

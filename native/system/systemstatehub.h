@@ -11,6 +11,8 @@
 #include <Solid/Device>
 
 #include <QObject>
+#include <QDate>
+#include <QNetworkAccessManager>
 #include <QString>
 #include <QTimer>
 #include <QVariantList>
@@ -18,6 +20,8 @@
 class SystemStateHub final : public QObject
 {
     Q_OBJECT
+    Q_CLASSINFO("QML.Element", "SystemState")
+    Q_CLASSINFO("QML.Singleton", "true")
     Q_PROPERTY(bool networkAvailable READ networkAvailable NOTIFY networkChanged)
     Q_PROPERTY(bool networkConnected READ networkConnected NOTIFY networkChanged)
     Q_PROPERTY(bool wirelessEnabled READ wirelessEnabled WRITE setWirelessEnabled NOTIFY networkChanged)
@@ -50,6 +54,12 @@ class SystemStateHub final : public QObject
 
     Q_PROPERTY(bool operationBusy READ operationBusy NOTIFY operationChanged)
     Q_PROPERTY(QString operationError READ operationError NOTIFY operationChanged)
+
+    // A secondary calendar is a display preference.  It never changes the
+    // system clock, file timestamps, or application event data.
+    Q_PROPERTY(QString secondaryCalendarText READ secondaryCalendarText NOTIFY calendarChanged)
+    Q_PROPERTY(QString secondaryCalendarState READ secondaryCalendarState NOTIFY calendarChanged)
+    Q_PROPERTY(QString secondaryCalendarSource READ secondaryCalendarSource NOTIFY calendarChanged)
 
 public:
     explicit SystemStateHub(QObject *parent = nullptr);
@@ -93,6 +103,7 @@ public:
     Q_INVOKABLE void requestWifiScan();
     Q_INVOKABLE void connectWifi(const QString &ssid, const QString &password = QString());
     Q_INVOKABLE void disconnectWifi();
+    Q_INVOKABLE void forgetWifi(const QString &ssid);
     Q_INVOKABLE void startBluetoothDiscovery();
     Q_INVOKABLE void stopBluetoothDiscovery();
     Q_INVOKABLE void toggleBluetoothDevice(const QString &address);
@@ -103,6 +114,9 @@ public:
 
     bool operationBusy() const;
     QString operationError() const;
+    QString secondaryCalendarText() const;
+    QString secondaryCalendarState() const;
+    QString secondaryCalendarSource() const;
 
 Q_SIGNALS:
     void networkChanged();
@@ -115,6 +129,7 @@ Q_SIGNALS:
     void batteryChanged();
     void audioChanged();
     void operationChanged();
+    void calendarChanged();
 
 private:
     void refreshWifiDevice();
@@ -138,6 +153,11 @@ private:
     NetworkManager::Connection::Ptr savedConnectionForSsid(const QString &ssid) const;
     QString securityLabel(NetworkManager::WirelessSecurityType security) const;
     QString bluetoothMaterialIcon(const BluezQt::DevicePtr &device) const;
+    void refreshSecondaryCalendar();
+    void refreshHebcalCalendar(const QDate &today);
+    void setSecondaryCalendarResult(const QString &text, const QString &state, const QString &source);
+    QString calendarConfigValue(const QString &key) const;
+    QString hebcalCachePath(const QDate &date) const;
 
     NetworkManager::WirelessDevice::Ptr m_wifiDevice;
     bool m_wifiScanning = false;
@@ -155,4 +175,9 @@ private:
     PulseAudioQt::Sink *m_sink = nullptr;
     PulseAudioQt::Source *m_source = nullptr;
     QString m_operationError;
+    QNetworkAccessManager m_calendarNetwork;
+    QTimer m_calendarRefreshTimer;
+    QString m_secondaryCalendarText;
+    QString m_secondaryCalendarState = QStringLiteral("disabled");
+    QString m_secondaryCalendarSource;
 };
