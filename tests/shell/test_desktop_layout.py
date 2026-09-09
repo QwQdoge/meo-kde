@@ -269,6 +269,12 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn('NotificationManager.Notifications', source)
             self.assertIn('NotificationManager.Notifications.GroupDisabled', source)
 
+    def test_shell_motion_keeps_legacy_press_without_duplicate_property(self):
+        motion = (REPO_ROOT / "qml/MeoKDE/MeoMotion.qml").read_text(encoding="utf-8")
+
+        self.assertEqual(motion.count("readonly property int press:"), 1)
+        self.assertIn("readonly property int pressFeedback:", motion)
+
     def test_quick_control_sliders_expose_real_actions_and_names(self):
         home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
 
