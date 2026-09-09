@@ -176,6 +176,7 @@ for required in \
   "${repo_root}/tools/shell/apply-meo-panel-layout.sh" \
   "${repo_root}/tools/theme/apply-meo-desktop.sh" \
   "${repo_root}/plasmoids/org.meo.timecenter/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time-notifications/metadata.json" \
   "${repo_root}/assets/wallpapers/installer_background.png"; do
@@ -211,6 +212,7 @@ runtime_backups=(
   "${data_root}/plasma/plasmoids/org.meo.shelf|data/plasma/plasmoids/org.meo.shelf"
   "${data_root}/plasma/plasmoids/org.meo.topbar|data/plasma/plasmoids/org.meo.topbar"
   "${data_root}/plasma/plasmoids/org.meo.timecenter|data/plasma/plasmoids/org.meo.timecenter"
+  "${data_root}/plasma/plasmoids/org.meo.time|data/plasma/plasmoids/org.meo.time"
   "${data_root}/plasma/plasmoids/org.meo.notifications|data/plasma/plasmoids/org.meo.notifications"
   "${data_root}/plasma/plasmoids/org.meo.time-notifications|data/plasma/plasmoids/org.meo.time-notifications"
   "${data_root}/plasma/plasmoids/org.meo.toptasks|data/plasma/plasmoids/org.meo.toptasks"
@@ -363,7 +365,7 @@ done
 
 # Meo owns the quick-settings and time surfaces; KDE owns the native System
 # Tray/StatusNotifier application icons and the bottom task manager.
-for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   if [ -e "${data_root}/plasma/plasmoids/${meo_panel_applet}" ]; then
     run mkdir -p "${backup_root}/plasmoids"
     run cp -a "${data_root}/plasma/plasmoids/${meo_panel_applet}" \

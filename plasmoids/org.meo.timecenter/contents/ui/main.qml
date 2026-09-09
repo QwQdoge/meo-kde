@@ -44,14 +44,14 @@ PlasmoidItem {
 
     PlasmaClock.Clock {
         id: clock
-        trackSeconds: true
+        trackSeconds: Plasmoid.configuration.showSeconds
     }
 
     NotificationManager.Notifications {
         id: notificationModel
         limit: 50
         showNotifications: true
-        showJobs: true
+        showJobs: Plasmoid.configuration.showJobs
         showExpired: true
         showDismissed: false
         sortMode: NotificationManager.Notifications.SortByDate

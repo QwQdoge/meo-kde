@@ -269,6 +269,15 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn('NotificationManager.Notifications', source)
             self.assertIn('NotificationManager.Notifications.GroupDisabled', source)
 
+    def test_time_applet_has_no_notification_manager_and_uses_time_calendar_mode(self):
+        time_main = (REPO_ROOT / "plasmoids/org.meo.time/contents/ui/main.qml").read_text(encoding="utf-8")
+        status = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
+
+        self.assertNotIn("notificationmanager", time_main)
+        self.assertIn('centerMode:"timeCalendar"', time_main)
+        self.assertIn("trackSeconds: Plasmoid.configuration.showSeconds", time_main)
+        self.assertIn('centerMode !== "timeCalendar"', status)
+
     def test_shell_motion_keeps_legacy_press_without_duplicate_property(self):
         motion = (REPO_ROOT / "qml/MeoKDE/MeoMotion.qml").read_text(encoding="utf-8")
 

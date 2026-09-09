@@ -12,6 +12,7 @@ PlasmoidItem {
     Plasmoid.title: qsTr("Meo Notifications")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: compactRepresentation
+    onExpandedChanged: if (root.expanded) notifications.lastRead = new Date()
     Layout.minimumWidth: 28 * MeoTheme.globalScale; Layout.preferredWidth: Layout.minimumWidth; Layout.maximumWidth: Layout.minimumWidth
     Layout.minimumHeight: ShellMetrics.topBarHeight; Layout.preferredHeight: Layout.minimumHeight; Layout.maximumHeight: Layout.minimumHeight
     NotificationManager.Notifications { id: notifications; limit: 50; showNotifications: true; showJobs: Plasmoid.configuration.showJobs; showExpired: true; showDismissed: false; sortMode: NotificationManager.Notifications.SortByDate; sortOrder: Qt.DescendingOrder; groupMode: NotificationManager.Notifications.GroupDisabled; window: root.Window.window }

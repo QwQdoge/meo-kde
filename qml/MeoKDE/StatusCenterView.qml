@@ -22,7 +22,8 @@ Item {
     property string defaultPage: "notifications"
 
     readonly property bool showTime: centerMode !== "notificationsOnly"
-    readonly property bool showCalendar: centerMode === "timeCalendarNotifications"
+    readonly property bool showCalendar: centerMode === "timeCalendar" || centerMode === "timeCalendarNotifications"
+    readonly property bool showNotificationPane: centerMode !== "timeCalendar"
     readonly property bool use24HourClock: clockFormat === "24h"
     readonly property string timePattern: use24HourClock
                                        ? (showSeconds ? "hh:mm:ss" : "hh:mm")
@@ -73,6 +74,7 @@ Item {
                     MeoMonthCalendar {
                         anchors.fill: parent; anchors.margins: MeoTheme.space16
                         selectedDate: root.currentDateTime; displayDate: root.currentDateTime
+                        showWeekNumbers: root.showWeekNumbers
                     }
                 }
                 MeoDivider {
@@ -80,6 +82,7 @@ Item {
                     Layout.fillHeight: true; orientation: "vertical"
                 }
                 NotificationCenterView {
+                    visible: root.showNotificationPane
                     Layout.fillWidth: true; Layout.fillHeight: true
                     notifications: root.notifications; currentDateTime: root.currentDateTime
                     onSettingsRequested: Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")

@@ -15,9 +15,10 @@ PlasmoidItem {
     Plasmoid.title: qsTr("Meo Time and Notifications")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: compactRepresentation
+    onExpandedChanged: if (root.expanded) notifications.lastRead = clock.dateTime
     Layout.minimumWidth: compactRepresentationItem ? compactRepresentationItem.implicitWidth : 80 * MeoTheme.globalScale; Layout.preferredWidth: Layout.minimumWidth; Layout.maximumWidth: Layout.minimumWidth
     Layout.minimumHeight: ShellMetrics.topBarHeight; Layout.preferredHeight: Layout.minimumHeight; Layout.maximumHeight: Layout.minimumHeight
-    PlasmaClock.Clock { id: clock; trackSeconds: true }
+    PlasmaClock.Clock { id: clock; trackSeconds: Plasmoid.configuration.showSeconds }
     NotificationManager.Notifications { id: notifications; limit: 50; showNotifications: true; showJobs: Plasmoid.configuration.showJobs; showExpired: true; showDismissed: false; sortMode: NotificationManager.Notifications.SortByDate; sortOrder: Qt.DescendingOrder; groupMode: NotificationManager.Notifications.GroupDisabled; window: root.Window.window }
     compactRepresentation: QQC2.AbstractButton {
         implicitWidth: row.implicitWidth + 8 * MeoTheme.globalScale; implicitHeight: 28 * MeoTheme.globalScale
