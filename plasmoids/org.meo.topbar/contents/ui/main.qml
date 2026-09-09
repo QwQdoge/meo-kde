@@ -39,6 +39,13 @@ PlasmoidItem {
         MeoShellTheme.sync()
         if (Plasmoid.configuration.quickTileSizes === legacyQuickTileSizes)
             Plasmoid.configuration.quickTileSizes = pillQuickTileSizes
+        // density is the public per-instance key.  Keep the original tile
+        // key as a compatibility mirror so prior custom arrangements survive.
+        if (Plasmoid.configuration.density === "comfortable"
+                && Plasmoid.configuration.quickTileDensity !== "comfortable")
+            Plasmoid.configuration.density = Plasmoid.configuration.quickTileDensity
+        else if (Plasmoid.configuration.density !== Plasmoid.configuration.quickTileDensity)
+            Plasmoid.configuration.quickTileDensity = Plasmoid.configuration.density
     }
     onExpandedChanged: if (!root.expanded && root.fullRepresentationItem
                            && root.fullRepresentationItem.prepareToClose)
@@ -66,12 +73,13 @@ PlasmoidItem {
         tileOrder: Plasmoid.configuration.quickTileOrder
         tileSizes: Plasmoid.configuration.quickTileSizes
         tileVisibility: Plasmoid.configuration.quickTileVisibility
-        tileDensity: Plasmoid.configuration.quickTileDensity
+        tileDensity: Plasmoid.configuration.density
         onTileLayoutChanged: function(order, sizes, visibility, density) {
             Plasmoid.configuration.quickTileOrder = order
             Plasmoid.configuration.quickTileSizes = sizes
             Plasmoid.configuration.quickTileVisibility = visibility
             Plasmoid.configuration.quickTileDensity = density
+            Plasmoid.configuration.density = density
         }
     }
 }

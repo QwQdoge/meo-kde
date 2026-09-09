@@ -49,6 +49,8 @@ package() {
   done
   install -d "${pkgdir}/usr/share/plasma/plasmoids"
   cp -a "${workspace}/plasmoids/org.meo.topbar" \
+    "${workspace}/plasmoids/org.meo.notifications" \
+    "${workspace}/plasmoids/org.meo.time-notifications" \
     "${workspace}/plasmoids/org.meo.timecenter" \
     "${pkgdir}/usr/share/plasma/plasmoids/"
   install -d "${pkgdir}/usr/share/color-schemes"

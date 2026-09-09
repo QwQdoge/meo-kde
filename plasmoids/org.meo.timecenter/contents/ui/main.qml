@@ -73,13 +73,24 @@ PlasmoidItem {
         textScale: root.localTextScale
         showDate: Plasmoid.configuration.showDate
         showNotifications: Plasmoid.configuration.showNotifications
-        use24HourClock: Plasmoid.configuration.use24HourClock
+                           && Plasmoid.configuration.showUnreadBadge
+        use24HourClock: Plasmoid.configuration.clockFormat === "system"
+                       ? Plasmoid.configuration.use24HourClock
+                       : Plasmoid.configuration.clockFormat === "24h"
         onStatusCenterRequested: root.expanded = !root.expanded
     }
 
     fullRepresentation: TimeNotificationCenter {
         notifications: notificationModel
         currentDateTime: clock.dateTime
-        use24HourClock: Plasmoid.configuration.use24HourClock
+        use24HourClock: Plasmoid.configuration.clockFormat === "system"
+                       ? Plasmoid.configuration.use24HourClock
+                       : Plasmoid.configuration.clockFormat === "24h"
+        showJobs: Plasmoid.configuration.showJobs
+        showDate: Plasmoid.configuration.showDate
+        showSeconds: Plasmoid.configuration.showSeconds
+        showWeekNumbers: Plasmoid.configuration.showWeekNumbers
+        showSecondaryCalendar: Plasmoid.configuration.showSecondaryCalendar
+        defaultPage: Plasmoid.configuration.defaultPage
     }
 }

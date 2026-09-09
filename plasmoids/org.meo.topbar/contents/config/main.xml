@@ -10,6 +10,12 @@
       <label>Text size for the Meo top bar, in percent.</label>
       <default>100</default>
     </entry>
+    <entry name="density" type="String"><default>comfortable</default></entry>
+    <entry name="surfaceStyle" type="String"><default>theme</default></entry>
+    <entry name="surfaceOpacityPercent" type="Int"><default>100</default></entry>
+    <entry name="motionProfile" type="String"><default>pixel</default></entry>
+    <entry name="showUnreadBadge" type="Bool"><default>true</default></entry>
+    <entry name="showJobs" type="Bool"><default>true</default></entry>
     <entry name="showNetwork" type="Bool">
       <label>Show network status in the compact top bar.</label>
       <default>true</default>

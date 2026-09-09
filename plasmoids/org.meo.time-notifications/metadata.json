@@ -1,0 +1,1 @@
+{"KPlugin":{"Id":"org.meo.time-notifications","Name":"Meo Time and Notifications","Description":"Meo time and notification center for the Plasma panel","Icon":"preferences-system-time","Authors":[{"Name":"Meo Desktop Team"}],"Category":"Panel","License":"GPL-2.0-or-later","Version":"0.4.0"},"KPackageStructure":"Plasma/Applet","X-Plasma-API-Minimum-Version":"6.0"}

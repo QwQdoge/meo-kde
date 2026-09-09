@@ -144,7 +144,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("visible: root.showNotifications && root.hasNotificationState", time_button)
 
     def test_topbar_is_backed_by_real_kde_models(self):
-        status_center = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
+        status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
         notification_center = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
         time_main = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/main.qml").read_text(encoding="utf-8")
         quick_main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
@@ -155,6 +155,8 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('MeoMonthCalendar', status_center)
         self.assertIn('NotificationCenterView', status_center)
         self.assertIn('applications:org.meo.settings.notifications.desktop', status_center)
+        self.assertIn('centerMode !== "notificationsOnly"', status_center)
+        self.assertIn('centerMode === "timeCalendarNotifications"', status_center)
         self.assertIn('ListView', notification_center)
         self.assertIn('MeoTheme.surfaceContainerHigh', notification_center)
         self.assertIn('org.kde.notificationmanager', time_main)
@@ -248,12 +250,24 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("org.meo.settings.desktop", documentation)
 
     def test_status_and_quick_settings_have_compact_width_contracts(self):
-        status = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationCenter.qml").read_text(encoding="utf-8")
+        status = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
         quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
 
         self.assertIn("Layout.minimumWidth: 320 * MeoTheme.globalScale", status)
         self.assertIn("root.width >= 620 * MeoTheme.globalScale", status)
         self.assertIn("Layout.minimumWidth: 280 * MeoTheme.globalScale", quick_center)
+
+    def test_notification_variant_applets_share_the_status_center_contract(self):
+        shared = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
+        notifications = (REPO_ROOT / "plasmoids/org.meo.notifications/contents/ui/main.qml").read_text(encoding="utf-8")
+        time_notifications = (REPO_ROOT / "plasmoids/org.meo.time-notifications/contents/ui/main.qml").read_text(encoding="utf-8")
+
+        self.assertIn('property string centerMode', shared)
+        self.assertIn('centerMode: "notificationsOnly"', notifications)
+        self.assertIn('centerMode: "timeNotifications"', time_notifications)
+        for source in (notifications, time_notifications):
+            self.assertIn('NotificationManager.Notifications', source)
+            self.assertIn('NotificationManager.Notifications.GroupDisabled', source)
 
     def test_quick_control_sliders_expose_real_actions_and_names(self):
         home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")

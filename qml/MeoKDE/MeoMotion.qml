@@ -17,4 +17,13 @@ QtObject {
     readonly property var fastSpatial: UI.MeoMotion.fastSpatial
     readonly property var defaultSpatial: UI.MeoMotion.defaultSpatial
     readonly property var slowSpatial: UI.MeoMotion.slowSpatial
+
+    // Shell-facing semantic aliases.  Keep the historical duration names
+    // above so installed plasmoids remain source compatible.
+    readonly property int press: UI.MeoTheme.reduceMotion ? 80 : Kirigami.Units.shortDuration
+    readonly property int reorder: UI.MeoTheme.reduceMotion ? 100 : Kirigami.Units.longDuration
+    readonly property int popupEnter: UI.MeoTheme.reduceMotion ? 100 : Kirigami.Units.longDuration
+    readonly property int popupExit: UI.MeoTheme.reduceMotion ? 80 : Kirigami.Units.shortDuration
+    readonly property int pageEnter: UI.MeoTheme.reduceMotion ? 100 : Kirigami.Units.longDuration
+    readonly property int pageExit: UI.MeoTheme.reduceMotion ? 80 : Kirigami.Units.shortDuration
 }

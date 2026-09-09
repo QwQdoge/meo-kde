@@ -1,107 +1,11 @@
 import QtQuick
-import QtQuick.Layouts
-import MeoUI 1.0
 import MeoKDE 1.0
-import Meo.System 1.0
-
-Item {
+StatusCenterView {
     id: root
 
     property var notifications: null
     property date currentDateTime: new Date()
-    property bool use24HourClock: true
-
-    implicitWidth: ShellMetrics.statusCenterWidth
-    implicitHeight: ShellMetrics.statusCenterHeight
-    Layout.minimumWidth: 320 * MeoTheme.globalScale
-    Layout.minimumHeight: 360 * MeoTheme.globalScale
-
-    FrostedSurface {
-        anchors.fill: parent
-        baseColor: MeoTheme.surfaceContainerLow
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: ShellMetrics.popupContentMargin
-            spacing: MeoTheme.space16
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: (SystemState.secondaryCalendarText.length > 0 ? 88 : 64) * MeoTheme.globalScale
-                spacing: 0
-
-                MeoText {
-                    text: Qt.formatTime(root.currentDateTime, root.use24HourClock ? "hh:mm" : "h:mm AP")
-                    typeRole: "title"
-                    typeSize: "large"
-                    emphasized: true
-                    color: MeoTheme.onSurface
-                }
-
-                MeoText {
-                    text: Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleLongDate)
-                    typeRole: "body"
-                    typeSize: "medium"
-                    color: MeoTheme.onSurfaceVariant
-                }
-
-                MeoText {
-                    visible: SystemState.secondaryCalendarText.length > 0
-                    text: SystemState.secondaryCalendarText
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.onSurfaceVariant
-                    Accessible.name: qsTr("Secondary calendar: %1").arg(SystemState.secondaryCalendarText)
-                }
-
-                MeoText {
-                    visible: SystemState.secondaryCalendarSource.length > 0
-                    text: SystemState.secondaryCalendarSource
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.onSurfaceVariant
-                    opacity: 0.78
-                    Accessible.name: qsTr("Secondary calendar source: %1").arg(SystemState.secondaryCalendarSource)
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: MeoTheme.space16
-
-                MeoMotionSurface {
-                    visible: root.width >= 620 * MeoTheme.globalScale
-                    Layout.preferredWidth: 292 * MeoTheme.globalScale
-                    Layout.fillHeight: true
-                    color: MeoTheme.surfaceContainer
-                    radius: ShellMetrics.radiusPopup
-                    elevation: 0
-
-                    MeoMonthCalendar {
-                        anchors.fill: parent
-                        anchors.margins: MeoTheme.space16
-                        selectedDate: root.currentDateTime
-                        displayDate: root.currentDateTime
-                    }
-                }
-
-                MeoDivider {
-                    visible: root.width >= 620 * MeoTheme.globalScale
-                    Layout.fillHeight: true
-                    orientation: "vertical"
-                }
-
-                NotificationCenterView {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    notifications: root.notifications
-                    currentDateTime: root.currentDateTime
-                    onSettingsRequested: {
-                        Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")
-                    }
-                }
-            }
-        }
-    }
+    property bool use24HourClock: true // compatibility for existing callers
+    centerMode: "timeCalendarNotifications"
+    clockFormat: root.use24HourClock ? "24h" : "12h"
 }
