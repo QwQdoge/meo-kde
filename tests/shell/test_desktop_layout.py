@@ -140,7 +140,9 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn("MeoTheme.onPrimaryContainer", source)
             self.assertIn("Qt.rgba(0, 0, 0, 0)", source)
             self.assertIn("strokeWidth: 0", source)
-        self.assertIn("visible: root.showBluetooth && root.bluetoothConnected", quick_status)
+        self.assertIn("MeoStatusStrip", quick_status)
+        self.assertIn("statusModel: root.statusModel", quick_status)
+        self.assertIn("available: root.showBluetooth && root.bluetoothConnected", quick_status)
         self.assertIn("visible: root.showNotifications && root.hasNotificationState", time_button)
 
     def test_topbar_is_backed_by_real_kde_models(self):
@@ -153,6 +155,8 @@ class DesktopLayoutTests(unittest.TestCase):
         audio_page = (TOPBAR / "AudioPage.qml").read_text(encoding="utf-8")
 
         self.assertIn('MeoMonthCalendar', status_center)
+        self.assertIn('MeoStatusCenter', status_center)
+        self.assertIn('calendarEnabled: showCalendar', status_center)
         self.assertIn('NotificationCenterView', status_center)
         self.assertIn('applications:org.meo.settings.notifications.desktop', status_center)
         self.assertIn('centerMode !== "notificationsOnly"', status_center)
@@ -254,7 +258,7 @@ class DesktopLayoutTests(unittest.TestCase):
         quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
 
         self.assertIn("Layout.minimumWidth: 320 * MeoTheme.globalScale", status)
-        self.assertIn("root.width >= 620 * MeoTheme.globalScale", status)
+        self.assertIn("MeoStatusCenter", status)
         self.assertIn("Layout.minimumWidth: 280 * MeoTheme.globalScale", quick_center)
 
     def test_notification_variant_applets_share_the_status_center_contract(self):
@@ -262,7 +266,8 @@ class DesktopLayoutTests(unittest.TestCase):
         notifications = (REPO_ROOT / "plasmoids/org.meo.notifications/contents/ui/main.qml").read_text(encoding="utf-8")
         time_notifications = (REPO_ROOT / "plasmoids/org.meo.time-notifications/contents/ui/main.qml").read_text(encoding="utf-8")
 
-        self.assertIn('property string centerMode', shared)
+        self.assertIn('mode: centerMode === "notificationsOnly"', shared)
+        self.assertIn('calendarEnabled: showCalendar', shared)
         self.assertIn('centerMode: "notificationsOnly"', notifications)
         self.assertIn('centerMode: "timeNotifications"', time_notifications)
         for source in (notifications, time_notifications):

@@ -12,12 +12,13 @@ Item {
     property date currentDateTime: new Date()
     property bool showTitle: true
     property bool showSettingsAction: true
+    property bool showJobs: true
 
     readonly property int notificationCount: notifications && typeof notifications.count === "number"
                                              ? notifications.count : 0
     readonly property int unreadCount: notifications && typeof notifications.unreadNotificationsCount === "number"
                                        ? notifications.unreadNotificationsCount : 0
-    readonly property int activeJobsCount: notifications && typeof notifications.activeJobsCount === "number"
+    readonly property int activeJobsCount: showJobs && notifications && typeof notifications.activeJobsCount === "number"
                                            ? notifications.activeJobsCount : 0
     readonly property int liveNotificationCount: notifications && typeof notifications.activeNotificationsCount === "number"
                                                  ? notifications.activeNotificationsCount : 0
