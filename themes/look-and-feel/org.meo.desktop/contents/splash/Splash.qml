@@ -14,7 +14,7 @@ Rectangle {
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
     }
-    Rectangle { anchors.fill: parent; color: Qt.rgba(0.08, 0.06, 0.12, 0.18) }
+    Rectangle { anchors.fill: parent; color: Qt.rgba(MeoTheme.scrim.r, MeoTheme.scrim.g, MeoTheme.scrim.b, 0.18) }
 
     Column {
         anchors.centerIn: parent

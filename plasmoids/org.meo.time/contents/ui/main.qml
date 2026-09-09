@@ -23,7 +23,7 @@ PlasmoidItem {
         implicitWidth: label.implicitWidth + 8 * MeoTheme.globalScale; implicitHeight: 28 * MeoTheme.globalScale
         Accessible.name: qsTr("Time and calendar")
         onClicked: root.expanded = !root.expanded
-        background: MeoShape { type:"pill"; radius:height/2; color: parent.hovered || parent.down || root.expanded ? MeoTheme.surfaceContainerHighest : Qt.rgba(0,0,0,0) }
+        background: MeoShape { type:"pill"; radius:height/2; color: parent.hovered || parent.down || root.expanded ? MeoTheme.surfaceContainerHighest : "transparent" }
         contentItem: RowLayout { id: label; spacing: MeoTheme.space4; MeoText { text: Qt.formatTime(clock.dateTime, root.use24Hour ? (Plasmoid.configuration.showSeconds ? "hh:mm:ss" : "hh:mm") : (Plasmoid.configuration.showSeconds ? "h:mm:ss AP" : "h:mm AP")); typeRole:"label"; typeSize:"medium"; emphasized:true } MeoText { visible: Plasmoid.configuration.showDate; text:Qt.formatDate(clock.dateTime, "MMM d"); typeRole:"label"; typeSize:"small" } }
     }
     fullRepresentation: StatusCenterView { currentDateTime: clock.dateTime; centerMode:"timeCalendar"; clockFormat: Plasmoid.configuration.clockFormat; showSeconds: Plasmoid.configuration.showSeconds; showDate: Plasmoid.configuration.showDate; showWeekNumbers: Plasmoid.configuration.showWeekNumbers; showSecondaryCalendar: Plasmoid.configuration.showSecondaryCalendar }

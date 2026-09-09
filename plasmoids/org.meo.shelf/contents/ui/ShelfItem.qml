@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import MeoUI 1.0
 import MeoKDE 1.0
@@ -25,7 +24,7 @@ Item {
     scale: mouseArea.pressed ? 0.94 : 1.0
 
     Behavior on scale {
-        NumberAnimation { duration: MeoMotion.press; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: MeoMotion.press; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
     }
 
     // Active / hover container.  The launcher itself keeps its Meo logo while
@@ -53,7 +52,7 @@ Item {
         }
 
         Behavior on color {
-            ColorAnimation { duration: MeoMotion.hover; easing.type: Easing.OutCubic }
+            ColorAnimation { duration: MeoMotion.hover; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
         }
 
         // Icon representation
@@ -84,7 +83,7 @@ Item {
         color: MeoTheme.primary
 
         Behavior on width {
-            NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
         }
     }
 
@@ -103,26 +102,9 @@ Item {
         }
     }
 
-    // M3 Formatted Tooltip (Radius 12px, surfaceContainerHighest, 450ms delay)
-    QQC2.ToolTip {
-        id: itemToolTip
+    MeoTooltip {
         visible: mouseArea.containsMouse && root.title !== ""
-        delay: 450
+        delay: MeoTheme.motionDurationLong1
         text: root.winCount > 1 ? (root.title + "\n" + root.winCount + " windows") : root.title
-
-        contentItem: Text {
-            text: itemToolTip.text
-            font.family: MeoTheme.fontFamily
-            font.pixelSize: 12 * MeoTheme.globalScale * MeoTheme.fontScale
-            font.weight: Font.Medium
-            color: MeoTheme.onSurface
-        }
-
-        background: Rectangle {
-            color: MeoTheme.surfaceContainerHighest
-            radius: ShellMetrics.radiusControl
-            border.color: MeoTheme.outlineVariant
-            border.width: ShellMetrics.panelOutlineWidth
-        }
     }
 }

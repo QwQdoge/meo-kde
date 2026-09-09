@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
-import org.kde.plasma.private.sessions 2.0 as Sessions
 import MeoUI 1.0
 import MeoKDE 1.0
 
@@ -64,13 +63,15 @@ Item {
                     from: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
                     to: 0
                     duration: MeoTheme.motionDurationPage
-                    easing.bezierCurve: MeoTheme.motionEasingEmphasized
+                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
                 NumberAnimation {
                     property: "opacity"
                     from: MeoTheme.reduceMotion ? 1 : 0
                     to: 1
                     duration: MeoTheme.motionDurationPage
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
                 }
             }
             pushExit: Transition {
@@ -79,13 +80,15 @@ Item {
                     from: 0
                     to: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
                     duration: MeoTheme.motionDurationPage
-                    easing.bezierCurve: MeoTheme.motionEasingEmphasized
+                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
                 NumberAnimation {
                     property: "opacity"
                     from: 1
                     to: MeoTheme.reduceMotion ? 1 : 0
                     duration: MeoTheme.motionDurationPage
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
                 }
             }
             popEnter: Transition {
@@ -94,13 +97,15 @@ Item {
                     from: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
                     to: 0
                     duration: MeoTheme.motionDurationPage
-                    easing.bezierCurve: MeoTheme.motionEasingEmphasized
+                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
                 NumberAnimation {
                     property: "opacity"
                     from: MeoTheme.reduceMotion ? 1 : 0
                     to: 1
                     duration: MeoTheme.motionDurationPage
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
                 }
             }
             popExit: Transition {
@@ -109,13 +114,15 @@ Item {
                     from: 0
                     to: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
                     duration: MeoTheme.motionDurationPage
-                    easing.bezierCurve: MeoTheme.motionEasingEmphasized
+                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
                 NumberAnimation {
                     property: "opacity"
                     from: 1
                     to: MeoTheme.reduceMotion ? 1 : 0
                     duration: MeoTheme.motionDurationPage
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
                 }
             }
         }
@@ -143,38 +150,9 @@ Item {
         }
     }
 
-    Sessions.SessionManagement {
-        id: sessionManagement
-    }
-
-    QQC2.Menu {
+    SessionMenu {
         id: powerMenu
         x: Math.max(0, root.width - width - ShellMetrics.popupContentMargin)
         y: Math.max(0, root.height - height - ShellMetrics.popupContentMargin)
-
-        QQC2.MenuItem {
-            text: qsTr("Sleep now")
-            visible: sessionManagement.canSuspend
-            onTriggered: sessionManagement.suspend()
-        }
-        QQC2.MenuItem {
-            text: qsTr("Restart…")
-            visible: sessionManagement.canReboot
-            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
-            onTriggered: sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt)
-        }
-        QQC2.MenuItem {
-            text: qsTr("Shut down…")
-            visible: sessionManagement.canShutdown
-            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
-            onTriggered: sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt)
-        }
-        QQC2.MenuSeparator {}
-        QQC2.MenuItem {
-            text: qsTr("Sign out…")
-            visible: sessionManagement.canLogout
-            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
-            onTriggered: sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt)
-        }
     }
 }

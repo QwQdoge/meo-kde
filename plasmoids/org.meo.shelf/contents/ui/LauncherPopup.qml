@@ -8,7 +8,7 @@ import org.kde.plasma.private.kicker 0.1 as Kicker
 import MeoUI 1.0
 import MeoKDE 1.0
 
-QQC2.Popup {
+MeoMotionPopup {
     id: launcherPopup
 
     // `shellApplet` is the actual PlasmoidItem, supplied by main.qml. Kicker
@@ -37,19 +37,8 @@ QQC2.Popup {
     modal: false
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
-
+    presentation: MeoMotionPopup.Dialog
     transformOrigin: Item.Bottom
-
-    enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: MeoMotion.popupOpen; easing.type: Easing.OutCubic }
-        NumberAnimation { property: "scale"; from: 0.97; to: 1.0; duration: MeoMotion.popupOpen; easing.type: Easing.OutCubic }
-    }
-    exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: MeoMotion.popupClose; easing.type: Easing.InCubic }
-        NumberAnimation { property: "scale"; from: 1.0; to: 0.97; duration: MeoMotion.popupClose; easing.type: Easing.InCubic }
-    }
-
-    background: FrostedSurface {}
 
     function triggerModel(model, row) {
         if (!model || row < 0 || typeof model.trigger !== "function")
@@ -223,6 +212,7 @@ QQC2.Popup {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
+                QQC2.ScrollBar.vertical: MeoScrollBar {}
 
                 ColumnLayout {
                     width: parent.width

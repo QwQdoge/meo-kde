@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
-import org.kde.plasma.private.sessions 2.0 as Sessions
 import MeoUI 1.0
 import MeoKDE 1.0
 
@@ -89,35 +88,7 @@ Item {
         }
     }
 
-    Sessions.SessionManagement {
-        id: sessionManagement
-    }
-
-    QQC2.Menu {
+    SessionMenu {
         id: powerMenu
-        QQC2.MenuItem {
-            text: qsTr("Sleep now")
-            visible: sessionManagement.canSuspend
-            onTriggered: sessionManagement.suspend()
-        }
-        QQC2.MenuItem {
-            text: qsTr("Restart…")
-            visible: sessionManagement.canReboot
-            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
-            onTriggered: sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt)
-        }
-        QQC2.MenuItem {
-            text: qsTr("Shut down…")
-            visible: sessionManagement.canShutdown
-            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
-            onTriggered: sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt)
-        }
-        QQC2.MenuSeparator {}
-        QQC2.MenuItem {
-            text: qsTr("Sign out…")
-            visible: sessionManagement.canLogout
-            Accessible.description: qsTr("Use the Meo session confirmation. Applications can still ask to save work.")
-            onTriggered: sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt)
-        }
     }
 }

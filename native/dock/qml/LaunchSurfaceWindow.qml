@@ -90,7 +90,7 @@ Window {
         from: 0
         to: 1
         duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationEffectDefault
-        easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate
+        easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate
     }
 
     NumberAnimation {
@@ -98,8 +98,8 @@ Window {
         target: root
         property: "opacity"
         to: 0
-        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationFor(120)
-        easing.bezierCurve: MeoTheme.motionEasingStandardAccelerate
+        duration: MeoTheme.motionDurationEffectDefault
+        easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandardAccelerate
         onFinished: {
             root.visible = false
             root.hidden()

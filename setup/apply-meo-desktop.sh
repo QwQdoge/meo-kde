@@ -375,7 +375,7 @@ done
 for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.toptasks; do
   run rm -rf "${data_root}/plasma/plasmoids/${legacy_plasmoid}"
 done
-for meo_panel_applet in org.meo.topbar org.meo.timecenter; do
+for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   run rm -rf "${data_root}/plasma/plasmoids/${meo_panel_applet}"
   run cp -a "${repo_root}/plasmoids/${meo_panel_applet}" \
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"

@@ -5,7 +5,7 @@ import org.kde.plasma.clock as PlasmaClock
 import MeoUI 1.0
 import MeoKDE 1.0
 
-QQC2.Popup {
+MeoMotionPopup {
     id: statusCenter
 
     property var notificationWindow: null
@@ -20,16 +20,8 @@ QQC2.Popup {
     modal: false
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
+    presentation: MeoMotionPopup.Dialog
     transformOrigin: Item.TopRight
-
-    enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoMotion.popupOpen; easing.type: Easing.OutCubic }
-        NumberAnimation { property: "scale"; from: 0.985; to: 1; duration: MeoMotion.popupOpen; easing.type: Easing.OutCubic }
-    }
-    exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: MeoMotion.popupClose; easing.type: Easing.InCubic }
-        NumberAnimation { property: "scale"; from: 1; to: 0.985; duration: MeoMotion.popupClose; easing.type: Easing.InCubic }
-    }
 
     PlasmaClock.Clock {
         id: clock
@@ -50,7 +42,6 @@ QQC2.Popup {
     }
 
     onOpened: notificationModel.lastRead = clock.dateTime
-    background: Item {}
 
     contentItem: MeoStatusCenter {
         width: statusCenter.availableWidth

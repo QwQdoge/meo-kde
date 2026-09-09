@@ -138,7 +138,7 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn("targetValue: root.down ? 0.94 : 1", source)
             self.assertIn("MeoTheme.primaryContainer", source)
             self.assertIn("MeoTheme.onPrimaryContainer", source)
-            self.assertIn("Qt.rgba(0, 0, 0, 0)", source)
+            self.assertIn('"transparent"', source)
             self.assertIn("strokeWidth: 0", source)
         self.assertIn("MeoStatusStrip", quick_status)
         self.assertIn("statusModel: root.statusModel", quick_status)

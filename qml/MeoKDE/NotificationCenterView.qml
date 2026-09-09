@@ -208,23 +208,15 @@ Item {
                 Item {
                     Layout.preferredWidth: 22 * MeoTheme.globalScale
                     Layout.preferredHeight: Layout.preferredWidth
-                    // A small, non-essential sleeping moon gives Do Not Disturb
-                    // a friendly Pixel-like state cue. The live notification
-                    // server remains the only source of truth for this state.
+                    // Keep DND quiet at rest. The notification server remains
+                    // the only source of truth; state is conveyed by the icon
+                    // and tonal container, not a perpetual animation.
                     Text {
                         id: dndMood
                         anchors.centerIn: parent
                         text: "🌙"
                         font.pixelSize: 18 * MeoTheme.globalScale
                         Accessible.ignored: true
-                    }
-                    SequentialAnimation on rotation {
-                        running: NotificationManager.Server.inhibited
-                        loops: Animation.Infinite
-                        NumberAnimation { to: -5; duration: MeoMotion.popupOpen; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 5; duration: MeoMotion.stateChange; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 0; duration: MeoMotion.popupClose; easing.type: Easing.InOutSine }
-                        PauseAnimation { duration: 900 }
                     }
                 }
                 MeoText {
@@ -255,22 +247,22 @@ Item {
                 cacheBuffer: Math.max(height, 320 * MeoTheme.globalScale)
                 model: root.notifications
                 Behavior on opacity {
-                    NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                    NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
                 }
                 add: Transition {
                     ParallelAnimation {
-                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
-                        NumberAnimation { property: "scale"; from: 0.985; to: 1; duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoTheme.motionDurationPopupEffectsEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                        NumberAnimation { property: "scale"; from: MeoTheme.reduceMotion ? 1 : 0.985; to: 1; duration: MeoTheme.motionDurationPopupEffectsEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
                     }
                 }
                 remove: Transition {
                     ParallelAnimation {
-                        NumberAnimation { property: "opacity"; to: 0; duration: MeoMotion.stateChange; easing.type: Easing.InCubic }
-                        NumberAnimation { property: "scale"; to: 0.985; duration: MeoMotion.stateChange; easing.type: Easing.InCubic }
+                        NumberAnimation { property: "opacity"; to: 0; duration: MeoTheme.motionDurationPopupEffectsExit; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
+                        NumberAnimation { property: "scale"; to: MeoTheme.reduceMotion ? 1 : 0.985; duration: MeoTheme.motionDurationPopupEffectsExit; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
                     }
                 }
                 displaced: Transition {
-                    NumberAnimation { properties: "x,y"; duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                    NumberAnimation { properties: "x,y"; duration: MeoTheme.motionDurationDisclosureEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
                 }
 
                 delegate: MeoMotionSurface {
@@ -334,7 +326,7 @@ Item {
                     radius: ShellMetrics.radiusPopup
                     elevation: 0
                     Behavior on implicitHeight {
-                        NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: MeoTheme.motionDurationDisclosureEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
                     }
                     activeFocusOnTab: hasDefaultAction
                     Accessible.role: Accessible.ListItem
@@ -585,7 +577,7 @@ Item {
                     }
                 }
 
-                QQC2.ScrollBar.vertical: QQC2.ScrollBar {}
+                QQC2.ScrollBar.vertical: MeoScrollBar {}
             }
 
             PopupEmptyState {
@@ -601,7 +593,7 @@ Item {
                 actionText: root.showSettingsAction ? qsTr("Notification settings") : ""
                 onActionRequested: root.settingsRequested()
                 Behavior on opacity {
-                    NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                    NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
                 }
             }
         }

@@ -318,10 +318,10 @@ QQC2.ScrollView {
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
             Behavior on opacity {
-                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
             }
             Behavior on implicitHeight {
-                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
             }
             ColumnLayout {
                 id: audioAdvanced
@@ -414,13 +414,13 @@ QQC2.ScrollView {
                     }
 
                     Behavior on x {
-                        NumberAnimation { duration: root.editMode ? MeoMotion.stateChange : 0; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: root.editMode ? MeoTheme.motionDurationDisclosureEnter : 0; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
                     }
                     Behavior on y {
-                        NumberAnimation { duration: root.editMode ? MeoMotion.stateChange : 0; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: root.editMode ? MeoTheme.motionDurationDisclosureEnter : 0; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
                     }
                     Behavior on implicitHeight {
-                        NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                        NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
                     }
                 }
             }
@@ -437,10 +437,10 @@ QQC2.ScrollView {
             color: MeoTheme.surfaceContainerHigh
             elevation: 0
             Behavior on opacity {
-                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
             }
             Behavior on implicitHeight {
-                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
             }
 
             RowLayout {

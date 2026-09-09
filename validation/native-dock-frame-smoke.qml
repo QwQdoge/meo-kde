@@ -5,6 +5,8 @@ import org.kde.ksvg as KSvg
 Window {
     id: root
 
+    SystemPalette { id: palette }
+
     function argumentValue(prefix) {
         for (const argument of Qt.application.arguments) {
             if (argument.indexOf(prefix) === 0)
@@ -23,13 +25,13 @@ Window {
     width: preview ? 720 : 1
     height: preview ? 144 : 1
     visible: true
-    color: preview ? "#26439b" : "transparent"
+    color: preview ? palette.highlight : "transparent"
 
     Rectangle {
         z: -2
         anchors.fill: parent
         visible: root.preview
-        color: "#26439b"
+        color: palette.highlight
     }
 
     function assertPrefix(frame, expected) {

@@ -10,3 +10,4 @@ PopupSectionLabel 1.0 PopupSectionLabel.qml
 NotificationCenterView 1.0 NotificationCenterView.qml
 StatusCenterView 1.0 StatusCenterView.qml
 NotificationCompactButton 1.0 NotificationCompactButton.qml
+SessionMenu 1.0 SessionMenu.qml

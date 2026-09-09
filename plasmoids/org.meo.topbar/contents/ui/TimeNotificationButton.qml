@@ -30,7 +30,7 @@ QQC2.AbstractButton {
         id: statusSurface
         type: "pill"
         radius: height / 2
-        color: root.hovered || root.down ? MeoTheme.surfaceContainerHighest : Qt.rgba(0, 0, 0, 0)
+        color: root.hovered || root.down ? MeoTheme.surfaceContainerHighest : "transparent"
 
         MeoStateLayer {
             anchors.fill: parent

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import MeoUI 1.0
 import QtQuick.Layouts
 import org.kde.kcmutils as KCM
 import org.kde.kirigami as Kirigami
@@ -23,7 +24,7 @@ KCM.SimpleKCM {
     property alias cfg_showJobs: showJobs.checked
 
     Kirigami.FormLayout {
-        SpinBox {
+        MeoSpinBox {
             id: textScale
             from: 75
             to: 150
@@ -33,41 +34,41 @@ KCM.SimpleKCM {
             textFromValue: function(value) { return i18n("%1%", value) }
         }
 
-        CheckBox {
+        MeoCheckbox {
             id: showNetwork
             text: i18n("Show network")
         }
-        ComboBox {
+        MeoExposedDropdown {
             id: density
             Kirigami.FormData.label: i18n("Density:")
             textRole: "text"; valueRole: "value"
             model: [{ text: i18n("Compact"), value: "compact" }, { text: i18n("Comfortable"), value: "comfortable" }]
         }
-        ComboBox {
+        MeoExposedDropdown {
             id: surfaceStyle
             Kirigami.FormData.label: i18n("Surface:")
             textRole: "text"; valueRole: "value"
             model: [{ text: i18n("Follow theme"), value: "theme" }, { text: i18n("Flat"), value: "flat" }, { text: i18n("Tonal"), value: "tonal" }, { text: i18n("Translucent"), value: "translucent" }]
         }
-        SpinBox { id: surfaceOpacity; from: 70; to: 100; stepSize: 5; Kirigami.FormData.label: i18n("Surface opacity:"); textFromValue: function(value) { return i18n("%1%", value) } }
-        ComboBox {
+        MeoSpinBox { id: surfaceOpacity; from: 70; to: 100; stepSize: 5; Kirigami.FormData.label: i18n("Surface opacity:"); textFromValue: function(value) { return i18n("%1%", value) } }
+        MeoExposedDropdown {
             id: motionProfile
             Kirigami.FormData.label: i18n("Motion:")
             textRole: "text"; valueRole: "value"
             model: [{ text: i18n("Calm"), value: "calm" }, { text: i18n("Pixel"), value: "pixel" }, { text: i18n("Playful"), value: "playful" }]
         }
-        CheckBox { id: showUnreadBadge; text: i18n("Show unread badge") }
-        CheckBox { id: showJobs; text: i18n("Show background tasks") }
-        CheckBox {
+        MeoCheckbox { id: showUnreadBadge; text: i18n("Show unread badge") }
+        MeoCheckbox { id: showJobs; text: i18n("Show background tasks") }
+        MeoCheckbox {
             id: showBluetooth
             text: i18n("Show Bluetooth")
         }
-        CheckBox {
+        MeoCheckbox {
             id: showVolume
             text: i18n("Show volume")
         }
 
-        ComboBox {
+        MeoExposedDropdown {
             id: batteryDisplay
             Layout.fillWidth: true
             Kirigami.FormData.label: i18n("Battery:")
@@ -79,15 +80,15 @@ KCM.SimpleKCM {
             ]
         }
 
-        CheckBox {
+        MeoCheckbox {
             id: showDate
             text: i18n("Show date")
         }
-        CheckBox {
+        MeoCheckbox {
             id: showNotifications
             text: i18n("Show notifications")
         }
-        CheckBox {
+        MeoCheckbox {
             id: use24HourClock
             text: i18n("Use 24-hour clock")
         }

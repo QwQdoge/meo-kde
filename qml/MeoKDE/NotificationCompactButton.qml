@@ -17,7 +17,7 @@ QQC2.AbstractButton {
     onClicked: statusCenterRequested()
     background: MeoShape {
         type: "pill"; radius: height / 2
-        color: root.active ? MeoTheme.primaryContainer : (root.hovered || root.down ? MeoTheme.surfaceContainerHighest : Qt.rgba(0, 0, 0, 0))
+        color: root.active ? MeoTheme.primaryContainer : (root.hovered || root.down ? MeoTheme.surfaceContainerHighest : "transparent")
         MeoStateLayer { anchors.fill: parent; radius: parent.radius; hovered: root.hovered; pressed: root.down; focused: root.activeFocus }
     }
     contentItem: Item {

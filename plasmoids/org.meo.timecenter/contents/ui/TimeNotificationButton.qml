@@ -61,14 +61,14 @@ QQC2.AbstractButton {
                ? MeoTheme.primaryContainer
                : (root.hovered || root.down
                   ? MeoTheme.surfaceContainerHighest
-                  : Qt.rgba(0, 0, 0, 0))
-        strokeColor: Qt.rgba(0, 0, 0, 0)
+                  : "transparent")
+        strokeColor: "transparent"
         strokeWidth: 0
 
         Behavior on color {
             ColorAnimation {
                 duration: MeoTheme.motionDurationEffectDefault
-                easing.bezierCurve: MeoTheme.motionEasingStandard
+                easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard
             }
         }
 

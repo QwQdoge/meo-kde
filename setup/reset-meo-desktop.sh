@@ -125,6 +125,9 @@ run rm -rf "${data_root}/plasma/desktoptheme/MeoDark"
 run rm -rf "${data_root}/plasma/plasmoids/org.meo.shelf"
 run rm -rf "${data_root}/plasma/plasmoids/org.meo.topbar"
 run rm -rf "${data_root}/plasma/plasmoids/org.meo.timecenter"
+run rm -rf "${data_root}/plasma/plasmoids/org.meo.time"
+run rm -rf "${data_root}/plasma/plasmoids/org.meo.notifications"
+run rm -rf "${data_root}/plasma/plasmoids/org.meo.time-notifications"
 run rm -rf "${data_root}/plasma/plasmoids/org.meo.toptasks"
 run rm -rf "${data_root}/plasma/plasmoids/org.meo.launcher"
 run rm -rf "${data_root}/plasma/plasmoids/org.meo.quicksettings"
@@ -180,7 +183,7 @@ if [ -f "${backup_root}/runtime-backup-v1" ]; then
 fi
 
 if [ ! -f "${backup_root}/runtime-backup-v1" ]; then
-  for meo_panel_applet in org.meo.topbar org.meo.timecenter; do
+  for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
     if [ -d "${backup_root}/plasmoids/${meo_panel_applet}" ]; then
       run mkdir -p "${data_root}/plasma/plasmoids"
       run cp -a "${backup_root}/plasmoids/${meo_panel_applet}" \

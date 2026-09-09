@@ -107,6 +107,7 @@ MeoStatusCenter {
             anchors.fill: parent
             notifications: root.notifications
             currentDateTime: root.currentDateTime
+            showTitle: false
             showJobs: root.showJobs
             onSettingsRequested: Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")
         }

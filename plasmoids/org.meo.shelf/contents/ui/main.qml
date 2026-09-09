@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls as QQC2
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.taskmanager as TaskManager
@@ -44,8 +43,8 @@ PlasmoidItem {
         opacity: edgeMouseArea.containsMouse ? 0.7 : 0.35
         visible: root.currentShelfState !== root.stateVisible
 
-        Behavior on width { NumberAnimation { duration: MeoMotion.hover; easing.type: Easing.OutCubic } }
-        Behavior on opacity { NumberAnimation { duration: MeoMotion.hover; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: MeoMotion.hover; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate } }
+        Behavior on opacity { NumberAnimation { duration: MeoMotion.hover; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate } }
     }
 
     // Touch/Hover Edge Area at bottom of screen
@@ -88,14 +87,14 @@ PlasmoidItem {
             Behavior on y {
                 NumberAnimation {
                     duration: root.currentShelfState === root.stateRevealed ? MeoMotion.shelfReveal : MeoMotion.shelfHide
-                    easing.type: Easing.OutCubic
+                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
                 }
             }
         }
 
         opacity: (root.currentShelfState === root.stateDodgeHidden || root.currentShelfState === root.stateFullscreenHidden) ? 0 : 1
         Behavior on opacity {
-            NumberAnimation { duration: MeoMotion.shelfReveal }
+            NumberAnimation { duration: MeoMotion.shelfReveal; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
         }
 
         MouseArea {
@@ -174,7 +173,7 @@ PlasmoidItem {
                         if (winCount > 1 && isActive) {
                             // Multiple windows & currently active -> open window selector popup
                             windowSelectorMenu.targetIndex = index
-                            windowSelectorMenu.popup()
+                            windowSelectorMenu.open()
                         } else if (isActive) {
                             tasksModel.requestToggleMinimized(modelIndex)
                         } else {
@@ -184,7 +183,7 @@ PlasmoidItem {
 
                     onRightClicked: (mouse) => {
                         taskContextMenu.targetIndex = index
-                        taskContextMenu.popup()
+                        taskContextMenu.open()
                     }
                 }
             }
@@ -200,76 +199,56 @@ PlasmoidItem {
     }
 
     // Window Selector Menu for Multi-window grouped tasks
-    QQC2.Menu {
+    MeoMenu {
         id: windowSelectorMenu
         property int targetIndex: -1
-
-        background: Rectangle {
-            color: MeoTheme.surfaceContainerHighest
-            radius: ShellMetrics.radiusLarge
-            border.color: MeoTheme.outlineVariant
-            border.width: ShellMetrics.panelOutlineWidth
-        }
-
-        Instantiator {
-            model: windowSelectorMenu.targetIndex >= 0 ? tasksModel.data(tasksModel.index(windowSelectorMenu.targetIndex, 0), TaskManager.TasksModel.ChildList) || [] : []
-            onObjectAdded: (idx, obj) => windowSelectorMenu.insertItem(idx, obj)
-            onObjectRemoved: (idx, obj) => windowSelectorMenu.removeItem(obj)
-
-            delegate: QQC2.MenuItem {
-                required property var modelData
-                text: modelData.display || "Window"
-                onTriggered: {
-                    var idx = tasksModel.index(windowSelectorMenu.targetIndex, 0)
-                    tasksModel.requestActivate(idx)
-                }
+        model: {
+            root.taskRevision
+            if (targetIndex < 0)
+                return []
+            const taskIndex = tasksModel.index(targetIndex, 0)
+            const children = tasksModel.data(taskIndex, TaskManager.TasksModel.ChildList) || []
+            const entries = []
+            for (let index = 0; index < children.length; ++index) {
+                const child = children[index]
+                entries.push({
+                    "label": child.display || qsTr("Window"),
+                    "icon": "web_asset",
+                    "action": function() { tasksModel.requestActivate(taskIndex) }
+                })
             }
+            return entries
         }
     }
 
     // Context Menu for Tasks (M3 Style without Plasma internal jargon)
-    QQC2.Menu {
+    MeoMenu {
         id: taskContextMenu
         property int targetIndex: -1
-
-        background: Rectangle {
-            color: MeoTheme.surfaceContainer
-            radius: ShellMetrics.radiusLarge
-            border.color: MeoTheme.outlineVariant
-            border.width: ShellMetrics.panelOutlineWidth
-        }
-
-        QQC2.MenuItem {
-            text: "Open New Window"
-            onTriggered: {
-                if (taskContextMenu.targetIndex >= 0) {
-                    var idx = tasksModel.index(taskContextMenu.targetIndex, 0)
-                    tasksModel.requestNewInstance(idx)
+        model: {
+            root.taskRevision
+            if (targetIndex < 0)
+                return []
+            const taskIndex = tasksModel.index(targetIndex, 0)
+            const pinned = tasksModel.data(taskIndex, TaskManager.TasksModel.IsPinned) || false
+            return [
+                {
+                    "label": qsTr("Open new window"),
+                    "icon": "add_box",
+                    "action": function() { tasksModel.requestNewInstance(taskIndex) }
+                },
+                {
+                    "label": pinned ? qsTr("Unpin from Shelf") : qsTr("Pin to Shelf"),
+                    "icon": pinned ? "keep_off" : "keep",
+                    "action": function() { tasksModel.requestToggleIsPinned(taskIndex) }
+                },
+                { "type": "separator" },
+                {
+                    "label": qsTr("Close window"),
+                    "icon": "close",
+                    "action": function() { tasksModel.requestClose(taskIndex) }
                 }
-            }
-        }
-
-        QQC2.MenuItem {
-            property bool isPinned: taskContextMenu.targetIndex >= 0 ? (tasksModel.data(tasksModel.index(taskContextMenu.targetIndex, 0), TaskManager.TasksModel.IsPinned) || false) : false
-            text: isPinned ? "Unpin from Shelf" : "Pin to Shelf"
-            onTriggered: {
-                if (taskContextMenu.targetIndex >= 0) {
-                    var idx = tasksModel.index(taskContextMenu.targetIndex, 0)
-                    tasksModel.requestToggleIsPinned(idx)
-                }
-            }
-        }
-
-        QQC2.MenuSeparator {}
-
-        QQC2.MenuItem {
-            text: "Close Window"
-            onTriggered: {
-                if (taskContextMenu.targetIndex >= 0) {
-                    var idx = tasksModel.index(taskContextMenu.targetIndex, 0)
-                    tasksModel.requestClose(idx)
-                }
-            }
+            ]
         }
     }
 

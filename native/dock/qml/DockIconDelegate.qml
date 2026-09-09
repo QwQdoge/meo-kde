@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls as QQC2
 import QtQuick.Effects
 import org.kde.kirigami as Kirigami
 import org.kde.taskmanager as TaskManager
@@ -109,7 +108,7 @@ Item {
 
         Behavior on color {
             enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
-            ColorAnimation { duration: MeoMotion.stateChange }
+            ColorAnimation { duration: MeoMotion.stateChange; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
         }
 
         Kirigami.Icon {
@@ -157,7 +156,7 @@ Item {
 
             Behavior on width {
                 enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
-                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
             }
         }
 
@@ -182,9 +181,11 @@ Item {
         }
     }
 
-    QQC2.ToolTip.visible: hover.hovered && !contextMenu.visible
-    QQC2.ToolTip.text: root.title
-    QQC2.ToolTip.delay: 450
+    MeoTooltip {
+        visible: hover.hovered && !contextMenu.visible
+        text: root.title
+        delay: MeoTheme.motionDurationLong1
+    }
 
     HoverHandler { id: hover }
 
@@ -212,31 +213,35 @@ Item {
 
     TapHandler {
         acceptedButtons: Qt.RightButton
-        onTapped: contextMenu.popup()
+        onTapped: contextMenu.open()
     }
 
-    QQC2.Menu {
+    MeoMenu {
         id: contextMenu
-
-        QQC2.MenuItem {
-            text: qsTr("Open new window")
-            enabled: root.canLaunchNew
-            onTriggered: root.tasksModel.requestNewInstance(root.taskIndex)
-        }
-        QQC2.MenuItem {
-            text: root.hasLauncher || root.isLauncher ? qsTr("Unpin from Dock") : qsTr("Pin to Dock")
-            onTriggered: {
-                if (root.hasLauncher || root.isLauncher)
-                    root.tasksModel.requestRemoveLauncher(root.launcherUrl)
-                else
-                    root.tasksModel.requestAddLauncher(root.launcherUrl)
+        model: [
+            {
+                "label": qsTr("Open new window"),
+                "icon": "add_box",
+                "enabled": root.canLaunchNew,
+                "action": function() { root.tasksModel.requestNewInstance(root.taskIndex) }
+            },
+            {
+                "label": root.hasLauncher || root.isLauncher ? qsTr("Unpin from Dock") : qsTr("Pin to Dock"),
+                "icon": root.hasLauncher || root.isLauncher ? "keep_off" : "keep",
+                "action": function() {
+                    if (root.hasLauncher || root.isLauncher)
+                        root.tasksModel.requestRemoveLauncher(root.launcherUrl)
+                    else
+                        root.tasksModel.requestAddLauncher(root.launcherUrl)
+                }
+            },
+            { "type": "separator" },
+            {
+                "label": qsTr("Close"),
+                "icon": "close",
+                "enabled": root.canClose,
+                "action": function() { root.tasksModel.requestClose(root.taskIndex) }
             }
-        }
-        QQC2.MenuSeparator {}
-        QQC2.MenuItem {
-            text: qsTr("Close")
-            enabled: root.canClose
-            onTriggered: root.tasksModel.requestClose(root.taskIndex)
-        }
+        ]
     }
 }

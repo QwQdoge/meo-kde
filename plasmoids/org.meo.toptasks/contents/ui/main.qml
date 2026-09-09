@@ -142,9 +142,11 @@ PlasmoidItem {
                         }
                     }
 
-                    QQC2.ToolTip.visible: hovered && taskTitle !== ""
-                    QQC2.ToolTip.text: taskTitle
-                    QQC2.ToolTip.delay: 450
+                    MeoTooltip {
+                        visible: taskButton.hovered && taskButton.taskTitle !== ""
+                        text: taskButton.taskTitle
+                        delay: MeoTheme.motionDurationLong1
+                    }
                 }
             }
         }

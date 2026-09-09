@@ -271,7 +271,7 @@ if (${show_system_tray}) {
 var topbar = oneWidget(top, "org.meo.topbar");
 configureTopbar(topbar);
 topOrder.push(topbar.id);
-var timeCenter = oneWidget(top, "org.meo.timecenter");
+var timeCenter = oneWidget(top, "org.meo.time-notifications");
 configureTimeCenter(timeCenter);
 topOrder.push(timeCenter.id);
 removeWidgets(top, "org.meo.toptasks");

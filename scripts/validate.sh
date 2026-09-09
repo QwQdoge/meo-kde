@@ -4,12 +4,16 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 meoui_import="${MEOUI_IMPORT_ROOT:-/home/shekong/Projects/meo-ui/out/build/release}"
 meoui_source="${MEOUI_SOURCE_DIR:-/home/shekong/Projects/meo-ui}"
-system_import="${repo_root}/out/build/system/qml"
 validation_run_id="${MEO_KDE_VALIDATION_RUN_ID:-$(date -u +%Y-%m-%dT%H%M%SZ)-validate}"
 output_root="${MEO_OUTPUT_ROOT:-/home/shekong/Projects/outputs}"
 evidence_root="${MEO_KDE_EVIDENCE_ROOT:-${output_root}/meo-kde/validation/${validation_run_id}}"
+build_root="${MEO_KDE_BUILD_ROOT:-${output_root}/meo-kde/build/${validation_run_id}}"
+system_build="${build_root}/system"
+application_style_build="${build_root}/application-style"
+system_import="${system_build}/qml"
 log_root="${evidence_root}/logs"
-mkdir -p "${log_root}"
+screenshot_root="${evidence_root}/screenshots"
+mkdir -p "${log_root}" "${screenshot_root}"
 log_file="${log_root}/validate.log"
 : > "${log_file}"
 printf 'Validation evidence: %s\n' "${evidence_root}" | tee -a "${log_file}"
@@ -39,24 +43,51 @@ run python -m unittest discover -s "${repo_root}/tests/system" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/shell" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/widgets" -p 'test_*.py'
 run python -m unittest discover -s "${repo_root}/tests/authentication" -p 'test_*.py'
-run cmake -S "${repo_root}/native/system" -B "${repo_root}/out/build/system" -DCMAKE_BUILD_TYPE=RelWithDebInfo
-run cmake --build "${repo_root}/out/build/system" --parallel
+run python "${meoui_source}/tools/verify-design-system-usage.py" --mode consumer \
+  "${repo_root}/qml" "${repo_root}/plasmoids" \
+  "${repo_root}/native/dock/qml" "${repo_root}/native/authentication/qml" \
+  "${repo_root}/themes/look-and-feel"
+run cmake -S "${repo_root}/native/system" -B "${system_build}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
+run cmake --build "${system_build}" --parallel
 run test -s "${system_import}/Meo/System/plugins.qmltypes"
-run "${repo_root}/out/build/system/meo-system-state-smoke"
-run cmake -S "${repo_root}/native" -B "${repo_root}/out/build/application-style" \
+run "${system_build}/meo-system-state-smoke"
+run cmake -S "${repo_root}/native" -B "${application_style_build}" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}" \
   -DMEOUI_IMPORT_ROOT_PATH="${meoui_import}" -DMEO_BUILD_STANDALONE_DOCK=OFF
-run cmake --build "${repo_root}/out/build/application-style" --parallel
-run ctest --test-dir "${repo_root}/out/build/application-style" --output-on-failure
-run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
-  -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/theme-runtime-smoke.qml"
-run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
-  -I "${system_import}" -I /usr/lib/qt6/qml -f "${repo_root}/validation/meoui-shell-components-smoke.qml"
-run env QT_QPA_PLATFORM=offscreen qml6 -I "${meoui_import}" -I "${repo_root}/qml" \
-  -I /usr/lib/qt6/qml -f "${repo_root}/validation/authentication-dialog-smoke.qml"
+run cmake --build "${application_style_build}" --parallel
+run ctest --test-dir "${application_style_build}" --output-on-failure
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/theme-runtime-smoke.qml"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/meoui-shell-components-smoke.qml"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/notification-center-smoke.qml" \
+  "--snapshot=${screenshot_root}/notification-center.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/status-center-smoke.qml" \
+  "--snapshot=${screenshot_root}/status-center.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/quick-settings-smoke.qml" \
+  "--snapshot=${screenshot_root}/quick-settings.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/quick-settings-page-smoke.qml" \
+  "--snapshot=${screenshot_root}/quick-settings-page.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/quick-settings-customization-smoke.qml" \
+  "--snapshot=${screenshot_root}/quick-settings-customization.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  "${repo_root}/validation/authentication-dialog-smoke.qml"
 for desktop_theme in MeoLight MeoDark; do
-  run env QT_QPA_PLATFORM=offscreen qml6 -I /usr/lib/qt6/qml -f \
-    "${repo_root}/validation/native-dock-frame-smoke.qml" -- \
+  run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+    qmlscene6 "${repo_root}/validation/native-dock-frame-smoke.qml" \
     "--theme-root=${repo_root}/themes/desktoptheme/${desktop_theme}"
 done
 
@@ -72,7 +103,7 @@ qt6_qmllint="${QT6_QMLLINT:-/usr/lib/qt6/bin/qmllint}"
 
 while IFS= read -r qml_file; do
   run "${qt6_qmllint}" -i "${system_import}/Meo/System/qmldir" \
-    -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" -I /usr/lib/qt6/qml "${qml_file}"
+    -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" "${qml_file}"
 done < <(find "${repo_root}/plasmoids" "${repo_root}/qml" \
   "${repo_root}/native/authentication/qml" \
   -name '*.qml' -type f | sort)

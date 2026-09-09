@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import org.kde.taskmanager as TaskManager
 import MeoUI 1.0
@@ -222,7 +221,7 @@ Window {
                     Behavior on color {
                         ColorAnimation {
                             duration: MeoTheme.motionDurationEffectDefault
-                            easing.bezierCurve: MeoTheme.motionEasingStandard
+                            easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard
                         }
                     }
 
@@ -242,8 +241,11 @@ Window {
                     id: launcherTap
                     onTapped: DockConfig.activateLauncherMenu()
                 }
-                QQC2.ToolTip.visible: launcherHover.hovered
-                QQC2.ToolTip.text: qsTr("Applications")
+                MeoTooltip {
+                    visible: launcherHover.hovered
+                    text: qsTr("Applications")
+                    delay: MeoTheme.motionDurationLong1
+                }
             }
 
             Rectangle {
