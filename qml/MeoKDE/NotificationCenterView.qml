@@ -13,6 +13,20 @@ Item {
     property bool showTitle: true
     property bool showSettingsAction: true
     property bool showJobs: true
+    // Presentation choices are normalized once at the shared notification
+    // surface.  They change only the view; NotificationManager remains the
+    // data and action authority for every variant.
+    property string notificationView: "cards"
+    property string notificationPreview: "full"
+    property bool showHistory: true
+    property string density: "comfortable"
+    readonly property bool compactView: notificationView === "compact"
+    readonly property bool compactDensity: density === "compact"
+    readonly property string normalizedPreview: notificationPreview === "summary"
+                                               || notificationPreview === "hidden"
+                                             ? notificationPreview : "full"
+    readonly property real cardPadding: (compactView || compactDensity)
+                                      ? MeoTheme.space8 : MeoTheme.space12
 
     readonly property int notificationCount: notifications && typeof notifications.count === "number"
                                              ? notifications.count : 0
@@ -114,120 +128,16 @@ Item {
         anchors.fill: parent
         spacing: MeoTheme.space8
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 40 * MeoTheme.globalScale
-            spacing: MeoTheme.space8
-
-            ColumnLayout {
-                visible: root.showTitle
-                Layout.fillWidth: true
-                spacing: 0
-
-                MeoText {
-                    text: root.unreadCount > 0
-                          ? qsTr("Notifications · %1 unread").arg(root.unreadCount)
-                          : qsTr("Notifications")
-                    typeRole: "title"
-                    typeSize: "medium"
-                    emphasized: true
-                    color: MeoTheme.onSurface
-                }
-
-                MeoText {
-                    visible: root.activeJobsCount > 0
-                    text: root.activeJobsCount === 1
-                          ? qsTr("1 background task")
-                          : qsTr("%1 background tasks").arg(root.activeJobsCount)
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.onSurfaceVariant
-                }
-
-                MeoText {
-                    visible: root.activeJobsCount === 0
-                             && (root.liveNotificationCount > 0 || root.historyNotificationCount > 0)
-                    text: root.liveNotificationCount > 0 && root.historyNotificationCount > 0
-                          ? qsTr("%1 live · %2 in history").arg(root.liveNotificationCount)
-                                .arg(root.historyNotificationCount)
-                          : (root.liveNotificationCount > 0
-                             ? qsTr("%1 live notification").arg(root.liveNotificationCount)
-                             : qsTr("%1 in history").arg(root.historyNotificationCount))
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.onSurfaceVariant
-                }
-            }
-
-            Item { visible: !root.showTitle; Layout.fillWidth: true }
-
-            MeoIconButton {
-                type: NotificationManager.Server.inhibited ? "filled" : "tonal"
-                size: "s"
-                icon.name: NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications"
-                enabled: NotificationManager.Server.valid
-                Accessible.name: NotificationManager.Server.inhibited
-                                 ? qsTr("Turn off Do Not Disturb")
-                                 : qsTr("Turn on Do Not Disturb")
-                Accessible.checked: NotificationManager.Server.inhibited
-                onClicked: NotificationManager.Server.inhibited = !NotificationManager.Server.inhibited
-            }
-
-            MeoButton {
-                visible: root.notificationCount > 0
-                type: "text"
-                size: "s"
-                text: qsTr("Clear all")
-                onClicked: root.clearClosableNotifications()
-            }
-
-            MeoIconButton {
-                visible: root.showSettingsAction
-                type: "standard"
-                size: "s"
-                icon.name: "settings"
-                Accessible.name: qsTr("Notification settings")
-                onClicked: root.settingsRequested()
-            }
-        }
-
-        MeoMotionSurface {
-            visible: NotificationManager.Server.inhibited
-            Layout.fillWidth: true
-            Layout.preferredHeight: dndMessage.implicitHeight + 2 * MeoTheme.space8
-            color: MeoTheme.secondaryContainer
-            radius: ShellMetrics.radiusControl
-            elevation: 0
-
-            RowLayout {
-                id: dndMessage
-                anchors.fill: parent
-                anchors.margins: MeoTheme.space8
-                spacing: MeoTheme.space8
-
-                Item {
-                    Layout.preferredWidth: 22 * MeoTheme.globalScale
-                    Layout.preferredHeight: Layout.preferredWidth
-                    // Keep DND quiet at rest. The notification server remains
-                    // the only source of truth; state is conveyed by the icon
-                    // and tonal container, not a perpetual animation.
-                    Text {
-                        id: dndMood
-                        anchors.centerIn: parent
-                        text: "🌙"
-                        font.pixelSize: 18 * MeoTheme.globalScale
-                        Accessible.ignored: true
-                    }
-                }
-                MeoText {
-                    Layout.fillWidth: true
-                    text: qsTr("Do Not Disturb is on. New notifications are collected quietly.")
-                    typeRole: "label"
-                    typeSize: "small"
-                    wrapMode: Text.Wrap
-                    color: MeoTheme.onSecondaryContainer
-                }
-            }
+        NotificationCenterHeader {
+            showTitle: root.showTitle
+            showSettingsAction: root.showSettingsAction
+            notificationCount: root.notificationCount
+            unreadCount: root.unreadCount
+            activeJobsCount: root.activeJobsCount
+            liveNotificationCount: root.liveNotificationCount
+            historyNotificationCount: root.historyNotificationCount
+            onClearRequested: root.clearClosableNotifications()
+            onSettingsRequested: root.settingsRequested()
         }
 
         Item {
@@ -241,7 +151,8 @@ Item {
                 enabled: count > 0
                 opacity: count > 0 ? 1 : 0
                 clip: true
-                spacing: MeoTheme.space8
+                spacing: root.compactView || root.compactDensity
+                         ? MeoTheme.space4 : MeoTheme.space8
                 boundsBehavior: Flickable.StopAtBounds
                 reuseItems: true
                 cacheBuffer: Math.max(height, 320 * MeoTheme.globalScale)
@@ -299,12 +210,15 @@ Item {
                     readonly property bool critical: urgency === NotificationManager.Notifications.CriticalUrgency
                     readonly property bool historical: expired
                     readonly property var effectiveTime: updated || created
+                    readonly property bool compact: root.compactView
+                    readonly property bool showPreview: root.normalizedPreview !== "hidden"
+                    readonly property int previewLines: root.normalizedPreview === "full"
+                                                            ? (compact ? 2 : 4)
+                                                            : 2
                     property bool replyExpanded: false
-                    property bool bodyExpanded: false
 
                     ListView.onReused: {
                         replyExpanded = false
-                        bodyExpanded = false
                         replyField.clear()
                     }
 
@@ -318,15 +232,27 @@ Item {
                     }
 
                     width: notificationList.width
-                    implicitHeight: cardContent.implicitHeight + 2 * MeoTheme.space12
+                    visible: root.showHistory || !historical
+                    implicitHeight: cardContent.implicitHeight + 2 * root.cardPadding
                     color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
                     // Notification cards share the popup's expressive corner
                     // token, so they morph with the same MeoUI shape scale as
                     // the surrounding status surface.
                     radius: ShellMetrics.radiusPopup
                     elevation: 0
+                    // The disclosure controls the card's real height.  This
+                    // mirrors DMS's retained-content collapse rather than
+                    // deleting long text before the contraction completes.
+                    clip: bodyDisclosure.animating
                     Behavior on implicitHeight {
-                        NumberAnimation { duration: MeoTheme.motionDurationDisclosureEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                        enabled: bodyDisclosure.userInitiatedExpansion && !MeoTheme.reduceMotion
+                        NumberAnimation {
+                            duration: bodyDisclosure.expanded
+                                      ? MeoTheme.motionDurationDisclosureEnter
+                                      : MeoTheme.motionDurationDisclosureExit
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: bodyDisclosure.expanded ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
+                        }
                     }
                     activeFocusOnTab: hasDefaultAction
                     Accessible.role: Accessible.ListItem
@@ -358,8 +284,8 @@ Item {
                     ColumnLayout {
                         id: cardContent
                         anchors.fill: parent
-                        anchors.margins: MeoTheme.space12
-                        spacing: MeoTheme.space8
+                        anchors.margins: root.cardPadding
+                        spacing: root.compact ? MeoTheme.space4 : MeoTheme.space8
 
                         RowLayout {
                             Layout.fillWidth: true
@@ -437,35 +363,21 @@ Item {
                                                  : notificationCard.applicationName)
                             textFormat: Text.PlainText
                             typeRole: "body"
-                            typeSize: "large"
+                            typeSize: notificationCard.compact ? "medium" : "large"
                             emphasized: true
                             wrapMode: Text.Wrap
                             color: notificationCard.critical ? MeoTheme.onErrorContainer : MeoTheme.onSurface
                         }
 
-                        MeoText {
-                            visible: text !== ""
+                        NotificationBodyDisclosure {
+                            id: bodyDisclosure
                             Layout.fillWidth: true
-                            text: root.displayBody(notificationCard.body, notificationCard.type,
-                                                   notificationCard.percentage)
-                            typeRole: "body"
-                            typeSize: "medium"
-                            wrapMode: Text.Wrap
-                            textFormat: Text.PlainText
-                            maximumLineCount: notificationCard.bodyExpanded ? 1000 : 4
-                            elide: Text.ElideRight
-                            color: notificationCard.critical ? MeoTheme.onErrorContainer
-                                                             : MeoTheme.onSurfaceVariant
-                        }
-
-                        MeoButton {
-                            visible: root.displayBody(notificationCard.body, notificationCard.type,
-                                                      notificationCard.percentage).length > 180
-                            type: "text"
-                            size: "xs"
-                            text: notificationCard.bodyExpanded ? qsTr("Show less") : qsTr("Show more")
-                            Accessible.name: text
-                            onClicked: notificationCard.bodyExpanded = !notificationCard.bodyExpanded
+                            visible: notificationCard.showPreview && bodyText !== ""
+                            bodyText: root.displayBody(notificationCard.body, notificationCard.type,
+                                                       notificationCard.percentage)
+                            collapsedLines: notificationCard.previewLines
+                            compact: notificationCard.compact
+                            critical: notificationCard.critical
                         }
 
                         RowLayout {

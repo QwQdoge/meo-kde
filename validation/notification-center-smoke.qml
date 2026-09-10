@@ -10,6 +10,8 @@ Window {
     height: 720
     visible: true
     color: MeoTheme.background
+    readonly property bool compactNotificationView: Qt.application.arguments.indexOf("--compact") !== -1
+    readonly property bool summaryPreview: Qt.application.arguments.indexOf("--summary") !== -1
 
     property string snapshotPath: {
         for (const argument of Qt.application.arguments) {
@@ -113,6 +115,8 @@ Window {
             anchors.margins: 16
             notifications: previewNotifications
             currentDateTime: new Date(2026, 7, 21, 14, 30)
+            notificationView: window.compactNotificationView ? "compact" : "cards"
+            notificationPreview: window.summaryPreview ? "summary" : "full"
         }
     }
 

@@ -68,6 +68,10 @@ run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYL
   "--snapshot=${screenshot_root}/notification-center.png"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
   qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/notification-disclosure-smoke.qml" \
+  "--expand" "--snapshot=${screenshot_root}/notification-disclosure-expanded.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
   "${repo_root}/validation/status-center-smoke.qml" \
   "--snapshot=${screenshot_root}/status-center.png"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \

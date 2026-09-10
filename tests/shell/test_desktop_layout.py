@@ -148,9 +148,12 @@ class DesktopLayoutTests(unittest.TestCase):
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
         notification_center = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
+        notification_header = (REPO_ROOT / "qml/MeoKDE/NotificationCenterHeader.qml").read_text(encoding="utf-8")
+        notification_disclosure = (REPO_ROOT / "qml/MeoKDE/NotificationBodyDisclosure.qml").read_text(encoding="utf-8")
         time_main = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/main.qml").read_text(encoding="utf-8")
         quick_main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
         quick_settings = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
+        quick_footer = (TOPBAR / "QuickSettingsFooter.qml").read_text(encoding="utf-8")
         quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
         audio_page = (TOPBAR / "AudioPage.qml").read_text(encoding="utf-8")
 
@@ -176,9 +179,10 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('SystemState.', quick_settings)
         self.assertIn('Platform.', quick_settings)
         self.assertIn('Media.', quick_settings)
-        self.assertIn('Platform.lockScreen()', quick_settings)
+        self.assertIn('root.platform.lockScreen()', quick_footer)
+        self.assertIn('QuickSettingsMediaCard', quick_settings)
         self.assertIn('NotificationManager.Server.inhibited', quick_settings)
-        self.assertIn('NotificationManager.Server.inhibited', notification_center)
+        self.assertIn('NotificationManager.Server.inhibited', notification_header)
         self.assertIn('clearClosableNotifications()', notification_center)
         self.assertIn('invokeAction', notification_center)
         self.assertIn('root.notifications.reply', notification_center)
@@ -191,6 +195,11 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('displaced: Transition', notification_center)
         self.assertIn('ListView.onReused', notification_center)
         self.assertIn('Behavior on implicitHeight', notification_center)
+        self.assertIn('NotificationBodyDisclosure', notification_center)
+        self.assertIn('DankMaterialShell', notification_disclosure)
+        self.assertIn('_retainedExpandedContent', notification_disclosure)
+        self.assertIn('_clipAnimatedContent', notification_disclosure)
+        self.assertIn('motionDurationDisclosureExit', notification_disclosure)
         self.assertIn('pushExit: Transition', quick_center)
         self.assertIn('popEnter: Transition', quick_center)
         self.assertIn('prepareToClose()', quick_center)
@@ -208,6 +217,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
     def test_quick_settings_grid_is_editable_resizable_and_persistent(self):
         home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
+        footer = (TOPBAR / "QuickSettingsFooter.qml").read_text(encoding="utf-8")
         center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
         main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
         config = (REPO_ROOT / "plasmoids/org.meo.topbar/contents/config/main.xml").read_text(encoding="utf-8")
@@ -234,8 +244,8 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("Plasmoid.configuration.quickTileOrder", main)
         self.assertIn("Plasmoid.configuration.quickTileVisibility", main)
         self.assertIn("Plasmoid.configuration.quickTileDensity", main)
-        self.assertIn('applications:org.meo.settings.desktop', home)
-        self.assertNotIn('systemsettings:', home)
+        self.assertIn('applications:org.meo.settings.desktop', footer)
+        self.assertNotIn('systemsettings:', footer)
         self.assertIn("root.availableWidth < 320 * MeoTheme.globalScale ? 2 : 4", home)
 
     def test_control_center_settings_contract_keeps_the_meo_applet_authoritative(self):
@@ -600,6 +610,42 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("BatteryDisplay=2", profile)
         self.assertIn('name="textScalePercent"', schema)
         self.assertIn('name="batteryDisplay"', schema)
+
+    def test_notification_presentation_schema_reaches_each_runtime_consumer(self):
+        applets = (
+            "org.meo.notifications",
+            "org.meo.time-notifications",
+            "org.meo.timecenter",
+        )
+        keys = ("showNotificationHistory", "notificationView", "notificationPreview")
+        for applet in applets:
+            applet_root = REPO_ROOT / "plasmoids" / applet / "contents"
+            schema = (applet_root / "config/main.xml").read_text(encoding="utf-8")
+            appearance = (applet_root / "ui/config/Appearance.qml").read_text(encoding="utf-8")
+            runtime = (applet_root / "ui/main.qml").read_text(encoding="utf-8")
+            for key in keys:
+                self.assertIn(f'name="{key}"', schema)
+                self.assertIn(f"cfg_{key}", appearance)
+                self.assertIn(f"Plasmoid.configuration.{key}", runtime)
+
+        shared_view = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
+        self.assertIn('notificationView === "compact"', shared_view)
+        self.assertIn('normalizedPreview', shared_view)
+        self.assertIn('visible: root.showHistory || !historical', shared_view)
+
+    def test_notification_disclosure_keeps_dms_style_content_lifecycle_local(self):
+        disclosure = (REPO_ROOT / "qml/MeoKDE/NotificationBodyDisclosure.qml").read_text(encoding="utf-8")
+        smoke = (REPO_ROOT / "validation/notification-disclosure-smoke.qml").read_text(encoding="utf-8")
+
+        # The service-facing DMS code is deliberately not copied: Plasma owns
+        # the model and this local component only implements the card lifecycle.
+        self.assertIn('Qt Quick Controls / MeoUI reimplementation', disclosure)
+        self.assertIn('_retainedExpandedContent = !expanded', disclosure)
+        self.assertIn('_clipAnimatedContent = true', disclosure)
+        self.assertIn('motionDurationDisclosureEnter', disclosure)
+        self.assertIn('motionDurationDisclosureExit', disclosure)
+        self.assertIn('notification-disclosure-smoke', (REPO_ROOT / "scripts/validate.sh").read_text(encoding="utf-8"))
+        self.assertIn('disclosure.toggleExpanded()', smoke)
 
 
 if __name__ == "__main__":

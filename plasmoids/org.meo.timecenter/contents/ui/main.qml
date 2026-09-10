@@ -52,7 +52,7 @@ PlasmoidItem {
         limit: 50
         showNotifications: true
         showJobs: Plasmoid.configuration.showJobs
-        showExpired: true
+        showExpired: Plasmoid.configuration.showNotificationHistory
         showDismissed: false
         sortMode: NotificationManager.Notifications.SortByDate
         sortOrder: Qt.DescendingOrder
@@ -87,6 +87,10 @@ PlasmoidItem {
                        ? Plasmoid.configuration.use24HourClock
                        : Plasmoid.configuration.clockFormat === "24h"
         showJobs: Plasmoid.configuration.showJobs
+        showHistory: Plasmoid.configuration.showNotificationHistory
+        notificationView: Plasmoid.configuration.notificationView
+        notificationPreview: Plasmoid.configuration.notificationPreview
+        density: Plasmoid.configuration.density
         showDate: Plasmoid.configuration.showDate
         showSeconds: Plasmoid.configuration.showSeconds
         showWeekNumbers: Plasmoid.configuration.showWeekNumbers

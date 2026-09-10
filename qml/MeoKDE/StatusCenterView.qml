@@ -15,6 +15,10 @@ MeoStatusCenter {
     property bool showSeconds: false
     property bool showDate: true
     property bool showJobs: true
+    property bool showHistory: true
+    property string notificationView: "cards"
+    property string notificationPreview: "full"
+    property string density: "comfortable"
     property bool showWeekNumbers: false
     property bool showSecondaryCalendar: true
     property string defaultPage: "notifications"
@@ -109,6 +113,10 @@ MeoStatusCenter {
             currentDateTime: root.currentDateTime
             showTitle: false
             showJobs: root.showJobs
+            showHistory: root.showHistory
+            notificationView: root.notificationView
+            notificationPreview: root.notificationPreview
+            density: root.density
             onSettingsRequested: Qt.openUrlExternally("applications:org.meo.settings.notifications.desktop")
         }
     }

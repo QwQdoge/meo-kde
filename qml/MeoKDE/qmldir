@@ -8,6 +8,8 @@ PopupInlineMessage 1.0 PopupInlineMessage.qml
 PopupEmptyState 1.0 PopupEmptyState.qml
 PopupSectionLabel 1.0 PopupSectionLabel.qml
 NotificationCenterView 1.0 NotificationCenterView.qml
+NotificationCenterHeader 1.0 NotificationCenterHeader.qml
+NotificationBodyDisclosure 1.0 NotificationBodyDisclosure.qml
 StatusCenterView 1.0 StatusCenterView.qml
 NotificationCompactButton 1.0 NotificationCompactButton.qml
 SessionMenu 1.0 SessionMenu.qml

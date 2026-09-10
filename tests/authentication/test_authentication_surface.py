@@ -118,7 +118,7 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("slice(0, 4096)", qml)
         self.assertIn("slice(0, 256)", qml)
         self.assertIn("textFormat: Text.PlainText", qml)
-        self.assertIn("bodyExpanded", qml)
+        self.assertIn("NotificationBodyDisclosure", qml)
         self.assertIn('qsTr("Critical")', qml)
         self.assertIn('qsTr("Earlier")', qml)
         self.assertIn("invokeDefaultAction(sourceIndex)", qml)
@@ -126,6 +126,15 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("MeoButton", qml)
         self.assertIn("MeoIconButton", qml)
         self.assertNotIn("QQC2.Button", qml)
+
+        disclosure = (REPO_ROOT / "qml/MeoKDE/NotificationBodyDisclosure.qml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("property bool expanded", disclosure)
+        self.assertIn("textFormat: Text.PlainText", disclosure)
+        self.assertIn("MeoTheme.motionDurationDisclosureEnter", disclosure)
+        self.assertIn("MeoTheme.motionDurationDisclosureExit", disclosure)
+        self.assertNotIn("Text.RichText", disclosure)
 
         inline = (REPO_ROOT / "qml/MeoKDE/PopupInlineMessage.qml").read_text(encoding="utf-8")
         self.assertIn("textFormat: Text.PlainText", inline)

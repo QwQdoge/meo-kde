@@ -233,36 +233,9 @@ QQC2.ScrollView {
         width: root.availableWidth
         spacing: MeoTheme.space12
 
-        RowLayout {
-            Layout.fillWidth: true
-            ColumnLayout {
-                spacing: 0
-                MeoText { id: timeText; typeRole: "title"; typeSize: "large"; emphasized: true; color: MeoTheme.onSurface }
-                MeoText { id: dateText; typeRole: "body"; typeSize: "medium"; color: MeoTheme.onSurfaceVariant }
-            }
-            Item { Layout.fillWidth: true }
-            MeoText {
-                visible: root.editMode
-                text: qsTr("Drag to reorder · use arrows to resize")
-                typeRole: "label"
-                typeSize: "small"
-                color: MeoTheme.primary
-            }
-            RowLayout {
-                visible: SystemState.batteryAvailable && !root.editMode
-                spacing: MeoTheme.space4
-                MeoIcon { icon: SystemState.batteryCharging ? "battery_charging_full" : "battery_full"; size: 20; color: MeoTheme.onSurfaceVariant }
-                MeoText { text: SystemState.batteryPercent + "%"; typeRole: "label"; typeSize: "medium"; emphasized: true; color: MeoTheme.onSurface }
-            }
-        }
-
-        Timer {
-            interval: 1000; running: true; repeat: true; triggeredOnStart: true
-            onTriggered: {
-                const now = new Date()
-                timeText.text = Qt.formatDateTime(now, "hh:mm")
-                dateText.text = Qt.formatDateTime(now, "dddd, MMMM d")
-            }
+        QuickSettingsHeader {
+            editMode: root.editMode
+            systemState: SystemState
         }
 
         Repeater {
@@ -426,76 +399,7 @@ QQC2.ScrollView {
             }
         }
 
-        MeoMotionSurface {
-            visible: implicitHeight > 0 || opacity > 0
-            enabled: Media.available
-            Layout.fillWidth: true
-            clip: true
-            opacity: Media.available ? 1 : 0
-            implicitHeight: Media.available ? 72 * MeoTheme.globalScale : 0
-            radius: ShellMetrics.radiusLarge
-            color: MeoTheme.surfaceContainerHigh
-            elevation: 0
-            Behavior on opacity {
-                NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
-            }
-            Behavior on implicitHeight {
-                NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
-            }
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: MeoTheme.space12
-                anchors.rightMargin: MeoTheme.space8
-                spacing: MeoTheme.space8
-
-                MeoIcon {
-                    icon: Media.iconName !== "" ? Media.iconName : "music_note"
-                    size: 24
-                    color: MeoTheme.primary
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
-                    MeoText {
-                        Layout.fillWidth: true
-                        text: Media.title !== "" ? Media.title : Media.playerName
-                        typeRole: "label"
-                        typeSize: "medium"
-                        emphasized: true
-                        color: MeoTheme.onSurface
-                        elide: Text.ElideRight
-                    }
-                    MeoText {
-                        Layout.fillWidth: true
-                        text: Media.artist !== "" ? Media.artist : Media.playerName
-                        typeRole: "body"
-                        typeSize: "small"
-                        color: MeoTheme.onSurfaceVariant
-                        elide: Text.ElideRight
-                    }
-                }
-
-                MeoIconButton {
-                    visible: Media.canGoPrevious
-                    type: "standard"; size: "s"; icon.name: "skip_previous"
-                    Accessible.name: qsTr("Previous track")
-                    onClicked: Media.previous()
-                }
-                MeoIconButton {
-                    type: "tonal"; size: "m"; icon.name: Media.playing ? "pause" : "play_arrow"
-                    Accessible.name: Media.playing ? qsTr("Pause") : qsTr("Play")
-                    onClicked: Media.playPause()
-                }
-                MeoIconButton {
-                    visible: Media.canGoNext
-                    type: "standard"; size: "s"; icon.name: "skip_next"
-                    Accessible.name: qsTr("Next track")
-                    onClicked: Media.next()
-                }
-            }
-        }
+        QuickSettingsMediaCard { media: Media }
 
         PopupInlineMessage {
             Layout.fillWidth: true
@@ -504,35 +408,19 @@ QQC2.ScrollView {
             onDismissed: { SystemState.clearOperationError(); Platform.clearError(); Media.clearError() }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Item { Layout.fillWidth: true }
-            MeoIconButton {
-                visible: root.editMode
-                type: "standard"; size: "m"; icon.name: "restart_alt"
-                Accessible.name: qsTr("Reset tile layout")
-                onClicked: {
-                    root.tileOrder = "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
-                    root.tileSizes = "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
-                    root.tileVisibility = root.defaultTileVisibility
-                    root.tileDensity = "comfortable"
-                    root.rebuildTiles(); root.scheduleSaveTiles()
-                }
+        QuickSettingsFooter {
+            editMode: root.editMode
+            platform: Platform
+            onResetRequested: {
+                root.tileOrder = "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
+                root.tileSizes = "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
+                root.tileVisibility = root.defaultTileVisibility
+                root.tileDensity = "comfortable"
+                root.rebuildTiles()
+                root.scheduleSaveTiles()
             }
-            MeoIconButton { type: "standard"; size: "m"; icon.name: "lock"; Accessible.name: qsTr("Lock screen"); onClicked: Platform.lockScreen() }
-            MeoIconButton {
-                type: "standard"; size: "m"; icon.name: "settings"
-                Accessible.name: qsTr("Meo Settings")
-                onClicked: {
-                    Qt.openUrlExternally("applications:org.meo.settings.desktop")
-                }
-            }
-            MeoIconButton { type: "standard"; size: "m"; icon.name: "power_settings_new"; Accessible.name: qsTr("Power"); onClicked: root.powerRequested() }
-            MeoIconButton {
-                type: "standard"; size: "m"; icon.name: "edit"
-                Accessible.name: qsTr("Edit quick settings")
-                onClicked: root.editRequested()
-            }
+            onPowerRequested: root.powerRequested()
+            onEditRequested: root.editRequested()
         }
     }
 }

@@ -16,6 +16,9 @@
     <entry name="motionProfile" type="String"><default>pixel</default></entry>
     <entry name="showUnreadBadge" type="Bool"><default>true</default></entry>
     <entry name="showJobs" type="Bool"><default>true</default></entry>
+    <entry name="showNotificationHistory" type="Bool"><default>true</default></entry>
+    <entry name="notificationView" type="String"><default>cards</default></entry>
+    <entry name="notificationPreview" type="String"><default>full</default></entry>
     <entry name="clockFormat" type="String"><default>system</default></entry>
     <entry name="showSeconds" type="Bool"><default>false</default></entry>
     <entry name="popupLayout" type="String"><default>standard</default></entry>

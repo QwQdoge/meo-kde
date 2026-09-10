@@ -15,6 +15,9 @@ KCM.SimpleKCM {
     property alias cfg_motionProfile: motionProfile.currentValue
     property alias cfg_showUnreadBadge: showUnreadBadge.checked
     property alias cfg_showJobs: showJobs.checked
+    property alias cfg_showNotificationHistory: notificationHistory.checked
+    property alias cfg_notificationView: notificationView.currentValue
+    property alias cfg_notificationPreview: notificationPreview.currentValue
     property alias cfg_clockFormat: clockFormat.currentValue
     property alias cfg_showSeconds: showSeconds.checked
     property alias cfg_popupLayout: popupLayout.currentValue
@@ -53,6 +56,19 @@ KCM.SimpleKCM {
         MeoCheckbox { id: showSeconds; text: i18n("Show seconds") }
         MeoCheckbox { id: showUnreadBadge; text: i18n("Show unread badge") }
         MeoCheckbox { id: showJobs; text: i18n("Show background tasks") }
+        MeoCheckbox { id: notificationHistory; text: i18n("Show notification history") }
+        MeoExposedDropdown {
+            id: notificationView
+            Kirigami.FormData.label: i18n("Notification view:")
+            textRole: "text"; valueRole: "value"
+            model: [{ text: i18n("Cards"), value: "cards" }, { text: i18n("Compact list"), value: "compact" }]
+        }
+        MeoExposedDropdown {
+            id: notificationPreview
+            Kirigami.FormData.label: i18n("Preview:")
+            textRole: "text"; valueRole: "value"
+            model: [{ text: i18n("Full"), value: "full" }, { text: i18n("Summary"), value: "summary" }, { text: i18n("Hidden"), value: "hidden" }]
+        }
         MeoExposedDropdown {
             id: popupLayout
             Kirigami.FormData.label: i18n("Popup layout:")
