@@ -16,9 +16,8 @@ QQC2.AbstractButton {
     Accessible.description: root.unreadCount > 0 ? qsTr("%1 unread notifications").arg(root.unreadCount) : qsTr("No unread notifications")
     onClicked: statusCenterRequested()
     background: MeoShape {
-        type: root.hovered && !root.down && !root.active ? "round" : "pill"
-        radius: root.hovered && !root.down && !root.active
-                ? MeoTheme.shapeSmall : height / 2
+        type: "round"
+        radius: MeoTheme.shapeSmall
         color: root.active ? MeoTheme.primaryContainer : (root.hovered || root.down ? MeoTheme.surfaceContainerHighest : "transparent")
         MeoStateLayer { anchors.fill: parent; radius: parent.radius; hovered: root.hovered; pressed: root.down; focused: root.activeFocus }
     }

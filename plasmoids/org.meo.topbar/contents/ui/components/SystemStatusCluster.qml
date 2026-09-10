@@ -103,9 +103,8 @@ QQC2.AbstractButton {
 
     background: MeoShape {
         id: statusBackground
-        type: root.hovered && !root.down && !root.active ? "round" : "pill"
-        radius: root.hovered && !root.down && !root.active
-                ? MeoTheme.shapeSmall : height / 2
+        type: "round"
+        radius: MeoTheme.shapeSmall
         color: root.active
                ? MeoTheme.primaryContainer
                : (root.hovered || root.down

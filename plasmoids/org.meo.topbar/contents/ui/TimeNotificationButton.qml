@@ -27,8 +27,8 @@ QQC2.AbstractButton {
 
     background: MeoShape {
         id: statusSurface
-        type: root.hovered && !root.down ? "round" : "pill"
-        radius: root.hovered && !root.down ? MeoTheme.shapeSmall : height / 2
+        type: "round"
+        radius: MeoTheme.shapeSmall
         color: root.hovered || root.down ? MeoTheme.surfaceContainerHighest : "transparent"
 
         MeoStateLayer {
