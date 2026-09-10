@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import MeoUI 1.0
-import MeoKDE 1.0
 
 QQC2.AbstractButton {
     id: root
@@ -17,7 +16,7 @@ QQC2.AbstractButton {
     signal statusCenterRequested()
 
     implicitWidth: contentItem.implicitWidth + leftPadding + rightPadding
-    implicitHeight: ShellMetrics.compactTopControlHeight
+    implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
     Accessible.name: qsTr("Time, calendar, and notifications")
@@ -28,8 +27,8 @@ QQC2.AbstractButton {
 
     background: MeoShape {
         id: statusSurface
-        type: "pill"
-        radius: height / 2
+        type: root.hovered && !root.down ? "round" : "pill"
+        radius: root.hovered && !root.down ? MeoTheme.shapeSmall : height / 2
         color: root.hovered || root.down ? MeoTheme.surfaceContainerHighest : "transparent"
 
         MeoStateLayer {
