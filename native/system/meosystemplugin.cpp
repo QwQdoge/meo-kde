@@ -1,8 +1,10 @@
 #include "systemstatehub.h"
 #include "dynamiccolorprovider.h"
 #include "mediacontroller.h"
+#include "weathercache.h"
 #include "platformcontroller.h"
 #include "sessionactionclient.h"
+#include "desktopwidgetbridge.h"
 
 #include <QQmlEngine>
 #include <QQmlExtensionPlugin>
@@ -41,11 +43,25 @@ QObject *mediaProvider(QQmlEngine *, QJSEngine *)
     return controller;
 }
 
+QObject *weatherProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *cache = new WeatherCache;
+    QQmlEngine::setObjectOwnership(cache, QQmlEngine::CppOwnership);
+    return cache;
+}
+
 QObject *sessionActionProvider(QQmlEngine *, QJSEngine *)
 {
     auto *client = new SessionActionClient;
     QQmlEngine::setObjectOwnership(client, QQmlEngine::CppOwnership);
     return client;
+}
+
+QObject *desktopWidgetProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *bridge = new DesktopWidgetBridge;
+    QQmlEngine::setObjectOwnership(bridge, QQmlEngine::CppOwnership);
+    return bridge;
 }
 
 class MeoSystemPlugin final : public QQmlExtensionPlugin
@@ -60,8 +76,10 @@ public:
         qmlRegisterSingletonType<SystemStateHub>(uri, 1, 0, "SystemState", systemStateProvider);
         qmlRegisterSingletonType<PlatformController>(uri, 1, 0, "Platform", platformProvider);
         qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
+        qmlRegisterSingletonType<WeatherCache>(uri, 1, 0, "Weather", weatherProvider);
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);
         qmlRegisterSingletonType<SessionActionClient>(uri, 1, 0, "SessionActions", sessionActionProvider);
+        qmlRegisterSingletonType<DesktopWidgetBridge>(uri, 1, 0, "DesktopWidgets", desktopWidgetProvider);
     }
 };
 }

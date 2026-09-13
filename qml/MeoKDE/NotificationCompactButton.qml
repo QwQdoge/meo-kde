@@ -15,11 +15,43 @@ QQC2.AbstractButton {
     Accessible.name: qsTr("Notifications")
     Accessible.description: root.unreadCount > 0 ? qsTr("%1 unread notifications").arg(root.unreadCount) : qsTr("No unread notifications")
     onClicked: statusCenterRequested()
+
+    PointHandler {
+        acceptedButtons: Qt.LeftButton
+        onActiveChanged: {
+            compactStateLayer._pointerPressActive = active
+            if (active) {
+                const localPoint = compactStateLayer.mapFromItem(root,
+                                                                  point.position.x,
+                                                                  point.position.y)
+                compactStateLayer.trigger(localPoint.x, localPoint.y)
+            } else {
+                compactStateLayer.releaseRipple()
+            }
+        }
+    }
+
+    Keys.onPressed: event => {
+        if (!event.isAutoRepeat
+                && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                    || event.key === Qt.Key_Space))
+            compactStateLayer.triggerFromKeyboard()
+    }
+
     background: MeoShape {
         type: "round"
         radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : (root.hovered || root.down ? MeoTheme.surfaceContainerHighest : "transparent")
-        MeoStateLayer { anchors.fill: parent; radius: parent.radius; hovered: root.hovered; pressed: root.down; focused: root.activeFocus }
+        color: root.active ? MeoTheme.primaryContainer : "transparent"
+        MeoStateLayer {
+            id: compactStateLayer
+            anchors.fill: parent
+            internalPointerTrackingEnabled: false
+            radius: parent.radius
+            hovered: root.hovered
+            pressed: root.down
+            focused: root.visualFocus
+            focusColor: MeoTheme.primary
+        }
     }
     contentItem: Item {
         MeoIcon { anchors.centerIn: parent; icon: root.inhibited ? "do_not_disturb_on" : (root.activeJobsCount > 0 ? "progress_activity" : "notifications"); size: 20; color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface }

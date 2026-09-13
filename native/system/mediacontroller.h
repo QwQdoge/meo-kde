@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QVariantMap>
 
 class MediaController final : public QObject
 {
@@ -12,7 +13,9 @@ class MediaController final : public QObject
     Q_PROPERTY(QString title READ title NOTIFY mediaChanged)
     Q_PROPERTY(QString artist READ artist NOTIFY mediaChanged)
     Q_PROPERTY(QString iconName READ iconName NOTIFY mediaChanged)
+    Q_PROPERTY(QString artUrl READ artUrl NOTIFY mediaChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY mediaChanged)
+    Q_PROPERTY(bool controllable READ controllable NOTIFY mediaChanged)
     Q_PROPERTY(bool canGoNext READ canGoNext NOTIFY mediaChanged)
     Q_PROPERTY(bool canGoPrevious READ canGoPrevious NOTIFY mediaChanged)
     Q_PROPERTY(QString lastError READ lastError NOTIFY errorChanged)
@@ -25,7 +28,9 @@ public:
     QString title() const;
     QString artist() const;
     QString iconName() const;
+    QString artUrl() const;
     bool playing() const;
+    bool controllable() const;
     bool canGoNext() const;
     bool canGoPrevious() const;
     QString lastError() const;
@@ -44,6 +49,11 @@ private Q_SLOTS:
 
 private:
     void callPlayerMethod(const QString &method);
+    void fetchPlayerProperties(const QString &service, quint64 generation);
+    void applyPlayerProperties(const QString &service,
+                               const QVariantMap &playerProperties,
+                               const QVariantMap &rootProperties);
+    void clearMedia();
     void setError(const QString &error);
 
     QString m_service;
@@ -51,8 +61,11 @@ private:
     QString m_title;
     QString m_artist;
     QString m_iconName;
+    QString m_artUrl;
     bool m_playing = false;
+    bool m_controllable = false;
     bool m_canGoNext = false;
     bool m_canGoPrevious = false;
     QString m_lastError;
+    quint64 m_refreshGeneration = 0;
 };

@@ -53,6 +53,9 @@ package() {
     "${workspace}/plasmoids/org.meo.notifications" \
     "${workspace}/plasmoids/org.meo.time-notifications" \
     "${workspace}/plasmoids/org.meo.timecenter" \
+    "${workspace}/plasmoids/org.meo.widgetexplorer" \
+    "${workspace}/plasmoids/org.meo.widget.clock" \
+    "${workspace}/plasmoids/org.meo.widget.media" \
     "${pkgdir}/usr/share/plasma/plasmoids/"
   install -d "${pkgdir}/usr/share/color-schemes"
   install -m644 "${workspace}"/themes/color-schemes/*.colors \

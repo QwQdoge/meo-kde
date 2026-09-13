@@ -4,14 +4,17 @@ project(MeoSystem VERSION 0.2.0 LANGUAGES CXX)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(CTest)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Network Qml)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Network Qml Test)
 find_package(KF6NetworkManagerQt REQUIRED)
 find_package(KF6BluezQt REQUIRED)
 find_package(KF6Solid REQUIRED)
 find_package(KF6PulseAudioQt REQUIRED)
 find_package(KF6GuiAddons REQUIRED)
+find_package(KF6Config REQUIRED)
 find_package(LibTaskManager REQUIRED)
+find_package(Plasma REQUIRED)
 
 # `scripts/validate.sh` configures this directory directly.  Bring in the
 # shared generator there as well as from the top-level native build so the QML
@@ -36,6 +39,10 @@ add_library(meosystemplugin MODULE
     sessionactionclient.h
     mediacontroller.cpp
     mediacontroller.h
+    weathercache.cpp
+    weathercache.h
+    desktopwidgetbridge.cpp
+    desktopwidgetbridge.h
 )
 set_target_properties(meosystemplugin PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/Meo/System"
@@ -52,6 +59,7 @@ target_link_libraries(meosystemplugin PRIVATE
     KF6::Solid
     KF6::PulseAudioQt
     KF6::GuiAddons
+    Plasma::Plasma
 )
 
 add_executable(meo-system-state-smoke
@@ -62,6 +70,10 @@ add_executable(meo-system-state-smoke
     platformcontroller.h
     mediacontroller.cpp
     mediacontroller.h
+    weathercache.cpp
+    weathercache.h
+    desktopwidgetbridge.cpp
+    desktopwidgetbridge.h
 )
 target_link_libraries(meo-system-state-smoke PRIVATE
     Qt6::Core
@@ -72,7 +84,28 @@ target_link_libraries(meo-system-state-smoke PRIVATE
     KF6::Solid
     KF6::PulseAudioQt
     KF6::GuiAddons
+    Plasma::Plasma
 )
+
+if(BUILD_TESTING)
+    add_executable(meo-weather-cache-test
+        tests/weathercache-test.cpp
+        weathercache.cpp
+        weathercache.h
+    )
+    target_include_directories(meo-weather-cache-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-weather-cache-test PRIVATE Qt6::Core Qt6::Test)
+    add_test(NAME meo-weather-cache COMMAND meo-weather-cache-test)
+
+    add_executable(meo-desktop-widget-bridge-test
+        tests/desktopwidgetbridge-test.cpp
+        desktopwidgetbridge.cpp
+        desktopwidgetbridge.h
+    )
+    target_include_directories(meo-desktop-widget-bridge-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-desktop-widget-bridge-test PRIVATE Qt6::Core Qt6::Test Plasma::Plasma)
+    add_test(NAME meo-desktop-widget-bridge COMMAND meo-desktop-widget-bridge-test)
+endif()
 
 add_executable(meo-task-role-smoke task-role-smoke.cpp)
 target_link_libraries(meo-task-role-smoke PRIVATE Qt6::Core Qt6::Gui PW::LibTaskManager)

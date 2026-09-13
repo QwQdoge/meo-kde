@@ -3,6 +3,9 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import MeoUI 1.0
 
+// One compact interaction target shared by every clock/notification applet.
+// The notification glyph is deliberately non-interactive: nesting a second
+// button inside the clock caused duplicate popup toggles and split feedback.
 QQC2.AbstractButton {
     id: root
 
@@ -13,21 +16,23 @@ QQC2.AbstractButton {
     property bool inhibited: false
     property real textScale: 1.0
     property bool showDate: true
+    property bool showSeconds: false
     property bool showNotifications: true
+    property bool showUnreadBadge: true
     property bool use24HourClock: true
     property bool active: false
-    readonly property bool hasNotificationState: root.unreadCount > 0
-                                                 || root.activeJobsCount > 0
-                                                 || root.inhibited
+    readonly property bool hasNotificationState: unreadCount > 0
+                                                 || activeJobsCount > 0
+                                                 || inhibited
+
     signal statusCenterRequested()
 
     implicitWidth: timeContent.implicitWidth + leftPadding + rightPadding
-    // The top panel is intentionally compact.  Keep time, date and the
-    // notification affordance on a single baseline in the compact 32 dp
-    // panel while retaining a small vertical breathing margin.
     implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space4
     rightPadding: MeoTheme.space4
+    hoverEnabled: true
+    activeFocusOnTab: true
     Accessible.name: qsTr("Time, calendar, and notifications")
     Accessible.description: inhibited
                             ? qsTr("Do Not Disturb is on")
@@ -39,48 +44,54 @@ QQC2.AbstractButton {
                                   : qsTr("No unread notifications")))
     onClicked: statusCenterRequested()
 
-    MeoSpringValue {
-        id: pressSpring
-        value: 1
-        targetValue: root.down ? 0.94 : 1
-        spring: MeoMotion.fastSpatial
+    PointHandler {
+        acceptedButtons: Qt.LeftButton
+        onActiveChanged: {
+            stateLayer._pointerPressActive = active
+            if (active) {
+                const localPoint = stateLayer.mapFromItem(root,
+                                                          point.position.x,
+                                                          point.position.y)
+                stateLayer.trigger(localPoint.x, localPoint.y)
+            } else {
+                stateLayer.releaseRipple()
+            }
+        }
     }
 
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: pressSpring.value
-        yScale: pressSpring.value
+    Keys.onPressed: event => {
+        if (!event.isAutoRepeat
+                && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                    || event.key === Qt.Key_Space))
+            stateLayer.triggerFromKeyboard()
     }
 
     background: MeoShape {
         id: statusSurface
         type: "round"
         radius: MeoTheme.shapeSmall
-        color: root.active
-               ? MeoTheme.primaryContainer
-               : (root.hovered || root.down
-                  ? MeoTheme.surfaceContainerHighest
-                  : "transparent")
+        color: root.active ? MeoTheme.primaryContainer : "transparent"
         strokeColor: "transparent"
         strokeWidth: 0
 
         Behavior on color {
             ColorAnimation {
-                duration: MeoTheme.motionDurationEffectDefault
-                easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard
+                duration: MeoTheme.motionDurationSelection
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: MeoTheme.motionEasingStandard
             }
         }
 
         MeoStateLayer {
+            id: stateLayer
             anchors.fill: parent
+            internalPointerTrackingEnabled: false
             radius: statusSurface.radius
-            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
             hovered: root.hovered
             pressed: root.down
-            focused: root.activeFocus
+            focused: root.visualFocus
+            focusColor: MeoTheme.primary
         }
-
     }
 
     contentItem: RowLayout {
@@ -92,7 +103,10 @@ QQC2.AbstractButton {
             Layout.alignment: Qt.AlignVCenter
 
             MeoText {
-                text: Qt.formatTime(root.currentDateTime, root.use24HourClock ? "hh:mm" : "h:mm AP")
+                text: Qt.formatTime(root.currentDateTime,
+                                    root.use24HourClock
+                                    ? (root.showSeconds ? "hh:mm:ss" : "hh:mm")
+                                    : (root.showSeconds ? "h:mm:ss AP" : "h:mm AP"))
                 typeRole: "label"
                 typeSize: "medium"
                 emphasized: true
@@ -111,8 +125,6 @@ QQC2.AbstractButton {
         }
 
         Item {
-            // The clock already opens the combined calendar/notification
-            // center. Keep the bell out of the idle bar unless it has state.
             visible: root.showNotifications && root.hasNotificationState
             Layout.leftMargin: MeoTheme.space2
             implicitWidth: 24 * MeoTheme.globalScale
@@ -131,7 +143,8 @@ QQC2.AbstractButton {
             }
 
             MeoBadge {
-                visible: root.unreadCount > 0 || root.activeJobsCount > 0
+                visible: root.showUnreadBadge
+                         && (root.unreadCount > 0 || root.activeJobsCount > 0)
                 text: root.unreadCount > 0 ? root.unreadCount : root.activeJobsCount
                 target: parent
             }

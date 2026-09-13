@@ -71,6 +71,10 @@ bottomPanel.addWidget("org.kde.plasma.icontasks")
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())
 for (var i = 0; i < existingDesktops.length; ++i) {
+    // A compact, desktop-only entry point to the Meo Widget Explorer.  It
+    // adds reviewed widgets to this containment but never configures panels,
+    // task managers, or the native Dock.
+    existingDesktops[i].addWidget("org.meo.widgetexplorer")
     existingDesktops[i].wallpaperPlugin = "org.kde.image"
     existingDesktops[i].currentConfigGroup = ["/Wallpaper/org.kde.image/General"]
     existingDesktops[i].writeConfig("Image", "file:///usr/share/wallpapers/MeoArch/installer_background.png")

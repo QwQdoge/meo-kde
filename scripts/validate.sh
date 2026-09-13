@@ -11,6 +11,7 @@ build_root="${MEO_KDE_BUILD_ROOT:-${output_root}/meo-kde/build/${validation_run_
 system_build="${build_root}/system"
 application_style_build="${build_root}/application-style"
 system_import="${system_build}/qml"
+lockscreen_import="${application_style_build}/qml"
 log_root="${evidence_root}/logs"
 screenshot_root="${evidence_root}/screenshots"
 mkdir -p "${log_root}" "${screenshot_root}"
@@ -57,6 +58,10 @@ run cmake -S "${repo_root}/native" -B "${application_style_build}" \
 run cmake --build "${application_style_build}" --parallel
 run ctest --test-dir "${application_style_build}" --output-on-failure
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" \
+  "${repo_root}/validation/lockscreen-widgets-preview.qml" \
+  "--snapshot=${screenshot_root}/lockscreen-widgets-preview.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
   qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
   "${repo_root}/validation/theme-runtime-smoke.qml"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
@@ -66,6 +71,15 @@ run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYL
   qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
   "${repo_root}/validation/notification-center-smoke.qml" \
   "--snapshot=${screenshot_root}/notification-center.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
+  "${repo_root}/validation/notification-center-smoke.qml" \
+  "--compact" "--summary" "--hide-history" "--hide-jobs" \
+  "--snapshot=${screenshot_root}/notification-center-filtered.png"
+run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  "${repo_root}/validation/time-notification-button-smoke.qml" \
+  "--snapshot=${screenshot_root}/time-notification-button.png"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
   qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
   "${repo_root}/validation/notification-disclosure-smoke.qml" \
@@ -107,10 +121,26 @@ qt6_qmllint="${QT6_QMLLINT:-/usr/lib/qt6/bin/qmllint}"
 
 while IFS= read -r qml_file; do
   run "${qt6_qmllint}" -i "${system_import}/Meo/System/qmldir" \
+    -i "${meoui_import}/MeoUI/qmldir" \
     -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" "${qml_file}"
 done < <(find "${repo_root}/plasmoids" "${repo_root}/qml" \
   "${repo_root}/native/authentication/qml" \
   -name '*.qml' -type f | sort)
+
+# KScreenLocker provides root/authenticator values as context properties. Qt's
+# static linter cannot model that runtime injection, so disable only those two
+# diagnostics for the look-and-feel entry point; all import/type diagnostics
+# remain fatal. The MeoUI qmldir makes the shared session-entry primitives part
+# of the linted public contract instead of an unchecked relative copy.
+while IFS= read -r qml_file; do
+  run "${qt6_qmllint}" --context-properties disable --unqualified disable \
+    -i "${meoui_import}/MeoUI/qmldir" -i "${system_import}/Meo/System/qmldir" \
+    -i "${lockscreen_import}/Meo/KScreenLocker/qmldir" \
+    -I "${meoui_import}" -I "${system_import}" -I "${lockscreen_import}" "${qml_file}"
+done < <(find "${repo_root}/themes/look-and-feel/org.meo.desktop/contents/lockscreen" \
+  -name '*.qml' -type f | sort)
+
+run xmllint --noout "${repo_root}/themes/look-and-feel/org.meo.desktop/contents/lockscreen/config.xml"
 
 while IFS= read -r svg_file; do
   run xmllint --noout "${svg_file}"

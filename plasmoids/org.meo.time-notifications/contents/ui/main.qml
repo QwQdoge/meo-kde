@@ -1,5 +1,6 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.notificationmanager as NotificationManager
 import org.kde.plasma.clock as PlasmaClock
@@ -10,22 +11,66 @@ import MeoKDE 1.0
 
 PlasmoidItem {
     id: root
+
     readonly property bool use24Hour: Plasmoid.configuration.clockFormat !== "12h"
+
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     Plasmoid.title: qsTr("Meo Time and Notifications")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: compactRepresentation
-    onExpandedChanged: if (root.expanded) notifications.lastRead = clock.dateTime
-    Layout.minimumWidth: compactRepresentationItem ? compactRepresentationItem.implicitWidth : 80 * MeoTheme.globalScale; Layout.preferredWidth: Layout.minimumWidth; Layout.maximumWidth: Layout.minimumWidth
-    Layout.minimumHeight: ShellMetrics.topBarHeight; Layout.preferredHeight: Layout.minimumHeight; Layout.maximumHeight: Layout.minimumHeight
-    PlasmaClock.Clock { id: clock; trackSeconds: Plasmoid.configuration.showSeconds }
-    NotificationManager.Notifications { id: notifications; limit: 50; showNotifications: true; showJobs: Plasmoid.configuration.showJobs; showExpired: Plasmoid.configuration.showNotificationHistory; showDismissed: false; sortMode: NotificationManager.Notifications.SortByDate; sortOrder: Qt.DescendingOrder; groupMode: NotificationManager.Notifications.GroupDisabled; window: root.Window.window }
-    compactRepresentation: QQC2.AbstractButton {
-        implicitWidth: row.implicitWidth + 8 * MeoTheme.globalScale; implicitHeight: 28 * MeoTheme.globalScale
-        Accessible.name: qsTr("Time and notifications")
-        onClicked: root.expanded = !root.expanded
-        background: MeoShape { type: "round"; radius: MeoTheme.shapeSmall; color: parent.down || parent.hovered || root.expanded ? MeoTheme.surfaceContainerHighest : "transparent" }
-        contentItem: RowLayout { id: row; spacing: MeoTheme.space4; MeoText { text: Qt.formatTime(clock.dateTime, root.use24Hour ? (Plasmoid.configuration.showSeconds ? "hh:mm:ss" : "hh:mm") : (Plasmoid.configuration.showSeconds ? "h:mm:ss AP" : "h:mm AP")); typeRole: "label"; typeSize: "medium"; emphasized: true } MeoText { visible: Plasmoid.configuration.showDate; text: Qt.formatDate(clock.dateTime, "MMM d"); typeRole: "label"; typeSize: "small" } NotificationCompactButton { active: root.expanded; unreadCount: notifications.unreadNotificationsCount; activeJobsCount: notifications.activeJobsCount; inhibited: NotificationManager.Server.inhibited; showUnreadBadge: Plasmoid.configuration.showUnreadBadge; onStatusCenterRequested: root.expanded = !root.expanded } }
+    onExpandedChanged: if (root.expanded)
+                           notifications.lastRead = clock.dateTime
+    Layout.minimumWidth: compactRepresentationItem
+                         ? compactRepresentationItem.implicitWidth
+                         : 80 * MeoTheme.globalScale
+    Layout.preferredWidth: Layout.minimumWidth
+    Layout.maximumWidth: Layout.minimumWidth
+    Layout.minimumHeight: ShellMetrics.topBarHeight
+    Layout.preferredHeight: Layout.minimumHeight
+    Layout.maximumHeight: Layout.minimumHeight
+
+    PlasmaClock.Clock {
+        id: clock
+        trackSeconds: Plasmoid.configuration.showSeconds
     }
-    fullRepresentation: StatusCenterView { notifications: notifications; currentDateTime: clock.dateTime; centerMode: "timeNotifications"; clockFormat: Plasmoid.configuration.clockFormat; showSeconds: Plasmoid.configuration.showSeconds; showDate: Plasmoid.configuration.showDate; showJobs: Plasmoid.configuration.showJobs; showHistory: Plasmoid.configuration.showNotificationHistory; notificationView: Plasmoid.configuration.notificationView; notificationPreview: Plasmoid.configuration.notificationPreview; density: Plasmoid.configuration.density }
+
+    NotificationManager.Notifications {
+        id: notifications
+        limit: 50
+        showNotifications: true
+        showJobs: Plasmoid.configuration.showJobs
+        showExpired: Plasmoid.configuration.showNotificationHistory
+        showDismissed: false
+        sortMode: NotificationManager.Notifications.SortByDate
+        sortOrder: Qt.DescendingOrder
+        groupMode: NotificationManager.Notifications.GroupDisabled
+        window: root.Window.window
+    }
+    compactRepresentation: TimeNotificationButton {
+        active: root.expanded
+        currentDateTime: clock.dateTime
+        unreadCount: notifications.unreadNotificationsCount
+        activeJobsCount: notifications.activeJobsCount
+        jobsPercentage: notifications.jobsPercentage
+        inhibited: NotificationManager.Server.inhibited
+        showDate: Plasmoid.configuration.showDate
+        showSeconds: Plasmoid.configuration.showSeconds
+        showNotifications: true
+        showUnreadBadge: Plasmoid.configuration.showUnreadBadge
+        use24HourClock: root.use24Hour
+        onStatusCenterRequested: root.expanded = !root.expanded
+    }
+    fullRepresentation: StatusCenterView {
+        notifications: notifications
+        currentDateTime: clock.dateTime
+        centerMode: "timeNotifications"
+        clockFormat: Plasmoid.configuration.clockFormat
+        showSeconds: Plasmoid.configuration.showSeconds
+        showDate: Plasmoid.configuration.showDate
+        showJobs: Plasmoid.configuration.showJobs
+        showHistory: Plasmoid.configuration.showNotificationHistory
+        notificationView: Plasmoid.configuration.notificationView
+        notificationPreview: Plasmoid.configuration.notificationPreview
+        density: Plasmoid.configuration.density
+    }
 }

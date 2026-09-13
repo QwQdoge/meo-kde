@@ -1,6 +1,7 @@
 #include "systemstatehub.h"
 #include "platformcontroller.h"
 #include "mediacontroller.h"
+#include "weathercache.h"
 
 #include <QCoreApplication>
 #include <QTextStream>
@@ -12,6 +13,7 @@ int main(int argc, char **argv)
     SystemStateHub state;
     PlatformController platform;
     MediaController media;
+    WeatherCache weather;
     QTimer::singleShot(1000, &application, [&] {
         QTextStream output(stdout);
         output << "MEO_SYSTEM_STATE"
@@ -37,6 +39,8 @@ int main(int argc, char **argv)
                << " activePowerProfile=" << platform.activePowerProfile()
                << " mediaAvailable=" << media.available()
                << " mediaPlayer=" << media.playerName()
+               << " weatherAvailable=" << weather.available()
+               << " weatherStale=" << weather.stale()
                << " secondaryCalendarState=" << state.secondaryCalendarState()
                << " secondaryCalendarSource=" << state.secondaryCalendarSource()
                << " secondaryCalendarText=" << state.secondaryCalendarText()

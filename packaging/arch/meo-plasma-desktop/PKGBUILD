@@ -1,0 +1,129 @@
+# Maintainer: MeoArch Contributors <packages@meo.local>
+#
+# Thin, version-pinned Plasma Desktop fork. This is a repository package only:
+# it replaces the upstream `plasma-desktop` atomically in a Meo compatibility
+# train and must never be installed as a loose local overlay.
+
+pkgname=meo-plasma-desktop
+_upstream_pkgname=plasma-desktop
+pkgver=6.7.5
+_dirver=${pkgver}
+pkgrel=1
+pkgdesc='KDE Plasma Desktop with the Meo desktop-widget presentation adapter'
+arch=(x86_64)
+url='https://kde.org/plasma-desktop/'
+license=(LGPL-2.0-or-later)
+depends=(attica
+         baloo
+         emoji-font
+         glibc
+         kbookmarks
+         kcmutils
+         kcodecs
+         kcompletion
+         kconfig
+         kconfigwidgets
+         kcoreaddons
+         kcrash
+         kdbusaddons
+         kdeclarative
+         kglobalaccel
+         kguiaddons
+         ki18n
+         kiconthemes
+         kio
+         kirigami
+         kirigami-addons
+         kitemmodels
+         kitemviews
+         kjobwidgets
+         kmenuedit
+         knewstuff
+         knotifications
+         knotifyconfig
+         kpackage
+         kpipewire
+         krunner
+         kservice
+         ksvg
+         kwidgetsaddons
+         kwindowsystem
+         kxmlgui
+         libcanberra
+         libksysguard
+         libstdc++
+         libwacom
+         libx11
+         libxcb
+         libxcursor
+         libxi
+         libxkbcommon
+         libxkbfile
+         libplasma
+         'meoui-qml>=1.0.3'
+         plasma-activities
+         plasma-activities-stats
+         plasma-workspace
+         plasma5support
+         polkit-kde-agent
+         powerdevil
+         qt6-5compat
+         qt6-base
+         qt6-declarative
+         sdl2
+         solid
+         sonnet
+         systemd-libs
+         systemsettings
+         wayland
+         xcb-util-keysyms
+         xdg-user-dirs)
+optdepends=('bluedevil: Bluetooth applet'
+            'glib2: kimpanel IBUS support'
+            'ibus: kimpanel IBUS support'
+            'kaccounts-integration: OpenDesktop integration plugin'
+            'kscreen: screen management'
+            'libaccounts-qt: OpenDesktop integration plugin'
+            'packagekit-qt6: to install new krunner plugins'
+            'plasma-nm: Network manager applet'
+            'plasma-pa: Audio volume applet'
+            'scim: kimpanel SCIM support')
+makedepends=(extra-cmake-modules
+             intltool
+             kaccounts-integration
+             kdoctools
+             libibus
+             packagekit-qt6
+             scim
+             wayland-protocols
+             xf86-input-libinput
+             xorg-server-devel)
+provides=("plasma-desktop=${pkgver}")
+conflicts=(plasma-desktop)
+replaces=(plasma-desktop)
+groups=(plasma)
+source=("https://download.kde.org/stable/plasma/${_dirver}/${_upstream_pkgname}-${pkgver}.tar.xz"{,.sig}
+        '0001-meo-widget-presentation.patch')
+sha256sums=('079fcf6b87d7bf65e3f2a4670d605fac9469344c279a285a98ad549332d7b53e'
+            'SKIP'
+            '201e83dd3fa64f424fe2c5fd8f15a12144f479a2a1ee95c54405651450fec93e')
+validpgpkeys=('E0A3EB202F8E57528E13E72FD7574483BB57B18D'
+              '0AAC775BB6437A8D9AF7A3ACFE0784117FBCE11D'
+              'D07BD8662C56CB291B316EB2F5675605C74E02CF'
+              '1FA881591C26B276D7A5518EEAAF29B42A678C20')
+
+prepare() {
+  cd "${_upstream_pkgname}-${pkgver}"
+  patch --forward --strip=1 --input="${srcdir}/0001-meo-widget-presentation.patch"
+}
+
+build() {
+  cmake -B build -S "${_upstream_pkgname}-${pkgver}" \
+    -DCMAKE_INSTALL_LIBEXECDIR=lib \
+    -DBUILD_TESTING=OFF
+  cmake --build build
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install build
+}

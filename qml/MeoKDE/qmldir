@@ -12,4 +12,5 @@ NotificationCenterHeader 1.0 NotificationCenterHeader.qml
 NotificationBodyDisclosure 1.0 NotificationBodyDisclosure.qml
 StatusCenterView 1.0 StatusCenterView.qml
 NotificationCompactButton 1.0 NotificationCompactButton.qml
+TimeNotificationButton 1.0 TimeNotificationButton.qml
 SessionMenu 1.0 SessionMenu.qml

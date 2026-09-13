@@ -1,0 +1,145 @@
+diff --git a/containments/desktop/package/contents/config/main.xml b/containments/desktop/package/contents/config/main.xml
+index 13b6c07..7ad550b 100644
+--- a/containments/desktop/package/contents/config/main.xml
++++ b/containments/desktop/package/contents/config/main.xml
+@@ -6,6 +6,10 @@
+   <kcfgfile name=""/>
+ 
+   <group name="General">
++    <entry name="meoWidgetFrameMode" type="Int">
++      <label>Presentation policy for desktop widgets: 0 = Native, 1 = Meo Framed, 2 = Adaptive.</label>
++      <default>2</default>
++    </entry>
+     <entry name="icon" type="String">
+       <label>The name of the custom icon to use for the compact representation (e.g. on a small panel) of the Folder View applet. Only used if useCustomIcon is true.</label>
+       <default>folder-symbolic</default>
+diff --git a/containments/desktop/package/contents/ui/MeoAppletContainer.qml b/containments/desktop/package/contents/ui/MeoAppletContainer.qml
+new file mode 100644
+index 0000000..a1a23bc
+--- /dev/null
++++ b/containments/desktop/package/contents/ui/MeoAppletContainer.qml
+@@ -0,0 +1,111 @@
++/*
++    SPDX-FileCopyrightText: 2026 MeoArch Contributors
++
++    SPDX-License-Identifier: LGPL-2.0-or-later
++*/
++pragma ComponentBehavior: Bound
++
++import QtQuick
++
++import org.kde.plasma.plasmoid
++import org.kde.plasma.core as PlasmaCore
++import org.kde.plasma.private.containmentlayoutmanager as ContainmentLayoutManager
++
++import MeoUI 1.0
++
++// A containment-level presentation layer. Applet creation, geometry,
++// configuration, drag/resize, and the applet's own QML remain owned by
++// Plasma's BasicAppletContainer and AppletsLayout.
++//
++// The outer surface is intentionally opt-in at the containment level. It
++// never changes a third-party applet's background hints or rewrites its QML.
++// Adaptive mode keeps widgets requesting Plasma's standard/translucent
++// container surface native, avoiding a second background behind legacy apps.
++ContainmentLayoutManager.BasicAppletContainer {
++    id: container
++
++    readonly property int nativeMode: 0
++    readonly property int meoFramedMode: 1
++    readonly property int adaptiveMode: 2
++    readonly property int presentationMode: Number(Plasmoid.configuration.meoWidgetFrameMode ?? adaptiveMode)
++    // AppletContainer exposes an AppletQuickItem. Its generated public type
++    // metadata does not describe the nested `plasmoid` object. Keep the
++    // narrow suppression adjacent to this Plasma runtime binding rather than
++    // disabling the diagnostic for the package.
++    // qmllint disable missing-property
++    readonly property int appletBackgroundHints:
++        applet && applet.plasmoid ? (applet.plasmoid["effectiveBackgroundHints"] ?? 0) : 0
++    // qmllint enable missing-property
++    readonly property bool appletRequestsPlasmaSurface:
++        (appletBackgroundHints & PlasmaCore.Types.StandardBackground)
++        || (appletBackgroundHints & PlasmaCore.Types.TranslucentBackground)
++    readonly property bool shouldShowMeoFrame:
++        presentationMode === meoFramedMode
++        || (presentationMode === adaptiveMode && !appletRequestsPlasmaSurface)
++    readonly property real frameInset: shouldShowMeoFrame ? MeoTheme.space8 : 0
++    readonly property real frameRadius: MeoTheme.cardRadius + frameInset
++
++    // This surface lives outside the native container bounds, so a framed
++    // applet keeps its original content and background policy. It is passive:
++    // hit testing, focus, keyboard navigation, configuration and edit handles
++    // still belong to BasicAppletContainer.
++    MeoShape {
++        id: outerSurface
++        anchors.fill: parent
++        anchors.margins: -container.frameInset
++        z: -2
++        visible: container.applet !== null && container.shouldShowMeoFrame
++        type: "rect"
++        radius: container.frameRadius
++        color: MeoTheme.surfaceContainerLow
++        strokeWidth: MeoTheme.strokeWidthThin
++        strokeColor: MeoTheme.outlineVariant
++
++        Behavior on color {
++            enabled: !MeoTheme.reduceMotion
++            ColorAnimation {
++                duration: MeoTheme.motionDurationState
++                easing.type: Easing.BezierSpline
++                easing.bezierCurve: MeoTheme.motionEasingStandard
++            }
++        }
++        Behavior on radius {
++            enabled: !MeoTheme.reduceMotion
++            NumberAnimation {
++                duration: MeoTheme.motionDurationShapeSettle
++                easing.type: Easing.BezierSpline
++                easing.bezierCurve: MeoTheme.motionEasingStandard
++            }
++        }
++    }
++
++    HoverHandler {
++        id: hoverHandler
++        enabled: container.shouldShowMeoFrame
++    }
++
++    // The interactive outline stays quiet at rest and is only a visual cue;
++    // it never consumes the applet's pointer or keyboard input.
++    MeoShape {
++        anchors.fill: parent
++        anchors.margins: -container.frameInset
++        z: 1000
++        visible: container.applet !== null && container.shouldShowMeoFrame
++        type: "rect"
++        radius: container.frameRadius
++        color: "transparent"
++        strokeWidth: hoverHandler.hovered || container.activeFocus || container.editMode
++                     ? MeoTheme.strokeWidthMedium : 0
++        strokeColor: MeoTheme.primary
++        opacity: hoverHandler.hovered || container.activeFocus || container.editMode ? 1 : 0
++
++        Behavior on opacity {
++            enabled: !MeoTheme.reduceMotion
++            NumberAnimation {
++                duration: MeoTheme.motionDurationState
++                easing.type: Easing.BezierSpline
++                easing.bezierCurve: MeoTheme.motionEasingStandard
++            }
++        }
++    }
++}
+diff --git a/containments/desktop/package/contents/ui/main.qml b/containments/desktop/package/contents/ui/main.qml
+index d2bcbd8..97061d6 100644
+--- a/containments/desktop/package/contents/ui/main.qml
++++ b/containments/desktop/package/contents/ui/main.qml
+@@ -315,7 +315,7 @@ ContainmentItem {
+ 
+             eventManagerToFilter: (folderViewLayer.item as FolderViewLayer)?.view.view ?? null
+ 
+-            appletContainerComponent: ContainmentLayoutManager.BasicAppletContainer {
++            appletContainerComponent: MeoAppletContainer {
+                 id: appletContainer
+ 
+                 editModeCondition: Plasmoid.immutable

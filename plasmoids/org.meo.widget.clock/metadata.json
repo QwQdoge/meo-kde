@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "org.meo.widget.clock",
+        "Name": "Meo Clock",
+        "Description": "Pixel-style time, date, and cached weather",
+        "Icon": "preferences-system-time",
+        "Category": "Date and Time",
+        "License": "GPL-2.0-or-later",
+        "Version": "0.1.0",
+        "Authors": [
+            { "Name": "Meo Desktop Team" }
+        ],
+        "FormFactors": [ "desktop" ]
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

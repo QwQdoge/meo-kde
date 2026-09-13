@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "org.meo.widget.media",
+        "Name": "Meo Media",
+        "Description": "Current-session MPRIS media controls",
+        "Icon": "media-playback-start",
+        "Category": "Multimedia",
+        "License": "GPL-2.0-or-later",
+        "Version": "0.1.0",
+        "Authors": [
+            { "Name": "Meo Desktop Team" }
+        ],
+        "FormFactors": [ "desktop" ]
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

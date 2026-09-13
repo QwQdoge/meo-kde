@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meoarch.org/schemas/session-entry/v1",
+  "title": "Meo session entry configuration",
+  "description": "Validated, presentation-only preferences for one Meo lock screen or login greeter surface.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scope",
+    "appearance",
+    "modules",
+    "privacy",
+    "layout",
+    "motion"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "scope": {
+      "enum": ["lockscreen", "login"]
+    },
+    "appearance": {
+      "$ref": "#/$defs/appearance"
+    },
+    "modules": {
+      "$ref": "#/$defs/modules"
+    },
+    "privacy": {
+      "$ref": "#/$defs/privacy"
+    },
+    "layout": {
+      "$ref": "#/$defs/layout"
+    },
+    "motion": {
+      "$ref": "#/$defs/motion"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {"const": "login"}
+        }
+      },
+      "then": {
+        "properties": {
+          "appearance": {
+            "properties": {
+              "wallpaper": {
+                "properties": {
+                  "source": {"enum": ["system-default", "managed-asset"]}
+                }
+              }
+            }
+          },
+          "modules": {
+            "properties": {
+              "media": {"const": false}
+            }
+          },
+          "privacy": {
+            "properties": {
+              "notificationVisibility": {"const": "hidden"},
+              "showAlbumArtwork": {"const": false},
+              "weatherLocation": {"enum": ["hidden", "city"]}
+            }
+          },
+          "layout": {
+            "properties": {
+              "displayOverrides": {
+                "items": {
+                  "properties": {
+                    "wallpaper": {
+                      "properties": {
+                        "source": {"enum": ["system-default", "managed-asset"]}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "wallpaper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "assetId", "fillMode"],
+      "properties": {
+        "source": {
+          "enum": ["system-default", "current-user", "managed-asset"]
+        },
+        "assetId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$"
+        },
+        "fillMode": {
+          "enum": ["cover", "contain", "stretch", "center"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {"const": "system-default"}
+            }
+          },
+          "then": {
+            "properties": {
+              "assetId": {"const": ""}
+            }
+          },
+          "else": {
+            "properties": {
+              "assetId": {"minLength": 1}
+            }
+          }
+        }
+      ]
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clockStyle", "showDate", "backgroundTreatment", "wallpaper"],
+      "properties": {
+        "clockStyle": {
+          "enum": ["large", "compact"]
+        },
+        "showDate": {
+          "type": "boolean"
+        },
+        "backgroundTreatment": {
+          "enum": ["dim", "blur", "solid"]
+        },
+        "wallpaper": {
+          "$ref": "#/$defs/wallpaper"
+        }
+      }
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["media", "weather"],
+      "properties": {
+        "media": {
+          "type": "boolean",
+          "default": false
+        },
+        "weather": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["notificationVisibility", "showAlbumArtwork", "weatherLocation"],
+      "properties": {
+        "notificationVisibility": {
+          "enum": ["hidden", "count", "app-name", "full-content"]
+        },
+        "showAlbumArtwork": {
+          "type": "boolean",
+          "default": false
+        },
+        "weatherLocation": {
+          "enum": ["hidden", "city", "precise"]
+        }
+      }
+    },
+    "displayOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outputKey", "wallpaper"],
+      "properties": {
+        "outputKey": {
+          "description": "Opaque stable KScreen output identity, never a raw EDID or coordinate.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "wallpaper": {
+          "$ref": "#/$defs/wallpaper"
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activeAuthenticationScreen", "displayOverrides"],
+      "properties": {
+        "activeAuthenticationScreen": {
+          "enum": ["auto", "fixed-primary", "follow-interaction"]
+        },
+        "displayOverrides": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/displayOverride"
+          }
+        }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reduceMotion"],
+      "properties": {
+        "reduceMotion": {
+          "enum": ["system", "always", "never"]
+        }
+      }
+    }
+  }
+}

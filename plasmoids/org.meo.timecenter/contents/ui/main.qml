@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import org.kde.notificationmanager as NotificationManager
@@ -5,7 +7,7 @@ import org.kde.plasma.clock as PlasmaClock
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import MeoUI 1.0
-import MeoKDE 1.0
+import MeoKDE 1.0 as MeoShell
 
 PlasmoidItem {
     id: root
@@ -15,7 +17,7 @@ PlasmoidItem {
     readonly property real compactWidth: Math.ceil(compactRepresentationItem
                                                     ? compactRepresentationItem.implicitWidth
                                                     : 96 * MeoTheme.globalScale)
-    readonly property real compactHeight: ShellMetrics.topBarHeight
+    readonly property real compactHeight: MeoShell.ShellMetrics.topBarHeight
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     Plasmoid.title: qsTr("Meo Time and Notifications")
@@ -36,7 +38,7 @@ PlasmoidItem {
     Layout.preferredHeight: compactHeight
     Layout.maximumHeight: compactHeight
 
-    Component.onCompleted: MeoShellTheme.sync()
+    Component.onCompleted: MeoShell.MeoShellTheme.sync()
     onExpandedChanged: function() {
         if (root.expanded)
             notificationModel.lastRead = clock.dateTime
@@ -63,7 +65,7 @@ PlasmoidItem {
         window: root.Window.window
     }
 
-    compactRepresentation: TimeNotificationButton {
+    compactRepresentation: MeoShell.TimeNotificationButton {
         active: root.expanded
         currentDateTime: clock.dateTime
         unreadCount: notificationModel.unreadNotificationsCount
@@ -72,8 +74,9 @@ PlasmoidItem {
         inhibited: NotificationManager.Server.inhibited
         textScale: root.localTextScale
         showDate: Plasmoid.configuration.showDate
+        showSeconds: Plasmoid.configuration.showSeconds
         showNotifications: Plasmoid.configuration.showNotifications
-                           && Plasmoid.configuration.showUnreadBadge
+        showUnreadBadge: Plasmoid.configuration.showUnreadBadge
         use24HourClock: Plasmoid.configuration.clockFormat === "system"
                        ? Plasmoid.configuration.use24HourClock
                        : Plasmoid.configuration.clockFormat === "24h"

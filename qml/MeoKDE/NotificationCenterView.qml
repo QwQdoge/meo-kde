@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
@@ -38,6 +40,30 @@ Item {
                                                  ? notifications.activeNotificationsCount : 0
     readonly property int historyNotificationCount: notifications && typeof notifications.expiredNotificationsCount === "number"
                                                     ? notifications.expiredNotificationsCount : 0
+    readonly property int visibleNotificationCount: {
+        root.notificationCount
+        root.showHistory
+        root.showJobs
+        let visibleCount = 0
+        for (let row = 0; row < root.notificationCount; ++row) {
+            if (root.isModelRowVisible(row))
+                ++visibleCount
+        }
+        return visibleCount
+    }
+    readonly property int closableCount: {
+        root.notificationCount
+        let count = 0
+        for (let row = 0; row < root.notificationCount; ++row) {
+            if (root.isModelRowVisible(row)
+                    && Boolean(root.modelRoleValue(row,
+                               NotificationManager.Notifications.ClosableRole,
+                               "closable", false)))
+                ++count
+        }
+        return count
+    }
+    property bool clearPending: false
 
     signal settingsRequested()
 
@@ -46,14 +72,53 @@ Item {
                 ? root.notifications.index(row, 0) : null
     }
 
+    function modelRoleValue(row, role, roleName, fallbackValue) {
+        if (!root.notifications || row < 0 || row >= root.notificationCount)
+            return fallbackValue
+        if (root.notifications.data && root.notifications.index) {
+            const value = root.notifications.data(root.notifications.index(row, 0), role)
+            if (value !== undefined && value !== null)
+                return value
+        }
+        if (root.notifications.get) {
+            const entry = root.notifications.get(row)
+            if (entry && entry[roleName] !== undefined && entry[roleName] !== null)
+                return entry[roleName]
+        }
+        return fallbackValue
+    }
+
+    function isModelRowVisible(row) {
+        const expired = Boolean(root.modelRoleValue(row,
+                                NotificationManager.Notifications.ExpiredRole,
+                                "expired", false))
+        const type = Number(root.modelRoleValue(row,
+                            NotificationManager.Notifications.TypeRole,
+                            "type", NotificationManager.Notifications.NotificationType))
+        return (root.showHistory || !expired)
+                && (root.showJobs || type !== NotificationManager.Notifications.JobType)
+    }
+
     function clearClosableNotifications() {
         if (!root.notifications || !root.notifications.data || !root.notifications.close)
             return
+        if (root.closableCount <= 0)
+            return
+        root.clearPending = true
+        clearFeedbackTimer.restart()
         for (let row = root.notifications.count - 1; row >= 0; --row) {
             const idx = root.notifications.index(row, 0)
-            if (root.notifications.data(idx, NotificationManager.Notifications.ClosableRole))
+            if (root.isModelRowVisible(row)
+                    && root.notifications.data(idx, NotificationManager.Notifications.ClosableRole))
                 root.notifications.close(idx)
         }
+    }
+
+    Timer {
+        id: clearFeedbackTimer
+        interval: MeoTheme.loadingFeedbackMinimumVisible
+        repeat: false
+        onTriggered: root.clearPending = false
     }
 
     function relativeTime(value) {
@@ -73,7 +138,7 @@ Item {
             return qsTr("%1 h").arg(hours)
         if (hours < 48)
             return qsTr("Yesterday")
-        return Qt.formatDate(timestamp, Qt.DefaultLocaleShortDate)
+        return Qt.formatDate(timestamp, Qt.locale().dateFormat(Locale.ShortFormat))
     }
 
     // Notification bodies may contain freedesktop markup. The shell deliberately
@@ -132,10 +197,12 @@ Item {
             showTitle: root.showTitle
             showSettingsAction: root.showSettingsAction
             notificationCount: root.notificationCount
+            closableCount: root.closableCount
             unreadCount: root.unreadCount
             activeJobsCount: root.activeJobsCount
             liveNotificationCount: root.liveNotificationCount
             historyNotificationCount: root.historyNotificationCount
+            clearPending: root.clearPending
             onClearRequested: root.clearClosableNotifications()
             onSettingsRequested: root.settingsRequested()
         }
@@ -144,45 +211,36 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            ListView {
+            MeoListView {
                 id: notificationList
                 anchors.fill: parent
                 visible: opacity > 0
-                enabled: count > 0
-                opacity: count > 0 ? 1 : 0
+                enabled: root.visibleNotificationCount > 0
+                opacity: root.visibleNotificationCount > 0 ? 1 : 0
                 clip: true
                 spacing: root.compactView || root.compactDensity
                          ? MeoTheme.space4 : MeoTheme.space8
                 boundsBehavior: Flickable.StopAtBounds
                 reuseItems: true
+                preserveScrollPosition: false
+                // The center has no single selected row. Leaving ListView's
+                // implicit current item enabled can auto-position a growing
+                // model to that delegate while the opening transition runs.
+                currentIndex: -1
                 cacheBuffer: Math.max(height, 320 * MeoTheme.globalScale)
                 model: root.notifications
                 Behavior on opacity {
                     NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
                 }
-                add: Transition {
-                    ParallelAnimation {
-                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoTheme.motionDurationPopupEffectsEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
-                        NumberAnimation { property: "scale"; from: MeoTheme.reduceMotion ? 1 : 0.985; to: 1; duration: MeoTheme.motionDurationPopupEffectsEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
-                    }
-                }
-                remove: Transition {
-                    ParallelAnimation {
-                        NumberAnimation { property: "opacity"; to: 0; duration: MeoTheme.motionDurationPopupEffectsExit; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
-                        NumberAnimation { property: "scale"; to: MeoTheme.reduceMotion ? 1 : 0.985; duration: MeoTheme.motionDurationPopupEffectsExit; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
-                    }
-                }
-                displaced: Transition {
-                    NumberAnimation { properties: "x,y"; duration: MeoTheme.motionDurationDisclosureEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
-                }
-
                 delegate: MeoMotionSurface {
                     id: notificationCard
 
                     required property int index
+                    required property var model
                     required property string summary
                     required property string body
                     required property string applicationName
+                    required property string originName
                     required property string iconName
                     required property string applicationIconName
                     required property bool closable
@@ -195,7 +253,6 @@ Item {
                     required property string replySubmitButtonText
                     required property var actionNames
                     required property var actionLabels
-                    required property int type
                     required property int urgency
                     required property int percentage
                     required property int jobState
@@ -206,9 +263,15 @@ Item {
 
                     readonly property var sourceIndex: root.modelIndex(index)
                     readonly property string displayIcon: root.safeIconName(iconName, applicationIconName)
-                    readonly property bool isJob: type === NotificationManager.Notifications.JobType
+                    readonly property string displaySource: root.plainText(originName) !== ""
+                                                            ? qsTr("%1 · %2").arg(root.plainText(applicationName)).arg(root.plainText(originName))
+                                                            : root.plainText(applicationName)
+                    readonly property int notificationType: Number(model.type)
+                    readonly property bool isJob: notificationType === NotificationManager.Notifications.JobType
                     readonly property bool critical: urgency === NotificationManager.Notifications.CriticalUrgency
                     readonly property bool historical: expired
+                    readonly property bool contentAllowed: (root.showHistory || !historical)
+                                                           && (root.showJobs || !isJob)
                     readonly property var effectiveTime: updated || created
                     readonly property bool compact: root.compactView
                     readonly property bool showPreview: root.normalizedPreview !== "hidden"
@@ -216,10 +279,20 @@ Item {
                                                             ? (compact ? 2 : 4)
                                                             : 2
                     property bool replyExpanded: false
+                    property bool animateLayoutChange: false
 
                     ListView.onReused: {
                         replyExpanded = false
+                        animateLayoutChange = false
                         replyField.clear()
+                    }
+
+                    function toggleReply() {
+                        animateLayoutChange = true
+                        replyExpanded = !replyExpanded
+                        replyLayoutTimer.restart()
+                        if (replyExpanded)
+                            Qt.callLater(function() { replyField.forceActiveFocus() })
                     }
 
                     function submitReply() {
@@ -228,24 +301,41 @@ Item {
                         root.notifications.reply(notificationCard.sourceIndex, replyField.text.trim(),
                                                  NotificationManager.Notifications.Close)
                         replyField.clear()
+                        animateLayoutChange = true
                         notificationCard.replyExpanded = false
+                        replyLayoutTimer.restart()
+                    }
+
+                    Timer {
+                        id: replyLayoutTimer
+                        interval: notificationCard.replyExpanded
+                                  ? MeoTheme.motionDurationDisclosureEnter
+                                  : MeoTheme.motionDurationDisclosureExit
+                        repeat: false
+                        onTriggered: notificationCard.animateLayoutChange = false
                     }
 
                     width: notificationList.width
-                    visible: root.showHistory || !historical
+                    objectName: "notificationCard-" + index
+                    visible: contentAllowed
+                    enabled: contentAllowed
+                    height: contentAllowed ? implicitHeight : 0
+                    opacity: contentAllowed ? 1 : 0
                     implicitHeight: cardContent.implicitHeight + 2 * root.cardPadding
                     color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
                     // Notification cards share the popup's expressive corner
                     // token, so they morph with the same MeoUI shape scale as
                     // the surrounding status surface.
-                    radius: ShellMetrics.radiusPopup
+                    radius: root.compactView ? ShellMetrics.radiusMedium : ShellMetrics.radiusLarge
                     elevation: 0
                     // The disclosure controls the card's real height.  This
                     // mirrors DMS's retained-content collapse rather than
                     // deleting long text before the contraction completes.
                     clip: bodyDisclosure.animating
                     Behavior on implicitHeight {
-                        enabled: bodyDisclosure.userInitiatedExpansion && !MeoTheme.reduceMotion
+                        enabled: (bodyDisclosure.userInitiatedExpansion
+                                  || notificationCard.animateLayoutChange)
+                                 && !MeoTheme.reduceMotion
                         NumberAnimation {
                             duration: bodyDisclosure.expanded
                                       ? MeoTheme.motionDurationDisclosureEnter
@@ -254,38 +344,57 @@ Item {
                             easing.bezierCurve: bodyDisclosure.expanded ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
                         }
                     }
-                    activeFocusOnTab: hasDefaultAction
+                    activeFocusOnTab: hasDefaultAction && !historical
                     Accessible.role: Accessible.ListItem
                     Accessible.name: root.plainText(summary !== "" ? summary : applicationName)
-                    Accessible.description: root.displayBody(body, type, percentage)
+                    Accessible.description: root.displayBody(body, notificationType, percentage)
                                             + (historical ? qsTr(" Earlier notification.") : "")
-                    Accessible.focusable: hasDefaultAction
-                    Accessible.onPressAction: if (hasDefaultAction && root.notifications
+                    Accessible.focusable: hasDefaultAction && !historical
+                    Accessible.onPressAction: if (hasDefaultAction && !historical && root.notifications
                                                      && root.notifications.invokeDefaultAction)
                                                   root.notifications.invokeDefaultAction(sourceIndex)
-                    Keys.onReturnPressed: if (hasDefaultAction && root.notifications
+                    Keys.onReturnPressed: if (hasDefaultAction && !historical && root.notifications
                                                && root.notifications.invokeDefaultAction)
                                               root.notifications.invokeDefaultAction(sourceIndex)
-                    Keys.onEnterPressed: if (hasDefaultAction && root.notifications
+                    Keys.onEnterPressed: if (hasDefaultAction && !historical && root.notifications
                                               && root.notifications.invokeDefaultAction)
                                              root.notifications.invokeDefaultAction(sourceIndex)
-                    Keys.onSpacePressed: if (hasDefaultAction && root.notifications
+                    Keys.onSpacePressed: if (hasDefaultAction && !historical && root.notifications
                                               && root.notifications.invokeDefaultAction)
                                              root.notifications.invokeDefaultAction(sourceIndex)
 
                     MouseArea {
+                        id: notificationPointer
                         anchors.fill: parent
-                        enabled: notificationCard.hasDefaultAction
+                        enabled: notificationCard.hasDefaultAction && !notificationCard.historical
+                        hoverEnabled: true
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: if (root.notifications && root.notifications.invokeDefaultAction)
                                        root.notifications.invokeDefaultAction(notificationCard.sourceIndex)
+                    }
+
+                    // Default notification actions are full-card actions. Keep
+                    // their feedback on the same shared click-point state layer
+                    // as every MeoUI button instead of a card-local color swap.
+                    MeoStateLayer {
+                        anchors.fill: parent
+                        enabled: notificationPointer.enabled
+                        internalPointerTrackingEnabled: false
+                        hovered: notificationPointer.containsMouse
+                        pressed: notificationPointer.pressed
+                        focused: notificationCard.activeFocus
+                        pressX: notificationPointer.mouseX
+                        pressY: notificationPointer.mouseY
+                        radius: notificationCard.radius
+                        focusColor: notificationCard.critical
+                                    ? MeoTheme.onErrorContainer : MeoTheme.primary
                     }
 
                     ColumnLayout {
                         id: cardContent
                         anchors.fill: parent
                         anchors.margins: root.cardPadding
-                        spacing: root.compact ? MeoTheme.space4 : MeoTheme.space8
+                        spacing: notificationCard.compact ? MeoTheme.space4 : MeoTheme.space8
 
                         RowLayout {
                             Layout.fillWidth: true
@@ -300,8 +409,8 @@ Item {
                             }
                             MeoText {
                                 Layout.fillWidth: true
-                                text: root.plainText(notificationCard.applicationName) !== ""
-                                      ? root.plainText(notificationCard.applicationName) : qsTr("System")
+                                text: notificationCard.displaySource !== ""
+                                      ? notificationCard.displaySource : qsTr("System")
                                 textFormat: Text.PlainText
                                 typeRole: "label"
                                 typeSize: "small"
@@ -373,7 +482,7 @@ Item {
                             id: bodyDisclosure
                             Layout.fillWidth: true
                             visible: notificationCard.showPreview && bodyText !== ""
-                            bodyText: root.displayBody(notificationCard.body, notificationCard.type,
+                            bodyText: root.displayBody(notificationCard.body, notificationCard.notificationType,
                                                        notificationCard.percentage)
                             collapsedLines: notificationCard.previewLines
                             compact: notificationCard.compact
@@ -399,9 +508,11 @@ Item {
                         }
 
                         Flow {
-                            visible: notificationCard.hasReplyAction
-                                     || (notificationCard.actionNames && notificationCard.actionNames.length > 0)
-                                     || (notificationCard.isJob && (notificationCard.suspendable || notificationCard.killable))
+                            visible: !notificationCard.historical
+                                     && (notificationCard.hasReplyAction
+                                         || (notificationCard.actionNames && notificationCard.actionNames.length > 0)
+                                         || (notificationCard.isJob
+                                             && (notificationCard.suspendable || notificationCard.killable)))
                             Layout.fillWidth: true
                             spacing: MeoTheme.space4
 
@@ -413,6 +524,7 @@ Item {
                                     required property string modelData
                                     type: index === 0 ? "tonal" : "text"
                                     size: "s"
+                                    enabled: !notificationCard.historical
                                     text: root.buttonLabel(notificationCard.actionLabels
                                                            && index < notificationCard.actionLabels.length
                                                           ? notificationCard.actionLabels[index] : modelData)
@@ -422,20 +534,17 @@ Item {
                             }
 
                             MeoButton {
-                                visible: notificationCard.hasReplyAction
+                                objectName: "notificationReplyButton-" + notificationCard.index
+                                visible: !notificationCard.historical && notificationCard.hasReplyAction
                                 type: notificationCard.replyExpanded ? "tonal" : "text"
                                 size: "s"
                                 text: notificationCard.replyActionLabel !== ""
                                       ? root.buttonLabel(notificationCard.replyActionLabel) : qsTr("Reply")
-                                onClicked: {
-                                    notificationCard.replyExpanded = !notificationCard.replyExpanded
-                                    if (notificationCard.replyExpanded)
-                                        replyField.forceActiveFocus()
-                                }
+                                onClicked: notificationCard.toggleReply()
                             }
 
                             MeoButton {
-                                visible: notificationCard.isJob && notificationCard.suspendable
+                                visible: !notificationCard.historical && notificationCard.isJob && notificationCard.suspendable
                                 type: "text"
                                 size: "s"
                                 text: notificationCard.jobState === NotificationManager.Notifications.JobStateSuspended
@@ -451,7 +560,7 @@ Item {
                             }
 
                             MeoButton {
-                                visible: notificationCard.isJob && notificationCard.killable
+                                visible: !notificationCard.historical && notificationCard.isJob && notificationCard.killable
                                 type: "text"
                                 size: "s"
                                 text: qsTr("Cancel")
@@ -461,7 +570,7 @@ Item {
                         }
 
                         RowLayout {
-                            visible: notificationCard.hasReplyAction && notificationCard.replyExpanded
+                            visible: !notificationCard.historical && notificationCard.hasReplyAction && notificationCard.replyExpanded
                             Layout.fillWidth: true
                             spacing: MeoTheme.space8
 
@@ -495,13 +604,18 @@ Item {
             PopupEmptyState {
                 anchors.fill: parent
                 visible: opacity > 0
-                enabled: notificationList.count === 0
-                opacity: notificationList.count === 0 ? 1 : 0
+                enabled: root.visibleNotificationCount === 0
+                opacity: root.visibleNotificationCount === 0 ? 1 : 0
                 iconName: NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications_none"
-                title: NotificationManager.Server.inhibited ? qsTr("Do Not Disturb is on") : qsTr("You’re all caught up")
+                title: NotificationManager.Server.inhibited
+                       ? qsTr("Do Not Disturb is on")
+                       : (root.notificationCount > 0 ? qsTr("No recent notifications")
+                                                     : qsTr("You’re all caught up"))
                 description: NotificationManager.Server.inhibited
                              ? qsTr("New notifications are collected quietly until you turn it off.")
-                             : qsTr("New notifications and background jobs will appear here.")
+                             : (root.notificationCount > 0
+                                ? qsTr("Older notifications or background jobs are hidden by this view’s preferences.")
+                                : qsTr("New notifications and background jobs will appear here."))
                 actionText: root.showSettingsAction ? qsTr("Notification settings") : ""
                 onActionRequested: root.settingsRequested()
                 Behavior on opacity {
