@@ -2,11 +2,18 @@
 
 MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主题、默认配置、KDE/Qt 原生桥接和 Arch 打包定义都在这里。通用 MD3 QML 组件和 token 由相邻的 `meo-ui` 提供；MeoKDE 不复制它们。
 
+## License
+
+除另有文件级声明外，MeoKDE 原创代码采用 GNU General Public License
+v3.0 或更高版本（`GPL-3.0-or-later`），见 [LICENSE](LICENSE)。KDE/Plasma
+衍生文件、第三方实现、字体、符号与上游 Widget 保留各自许可证；完整归属见
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
 ## 目录 / Layout
 
 - `qml/`、`plasmoids/`：MeoKDE QML 模块与 Plasma 原生界面。
 - `widgets/`：受版本控制的上游 Widget 白名单、适配契约与验收测试；只包含可由 MeoUI 统一换皮的 Plasma Widget 集成入口。
-- `third_party/`：固定版本的上游源码依赖；`kde-plasma6-widgets` 是保留 GPL-3.0 来源和历史的 Git submodule，不是打包输入的默认目录。
+- `third_party/`：固定版本的上游源码依赖；`kde-plasma6-widgets` 是从 [MCC45TR/kde-plasma6-widgets](https://github.com/MCC45TR/kde-plasma6-widgets) 派生、固定到 `ce3731be424f62f11ce96df5d989a2fbdc5d56d2` 的 GPL-3.0 Git submodule，不是打包输入的默认目录。
 - `native/`：C++/Qt/KDE 平台桥接、独立 Layer Shell Dock 与原生样式。
 - `themes/`、`defaults/`、`icons/`、`assets/`：主题、默认值和受版本控制的源资源。
 - `setup/`、`scripts/`、`tools/`：受维护的安装、验证、同步与生成工具源码。

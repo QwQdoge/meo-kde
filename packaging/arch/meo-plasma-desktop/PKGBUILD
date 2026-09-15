@@ -8,7 +8,7 @@ pkgname=meo-plasma-desktop
 _upstream_pkgname=plasma-desktop
 pkgver=6.7.5
 _dirver=${pkgver}
-pkgrel=1
+pkgrel=2
 pkgdesc='KDE Plasma Desktop with the Meo desktop-widget presentation adapter'
 arch=(x86_64)
 url='https://kde.org/plasma-desktop/'
@@ -60,7 +60,7 @@ depends=(attica
          libxkbcommon
          libxkbfile
          libplasma
-         'meoui-qml>=1.0.3'
+         'meoui-qml>=1.0.4beta1'
          plasma-activities
          plasma-activities-stats
          plasma-workspace

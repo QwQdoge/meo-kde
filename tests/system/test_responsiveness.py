@@ -12,12 +12,16 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 class ResponsivenessContractTests(unittest.TestCase):
     def test_default_package_stack_is_bounded_and_has_no_ananicy_daemon(self):
         recipe = (ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        srcinfo = (ROOT / "packaging/arch/.SRCINFO").read_text(encoding="utf-8")
         for package in (
             "system76-scheduler", "zram-generator", "dbus-broker-units",
             "power-profiles-daemon", "gamemode",
         ):
             self.assertIn(f"'{package}'", recipe)
-        self.assertIn("'meoui-qml>=1.0.3'", recipe)
+        self.assertIn("'meoui-qml>=1.0.4beta1'", recipe)
+        self.assertIn("pkgver = 0.4.0", srcinfo)
+        self.assertIn("pkgrel = 2", srcinfo)
+        self.assertIn("depends = meoui-qml>=1.0.4beta1", srcinfo)
         self.assertNotIn("'ananicy-cpp'", recipe)
         self.assertIn("disable ananicy-cpp.service", (
             ROOT / "defaults/systemd/50-meo-responsiveness.preset"

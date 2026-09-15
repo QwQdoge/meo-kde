@@ -98,7 +98,7 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("pkgver=6.7.5", package)
         self.assertIn("provides=(\"plasma-desktop=${pkgver}\")", package)
         self.assertIn("conflicts=(plasma-desktop)", package)
-        self.assertIn("meoui-qml>=1.0.3", package)
+        self.assertIn("meoui-qml>=1.0.4beta1", package)
         self.assertIn(patch_hash, package)
         self.assertIn(patch_hash, srcinfo)
         self.assertIn("MeoAppletContainer.qml", patch)

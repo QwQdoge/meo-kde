@@ -1,7 +1,7 @@
 pkgbase = meo-plasma-desktop
 	pkgdesc = KDE Plasma Desktop with the Meo desktop-widget presentation adapter
 	pkgver = 6.7.5
-	pkgrel = 1
+	pkgrel = 2
 	url = https://kde.org/plasma-desktop/
 	arch = x86_64
 	groups = plasma
@@ -63,7 +63,7 @@ pkgbase = meo-plasma-desktop
 	depends = libxkbcommon
 	depends = libxkbfile
 	depends = libplasma
-	depends = meoui-qml>=1.0.3
+	depends = meoui-qml>=1.0.4beta1
 	depends = plasma-activities
 	depends = plasma-activities-stats
 	depends = plasma-workspace
