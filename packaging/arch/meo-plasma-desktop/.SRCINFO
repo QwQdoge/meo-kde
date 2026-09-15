@@ -1,7 +1,7 @@
 pkgbase = meo-plasma-desktop
 	pkgdesc = KDE Plasma Desktop with the Meo desktop-widget presentation adapter
 	pkgver = 6.7.5
-	pkgrel = 2
+	pkgrel = 3
 	url = https://kde.org/plasma-desktop/
 	arch = x86_64
 	groups = plasma
@@ -97,6 +97,7 @@ pkgbase = meo-plasma-desktop
 	source = https://download.kde.org/stable/plasma/6.7.5/plasma-desktop-6.7.5.tar.xz
 	source = https://download.kde.org/stable/plasma/6.7.5/plasma-desktop-6.7.5.tar.xz.sig
 	source = 0001-meo-widget-presentation.patch
+	source = LGPL-2.0-or-later.txt
 	validpgpkeys = E0A3EB202F8E57528E13E72FD7574483BB57B18D
 	validpgpkeys = 0AAC775BB6437A8D9AF7A3ACFE0784117FBCE11D
 	validpgpkeys = D07BD8662C56CB291B316EB2F5675605C74E02CF
@@ -104,5 +105,6 @@ pkgbase = meo-plasma-desktop
 	sha256sums = 079fcf6b87d7bf65e3f2a4670d605fac9469344c279a285a98ad549332d7b53e
 	sha256sums = SKIP
 	sha256sums = 201e83dd3fa64f424fe2c5fd8f15a12144f479a2a1ee95c54405651450fec93e
+	sha256sums = 86dc99d7e5060915ab1dfc1378b7dd351c62088bfa74067e8aa1868c6fdba7d8
 
 pkgname = meo-plasma-desktop

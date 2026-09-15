@@ -13,7 +13,7 @@ v3.0 或更高版本（`GPL-3.0-or-later`），见 [LICENSE](LICENSE)。KDE/Plas
 
 - `qml/`、`plasmoids/`：MeoKDE QML 模块与 Plasma 原生界面。
 - `widgets/`：受版本控制的上游 Widget 白名单、适配契约与验收测试；只包含可由 MeoUI 统一换皮的 Plasma Widget 集成入口。
-- `third_party/`：固定版本的上游源码依赖；`kde-plasma6-widgets` 是从 [MCC45TR/kde-plasma6-widgets](https://github.com/MCC45TR/kde-plasma6-widgets) 派生、固定到 `ce3731be424f62f11ce96df5d989a2fbdc5d56d2` 的 GPL-3.0 Git submodule，不是打包输入的默认目录。
+- `third_party/`：固定版本的上游源码依赖；`kde-plasma6-widgets` 是从 [MCC45TR/kde-plasma6-widgets](https://github.com/MCC45TR/kde-plasma6-widgets) 派生、固定到 `ce3731be424f62f11ce96df5d989a2fbdc5d56d2` 的 GPL-3.0-only Git submodule，不是打包输入的默认目录。
 - `native/`：C++/Qt/KDE 平台桥接、独立 Layer Shell Dock 与原生样式。
 - `themes/`、`defaults/`、`icons/`、`assets/`：主题、默认值和受版本控制的源资源。
 - `setup/`、`scripts/`、`tools/`：受维护的安装、验证、同步与生成工具源码。

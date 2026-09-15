@@ -7,8 +7,15 @@ licenses listed below.
 ## KDE and Plasma-derived files
 
 Several lock-screen and decoration files carry explicit
-`GPL-2.0-or-later`, `GPL-3.0-or-later`, or `LGPL-2.0-or-later` SPDX headers.
-Those file-level declarations take precedence over the repository default.
+`GPL-2.0-or-later` or `GPL-3.0-or-later` SPDX headers. Those file-level
+declarations take precedence over the repository default. The complete
+GPL-2.0-or-later text is in `assets/licenses/GPL-2.0-or-later.txt`.
+
+The separate `packaging/arch/meo-plasma-desktop` package applies a downstream
+Plasma patch whose new source files are licensed `LGPL-2.0-or-later`. Its full
+license text is in
+`packaging/arch/meo-plasma-desktop/LGPL-2.0-or-later.txt` and is installed by
+that package.
 
 ## Material Color Utilities
 
@@ -54,7 +61,7 @@ notices, and AUTHORS file. It is not installed by the `meo-desktop` package.
 
 `third_party/kde-plasma6-widgets` is a pinned Git submodule fork of MCC45TR's
 KDE Plasma 6 Widget Collection. The submodule retains its own history and
-GPL-3.0 license and is not installed by the default `meo-desktop` package.
+GPL-3.0-only license and is not installed by the default `meo-desktop` package.
 
 - Original upstream: https://github.com/MCC45TR/kde-plasma6-widgets
 - Meo fork: https://github.com/QwQdoge/kde-plasma6-widgets

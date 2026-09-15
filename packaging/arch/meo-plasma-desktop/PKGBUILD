@@ -8,7 +8,7 @@ pkgname=meo-plasma-desktop
 _upstream_pkgname=plasma-desktop
 pkgver=6.7.5
 _dirver=${pkgver}
-pkgrel=2
+pkgrel=3
 pkgdesc='KDE Plasma Desktop with the Meo desktop-widget presentation adapter'
 arch=(x86_64)
 url='https://kde.org/plasma-desktop/'
@@ -103,10 +103,12 @@ conflicts=(plasma-desktop)
 replaces=(plasma-desktop)
 groups=(plasma)
 source=("https://download.kde.org/stable/plasma/${_dirver}/${_upstream_pkgname}-${pkgver}.tar.xz"{,.sig}
-        '0001-meo-widget-presentation.patch')
+        '0001-meo-widget-presentation.patch'
+        'LGPL-2.0-or-later.txt')
 sha256sums=('079fcf6b87d7bf65e3f2a4670d605fac9469344c279a285a98ad549332d7b53e'
             'SKIP'
-            '201e83dd3fa64f424fe2c5fd8f15a12144f479a2a1ee95c54405651450fec93e')
+            '201e83dd3fa64f424fe2c5fd8f15a12144f479a2a1ee95c54405651450fec93e'
+            '86dc99d7e5060915ab1dfc1378b7dd351c62088bfa74067e8aa1868c6fdba7d8')
 validpgpkeys=('E0A3EB202F8E57528E13E72FD7574483BB57B18D'
               '0AAC775BB6437A8D9AF7A3ACFE0784117FBCE11D'
               'D07BD8662C56CB291B316EB2F5675605C74E02CF'
@@ -126,4 +128,6 @@ build() {
 
 package() {
   DESTDIR="${pkgdir}" cmake --install build
+  install -Dm644 "${srcdir}/LGPL-2.0-or-later.txt" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LGPL-2.0-or-later.txt"
 }
