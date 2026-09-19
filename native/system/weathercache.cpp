@@ -21,7 +21,7 @@ constexpr qint64 kMaximumCacheAgeSeconds = 6 * 60 * 60;
 QString boundedText(const QString &value, qsizetype maximumLength)
 {
     QString result = value;
-    result.remove(QRegularExpression(QStringLiteral("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F\\u202A-\\u202E\\u2066-\\u2069]")));
+    static const QRegularExpression unsafeTextCharacters(\n        QStringLiteral("[\\\\x{0000}-\\\\x{0008}\\\\x{000B}\\\\x{000C}\\\\x{000E}-\\\\x{001F}\\\\x{007F}\\\\x{202A}-\\\\x{202E}\\\\x{2066}-\\\\x{2069}]")\n    );\n    result.remove(unsafeTextCharacters);
     return result.left(maximumLength).trimmed();
 }
 
