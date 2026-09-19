@@ -448,7 +448,7 @@ Item {
                     MeoButton {
                         type: "text"
                         size: "s"
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Slee&p")
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Sleep")
                         icon.name: "system-suspend"
                         onClicked: {
                             root.clearPassword()
@@ -459,7 +459,7 @@ Item {
                     MeoButton {
                         type: "text"
                         size: "s"
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "&Hibernate")
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Hibernate")
                         icon.name: "system-suspend-hibernate"
                         onClicked: {
                             root.clearPassword()
@@ -470,7 +470,7 @@ Item {
                     MeoButton {
                         type: "text"
                         size: "s"
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Switch &User")
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Switch User")
                         icon.name: "system-switch-user"
                         onClicked: {
                             root.clearPassword()
@@ -481,7 +481,7 @@ Item {
                     MeoButton {
                         type: "text"
                         size: "s"
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "&Restart")
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Restart")
                         icon.name: "system-reboot"
                         onClicked: {
                             root.clearPassword()
@@ -492,7 +492,7 @@ Item {
                     MeoButton {
                         type: "text"
                         size: "s"
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Shut &Down")
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Shut Down")
                         icon.name: "system-shutdown"
                         onClicked: {
                             root.clearPassword()
