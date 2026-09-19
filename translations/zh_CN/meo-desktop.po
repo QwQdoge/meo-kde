@@ -1,0 +1,1055 @@
+# SPDX-FileCopyrightText: 2026 Meo Desktop Team
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Simplified Chinese catalog for MeoKDE's Plasma surfaces.  The source text
+# remains English; KI18n chooses this catalog from the desktop locale.
+msgid ""
+msgstr ""
+"Project-Id-Version: meo-desktop 0.4.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-17 00:00+0000\n"
+"PO-Revision-Date: 2026-09-17 00:00+0000\n"
+"Last-Translator: Meo Desktop Team\n"
+"Language-Team: Simplified Chinese\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Appearance"
+msgstr "外观"
+
+msgid "Application Launcher"
+msgstr "应用启动器"
+
+msgid "Clear sky"
+msgstr "晴朗"
+
+msgid "Drizzle"
+msgstr "毛毛雨"
+
+msgid "Foggy"
+msgstr "有雾"
+
+msgid "Open applications"
+msgstr "打开应用"
+
+msgid "%1 open windows"
+msgstr "已打开 %1 个窗口"
+
+msgid "Open application"
+msgstr "打开应用"
+
+msgid "Partly cloudy"
+msgstr "局部多云"
+
+msgid "Rain"
+msgstr "雨"
+
+msgid "Rain showers"
+msgstr "阵雨"
+
+msgid "%1 windows"
+msgstr "%1 个窗口"
+
+msgid "Search your tabs, files, apps, and more…"
+msgstr "搜索标签页、文件、应用等…"
+
+msgid "Search your tabs, files, apps, and more"
+msgstr "搜索标签页、文件、应用等"
+
+msgid "Search results"
+msgstr "搜索结果"
+
+msgid "Snow"
+msgstr "雪"
+
+msgid "Snow showers"
+msgstr "阵雪"
+
+msgid "Thunderstorm"
+msgstr "雷暴"
+
+msgid "Weather cache has an unsupported version."
+msgstr "天气缓存版本不受支持。"
+
+msgid "Weather cache is invalid."
+msgstr "天气缓存无效。"
+
+msgid "Weather cache is unavailable."
+msgstr "天气缓存不可用。"
+
+msgid "Weather unavailable"
+msgstr "天气信息不可用"
+
+msgid "Continue where you left off"
+msgstr "继续上次的内容"
+
+msgid "All apps"
+msgstr "全部应用"
+
+msgid "Loading applications…"
+msgstr "正在加载应用…"
+
+msgid "Window"
+msgstr "窗口"
+
+msgid "Open new window"
+msgstr "打开新窗口"
+
+msgid "Unpin from Shelf"
+msgstr "从底部栏取消固定"
+
+msgid "Pin to Shelf"
+msgstr "固定到底部栏"
+
+msgid "Close window"
+msgstr "关闭窗口"
+
+msgid "KDE window controls in a compact Meo strip"
+msgstr "在紧凑 Meo 栏中控制 KDE 窗口"
+
+msgid "Active application"
+msgstr "当前应用"
+
+msgid "Activate application"
+msgstr "切换到应用"
+
+msgid "Open application icons:"
+msgstr "显示应用图标："
+
+msgid "Density:"
+msgstr "密度："
+
+msgid "Compact"
+msgstr "紧凑"
+
+msgid "Comfortable"
+msgstr "舒适"
+
+msgid "Text size:"
+msgstr "文字大小："
+
+msgid "Notification view:"
+msgstr "通知视图："
+
+msgid "Cards"
+msgstr "卡片"
+
+msgid "Compact list"
+msgstr "紧凑列表"
+
+msgid "Preview:"
+msgstr "预览："
+
+msgid "Full"
+msgstr "完整"
+
+msgid "Summary"
+msgstr "摘要"
+
+msgid "Hidden"
+msgstr "隐藏"
+
+msgid "Show unread badge"
+msgstr "显示未读徽标"
+
+msgid "Show background tasks"
+msgstr "显示后台任务"
+
+msgid "Show notification history"
+msgstr "显示通知历史记录"
+
+msgid "Surface:"
+msgstr "界面样式："
+
+msgid "Follow theme"
+msgstr "跟随主题"
+
+msgid "Flat"
+msgstr "扁平"
+
+msgid "Tonal"
+msgstr "色调"
+
+msgid "Translucent"
+msgstr "半透明"
+
+msgid "Surface opacity:"
+msgstr "界面不透明度："
+
+msgid "Motion:"
+msgstr "动效："
+
+msgid "Calm"
+msgstr "平缓"
+
+msgid "Pixel"
+msgstr "像素"
+
+msgid "Playful"
+msgstr "活泼"
+
+msgid "Meo Notifications"
+msgstr "Meo 通知中心"
+
+msgid "Clock:"
+msgstr "时钟："
+
+msgid "System default"
+msgstr "跟随系统"
+
+msgid "24-hour"
+msgstr "24 小时制"
+
+msgid "12-hour"
+msgstr "12 小时制"
+
+msgid "Show date"
+msgstr "显示日期"
+
+msgid "Show seconds"
+msgstr "显示秒"
+
+msgid "Meo Time and Notifications"
+msgstr "Meo 时间与通知"
+
+msgid "Show week numbers"
+msgstr "显示周数"
+
+msgid "Show secondary calendar"
+msgstr "显示第二日历"
+
+msgid "Meo Time"
+msgstr "Meo 时间"
+
+msgid "Time and calendar"
+msgstr "时间与日历"
+
+msgid "%1%"
+msgstr "%1%"
+
+msgid "Popup layout:"
+msgstr "弹出面板布局："
+
+msgid "Standard"
+msgstr "标准"
+
+msgid "Wide"
+msgstr "宽"
+
+msgid "Default content:"
+msgstr "默认内容："
+
+msgid "Notifications"
+msgstr "通知"
+
+msgid "Calendar"
+msgstr "日历"
+
+msgid "Show notifications"
+msgstr "显示通知"
+
+msgid "Use 24-hour clock"
+msgstr "使用 24 小时制"
+
+msgid "%1 unread notifications"
+msgstr "%1 条未读通知"
+
+msgid "Calendar and notifications"
+msgstr "日历与通知"
+
+msgid "Sound"
+msgstr "声音"
+
+msgid "No audio service"
+msgstr "未检测到音频服务"
+
+msgid "Open Sound Settings"
+msgstr "打开声音设置"
+
+msgid "Audio is unavailable"
+msgstr "音频不可用"
+
+msgid "Open Sound Settings to check PipeWire or PulseAudio devices."
+msgstr "打开声音设置，检查 PipeWire 或 PulseAudio 设备。"
+
+msgid "Sound Settings"
+msgstr "声音设置"
+
+msgid "Output volume"
+msgstr "输出音量"
+
+msgid "Unmute"
+msgstr "取消静音"
+
+msgid "Mute"
+msgstr "静音"
+
+msgid "Output device"
+msgstr "输出设备"
+
+msgid "No output device is currently available."
+msgstr "当前没有可用的输出设备。"
+
+msgid "Microphone"
+msgstr "麦克风"
+
+msgid "Unmute microphone"
+msgstr "取消麦克风静音"
+
+msgid "Mute microphone"
+msgstr "麦克风静音"
+
+msgid "Microphone volume"
+msgstr "麦克风音量"
+
+msgid "Bluetooth"
+msgstr "蓝牙"
+
+msgid "Connect and manage devices"
+msgstr "连接和管理设备"
+
+msgid "Bluetooth is off"
+msgstr "蓝牙已关闭"
+
+msgid "Stop Bluetooth discovery"
+msgstr "停止搜索蓝牙设备"
+
+msgid "Discover Bluetooth devices"
+msgstr "搜索蓝牙设备"
+
+msgid "Open Bluetooth in Meo Settings"
+msgstr "在 Meo 设置中打开蓝牙"
+
+msgid "Looking for nearby devices…"
+msgstr "正在搜索附近的设备…"
+
+msgid "Connected · %1%"
+msgstr "已连接 · %1%"
+
+msgid "Connected"
+msgstr "已连接"
+
+msgid "Paired"
+msgstr "已配对"
+
+msgid "Available · Set up in Meo Settings"
+msgstr "可用 · 请在 Meo 设置中完成设置"
+
+msgid "Forget %1"
+msgstr "忘记 %1"
+
+msgid "Bluetooth is unavailable"
+msgstr "蓝牙不可用"
+
+msgid "Bluetooth is turned off"
+msgstr "蓝牙已关闭"
+
+msgid "No devices found"
+msgstr "未找到设备"
+
+msgid "Check that a Bluetooth adapter and the BlueZ service are available."
+msgstr "请确认蓝牙适配器和 BlueZ 服务可用。"
+
+msgid "Turn on Bluetooth to connect accessories."
+msgstr "打开蓝牙以连接配件。"
+
+msgid "Put the device in pairing mode, then search again."
+msgstr "让设备进入配对模式后重新搜索。"
+
+msgid "Turn on Bluetooth"
+msgstr "打开蓝牙"
+
+msgid "Find devices"
+msgstr "搜索设备"
+
+msgid "Performance"
+msgstr "性能"
+
+msgid "Power saver"
+msgstr "省电"
+
+msgid "Balanced"
+msgstr "平衡"
+
+msgid "Prioritise speed and responsiveness"
+msgstr "优先保证速度和响应"
+
+msgid "Reduce energy use and background activity"
+msgstr "减少能耗和后台活动"
+
+msgid "Balance performance and battery life"
+msgstr "平衡性能与续航"
+
+msgid "Power"
+msgstr "电源"
+
+msgid "Session and display controls"
+msgstr "会话与显示控制"
+
+msgid "Open Power in Meo Settings"
+msgstr "在 Meo 设置中打开电源"
+
+msgid "Power mode"
+msgstr "电源模式"
+
+msgid "Power profiles are not provided by this system. Session controls remain available below."
+msgstr "本系统不提供电源配置文件。下方会话控制仍可使用。"
+
+msgid "Session"
+msgstr "会话"
+
+msgid "Keep awake"
+msgstr "保持唤醒"
+
+msgid "Sleep and screen locking are paused"
+msgstr "睡眠与屏幕锁定已暂停"
+
+msgid "Use the normal sleep and screen-lock timers"
+msgstr "使用正常的睡眠与锁屏计时器"
+
+msgid "Automatic sleep"
+msgstr "自动睡眠"
+
+msgid "Power Management sets the schedule. Applications can temporarily delay sleep when they request it."
+msgstr "电源管理决定计划；应用请求时可以暂缓睡眠。"
+
+msgid "Open Power in Meo Settings. This does not force or stop any system service."
+msgstr "打开 Meo 设置中的电源；不会强制启动或停止任何系统服务。"
+
+msgid "Lock screen"
+msgstr "锁定屏幕"
+
+msgid "Lock without closing applications"
+msgstr "锁定屏幕但不关闭应用"
+
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+msgid "Modes"
+msgstr "模式"
+
+msgid "Night Light"
+msgstr "夜间模式"
+
+msgid "Keep Awake"
+msgstr "保持唤醒"
+
+msgid "Power Mode"
+msgstr "电源模式"
+
+msgid "Displays"
+msgstr "显示器"
+
+msgid "Screenshot"
+msgstr "截图"
+
+msgid "Reset tile layout"
+msgstr "重置磁贴布局"
+
+msgid "Meo Settings"
+msgstr "Meo 设置"
+
+msgid "Edit quick settings"
+msgstr "编辑快速设置"
+
+msgid "Drag to reorder · use arrows to resize"
+msgstr "拖动以重新排序 · 使用箭头调整大小"
+
+msgid "Off"
+msgstr "关闭"
+
+msgid "On"
+msgstr "开启"
+
+msgid "Focus"
+msgstr "专注"
+
+msgid "Do Not Disturb"
+msgstr "勿扰模式"
+
+msgid "Notifications on"
+msgstr "通知已开启"
+
+msgid "Muted"
+msgstr "已静音"
+
+msgid "%1 connected"
+msgstr "已连接 %1 台"
+
+msgid "Capture screen"
+msgstr "截取屏幕"
+
+msgid "%1 brightness"
+msgstr "%1 亮度"
+
+msgid "Display brightness"
+msgstr "显示器亮度"
+
+msgid "Unmute output"
+msgstr "取消输出静音"
+
+msgid "Mute output"
+msgstr "输出静音"
+
+msgid "Input device"
+msgstr "输入设备"
+
+msgid "Previous track"
+msgstr "上一曲"
+
+msgid "Pause"
+msgstr "暂停"
+
+msgid "Play"
+msgstr "播放"
+
+msgid "Next track"
+msgstr "下一曲"
+
+msgid "Choose a network"
+msgstr "选择网络"
+
+msgid "Wireless is off"
+msgstr "无线网络已关闭"
+
+msgid "Scan for Wi-Fi networks"
+msgstr "扫描 Wi-Fi 网络"
+
+msgid "Scanning for nearby networks…"
+msgstr "正在扫描附近的网络…"
+
+msgid "Connecting…"
+msgstr "正在连接…"
+
+msgid "Wi-Fi is unavailable"
+msgstr "Wi-Fi 不可用"
+
+msgid "Wi-Fi is turned off"
+msgstr "Wi-Fi 已关闭"
+
+msgid "No networks found"
+msgstr "未找到网络"
+
+msgid "Open Network Settings to check the adapter and connection service."
+msgstr "打开网络设置，检查适配器和连接服务。"
+
+msgid "Turn on Wi-Fi to discover nearby networks."
+msgstr "打开 Wi-Fi 以发现附近网络。"
+
+msgid "Scan again or move closer to an access point."
+msgstr "再次扫描，或靠近接入点。"
+
+msgid "Network Settings"
+msgstr "网络设置"
+
+msgid "Turn on Wi-Fi"
+msgstr "打开 Wi-Fi"
+
+msgid "Scan again"
+msgstr "再次扫描"
+
+msgid "Forget this network?"
+msgstr "忘记此网络？"
+
+msgid "NetworkManager will remove the saved profile and credentials for %1."
+msgstr "NetworkManager 会移除 %1 的已保存配置和凭据。"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Forget"
+msgstr "忘记"
+
+msgid "Connect to %1"
+msgstr "连接到 %1"
+
+msgid "This network requires a password."
+msgstr "此网络需要密码。"
+
+msgid "Cancel connection"
+msgstr "取消连接"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "The password is saved by NetworkManager only after the connection succeeds."
+msgstr "仅在连接成功后，NetworkManager 才会保存密码。"
+
+msgid "Connect"
+msgstr "连接"
+
+msgid "Network disconnected"
+msgstr "网络未连接"
+
+msgid "Wi-Fi off"
+msgstr "Wi-Fi 已关闭"
+
+msgid "Bluetooth connected"
+msgstr "蓝牙已连接"
+
+msgid "Volume muted"
+msgstr "音量已静音"
+
+msgid "Volume %1 percent"
+msgstr "音量 %1%"
+
+msgid "Charging · %1%"
+msgstr "正在充电 · %1%"
+
+msgid "Charging, %1 percent"
+msgstr "正在充电，%1%"
+
+msgid "Battery %1 percent"
+msgstr "电池 %1%"
+
+msgid "System status"
+msgstr "系统状态"
+
+msgid "Show network"
+msgstr "显示网络"
+
+msgid "Show Bluetooth"
+msgstr "显示蓝牙"
+
+msgid "Show volume"
+msgstr "显示音量"
+
+msgid "Battery:"
+msgstr "电池："
+
+msgid "Icon only"
+msgstr "仅图标"
+
+msgid "Icon and percentage"
+msgstr "图标和百分比"
+
+msgid "Detailed state"
+msgstr "详细状态"
+
+msgid "Meo Quick Settings"
+msgstr "Meo 快速设置"
+
+msgid "Network, audio, display, and power controls"
+msgstr "网络、音频、显示与电源控制"
+
+msgid "Meo Clock"
+msgstr "Meo 时钟"
+
+msgid "Date, time, and optional cached weather"
+msgstr "日期、时间和可用的缓存天气"
+
+msgid "Meo Media"
+msgstr "Meo 媒体"
+
+msgid "Current-session media controls"
+msgstr "当前会话的媒体控制"
+
+msgid "No media playing"
+msgstr "没有正在播放的媒体"
+
+msgid "Media controls appear when a current-session player is available."
+msgstr "当前会话有可用播放器时会显示媒体控制。"
+
+msgid "Meo Widget Explorer"
+msgstr "Meo 小组件浏览器"
+
+msgid "Add Meo and Plasma desktop widgets"
+msgstr "添加 Meo 和 Plasma 桌面小组件"
+
+msgid "Added %1 to the desktop."
+msgstr "已将 %1 添加到桌面。"
+
+msgid "Meo Widget"
+msgstr "Meo 小组件"
+
+msgid "Plasma Widget · User package"
+msgstr "Plasma 小组件 · 用户安装包"
+
+msgid "Plasma Widget · Compatibility mode"
+msgstr "Plasma 小组件 · 兼容模式"
+
+msgid "Add to desktop"
+msgstr "添加到桌面"
+
+msgid "Available on lock screen through a reviewed Meo adapter"
+msgstr "可通过经过审核的 Meo 适配器在锁屏界面使用"
+
+msgid "Desktop only; generic Plasma packages never run in the lock screen"
+msgstr "仅限桌面；通用 Plasma 包绝不会在锁屏界面运行"
+
+msgid "Open Meo Widget Explorer"
+msgstr "打开 Meo 小组件浏览器"
+
+msgid "Show less"
+msgstr "收起"
+
+msgid "Show more"
+msgstr "展开"
+
+msgid "Notifications · %1 unread"
+msgstr "通知 · %1 条未读"
+
+msgid "1 background task"
+msgstr "1 个后台任务"
+
+msgid "%1 background tasks"
+msgstr "%1 个后台任务"
+
+msgid "%1 live · %2 in history"
+msgstr "%1 条当前通知 · 历史记录中有 %2 条"
+
+msgid "%1 live notification"
+msgstr "%1 条当前通知"
+
+msgid "%1 in history"
+msgstr "历史记录中有 %1 条"
+
+msgid "Turn off Do Not Disturb"
+msgstr "关闭勿扰模式"
+
+msgid "Turn on Do Not Disturb"
+msgstr "开启勿扰模式"
+
+msgid "Clear all"
+msgstr "全部清除"
+
+msgid "Clear %1 dismissible notifications"
+msgstr "清除 %1 条可关闭的通知"
+
+msgid "Notification settings"
+msgstr "通知设置"
+
+msgid "Do Not Disturb is on. New notifications are collected quietly."
+msgstr "已开启勿扰模式，新通知将静默收集。"
+
+msgid "Now"
+msgstr "刚刚"
+
+msgid "%1 min"
+msgstr "%1 分钟"
+
+msgid "%1 h"
+msgstr "%1 小时"
+
+msgid "Yesterday"
+msgstr "昨天"
+
+msgid "Progress: %1%"
+msgstr "进度：%1%"
+
+msgid "%1 · %2"
+msgstr "%1 · %2"
+
+msgid " Earlier notification."
+msgstr " 较早的通知。"
+
+msgid "System"
+msgstr "系统"
+
+msgid "Critical"
+msgstr "严重"
+
+msgid "Critical notification"
+msgstr "严重通知"
+
+msgid "Earlier"
+msgstr "较早"
+
+msgid "Notification history"
+msgstr "通知历史记录"
+
+msgid "Configure notifications from %1"
+msgstr "配置来自 %1 的通知"
+
+msgid "Dismiss notification"
+msgstr "关闭通知"
+
+msgid "Reply"
+msgstr "回复"
+
+msgid "Resume"
+msgstr "继续"
+
+msgid "Write a reply"
+msgstr "撰写回复"
+
+msgid "Send"
+msgstr "发送"
+
+msgid "Do Not Disturb is on"
+msgstr "勿扰模式已开启"
+
+msgid "No recent notifications"
+msgstr "没有最近通知"
+
+msgid "You’re all caught up"
+msgstr "所有通知都已处理"
+
+msgid "New notifications are collected quietly until you turn it off."
+msgstr "新通知会静默收集，直到您关闭勿扰模式。"
+
+msgid "Older notifications or background jobs are hidden by this view’s preferences."
+msgstr "较早的通知或后台任务已被当前视图设置隐藏。"
+
+msgid "New notifications and background jobs will appear here."
+msgstr "新通知和后台任务会显示在这里。"
+
+msgid "No unread notifications"
+msgstr "没有未读通知"
+
+msgid "Dismiss message"
+msgstr "关闭消息"
+
+msgid "Back"
+msgstr "返回"
+
+msgid "Sleep now"
+msgstr "立即睡眠"
+
+msgid "Restart…"
+msgstr "重新启动…"
+
+msgid "Shut down…"
+msgstr "关机…"
+
+msgid "Sign out…"
+msgstr "退出登录…"
+
+msgid "Secondary calendar: %1"
+msgstr "第二日历：%1"
+
+msgid "Time, calendar, and notifications"
+msgstr "时间、日历与通知"
+
+msgid "%1 background tasks, %2 percent complete"
+msgstr "%1 个后台任务，已完成 %2%"
+
+# Native system bridge: network, Bluetooth, audio, calendar, media, widgets,
+# and the session action service all use this same KDE gettext domain.
+msgid "Another network operation is still in progress."
+msgstr "另一项网络操作仍在进行中。"
+
+msgid "Audio output is unavailable."
+msgstr "音频输出不可用。"
+
+msgid "Bluetooth adapter is unavailable."
+msgstr "蓝牙适配器不可用。"
+
+msgid "Bluetooth device is no longer available."
+msgstr "蓝牙设备已不可用。"
+
+msgid "Brightness display is no longer available."
+msgstr "显示器亮度控制已不可用。"
+
+msgid "Buddhist Era · %1"
+msgstr "佛历 · %1"
+
+msgid "Choose a logout delay between 1 and 600 seconds."
+msgstr "请选择 1 到 600 秒之间的退出登录延迟时间。"
+
+msgid "Connected, but the Wi-Fi profile could not be saved."
+msgstr "已连接，但无法保存 Wi-Fi 配置文件。"
+
+msgid "Connected, but the Wi-Fi profile could not be saved: %1"
+msgstr "已连接，但无法保存 Wi-Fi 配置文件：%1"
+
+msgid "Connecting"
+msgstr "正在连接"
+
+msgid "Could not connect to the Wi-Fi network."
+msgstr "无法连接到 Wi-Fi 网络。"
+
+msgid "Current-session MPRIS controls with bounded local artwork."
+msgstr "当前会话的 MPRIS 控制，使用受限的本地封面图。"
+
+msgid "Disconnected"
+msgstr "已断开连接"
+
+msgid "Disconnecting"
+msgstr "正在断开连接"
+
+msgid "Enhanced Open"
+msgstr "增强型开放网络"
+
+msgid "Enterprise"
+msgstr "企业级"
+
+msgid "Hebcal could not be reached and no cached date is available"
+msgstr "无法连接到 Hebcal，且没有可用的缓存日期"
+
+msgid "Hebcal data cached on this device"
+msgstr "本设备已缓存 Hebcal 数据"
+
+msgid "Hebcal is disabled"
+msgstr "Hebcal 已禁用"
+
+msgid "Hebcal online data"
+msgstr "Hebcal 在线数据"
+
+msgid "Hebrew · %1"
+msgstr "希伯来历 · %1"
+
+msgid "Islamic Civil · %1 %2 %3"
+msgstr "伊斯兰民用历 · %1 %2 %3"
+
+msgid "Large date, time, and optional cached weather."
+msgstr "大号日期、时间和可选的缓存天气。"
+
+msgid "Limited"
+msgstr "受限"
+
+msgid "Link local"
+msgstr "本地链接"
+
+msgid "Local Qt calendar"
+msgstr "本地 Qt 日历"
+
+msgid "Local display"
+msgstr "本地显示"
+
+msgid "Meo clock"
+msgstr "Meo 时钟"
+
+msgid "Meo media"
+msgstr "Meo 媒体"
+
+msgid "Microphone input is unavailable."
+msgstr "麦克风输入不可用。"
+
+msgid "NetworkManager could not apply this Wi-Fi configuration."
+msgstr "NetworkManager 无法应用此 Wi-Fi 配置。"
+
+msgid "Networking disabled"
+msgstr "网络已禁用"
+
+msgid "No Bluetooth adapter is available."
+msgstr "未检测到蓝牙适配器。"
+
+msgid "No controllable media player is available."
+msgstr "没有可控制的媒体播放器。"
+
+msgid "No sign-out is scheduled."
+msgstr "尚未安排退出登录。"
+
+msgid "Open"
+msgstr "开放"
+
+msgid "Pair new devices in Meo Settings."
+msgstr "请在 Meo 设置中配对新设备。"
+
+msgid "Plasma could not create this widget."
+msgstr "Plasma 无法创建此小组件。"
+
+msgid "Plasma could not start sign-out: %1"
+msgstr "Plasma 无法开始退出登录：%1"
+
+msgid "Power profile is unavailable."
+msgstr "电源配置文件不可用。"
+
+msgid "Qt Islamic Civil calendar is unavailable"
+msgstr "Qt 伊斯兰民用历不可用"
+
+msgid "Screen locking service is unavailable."
+msgstr "屏幕锁定服务不可用。"
+
+msgid "Secured"
+msgstr "已加密"
+
+msgid "Sign out now"
+msgstr "立即退出登录"
+
+msgid "Signing out in %1 seconds"
+msgstr "将在 %1 秒后退出登录"
+
+msgid "The Plasma session service is unavailable. Sign-out was not started."
+msgstr "Plasma 会话服务不可用，未开始退出登录。"
+
+msgid "The Wi-Fi connection timed out. Check the password and try again."
+msgstr "Wi-Fi 连接超时。请检查密码后重试。"
+
+msgid "The Wi-Fi device became unavailable."
+msgstr "Wi-Fi 设备已不可用。"
+
+msgid "The Wi-Fi network did not provide a usable IP address."
+msgstr "Wi-Fi 网络未提供可用的 IP 地址。"
+
+msgid "The Wi-Fi network is no longer visible."
+msgstr "Wi-Fi 网络已不再可见。"
+
+msgid "The Wi-Fi password was rejected. Check it and try again."
+msgstr "Wi-Fi 密码被拒绝。请检查后重试。"
+
+msgid "The media player did not respond in time."
+msgstr "媒体播放器未及时响应。"
+
+msgid "The media player is no longer available."
+msgstr "媒体播放器已不可用。"
+
+msgid "The media service did not respond in time."
+msgstr "媒体服务未及时响应。"
+
+msgid "The required widget package is not installed."
+msgstr "未安装所需的小组件包。"
+
+msgid "The selected Wi-Fi network is no longer visible."
+msgstr "选定的 Wi-Fi 网络已不再可见。"
+
+msgid "The selected audio output is no longer available."
+msgstr "选定的音频输出已不可用。"
+
+msgid "The selected microphone is no longer available."
+msgstr "选定的麦克风已不可用。"
+
+msgid "This Plasma widget is not available from a standard Plasma package location."
+msgstr "此 Plasma 小组件不在标准 Plasma 软件包位置中，无法使用。"
+
+msgid "This Wi-Fi network requires a password."
+msgstr "此 Wi-Fi 网络需要密码。"
+
+msgid "This Wi-Fi security type needs the advanced NetworkManager settings UI."
+msgstr "此 Wi-Fi 安全类型需要使用 NetworkManager 的高级设置界面。"
+
+msgid "This saved Wi-Fi network is no longer available."
+msgstr "此已保存的 Wi-Fi 网络已不可用。"
+
+msgid "This widget is not in the Meo widget registry."
+msgstr "此小组件不在 Meo 小组件注册表中。"
+
+msgid "Turn Bluetooth on before scanning."
+msgstr "请先打开蓝牙再扫描。"
+
+msgid "Unavailable"
+msgstr "不可用"
+
+msgid "Unknown calendar preference"
+msgstr "未知的日历偏好设置"
+
+msgid "WEP"
+msgstr "WEP"
+
+msgid "WPA"
+msgstr "WPA"
+
+msgid "WPA2"
+msgstr "WPA2"
+
+msgid "WPA3"
+msgstr "WPA3"
+
+msgid "Wi-Fi is disabled by a hardware or rfkill switch."
+msgstr "Wi-Fi 已被硬件或 rfkill 开关禁用。"
+
+msgid "Wi-Fi is not available."
+msgstr "Wi-Fi 不可用。"
+
+msgid "Wi-Fi network is not available."
+msgstr "Wi-Fi 网络不可用。"
+
+msgid "Widgets can only be added to a desktop surface."
+msgstr "小组件只能添加到桌面。"
+
+msgid "Your apps may still ask to save work."
+msgstr "您的应用仍可能要求保存工作。"

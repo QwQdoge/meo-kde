@@ -1,5 +1,7 @@
 #include "sessionactionservice.h"
 
+#include <KLocalizedString>
+
 #include <QDBusConnection>
 #include <QDBusInterface>
 #include <QDBusPendingCallWatcher>
@@ -62,7 +64,7 @@ QVariantMap SessionActionService::state() const
 bool SessionActionService::scheduleLogout(int seconds)
 {
     if (seconds < 1 || seconds > 600) {
-        m_error = tr("Choose a logout delay between 1 and 600 seconds.");
+        m_error = i18nd("meo-desktop", "Choose a logout delay between 1 and 600 seconds.");
         publishState();
         return false;
     }
@@ -91,7 +93,7 @@ bool SessionActionService::cancel()
 bool SessionActionService::executeNow()
 {
     if (!m_deadline.isValid()) {
-        m_error = tr("No sign-out is scheduled.");
+        m_error = i18nd("meo-desktop", "No sign-out is scheduled.");
         publishState();
         return false;
     }
@@ -119,11 +121,12 @@ void SessionActionService::publishNotification()
                                                         QString::fromLatin1(notificationPath),
                                                         QString::fromLatin1(notificationInterface),
                                                         QStringLiteral("Notify"));
-    notification.setArguments({QStringLiteral("Meo Settings"), m_notificationId,
-                               QStringLiteral("system-log-out"), tr("Signing out in %1 seconds").arg(remaining),
-                               tr("Your apps may still ask to save work."),
-                               QStringList{QStringLiteral("cancel"), tr("Cancel"),
-                                           QStringLiteral("execute"), tr("Sign out now")}, hints, 0});
+    notification.setArguments({i18nd("meo-desktop", "Meo Settings"), m_notificationId,
+                               QStringLiteral("system-log-out"),
+                               i18nd("meo-desktop", "Signing out in %1 seconds", remaining),
+                               i18nd("meo-desktop", "Your apps may still ask to save work."),
+                               QStringList{QStringLiteral("cancel"), i18nd("meo-desktop", "Cancel"),
+                                           QStringLiteral("execute"), i18nd("meo-desktop", "Sign out now")}, hints, 0});
     auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(notification), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher] {
         const QDBusPendingReply<uint> reply = *watcher;
@@ -152,13 +155,13 @@ void SessionActionService::executeLogout()
     QDBusInterface shutdown(QString::fromLatin1(shutdownService), QString::fromLatin1(shutdownPath),
                             QString::fromLatin1(shutdownInterface), QDBusConnection::sessionBus());
     if (!shutdown.isValid()) {
-        m_error = tr("The Plasma session service is unavailable. Sign-out was not started.");
+        m_error = i18nd("meo-desktop", "The Plasma session service is unavailable. Sign-out was not started.");
         cancel();
         return;
     }
     const auto reply = shutdown.call(QStringLiteral("logout"));
     if (reply.type() == QDBusMessage::ErrorMessage) {
-        m_error = tr("Plasma could not start sign-out: %1").arg(reply.errorMessage());
+        m_error = i18nd("meo-desktop", "Plasma could not start sign-out: %1", reply.errorMessage());
         cancel();
         return;
     }

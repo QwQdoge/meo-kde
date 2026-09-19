@@ -50,7 +50,7 @@ MeoMotionSurface {
             type: "standard"
             size: "s"
             icon.name: "close"
-            Accessible.name: qsTr("Dismiss message")
+            Accessible.name: MeoI18n.translator.i18n("Dismiss message")
             onClicked: root.dismissed()
         }
     }

@@ -40,8 +40,8 @@ MeoMotionSurface {
             MeoText { Layout.fillWidth: true; text: root.media.title !== "" ? root.media.title : root.media.playerName; typeRole: "label"; typeSize: "medium"; emphasized: true; color: MeoTheme.onSurface; elide: Text.ElideRight }
             MeoText { Layout.fillWidth: true; text: root.media.artist !== "" ? root.media.artist : root.media.playerName; typeRole: "body"; typeSize: "small"; color: MeoTheme.onSurfaceVariant; elide: Text.ElideRight }
         }
-        MeoIconButton { visible: root.media.canGoPrevious; type: "standard"; size: "s"; icon.name: "skip_previous"; Accessible.name: qsTr("Previous track"); onClicked: root.media.previous() }
-        MeoIconButton { type: "tonal"; size: "m"; icon.name: root.media.playing ? "pause" : "play_arrow"; Accessible.name: root.media.playing ? qsTr("Pause") : qsTr("Play"); onClicked: root.media.playPause() }
-        MeoIconButton { visible: root.media.canGoNext; type: "standard"; size: "s"; icon.name: "skip_next"; Accessible.name: qsTr("Next track"); onClicked: root.media.next() }
+        MeoIconButton { visible: root.media.canGoPrevious; type: "standard"; size: "s"; icon.name: "skip_previous"; Accessible.name: MeoI18n.translator.i18n("Previous track"); onClicked: root.media.previous() }
+        MeoIconButton { type: "tonal"; size: "m"; icon.name: root.media.playing ? "pause" : "play_arrow"; Accessible.name: root.media.playing ? MeoI18n.translator.i18n("Pause") : MeoI18n.translator.i18n("Play"); onClicked: root.media.playPause() }
+        MeoIconButton { visible: root.media.canGoNext; type: "standard"; size: "s"; icon.name: "skip_next"; Accessible.name: MeoI18n.translator.i18n("Next track"); onClicked: root.media.next() }
     }
 }

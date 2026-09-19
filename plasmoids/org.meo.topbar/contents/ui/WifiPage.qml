@@ -23,9 +23,9 @@ Item {
 
         PopupPageHeader {
             Layout.fillWidth: true
-            title: qsTr("Wi-Fi")
+            title: MeoI18n.translator.i18n("Wi-Fi")
             subtitle: SystemState.networkConnected ? SystemState.networkName
-                      : (SystemState.wirelessEnabled ? qsTr("Choose a network") : qsTr("Wireless is off"))
+                      : (SystemState.wirelessEnabled ? MeoI18n.translator.i18n("Choose a network") : MeoI18n.translator.i18n("Wireless is off"))
             onBackRequested: root.backRequested()
             trailingContent: Component {
                 RowLayout {
@@ -34,7 +34,7 @@ Item {
                         size: "s"
                         checked: SystemState.wirelessEnabled
                         enabled: SystemState.networkAvailable && !SystemState.networkBusy
-                        Accessible.name: qsTr("Wi-Fi")
+                        Accessible.name: MeoI18n.translator.i18n("Wi-Fi")
                         onToggled: function(checked) { SystemState.wirelessEnabled = checked }
                     }
                     MeoIconButton {
@@ -42,7 +42,7 @@ Item {
                         size: "m"
                         icon.name: "refresh"
                         enabled: SystemState.wirelessEnabled && !SystemState.wifiScanning && !SystemState.networkBusy
-                        Accessible.name: qsTr("Scan for Wi-Fi networks")
+                        Accessible.name: MeoI18n.translator.i18n("Scan for Wi-Fi networks")
                         onClicked: SystemState.requestWifiScan()
                     }
                 }
@@ -62,7 +62,7 @@ Item {
             spacing: MeoTheme.space8
             MeoLoadingIndicator { indeterminate: true; width: 20 * MeoTheme.globalScale; height: width }
             MeoText {
-                text: qsTr("Scanning for nearby networks…")
+                text: MeoI18n.translator.i18n("Scanning for nearby networks…")
                 typeRole: "body"
                 typeSize: "small"
                 color: MeoTheme.onSurfaceVariant
@@ -88,8 +88,8 @@ Item {
                     isSegmented: true
                     roundingStrategy: "all"
                     headline: modelData.ssid
-                    supportingText: modelData.connected ? qsTr("Connected")
-                                  : (modelData.connecting ? qsTr("Connecting…") : modelData.securityLabel)
+                    supportingText: modelData.connected ? MeoI18n.translator.i18n("Connected")
+                                  : (modelData.connecting ? MeoI18n.translator.i18n("Connecting…") : modelData.securityLabel)
                     leadingIcon: root.signalIcon(modelData.strength)
                     selected: modelData.connected
                     interactive: !SystemState.networkBusy
@@ -102,7 +102,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 enabled: !SystemState.networkBusy
-                                Accessible.name: qsTr("Forget %1").arg(modelData.ssid)
+                                Accessible.name: MeoI18n.translator.i18n("Forget %1").arg(modelData.ssid)
                                 onClicked: {
                                     SystemState.clearOperationError()
                                     forgetDialog.ssid = modelData.ssid
@@ -132,16 +132,16 @@ Item {
                 visible: !networkList.visible
                 iconName: !SystemState.networkAvailable ? "wifi_off"
                           : (!SystemState.wirelessEnabled ? "wifi_off" : "wifi_find")
-                title: !SystemState.networkAvailable ? qsTr("Wi-Fi is unavailable")
-                       : (!SystemState.wirelessEnabled ? qsTr("Wi-Fi is turned off") : qsTr("No networks found"))
+                title: !SystemState.networkAvailable ? MeoI18n.translator.i18n("Wi-Fi is unavailable")
+                       : (!SystemState.wirelessEnabled ? MeoI18n.translator.i18n("Wi-Fi is turned off") : MeoI18n.translator.i18n("No networks found"))
                 description: !SystemState.networkAvailable
-                             ? qsTr("Open Network Settings to check the adapter and connection service.")
+                             ? MeoI18n.translator.i18n("Open Network Settings to check the adapter and connection service.")
                              : (!SystemState.wirelessEnabled
-                                ? qsTr("Turn on Wi-Fi to discover nearby networks.")
-                                : qsTr("Scan again or move closer to an access point."))
-                actionText: !SystemState.networkAvailable ? qsTr("Network Settings")
-                            : (!SystemState.wirelessEnabled ? qsTr("Turn on Wi-Fi")
-                                                           : (SystemState.wifiScanning ? "" : qsTr("Scan again")))
+                                ? MeoI18n.translator.i18n("Turn on Wi-Fi to discover nearby networks.")
+                                : MeoI18n.translator.i18n("Scan again or move closer to an access point."))
+                actionText: !SystemState.networkAvailable ? MeoI18n.translator.i18n("Network Settings")
+                            : (!SystemState.wirelessEnabled ? MeoI18n.translator.i18n("Turn on Wi-Fi")
+                                                           : (SystemState.wifiScanning ? "" : MeoI18n.translator.i18n("Scan again")))
                 onActionRequested: {
                     if (!SystemState.networkAvailable)
                         Qt.openUrlExternally("applications:org.meo.settings.wifi.desktop")
@@ -180,7 +180,7 @@ Item {
             spacing: MeoTheme.space16
             MeoText {
                 Layout.fillWidth: true
-                text: qsTr("Forget this network?")
+                text: MeoI18n.translator.i18n("Forget this network?")
                 typeRole: "title"
                 typeSize: "small"
                 emphasized: true
@@ -188,7 +188,7 @@ Item {
             }
             MeoText {
                 Layout.fillWidth: true
-                text: qsTr("NetworkManager will remove the saved profile and credentials for %1.").arg(forgetDialog.ssid)
+                text: MeoI18n.translator.i18n("NetworkManager will remove the saved profile and credentials for %1.").arg(forgetDialog.ssid)
                 typeRole: "body"
                 typeSize: "small"
                 color: MeoTheme.onSurfaceVariant
@@ -199,12 +199,12 @@ Item {
                 spacing: MeoTheme.space8
                 Item { Layout.fillWidth: true }
                 MeoButton {
-                    text: qsTr("Cancel")
+                    text: MeoI18n.translator.i18n("Cancel")
                     type: "text"
                     onClicked: forgetDialog.close()
                 }
                 MeoButton {
-                    text: qsTr("Forget")
+                    text: MeoI18n.translator.i18n("Forget")
                     type: "filled"
                     onClicked: {
                         SystemState.forgetWifi(forgetDialog.ssid)

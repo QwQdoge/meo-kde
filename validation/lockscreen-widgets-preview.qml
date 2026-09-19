@@ -1,7 +1,6 @@
 // Isolated visual preview only. It has no KScreenLocker, PAM, D-Bus, network,
 // or notification backend and is never installed as a lock-screen surface.
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
@@ -15,6 +14,13 @@ Window {
     visible: true
     color: MeoTheme.surface
 
+    // Sample state only. This file deliberately imports no security or KDE
+    // backend and is the approval gate before greeter visual integration.
+    property bool showAuthentication: false
+    property bool showArtwork: true
+    property bool showFullNotification: true
+    property bool showVolume: true
+
     property string snapshotPath: {
         for (const argument of Qt.application.arguments) {
             if (argument.indexOf("--snapshot=") === 0)
@@ -26,6 +32,11 @@ Window {
     Rectangle {
         anchors.fill: parent
         color: MeoTheme.surface
+
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: window.showAuthentication = !window.showAuthentication
+        }
 
         Rectangle {
             width: 640
@@ -57,6 +68,30 @@ Window {
         typeRole: "label"
         typeSize: "medium"
         color: MeoTheme.contentOnSurfaceVariant
+    }
+
+    Row {
+        anchors {
+            top: parent.top
+            right: parent.right
+            margins: MeoTheme.space16
+        }
+        spacing: MeoTheme.space8
+        MeoButton {
+            text: window.showAuthentication ? "Return to ambient" : "Preview unlock"
+            type: "tonal"
+            onClicked: window.showAuthentication = !window.showAuthentication
+        }
+        MeoButton {
+            text: window.showFullNotification ? "Full content" : "Private"
+            type: "text"
+            onClicked: window.showFullNotification = !window.showFullNotification
+        }
+        MeoButton {
+            text: window.showArtwork ? "Artwork on" : "Artwork off"
+            type: "text"
+            onClicked: window.showArtwork = !window.showArtwork
+        }
     }
 
     ColumnLayout {
@@ -92,9 +127,11 @@ Window {
             verticalCenter: authenticationSurface.verticalCenter
         }
         width: 320 * MeoTheme.globalScale
-        privacyLevel: "app-name"
+        privacyLevel: window.showFullNotification ? "full-content" : "count"
         notificationCount: 2
         applicationName: "Messages"
+        summary: "New message"
+        body: "Meet at the library after class"
     }
 
     MeoAuthenticationSurface {
@@ -105,6 +142,7 @@ Window {
             verticalCenterOffset: 82 * MeoTheme.globalScale
         }
         width: 400 * MeoTheme.globalScale
+        visible: window.showAuthentication
         title: "Unlock"
         supportingText: "Authenticate to return to your session"
         status: "fingerprint"
@@ -122,6 +160,15 @@ Window {
         }
     }
 
+    MeoText {
+        anchors.centerIn: authenticationSurface
+        visible: !window.showAuthentication
+        text: "Click anywhere to preview the upstream-bound authentication card"
+        typeRole: "body"
+        typeSize: "small"
+        color: MeoTheme.contentOnSurfaceVariant
+    }
+
     MeoMediaController {
         id: mediaCard
         anchors {
@@ -135,8 +182,8 @@ Window {
         artist: "Meo Sessions"
         sourceName: "Preview player"
         isPlaying: true
-        showArtwork: false
-        showVolume: false
+        showArtwork: window.showArtwork
+        showVolume: window.showVolume
         showSecondaryActions: false
     }
 
@@ -145,7 +192,7 @@ Window {
         running: window.snapshotPath !== ""
         repeat: false
         onTriggered: window.contentItem.grabToImage(function(result) {
-            if (!authenticationSurface.visible || !mediaCard.visible)
+            if (!mediaCard.visible)
                 throw new Error("Expected preview widgets did not render")
             if (!result.saveToFile(window.snapshotPath))
                 throw new Error("Unable to save lock-screen widget preview")

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="OmniStore monochrome glyph">
+  <mask id="bag-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+    <rect x="10" y="15" width="28" height="25" rx="6" fill="white"/>
+    <path fill="black" d="M16 23H22V29H16ZM26 23H32V29H26ZM16 32H22V36H16ZM26 32H32V36H26Z"/>
+  </mask>
+  <rect x="10" y="15" width="28" height="25" rx="6" fill="currentColor" mask="url(#bag-cutouts)"/>
+  <path d="M16 18C16 10 32 10 32 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4"/>
+</svg>

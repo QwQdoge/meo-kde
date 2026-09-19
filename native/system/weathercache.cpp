@@ -1,12 +1,13 @@
 #include "weathercache.h"
 
+#include <KLocalizedString>
+
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
-#include <QStandardPaths>
 #include <QTimer>
 
 #include <cmath>
@@ -29,6 +30,38 @@ QString safeIconName(const QString &value)
     const QString candidate = boundedText(value, 128);
     static const QRegularExpression validIconName(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._+\\-]*$"));
     return validIconName.match(candidate).hasMatch() ? candidate : QStringLiteral("weather-clear");
+}
+
+QString localizedConditionForCode(int code)
+{
+    if (code == 0) return i18nd("meo-desktop", "Clear sky");
+    if (code <= 3) return i18nd("meo-desktop", "Partly cloudy");
+    if (code == 45 || code == 48) return i18nd("meo-desktop", "Foggy");
+    if (code <= 57) return i18nd("meo-desktop", "Drizzle");
+    if (code <= 67) return i18nd("meo-desktop", "Rain");
+    if (code <= 77) return i18nd("meo-desktop", "Snow");
+    if (code <= 82) return i18nd("meo-desktop", "Rain showers");
+    if (code <= 86) return i18nd("meo-desktop", "Snow showers");
+    if (code <= 99) return i18nd("meo-desktop", "Thunderstorm");
+    return i18nd("meo-desktop", "Weather unavailable");
+}
+
+bool stableWeatherCode(const QJsonValue &value, int *code)
+{
+    if (!value.isDouble()) {
+        return false;
+    }
+
+    const double numericCode = value.toDouble();
+    if (!std::isfinite(numericCode)
+        || numericCode < std::numeric_limits<int>::min()
+        || numericCode > std::numeric_limits<int>::max()
+        || std::trunc(numericCode) != numericCode) {
+        return false;
+    }
+
+    *code = static_cast<int>(numericCode);
+    return true;
 }
 }
 
@@ -60,8 +93,15 @@ QString WeatherCache::lastError() const { return m_lastError; }
 
 QString WeatherCache::cachePath()
 {
-    return QDir(QStandardPaths::writableLocation(QStandardPaths::StateLocation))
-            .filePath(QStringLiteral("meo/weather/lockscreen.json"));
+    // StateLocation is application-specific on some Qt platforms.  The
+    // refresher and kscreenlocker are separate applications, so use the XDG
+    // state root explicitly to give both processes one private, per-user
+    // cache.  This is intentionally independent of their application names.
+    QString stateHome = qEnvironmentVariable("XDG_STATE_HOME");
+    if (stateHome.isEmpty()) {
+        stateHome = QDir::home().filePath(QStringLiteral(".local/state"));
+    }
+    return QDir(stateHome).filePath(QStringLiteral("meo/weather/lockscreen.json"));
 }
 
 void WeatherCache::refresh()
@@ -79,28 +119,28 @@ void WeatherCache::reload()
         return;
     }
     if (!info.isFile() || info.size() < 0 || info.size() > kMaximumCacheBytes) {
-        clearWeather(tr("Weather cache is unavailable."));
+        clearWeather(i18nd("meo-desktop", "Weather cache is unavailable."));
         return;
     }
 
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
-        clearWeather(tr("Weather cache is unavailable."));
+        clearWeather(i18nd("meo-desktop", "Weather cache is unavailable."));
         return;
     }
     const QByteArray bytes = file.read(kMaximumCacheBytes + 1);
     if (bytes.size() > kMaximumCacheBytes) {
-        clearWeather(tr("Weather cache is unavailable."));
+        clearWeather(i18nd("meo-desktop", "Weather cache is unavailable."));
         return;
     }
     const QJsonDocument document = QJsonDocument::fromJson(bytes);
     if (!document.isObject()) {
-        clearWeather(tr("Weather cache is invalid."));
+        clearWeather(i18nd("meo-desktop", "Weather cache is invalid."));
         return;
     }
     const QJsonObject object = document.object();
     if (object.value(QStringLiteral("schemaVersion")).toInt() != 1) {
-        clearWeather(tr("Weather cache has an unsupported version."));
+        clearWeather(i18nd("meo-desktop", "Weather cache has an unsupported version."));
         return;
     }
 
@@ -115,9 +155,17 @@ void WeatherCache::reload()
     if (!updatedAt.isValid() || updatedAt > QDateTime::currentDateTimeUtc().addSecs(5 * 60)
         || !std::isfinite(temperature) || temperature < -100 || temperature > 100
         || (unit != QLatin1String("C") && unit != QLatin1String("F")) || condition.isEmpty()) {
-        clearWeather(tr("Weather cache is invalid."));
+        clearWeather(i18nd("meo-desktop", "Weather cache is invalid."));
         return;
     }
+
+    int weatherCode = 0;
+    const QString displayedCondition = stableWeatherCode(
+        object.value(QStringLiteral("weatherCode")),
+        &weatherCode
+    )
+        ? localizedConditionForCode(weatherCode)
+        : condition;
 
     const bool stale = updatedAt.secsTo(QDateTime::currentDateTimeUtc()) > kMaximumCacheAgeSeconds;
     const QString temperatureText = QString::number(temperature, 'f', std::abs(temperature - std::round(temperature)) < 0.05 ? 0 : 1)
@@ -126,7 +174,7 @@ void WeatherCache::reload()
     const QString iconName = safeIconName(object.value(QStringLiteral("iconName")).toString());
     const bool available = !stale;
     if (m_available == available && m_stale == stale && m_temperatureText == temperatureText
-        && m_condition == condition && m_iconName == iconName && m_location == location
+        && m_condition == displayedCondition && m_iconName == iconName && m_location == location
         && m_updatedAt == updatedAt) {
         setError({});
         return;
@@ -134,7 +182,7 @@ void WeatherCache::reload()
     m_available = available;
     m_stale = stale;
     m_temperatureText = temperatureText;
-    m_condition = condition;
+    m_condition = displayedCondition;
     m_iconName = iconName;
     m_location = location;
     m_updatedAt = updatedAt;

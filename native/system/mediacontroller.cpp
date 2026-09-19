@@ -1,5 +1,7 @@
 #include "mediacontroller.h"
 
+#include <KLocalizedString>
+
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QDBusInterface>
@@ -157,7 +159,7 @@ void MediaController::refresh()
         }
         ++m_refreshGeneration;
         clearMedia();
-        setError(tr("The media service did not respond in time."));
+        setError(i18nd("meo-desktop", "The media service did not respond in time."));
     });
 }
 
@@ -173,7 +175,7 @@ void MediaController::fetchPlayerProperties(const QString &service, quint64 gene
         if (!properties.isValid()) {
             if (state->generation == m_refreshGeneration) {
                 clearMedia();
-                setError(tr("The media player is no longer available."));
+                setError(i18nd("meo-desktop", "The media player is no longer available."));
             }
             state->terminal = true;
             return;
@@ -210,7 +212,7 @@ void MediaController::fetchPlayerProperties(const QString &service, quint64 gene
             }
             state->terminal = true;
             clearMedia();
-            setError(tr("The media player did not respond in time."));
+            setError(i18nd("meo-desktop", "The media player did not respond in time."));
         });
     };
 
@@ -281,13 +283,13 @@ void MediaController::callPlayerMethod(const QString &method)
 {
     clearError();
     if (m_service.isEmpty() || !m_controllable) {
-        setError(tr("No controllable media player is available."));
+        setError(i18nd("meo-desktop", "No controllable media player is available."));
         return;
     }
     QDBusInterface player(m_service, QString::fromLatin1(kMprisPath), QString::fromLatin1(kPlayerInterface),
                           QDBusConnection::sessionBus());
     if (!player.isValid()) {
-        setError(tr("The media player is no longer available."));
+        setError(i18nd("meo-desktop", "The media player is no longer available."));
         refresh();
         return;
     }
@@ -313,7 +315,7 @@ void MediaController::callPlayerMethod(const QString &method)
             return;
         }
         *completed = true;
-        setError(tr("The media player did not respond in time."));
+        setError(i18nd("meo-desktop", "The media player did not respond in time."));
         refresh();
     });
 }

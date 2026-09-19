@@ -8,6 +8,7 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import MeoUI 1.0
 import MeoKDE 1.0 as MeoShell
+import MeoKDE 1.0
 
 PlasmoidItem {
     id: root
@@ -20,11 +21,11 @@ PlasmoidItem {
     readonly property real compactHeight: MeoShell.ShellMetrics.topBarHeight
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: qsTr("Meo Time and Notifications")
-    toolTipMainText: qsTr("Meo Time and Notifications")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Time and Notifications")
+    toolTipMainText: MeoI18n.translator.i18n("Meo Time and Notifications")
     toolTipSubText: notificationModel.unreadNotificationsCount > 0
-                    ? qsTr("%1 unread notifications").arg(notificationModel.unreadNotificationsCount)
-                    : qsTr("Calendar and notifications")
+                    ? MeoI18n.translator.i18n("%1 unread notifications").arg(notificationModel.unreadNotificationsCount)
+                    : MeoI18n.translator.i18n("Calendar and notifications")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
     switchHeight: 0

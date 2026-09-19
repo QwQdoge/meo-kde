@@ -1,4 +1,5 @@
 module MeoKDE
+singleton MeoI18n 1.0 MeoI18n.qml
 singleton MeoShellTheme 1.0 MeoShellTheme.qml
 singleton ShellMetrics 1.0 ShellMetrics.qml
 singleton MeoMotion 1.0 MeoMotion.qml

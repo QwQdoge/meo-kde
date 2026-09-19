@@ -2,7 +2,9 @@
     "KPlugin": {
         "Id": "org.meo.shelf",
         "Name": "Meo Bottom Shelf",
+        "Name[zh_CN]": "Meo 底部栏",
         "Description": "Adaptive Material 3 bottom Shelf for Meo Desktop",
+        "Description[zh_CN]": "适用于 Meo 桌面的自适应 Material 3 底部栏",
         "Icon": "meoarch-logo",
         "Authors": [
             {

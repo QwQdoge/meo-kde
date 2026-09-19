@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QLocale>
 #include <QSet>
 #include <QTest>
 #include <QTemporaryDir>
@@ -31,6 +32,24 @@ bool writePlasmaPackage(const QString &dataRoot,
     mainQml.write("import QtQuick\nItem {}\n");
     return true;
 }
+
+class DefaultLocaleGuard
+{
+public:
+    explicit DefaultLocaleGuard(const QLocale &locale)
+        : m_previous(QLocale())
+    {
+        QLocale::setDefault(locale);
+    }
+
+    ~DefaultLocaleGuard()
+    {
+        QLocale::setDefault(m_previous);
+    }
+
+private:
+    QLocale m_previous;
+};
 }
 
 class DesktopWidgetBridgeTest : public QObject
@@ -123,6 +142,32 @@ private slots:
         QCOMPARE(item.value(QStringLiteral("id")).toString(), QStringLiteral("com.example.weather"));
         QCOMPARE(item.value(QStringLiteral("source")).toString(), QStringLiteral("user"));
         QVERIFY(!item.value(QStringLiteral("lockScreenEligible")).toBool());
+    }
+
+    void readsStandardKPluginLocaleKeys()
+    {
+        QTemporaryDir dataRoot;
+        QVERIFY(dataRoot.isValid());
+        QVERIFY(writePlasmaPackage(dataRoot.path(), QStringLiteral("com.example.weather"),
+                                   QStringLiteral(R"({
+                "KPackageStructure": "Plasma/Applet",
+                "KPlugin": {
+                    "Id": "com.example.weather",
+                    "Name": "Example weather",
+                    "Name[zh_CN]": "示例天气",
+                    "Description": "A test desktop package",
+                    "Description[zh_CN]": "用于桌面的测试组件",
+                    "Icon": "weather-clear",
+                    "FormFactors": ["desktop"]
+                }
+            })")));
+
+        const DefaultLocaleGuard localeGuard(QLocale(QStringLiteral("zh_CN")));
+        DesktopWidgetBridge bridge(nullptr, {dataRoot.path()});
+        const QVariantMap item = bridge.plasmaCatalog().constFirst().toMap();
+        QCOMPARE(item.value(QStringLiteral("title")).toString(), QStringLiteral("示例天气"));
+        QCOMPARE(item.value(QStringLiteral("description")).toString(),
+                 QStringLiteral("用于桌面的测试组件"));
     }
 
     void rejectsNonDesktopContainments()

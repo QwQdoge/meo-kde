@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import MeoUI 1.0
+import MeoKDE 1.0
 
 // Pure presentation of the live system header. Backend state stays in
 // MeoKDE; the home page owns edit-mode and page composition.
@@ -22,7 +23,7 @@ RowLayout {
     Item { Layout.fillWidth: true }
     MeoText {
         visible: root.editMode
-        text: qsTr("Drag to reorder · use arrows to resize")
+        text: MeoI18n.translator.i18n("Drag to reorder · use arrows to resize")
         typeRole: "label"
         typeSize: "small"
         color: MeoTheme.primary
@@ -41,8 +42,8 @@ RowLayout {
         triggeredOnStart: true
         onTriggered: {
             const now = new Date()
-            timeText.text = Qt.formatDateTime(now, "hh:mm")
-            dateText.text = Qt.formatDateTime(now, "dddd, MMMM d")
+            timeText.text = Qt.formatTime(now, Qt.locale().timeFormat(Locale.ShortFormat))
+            dateText.text = Qt.formatDate(now, Qt.DefaultLocaleLongDate)
         }
     }
 }

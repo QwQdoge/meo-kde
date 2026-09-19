@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Meo Welcome monochrome glyph">
+  <mask id="center-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+    <rect width="48" height="48" fill="white"/>
+    <circle cx="24" cy="24" r="5" fill="black"/>
+  </mask>
+  <g fill="currentColor" mask="url(#center-cutout)">
+    <path d="M24 24C15 24 9 19 9 13C9 9 12 7 16 7C22 7 24 14 24 24Z"/>
+    <path d="M24 24C24 14 26 7 32 7C36 7 39 9 39 13C39 19 33 24 24 24Z"/>
+    <path d="M24 24C31 25 36 30 36 35C36 39 33 42 29 42C24 42 22 34 24 24Z"/>
+    <path d="M24 24C26 34 24 42 19 42C15 42 12 39 12 35C12 30 17 25 24 24Z"/>
+  </g>
+</svg>

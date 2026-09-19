@@ -1,8 +1,8 @@
 #include "desktopwidgetbridge.h"
 
+#include <KLocalizedString>
 #include <plasma/containment.h>
 
-#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -71,7 +71,7 @@ bool appletPackageIsInstalled(const QString &pluginId)
                 .isEmpty();
 }
 
-QString localizedMetadataString(const QJsonValue &value)
+QString localizedMetadataValue(const QJsonValue &value, const QString &locale)
 {
     if (value.isString()) {
         return value.toString();
@@ -81,7 +81,6 @@ QString localizedMetadataString(const QJsonValue &value)
     }
 
     const QJsonObject translations = value.toObject();
-    const QString locale = QLocale().name();
     if (translations.contains(locale)) {
         return translations.value(locale).toString();
     }
@@ -90,6 +89,24 @@ QString localizedMetadataString(const QJsonValue &value)
         return translations.value(language).toString();
     }
     return translations.value(QStringLiteral("en")).toString();
+}
+
+QString localizedMetadataString(const QJsonObject &metadata, const QString &key)
+{
+    const QString locale = QLocale().name();
+    const QString language = locale.section(QLatin1Char('_'), 0, 0);
+    const QStringList localizedKeys{
+        key + QLatin1Char('[') + locale + QLatin1Char(']'),
+        key + QLatin1Char('[') + language + QLatin1Char(']'),
+    };
+    for (const QString &localizedKey : localizedKeys) {
+        const QJsonValue localizedValue = metadata.value(localizedKey);
+        if (localizedValue.isString() && !localizedValue.toString().isEmpty()) {
+            return localizedValue.toString();
+        }
+    }
+
+    return localizedMetadataValue(metadata.value(key), locale);
 }
 
 bool supportsDesktop(const QJsonObject &plugin)
@@ -152,8 +169,8 @@ QVariantList DesktopWidgetBridge::meoCatalog() const
             {QStringLiteral("host"), QStringLiteral("meo")},
             {QStringLiteral("id"), QLatin1String(definition.id)},
             {QStringLiteral("pluginId"), pluginId},
-            {QStringLiteral("title"), QCoreApplication::translate("DesktopWidgetBridge", definition.title)},
-            {QStringLiteral("description"), QCoreApplication::translate("DesktopWidgetBridge", definition.description)},
+            {QStringLiteral("title"), i18nd("meo-desktop", definition.title)},
+            {QStringLiteral("description"), i18nd("meo-desktop", definition.description)},
             {QStringLiteral("icon"), QLatin1String(definition.iconName)},
             {QStringLiteral("previewKind"), QLatin1String(definition.previewKind)},
             {QStringLiteral("sharedWithLockScreen"), definition.sharedWithLockScreen},
@@ -244,8 +261,8 @@ void DesktopWidgetBridge::refreshPlasmaCatalog()
 
             seenIds.insert(pluginId);
             pluginIds.insert(pluginId);
-            const QString title = localizedMetadataString(plugin.value(QStringLiteral("Name")));
-            const QString description = localizedMetadataString(plugin.value(QStringLiteral("Description")));
+            const QString title = localizedMetadataString(plugin, QStringLiteral("Name"));
+            const QString description = localizedMetadataString(plugin, QStringLiteral("Description"));
             const QString normalizedPackagePath = QDir::cleanPath(packagePath);
             const bool isUserPackage = normalizedPackagePath == userDataLocation
                 || normalizedPackagePath.startsWith(userDataLocation + QLatin1Char('/'));
@@ -286,7 +303,7 @@ bool DesktopWidgetBridge::addMeoWidget(QObject *desktopContainment,
 {
     const MeoWidgetDefinition *definition = meoDefinitionFor(widgetId);
     if (!definition) {
-        setError(tr("This widget is not in the Meo widget registry."));
+        setError(i18nd("meo-desktop", "This widget is not in the Meo widget registry."));
         return false;
     }
     return addApplet(desktopContainment, QLatin1String(definition->pluginId),
@@ -303,7 +320,7 @@ bool DesktopWidgetBridge::addPlasmaWidget(QObject *desktopContainment,
     // input into an arbitrary package-ID escape hatch.
     refreshPlasmaCatalog();
     if (!safePluginId(pluginId) || !m_discoveredPlasmaPluginIds.contains(pluginId)) {
-        setError(tr("This Plasma widget is not available from a standard Plasma package location."));
+        setError(i18nd("meo-desktop", "This Plasma widget is not available from a standard Plasma package location."));
         return false;
     }
     return addApplet(desktopContainment, pluginId,
@@ -319,15 +336,15 @@ bool DesktopWidgetBridge::addApplet(QObject *desktopContainment,
 {
     auto *containment = qobject_cast<Plasma::Containment *>(desktopContainment);
     if (!containment || containment->containmentType() != Plasma::Containment::Desktop) {
-        setError(tr("Widgets can only be added to a desktop surface."));
+        setError(i18nd("meo-desktop", "Widgets can only be added to a desktop surface."));
         return false;
     }
     if (!appletPackageIsInstalled(pluginId)) {
-        setError(tr("The required widget package is not installed."));
+        setError(i18nd("meo-desktop", "The required widget package is not installed."));
         return false;
     }
     if (!containment->createApplet(pluginId, {}, geometry)) {
-        setError(tr("Plasma could not create this widget."));
+        setError(i18nd("meo-desktop", "Plasma could not create this widget."));
         return false;
     }
 

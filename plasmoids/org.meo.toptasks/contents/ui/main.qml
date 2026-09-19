@@ -30,9 +30,9 @@ PlasmoidItem {
     property int taskRevision: 0
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: qsTr("Open applications")
-    toolTipMainText: qsTr("Open applications")
-    toolTipSubText: qsTr("KDE window controls in a compact Meo strip")
+    Plasmoid.title: MeoI18n.translator.i18n("Open applications")
+    toolTipMainText: MeoI18n.translator.i18n("Open applications")
+    toolTipSubText: MeoI18n.translator.i18n("KDE window controls in a compact Meo strip")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
     switchHeight: 0
@@ -100,8 +100,8 @@ PlasmoidItem {
                     height: root.taskExtent
                     Accessible.name: taskTitle
                     Accessible.description: active
-                                            ? qsTr("Active application")
-                                            : qsTr("Activate application")
+                                            ? MeoI18n.translator.i18n("Active application")
+                                            : MeoI18n.translator.i18n("Activate application")
                     onClicked: {
                         if (active)
                             tasksModel.requestToggleMinimized(taskIndex)

@@ -27,8 +27,8 @@ Item {
 
         PopupPageHeader {
             Layout.fillWidth: true
-            title: qsTr("Bluetooth")
-            subtitle: SystemState.bluetoothEnabled ? qsTr("Connect and manage devices") : qsTr("Bluetooth is off")
+            title: MeoI18n.translator.i18n("Bluetooth")
+            subtitle: SystemState.bluetoothEnabled ? MeoI18n.translator.i18n("Connect and manage devices") : MeoI18n.translator.i18n("Bluetooth is off")
             onBackRequested: root.backRequested()
             trailingContent: Component {
                 RowLayout {
@@ -37,7 +37,7 @@ Item {
                         size: "s"
                         checked: SystemState.bluetoothEnabled
                         enabled: SystemState.bluetoothAvailable && !SystemState.bluetoothBusy
-                        Accessible.name: qsTr("Bluetooth")
+                        Accessible.name: MeoI18n.translator.i18n("Bluetooth")
                         onToggled: function(checked) { SystemState.bluetoothEnabled = checked }
                     }
                     MeoIconButton {
@@ -46,7 +46,7 @@ Item {
                         icon.name: SystemState.bluetoothDiscovering ? "stop" : "refresh"
                         enabled: SystemState.bluetoothEnabled && !SystemState.bluetoothBusy
                         Accessible.name: SystemState.bluetoothDiscovering
-                                         ? qsTr("Stop Bluetooth discovery") : qsTr("Discover Bluetooth devices")
+                                         ? MeoI18n.translator.i18n("Stop Bluetooth discovery") : MeoI18n.translator.i18n("Discover Bluetooth devices")
                         onClicked: {
                             if (SystemState.bluetoothDiscovering) SystemState.stopBluetoothDiscovery()
                             else SystemState.startBluetoothDiscovery()
@@ -56,7 +56,7 @@ Item {
                         type: "standard"
                         size: "m"
                         icon.name: "settings"
-                        Accessible.name: qsTr("Open Bluetooth in Meo Settings")
+                        Accessible.name: MeoI18n.translator.i18n("Open Bluetooth in Meo Settings")
                         onClicked: root.openMeoBluetoothSettings()
                     }
                 }
@@ -76,7 +76,7 @@ Item {
             spacing: MeoTheme.space8
             MeoLoadingIndicator { indeterminate: true; width: 20 * MeoTheme.globalScale; height: width }
             MeoText {
-                text: qsTr("Looking for nearby devices…")
+                text: MeoI18n.translator.i18n("Looking for nearby devices…")
                 typeRole: "body"
                 typeSize: "small"
                 color: MeoTheme.onSurfaceVariant
@@ -104,9 +104,9 @@ Item {
                     headline: modelData.name
                     supportingText: modelData.connected
                                     ? (modelData.batteryAvailable
-                                       ? qsTr("Connected · %1%").arg(modelData.batteryPercent) : qsTr("Connected"))
-                                    : (modelData.paired ? qsTr("Paired")
-                                                        : qsTr("Available · Set up in Meo Settings"))
+                                       ? MeoI18n.translator.i18n("Connected · %1%").arg(modelData.batteryPercent) : MeoI18n.translator.i18n("Connected"))
+                                    : (modelData.paired ? MeoI18n.translator.i18n("Paired")
+                                                        : MeoI18n.translator.i18n("Available · Set up in Meo Settings"))
                     leadingIcon: modelData.icon
                     selected: modelData.connected
                     interactive: !SystemState.bluetoothBusy
@@ -119,7 +119,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 icon.name: "delete"
-                                Accessible.name: qsTr("Forget %1").arg(modelData.name)
+                                Accessible.name: MeoI18n.translator.i18n("Forget %1").arg(modelData.name)
                                 onClicked: SystemState.forgetBluetoothDevice(modelData.address)
                             }
                         }
@@ -138,16 +138,16 @@ Item {
                 anchors.fill: parent
                 visible: !bluetoothList.visible
                 iconName: "bluetooth"
-                title: !SystemState.bluetoothAvailable ? qsTr("Bluetooth is unavailable")
-                       : (!SystemState.bluetoothEnabled ? qsTr("Bluetooth is turned off") : qsTr("No devices found"))
+                title: !SystemState.bluetoothAvailable ? MeoI18n.translator.i18n("Bluetooth is unavailable")
+                       : (!SystemState.bluetoothEnabled ? MeoI18n.translator.i18n("Bluetooth is turned off") : MeoI18n.translator.i18n("No devices found"))
                 description: !SystemState.bluetoothAvailable
-                             ? qsTr("Check that a Bluetooth adapter and the BlueZ service are available.")
+                             ? MeoI18n.translator.i18n("Check that a Bluetooth adapter and the BlueZ service are available.")
                              : (!SystemState.bluetoothEnabled
-                                ? qsTr("Turn on Bluetooth to connect accessories.")
-                                : qsTr("Put the device in pairing mode, then search again."))
-                actionText: !SystemState.bluetoothAvailable ? qsTr("Open Bluetooth in Meo Settings")
-                            : (!SystemState.bluetoothEnabled ? qsTr("Turn on Bluetooth")
-                                                            : (SystemState.bluetoothDiscovering ? "" : qsTr("Find devices")))
+                                ? MeoI18n.translator.i18n("Turn on Bluetooth to connect accessories.")
+                                : MeoI18n.translator.i18n("Put the device in pairing mode, then search again."))
+                actionText: !SystemState.bluetoothAvailable ? MeoI18n.translator.i18n("Open Bluetooth in Meo Settings")
+                            : (!SystemState.bluetoothEnabled ? MeoI18n.translator.i18n("Turn on Bluetooth")
+                                                            : (SystemState.bluetoothDiscovering ? "" : MeoI18n.translator.i18n("Find devices")))
                 onActionRequested: {
                     if (!SystemState.bluetoothAvailable)
                         root.openMeoBluetoothSettings()

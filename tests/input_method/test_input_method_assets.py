@@ -97,7 +97,8 @@ class InputMethodAssetsTests(unittest.TestCase):
                 highlight_rect = next(iter(highlight_svg))
                 menu_rect = next(iter(menu_svg))
                 self.assertEqual(panel_rect.attrib["fill"], colors["surfaceContainer"])
-                self.assertEqual(panel_rect.attrib["stroke"], colors["outline"])
+                self.assertNotIn("stroke", panel_rect.attrib)
+                self.assertNotIn("stroke-width", panel_rect.attrib)
                 self.assertEqual(
                     highlight_rect.attrib["fill"], colors["secondaryContainer"]
                 )
@@ -142,6 +143,8 @@ class InputMethodAssetsTests(unittest.TestCase):
         self.assertIn("@define-color theme_selected_bg_color @MEO_SECONDARY_CONTAINER@;", template)
         self.assertIn("@define-color theme_selected_fg_color @MEO_ON_SECONDARY_CONTAINER@;", template)
         self.assertIn("#IBusCandidate", template)
+        self.assertIn("border: 0;", template)
+        self.assertNotIn("border: 1px solid", template)
         self.assertIn("border-radius: 24px;", template)
         self.assertIn("border-radius: 17px;", template)
         self.assertIn("padding: 7px;", template)

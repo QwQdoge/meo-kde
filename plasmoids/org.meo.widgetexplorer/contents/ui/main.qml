@@ -6,6 +6,7 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import MeoUI 1.0
 import Meo.System 1.0 as MeoSystem
+import MeoKDE 1.0
 
 // A self-contained desktop utility, not a replacement for Plasma Edit Mode.
 // Meo entries use the MeoWidget registry. Plasma entries remain actual Plasma
@@ -15,9 +16,9 @@ import Meo.System 1.0 as MeoSystem
 PlasmoidItem {
     id: root
 
-    Plasmoid.title: qsTr("Meo Widget Explorer")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Widget Explorer")
     toolTipMainText: Plasmoid.title
-    toolTipSubText: qsTr("Add Meo and Plasma desktop widgets")
+    toolTipSubText: MeoI18n.translator.i18n("Add Meo and Plasma desktop widgets")
     preferredRepresentation: compactRepresentation
 
     property var contextWidget: null
@@ -59,7 +60,7 @@ PlasmoidItem {
                 : MeoSystem.DesktopWidgets.addPlasmaWidget(Plasmoid.containment, widget.pluginId,
                                                            suggestedGeometry(widget))
         if (added) {
-            feedbackText = qsTr("Added %1 to the desktop.").arg(widget.title)
+            feedbackText = MeoI18n.translator.i18n("Added %1 to the desktop.").arg(widget.title)
             feedbackIsError = false
         } else {
             feedbackText = MeoSystem.DesktopWidgets.lastError
@@ -69,10 +70,10 @@ PlasmoidItem {
 
     function sourceLabel(widget) {
         if (widget.host === "meo")
-            return qsTr("Meo Widget")
+            return MeoI18n.translator.i18n("Meo Widget")
         return widget.source === "user"
-                ? qsTr("Plasma Widget · User package")
-                : qsTr("Plasma Widget · Compatibility mode")
+                ? MeoI18n.translator.i18n("Plasma Widget · User package")
+                : MeoI18n.translator.i18n("Plasma Widget · Compatibility mode")
     }
 
     function openWidgetContext(widget, anchor, localX, localY) {
@@ -80,7 +81,7 @@ PlasmoidItem {
         const isMeo = widget.host === "meo"
         root.widgetActionsSurface.model = [
             {
-                "label": qsTr("Add to desktop"),
+                "label": MeoI18n.translator.i18n("Add to desktop"),
                 "icon": "add",
                 "enabled": widget.available,
                 "action": function() { root.addDesktopWidget(root.contextWidget) }
@@ -95,8 +96,8 @@ PlasmoidItem {
             },
             {
                 "label": isMeo && widget.lockScreenEligible
-                         ? qsTr("Available on lock screen through a reviewed Meo adapter")
-                         : qsTr("Desktop only; generic Plasma packages never run in the lock screen"),
+                         ? MeoI18n.translator.i18n("Available on lock screen through a reviewed Meo adapter")
+                         : MeoI18n.translator.i18n("Desktop only; generic Plasma packages never run in the lock screen"),
                 "icon": isMeo && widget.lockScreenEligible ? "lock" : "desktop_windows",
                 "enabled": false
             }
@@ -109,7 +110,7 @@ PlasmoidItem {
         implicitWidth: 56 * MeoTheme.globalScale
         implicitHeight: 56 * MeoTheme.globalScale
         hoverEnabled: true
-        Accessible.name: qsTr("Open Meo Widget Explorer")
+        Accessible.name: MeoI18n.translator.i18n("Open Meo Widget Explorer")
         onClicked: root.expanded = !root.expanded
 
         background: MeoShape {

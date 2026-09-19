@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Meo weather cache periodically
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=30m
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

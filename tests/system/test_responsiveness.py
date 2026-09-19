@@ -20,7 +20,7 @@ class ResponsivenessContractTests(unittest.TestCase):
             self.assertIn(f"'{package}'", recipe)
         self.assertIn("'meoui-qml>=1.0.4beta1'", recipe)
         self.assertIn("pkgver = 0.4.0", srcinfo)
-        self.assertIn("pkgrel = 2", srcinfo)
+        self.assertIn("pkgrel = 5", srcinfo)
         self.assertIn("depends = meoui-qml>=1.0.4beta1", srcinfo)
         self.assertNotIn("'ananicy-cpp'", recipe)
         self.assertIn("disable ananicy-cpp.service", (

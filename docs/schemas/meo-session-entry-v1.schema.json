@@ -52,12 +52,16 @@
                 "properties": {
                   "source": {"enum": ["system-default", "managed-asset"]}
                 }
-              }
+              },
+              "wallpaperMode": {"const": "managed"}
             }
           },
           "modules": {
             "properties": {
-              "media": {"const": false}
+              "media": {"const": false},
+              "weather": {"const": false},
+              "audio": {"const": false},
+              "weatherCity": {"const": ""}
             }
           },
           "privacy": {
@@ -126,7 +130,7 @@
     "appearance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["clockStyle", "showDate", "backgroundTreatment", "wallpaper"],
+      "required": ["clockStyle", "showDate", "backgroundTreatment", "wallpaperMode", "wallpaper"],
       "properties": {
         "clockStyle": {
           "enum": ["large", "compact"]
@@ -137,6 +141,11 @@
         "backgroundTreatment": {
           "enum": ["dim", "blur", "solid"]
         },
+        "wallpaperMode": {
+          "description": "follow-desktop resolves only the wallpaper already supplied by the KScreenLocker output; it never accepts a path or URL.",
+          "enum": ["follow-desktop", "managed"],
+          "default": "follow-desktop"
+        },
         "wallpaper": {
           "$ref": "#/$defs/wallpaper"
         }
@@ -145,15 +154,26 @@
     "modules": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["media", "weather"],
+      "required": ["media", "weather", "audio", "weatherCity"],
       "properties": {
         "media": {
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "weather": {
           "type": "boolean",
-          "default": false
+          "default": true
+        },
+        "audio": {
+          "description": "Output volume and mute only; output-device and input-device selection are excluded.",
+          "type": "boolean",
+          "default": true
+        },
+        "weatherCity": {
+          "description": "City-granularity user preference consumed only by the separate cache refresher, never by the locker.",
+          "type": "string",
+          "maxLength": 96,
+          "default": ""
         }
       }
     },
@@ -163,11 +183,12 @@
       "required": ["notificationVisibility", "showAlbumArtwork", "weatherLocation"],
       "properties": {
         "notificationVisibility": {
-          "enum": ["hidden", "count", "app-name", "full-content"]
+          "enum": ["hidden", "count", "app-name", "full-content"],
+          "default": "full-content"
         },
         "showAlbumArtwork": {
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "weatherLocation": {
           "enum": ["hidden", "city", "precise"]

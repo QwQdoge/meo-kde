@@ -70,7 +70,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 currentDateTime: root.currentDateTime
-                timeText: Qt.formatTime(root.currentDateTime, "hh:mm")
+                timeText: Qt.formatTime(root.currentDateTime, Qt.locale().timeFormat(Locale.ShortFormat))
                 dateText: Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleLongDate)
                 unreadCount: root.notifications ? root.notifications.unreadNotificationsCount : 0
 

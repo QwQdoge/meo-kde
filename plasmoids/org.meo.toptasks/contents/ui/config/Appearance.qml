@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import MeoUI 1.0
+import MeoKDE 1.0
 import org.kde.kcmutils as KCM
 import org.kde.kirigami as Kirigami
 
@@ -14,7 +15,7 @@ KCM.SimpleKCM {
             to: 12
             stepSize: 1
             editable: true
-            Kirigami.FormData.label: i18n("Open application icons:")
+            Kirigami.FormData.label: MeoI18n.translator.i18n("Open application icons:")
         }
     }
 }

@@ -65,7 +65,7 @@ MeoMotionPopup {
 
                 MeoText {
                     Layout.fillWidth: true
-                    text: qsTr("Connect to %1").arg(root.ssid)
+                    text: MeoI18n.translator.i18n("Connect to %1").arg(root.ssid)
                     textFormat: Text.PlainText
                     typeRole: "title"
                     typeSize: "medium"
@@ -75,7 +75,7 @@ MeoMotionPopup {
                 }
                 MeoText {
                     Layout.fillWidth: true
-                    text: qsTr("This network requires a password.")
+                    text: MeoI18n.translator.i18n("This network requires a password.")
                     typeRole: "body"
                     typeSize: "small"
                     color: MeoTheme.onSurfaceVariant
@@ -87,7 +87,7 @@ MeoMotionPopup {
                 size: "s"
                 icon.name: "close"
                 enabled: !root.busy
-                Accessible.name: qsTr("Cancel connection")
+                Accessible.name: MeoI18n.translator.i18n("Cancel connection")
                 onClicked: root.close()
             }
         }
@@ -102,10 +102,10 @@ MeoMotionPopup {
             id: passwordField
             Layout.fillWidth: true
             type: "outlined"
-            label: qsTr("Password")
+            label: MeoI18n.translator.i18n("Password")
             isPassword: true
             leadingIcon: "key"
-            helperText: qsTr("The password is saved by NetworkManager only after the connection succeeds.")
+            helperText: MeoI18n.translator.i18n("The password is saved by NetworkManager only after the connection succeeds.")
             enabled: !root.busy
             Accessible.description: helperText
             onAccepted: root.submit()
@@ -116,14 +116,14 @@ MeoMotionPopup {
             MeoButton {
                 type: "text"
                 size: "s"
-                text: qsTr("Cancel")
+                text: MeoI18n.translator.i18n("Cancel")
                 enabled: !root.busy
                 onClicked: root.close()
             }
             MeoButton {
                 type: "filled"
                 size: "s"
-                text: qsTr("Connect")
+                text: MeoI18n.translator.i18n("Connect")
                 loading: root.busy
                 enabled: !root.busy && passwordField.text.length > 0
                 onClicked: root.submit()

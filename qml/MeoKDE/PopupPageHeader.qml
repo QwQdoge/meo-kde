@@ -24,7 +24,7 @@ Item {
             type: "standard"
             size: "m"
             icon.name: "arrow_back"
-            Accessible.name: qsTr("Back")
+            Accessible.name: MeoI18n.translator.i18n("Back")
             onClicked: root.backRequested()
         }
 

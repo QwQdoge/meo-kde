@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Meo Account">
+  <circle cx="18" cy="16" r="6" fill="#42C7B3"/>
+  <path fill="#67DCCA" d="M8 36C8 29 12 25 18 25C24 25 28 29 28 36Z"/>
+  <circle cx="31" cy="18" r="5" fill="#7661C9"/>
+  <path fill="#B69DF8" d="M24 37C24 31 27 27 31 27C36 27 40 31 40 37Z"/>
+  <path fill="#FFE08A" d="M22 27H27V31H22Z"/>
+</svg>

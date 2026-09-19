@@ -13,6 +13,7 @@ find_package(KF6Solid REQUIRED)
 find_package(KF6PulseAudioQt REQUIRED)
 find_package(KF6GuiAddons REQUIRED)
 find_package(KF6Config REQUIRED)
+find_package(KF6I18n REQUIRED)
 find_package(LibTaskManager REQUIRED)
 find_package(Plasma REQUIRED)
 
@@ -59,6 +60,7 @@ target_link_libraries(meosystemplugin PRIVATE
     KF6::Solid
     KF6::PulseAudioQt
     KF6::GuiAddons
+    KF6::I18n
     Plasma::Plasma
 )
 
@@ -84,6 +86,7 @@ target_link_libraries(meo-system-state-smoke PRIVATE
     KF6::Solid
     KF6::PulseAudioQt
     KF6::GuiAddons
+    KF6::I18n
     Plasma::Plasma
 )
 
@@ -94,8 +97,14 @@ if(BUILD_TESTING)
         weathercache.h
     )
     target_include_directories(meo-weather-cache-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-    target_link_libraries(meo-weather-cache-test PRIVATE Qt6::Core Qt6::Test)
+    target_compile_definitions(meo-weather-cache-test PRIVATE
+        MEO_I18N_LOCALE_DIR="${CMAKE_BINARY_DIR}/translations/locale"
+    )
+    target_link_libraries(meo-weather-cache-test PRIVATE Qt6::Core Qt6::Test KF6::I18n)
     add_test(NAME meo-weather-cache COMMAND meo-weather-cache-test)
+    set_tests_properties(meo-weather-cache PROPERTIES
+        ENVIRONMENT "LANG=zh_CN.UTF-8;LC_ALL=zh_CN.UTF-8;LANGUAGE=zh_CN"
+    )
 
     add_executable(meo-desktop-widget-bridge-test
         tests/desktopwidgetbridge-test.cpp
@@ -103,7 +112,8 @@ if(BUILD_TESTING)
         desktopwidgetbridge.h
     )
     target_include_directories(meo-desktop-widget-bridge-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-    target_link_libraries(meo-desktop-widget-bridge-test PRIVATE Qt6::Core Qt6::Test Plasma::Plasma)
+    target_link_libraries(meo-desktop-widget-bridge-test PRIVATE
+        Qt6::Core Qt6::Test KF6::I18n Plasma::Plasma)
     add_test(NAME meo-desktop-widget-bridge COMMAND meo-desktop-widget-bridge-test)
 endif()
 
@@ -115,7 +125,10 @@ add_executable(meo-session-actiond
     sessionactionservice.cpp
     sessionactionservice.h
 )
-target_link_libraries(meo-session-actiond PRIVATE Qt6::Core Qt6::DBus)
+target_link_libraries(meo-session-actiond PRIVATE Qt6::Core Qt6::DBus KF6::I18n)
+
+add_executable(meo-weather-refresh weatherrefresh.cpp weathercache.cpp weathercache.h)
+target_link_libraries(meo-weather-refresh PRIVATE Qt6::Core Qt6::Network KF6::I18n)
 
 configure_file(qmldir "${CMAKE_BINARY_DIR}/qml/Meo/System/qmldir" COPYONLY)
 
@@ -142,14 +155,24 @@ add_custom_command(
 add_custom_target(meosystem-qmltypes ALL
     DEPENDS "${meosystem_qmltypes}" "${meosystem_registration_stub}"
 )
+# With Unix Makefiles, both this target and meosystemplugin own the
+# qt6_extract_metatypes intermediate.  Order them explicitly so parallel
+# recursive make cannot launch two moc --collect-json writers for the same
+# JSON file.
+add_dependencies(meosystem-qmltypes meosystemplugin)
 
 include(GNUInstallDirs)
 install(TARGETS meosystemplugin
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/qml/Meo/System"
 )
-install(TARGETS meo-session-actiond RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS meo-session-actiond meo-weather-refresh RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(FILES org.meo.SessionAction1.service
     DESTINATION "${CMAKE_INSTALL_DATADIR}/dbus-1/services"
+)
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../defaults/systemd/meo-weather-refresh.service"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../defaults/systemd/meo-weather-refresh.timer"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/systemd/user"
 )
 install(FILES qmldir
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/qml/Meo/System"

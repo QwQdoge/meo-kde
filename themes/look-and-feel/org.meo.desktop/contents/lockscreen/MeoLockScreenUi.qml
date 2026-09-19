@@ -43,6 +43,7 @@ Item {
                                                   : MeoTheme.motionDurationMedium1
     readonly property bool showMediaControls: configBoolean("showMediaControls", false)
     readonly property bool showAlbumArtwork: configBoolean("showAlbumArtwork", false)
+    readonly property bool showAudioControls: configBoolean("showAudioControls", false)
     readonly property bool showWeather: configBoolean("showWeather", false)
     readonly property bool showWeatherLocation: configBoolean("showWeatherLocation", false)
     readonly property string notificationPrivacyLevel: configNotificationPrivacy()
@@ -309,6 +310,18 @@ Item {
                 temperatureText: Weather.temperatureText
                 condition: Weather.condition
                 iconName: Weather.iconName
+            }
+
+            // This is deliberately outside the credential StackView.  It is a
+            // current-session MPRIS and audio projection that disappears as
+            // soon as authentication starts; it never receives password input.
+            MediaControls {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
+                visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
+                showMedia: lockScreenUi.showMediaControls
+                showArtwork: lockScreenUi.showAlbumArtwork
+                showVolume: lockScreenUi.showAudioControls
             }
 
             Loader {

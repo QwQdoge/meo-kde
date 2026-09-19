@@ -5,11 +5,12 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import MeoUI 1.0
 import Meo.System 1.0 as MeoSystem
+import MeoKDE 1.0
 
 PlasmoidItem {
     id: root
 
-    Plasmoid.title: qsTr("Meo Clock")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Clock")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: fullRepresentation
     property date currentDateTime: new Date()
@@ -40,7 +41,7 @@ PlasmoidItem {
             refreshPolicy: MeoWidget.Periodic
             supportedSurfaces: [MeoWidget.Desktop, MeoWidget.LockScreen]
             accessibleName: Plasmoid.title
-            accessibleDescription: qsTr("Date, time, and optional cached weather")
+            accessibleDescription: MeoI18n.translator.i18n("Date, time, and optional cached weather")
 
             ColumnLayout {
                 anchors.fill: parent

@@ -40,10 +40,18 @@ class SessionEntryContractTests(unittest.TestCase):
         )
         self.assertEqual(definitions["layout"]["properties"]["displayOverrides"]["maxItems"], 16)
         self.assertIn("Opaque stable KScreen output identity", definitions["displayOverride"]["properties"]["outputKey"]["description"])
+        self.assertEqual(definitions["appearance"]["properties"]["wallpaperMode"]["default"], "follow-desktop")
+        self.assertTrue(definitions["modules"]["properties"]["audio"]["default"])
+        self.assertEqual(definitions["modules"]["properties"]["weatherCity"]["maxLength"], 96)
+        self.assertEqual(definitions["privacy"]["properties"]["notificationVisibility"]["default"], "full-content")
 
     def test_login_scope_cannot_disclose_session_private_content(self):
         login_rules = self.schema["allOf"][0]["then"]["properties"]
         self.assertFalse(login_rules["modules"]["properties"]["media"]["const"])
+        self.assertFalse(login_rules["modules"]["properties"]["weather"]["const"])
+        self.assertFalse(login_rules["modules"]["properties"]["audio"]["const"])
+        self.assertEqual(login_rules["modules"]["properties"]["weatherCity"]["const"], "")
+        self.assertEqual(login_rules["appearance"]["properties"]["wallpaperMode"]["const"], "managed")
         self.assertEqual(login_rules["privacy"]["properties"]["notificationVisibility"]["const"], "hidden")
         self.assertFalse(login_rules["privacy"]["properties"]["showAlbumArtwork"]["const"])
         self.assertEqual(

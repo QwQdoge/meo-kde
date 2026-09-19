@@ -34,20 +34,20 @@ ColumnLayout {
             spacing: 0
             MeoText {
                 text: root.unreadCount > 0
-                      ? qsTr("Notifications · %1 unread").arg(root.unreadCount)
-                      : qsTr("Notifications")
+                      ? MeoI18n.translator.i18n("Notifications · %1 unread").arg(root.unreadCount)
+                      : MeoI18n.translator.i18n("Notifications")
                 typeRole: "title"; typeSize: "medium"; emphasized: true; color: MeoTheme.onSurface
             }
             MeoText {
                 visible: root.activeJobsCount > 0
-                text: root.activeJobsCount === 1 ? qsTr("1 background task") : qsTr("%1 background tasks").arg(root.activeJobsCount)
+                text: root.activeJobsCount === 1 ? MeoI18n.translator.i18n("1 background task") : MeoI18n.translator.i18n("%1 background tasks").arg(root.activeJobsCount)
                 typeRole: "label"; typeSize: "small"; color: MeoTheme.onSurfaceVariant
             }
             MeoText {
                 visible: root.activeJobsCount === 0 && (root.liveNotificationCount > 0 || root.historyNotificationCount > 0)
                 text: root.liveNotificationCount > 0 && root.historyNotificationCount > 0
-                      ? qsTr("%1 live · %2 in history").arg(root.liveNotificationCount).arg(root.historyNotificationCount)
-                      : (root.liveNotificationCount > 0 ? qsTr("%1 live notification").arg(root.liveNotificationCount) : qsTr("%1 in history").arg(root.historyNotificationCount))
+                      ? MeoI18n.translator.i18n("%1 live · %2 in history").arg(root.liveNotificationCount).arg(root.historyNotificationCount)
+                      : (root.liveNotificationCount > 0 ? MeoI18n.translator.i18n("%1 live notification").arg(root.liveNotificationCount) : MeoI18n.translator.i18n("%1 in history").arg(root.historyNotificationCount))
                 typeRole: "label"; typeSize: "small"; color: MeoTheme.onSurfaceVariant
             }
         }
@@ -60,7 +60,7 @@ ColumnLayout {
             icon.name: NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications"
             selectedIcon: "do_not_disturb_on"
             enabled: NotificationManager.Server.valid
-            Accessible.name: NotificationManager.Server.inhibited ? qsTr("Turn off Do Not Disturb") : qsTr("Turn on Do Not Disturb")
+            Accessible.name: NotificationManager.Server.inhibited ? MeoI18n.translator.i18n("Turn off Do Not Disturb") : MeoI18n.translator.i18n("Turn on Do Not Disturb")
             Accessible.checked: NotificationManager.Server.inhibited
             onClicked: NotificationManager.Server.inhibited = !NotificationManager.Server.inhibited
         }
@@ -68,13 +68,13 @@ ColumnLayout {
             visible: root.closableCount > 0 || root.clearPending
             type: "text"
             size: "s"
-            text: qsTr("Clear all")
+            text: MeoI18n.translator.i18n("Clear all")
             loading: root.clearPending
             enabled: !root.clearPending
-            Accessible.name: qsTr("Clear %1 dismissible notifications").arg(root.closableCount)
+            Accessible.name: MeoI18n.translator.i18n("Clear %1 dismissible notifications").arg(root.closableCount)
             onClicked: root.clearRequested()
         }
-        MeoIconButton { visible: root.showSettingsAction; type: "standard"; size: "s"; icon.name: "settings"; Accessible.name: qsTr("Notification settings"); onClicked: root.settingsRequested() }
+        MeoIconButton { visible: root.showSettingsAction; type: "standard"; size: "s"; icon.name: "settings"; Accessible.name: MeoI18n.translator.i18n("Notification settings"); onClicked: root.settingsRequested() }
     }
 
     MeoMotionSurface {
@@ -111,7 +111,7 @@ ColumnLayout {
             anchors.margins: MeoTheme.space8
             spacing: MeoTheme.space8
             MeoIcon { icon: "do_not_disturb_on"; size: 20; color: MeoTheme.onSecondaryContainer; Accessible.ignored: true }
-            MeoText { Layout.fillWidth: true; text: qsTr("Do Not Disturb is on. New notifications are collected quietly."); typeRole: "label"; typeSize: "small"; wrapMode: Text.Wrap; color: MeoTheme.onSecondaryContainer }
+            MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("Do Not Disturb is on. New notifications are collected quietly."); typeRole: "label"; typeSize: "small"; wrapMode: Text.Wrap; color: MeoTheme.onSecondaryContainer }
         }
     }
 }

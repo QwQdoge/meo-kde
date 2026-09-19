@@ -6,6 +6,7 @@
 #include <BluezQt/InitManagerJob>
 #include <BluezQt/Job>
 #include <BluezQt/PendingCall>
+#include <KLocalizedString>
 #include <NetworkManagerQt/AccessPoint>
 #include <NetworkManagerQt/ActiveConnection>
 #include <NetworkManagerQt/Connection>
@@ -71,7 +72,7 @@ SystemStateHub::SystemStateHub(QObject *parent)
     m_wifiConnectionTimeout.setInterval(45 * 1000);
     connect(&m_wifiConnectionTimeout, &QTimer::timeout, this, [this] {
         discardTemporaryWifiConnection();
-        finishWifiConnectionAttempt(tr("The Wi-Fi connection timed out. Check the password and try again."));
+        finishWifiConnectionAttempt(i18nd("meo-desktop", "The Wi-Fi connection timed out. Check the password and try again."));
     });
 
     auto *networkNotifier = NetworkManager::notifier();
@@ -194,14 +195,14 @@ QString SystemStateHub::networkName() const
 QString SystemStateHub::networkStatus() const
 {
     switch (NetworkManager::status()) {
-    case NetworkManager::Connecting: return tr("Connecting");
-    case NetworkManager::ConnectedLinkLocal: return tr("Link local");
-    case NetworkManager::ConnectedSiteOnly: return tr("Limited");
-    case NetworkManager::Connected: return tr("Connected");
-    case NetworkManager::Disconnecting: return tr("Disconnecting");
-    case NetworkManager::Disconnected: return tr("Disconnected");
-    case NetworkManager::Asleep: return tr("Networking disabled");
-    default: return tr("Unavailable");
+    case NetworkManager::Connecting: return i18nd("meo-desktop", "Connecting");
+    case NetworkManager::ConnectedLinkLocal: return i18nd("meo-desktop", "Link local");
+    case NetworkManager::ConnectedSiteOnly: return i18nd("meo-desktop", "Limited");
+    case NetworkManager::Connected: return i18nd("meo-desktop", "Connected");
+    case NetworkManager::Disconnecting: return i18nd("meo-desktop", "Disconnecting");
+    case NetworkManager::Disconnected: return i18nd("meo-desktop", "Disconnected");
+    case NetworkManager::Asleep: return i18nd("meo-desktop", "Networking disabled");
+    default: return i18nd("meo-desktop", "Unavailable");
     }
 }
 
@@ -272,7 +273,7 @@ void SystemStateHub::setWirelessEnabled(bool enabled)
     clearOperationError();
     if (!NetworkManager::isWirelessHardwareEnabled()) {
         if (enabled) {
-            setOperationError(tr("Wi-Fi is disabled by a hardware or rfkill switch."));
+            setOperationError(i18nd("meo-desktop", "Wi-Fi is disabled by a hardware or rfkill switch."));
         }
         return;
     }
@@ -285,7 +286,7 @@ void SystemStateHub::requestWifiScan()
 {
     clearOperationError();
     if (!m_wifiDevice || !wirelessEnabled()) {
-        setOperationError(tr("Wi-Fi is not available."));
+        setOperationError(i18nd("meo-desktop", "Wi-Fi is not available."));
         return;
     }
     if (m_wifiScanning) {
@@ -313,17 +314,17 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
 {
     clearOperationError();
     if (m_networkBusy) {
-        setOperationError(tr("Another network operation is still in progress."));
+        setOperationError(i18nd("meo-desktop", "Another network operation is still in progress."));
         return;
     }
     if (!m_wifiDevice || ssid.isEmpty()) {
-        setOperationError(tr("Wi-Fi network is not available."));
+        setOperationError(i18nd("meo-desktop", "Wi-Fi network is not available."));
         return;
     }
 
     const auto network = m_wifiDevice->findNetwork(ssid);
     if (!network || !network->referenceAccessPoint()) {
-        setOperationError(tr("The selected Wi-Fi network is no longer visible."));
+        setOperationError(i18nd("meo-desktop", "The selected Wi-Fi network is no longer visible."));
         return;
     }
     const auto accessPoint = network->referenceAccessPoint();
@@ -366,7 +367,7 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
     case NetworkManager::WpaPsk:
     case NetworkManager::Wpa2Psk:
         if (password.isEmpty()) {
-            setOperationError(tr("This Wi-Fi network requires a password."));
+            setOperationError(i18nd("meo-desktop", "This Wi-Fi network requires a password."));
             return;
         }
         wireless.insert(QStringLiteral("security"), QStringLiteral("802-11-wireless-security"));
@@ -375,7 +376,7 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
         break;
     case NetworkManager::SAE:
         if (password.isEmpty()) {
-            setOperationError(tr("This Wi-Fi network requires a password."));
+            setOperationError(i18nd("meo-desktop", "This Wi-Fi network requires a password."));
             return;
         }
         wireless.insert(QStringLiteral("security"), QStringLiteral("802-11-wireless-security"));
@@ -387,7 +388,7 @@ void SystemStateHub::connectWifi(const QString &ssid, const QString &password)
         securitySettings.insert(QStringLiteral("key-mgmt"), QStringLiteral("owe"));
         break;
     default:
-        setOperationError(tr("This Wi-Fi security type needs the advanced NetworkManager settings UI."));
+        setOperationError(i18nd("meo-desktop", "This Wi-Fi security type needs the advanced NetworkManager settings UI."));
         return;
     }
     settings.insert(QStringLiteral("802-11-wireless"), wireless);
@@ -418,7 +419,7 @@ void SystemStateHub::disconnectWifi()
 {
     clearOperationError();
     if (m_networkBusy) {
-        setOperationError(tr("Another network operation is still in progress."));
+        setOperationError(i18nd("meo-desktop", "Another network operation is still in progress."));
         return;
     }
     if (!m_wifiDevice || !m_wifiDevice->activeConnection()) {
@@ -443,7 +444,7 @@ void SystemStateHub::forgetWifi(const QString &ssid)
 {
     clearOperationError();
     if (m_networkBusy) {
-        setOperationError(tr("Another network operation is still in progress."));
+        setOperationError(i18nd("meo-desktop", "Another network operation is still in progress."));
         return;
     }
     if (ssid.isEmpty()) {
@@ -455,7 +456,7 @@ void SystemStateHub::forgetWifi(const QString &ssid)
     // network merely because its SSID is currently visible.
     const auto saved = savedConnectionForSsid(ssid);
     if (!saved) {
-        setOperationError(tr("This saved Wi-Fi network is no longer available."));
+        setOperationError(i18nd("meo-desktop", "This saved Wi-Fi network is no longer available."));
         return;
     }
 
@@ -537,7 +538,7 @@ void SystemStateHub::setBluetoothEnabled(bool enabled)
     const auto adapters = m_bluetoothManager.adapters();
     if (adapters.isEmpty()) {
         if (enabled) {
-            setOperationError(tr("No Bluetooth adapter is available."));
+            setOperationError(i18nd("meo-desktop", "No Bluetooth adapter is available."));
         }
         return;
     }
@@ -575,7 +576,7 @@ void SystemStateHub::startBluetoothDiscovery()
     clearOperationError();
     const auto adapter = m_bluetoothManager.usableAdapter();
     if (!adapter) {
-        setOperationError(tr("Turn Bluetooth on before scanning."));
+        setOperationError(i18nd("meo-desktop", "Turn Bluetooth on before scanning."));
         return;
     }
     if (adapter->isDiscovering()) {
@@ -614,7 +615,7 @@ void SystemStateHub::toggleBluetoothDevice(const QString &address)
     clearOperationError();
     const auto device = m_bluetoothManager.deviceForAddress(address);
     if (!device) {
-        setOperationError(tr("Bluetooth device is no longer available."));
+        setOperationError(i18nd("meo-desktop", "Bluetooth device is no longer available."));
         return;
     }
 
@@ -624,7 +625,7 @@ void SystemStateHub::toggleBluetoothDevice(const QString &address)
     // BlueZ Agent1 flow.  Never let a stale or third-party QML caller turn a
     // simple toggle into a hidden pair/trust/connect transaction here.
     if (!device->isPaired()) {
-        setOperationError(tr("Pair new devices in Meo Settings."));
+        setOperationError(i18nd("meo-desktop", "Pair new devices in Meo Settings."));
         refreshBluetoothState();
         return;
     }
@@ -667,7 +668,7 @@ void SystemStateHub::forgetBluetoothDevice(const QString &address)
     }
     const auto adapter = device->adapter();
     if (!adapter) {
-        setOperationError(tr("Bluetooth adapter is unavailable."));
+        setOperationError(i18nd("meo-desktop", "Bluetooth adapter is unavailable."));
         return;
     }
     setBluetoothBusy(true);
@@ -814,7 +815,7 @@ void SystemStateHub::setMicrophoneMuted(bool muted)
 void SystemStateHub::setDefaultAudioOutput(const QString &deviceId)
 {
     if (!m_audioContext || deviceId.isEmpty()) {
-        setOperationError(tr("Audio output is unavailable."));
+        setOperationError(i18nd("meo-desktop", "Audio output is unavailable."));
         return;
     }
     for (auto *device : m_audioContext->sinks()) {
@@ -827,13 +828,13 @@ void SystemStateHub::setDefaultAudioOutput(const QString &deviceId)
             return;
         }
     }
-    setOperationError(tr("The selected audio output is no longer available."));
+    setOperationError(i18nd("meo-desktop", "The selected audio output is no longer available."));
 }
 
 void SystemStateHub::setDefaultAudioInput(const QString &deviceId)
 {
     if (!m_audioContext || deviceId.isEmpty()) {
-        setOperationError(tr("Microphone input is unavailable."));
+        setOperationError(i18nd("meo-desktop", "Microphone input is unavailable."));
         return;
     }
     for (auto *device : m_audioContext->sources()) {
@@ -844,7 +845,7 @@ void SystemStateHub::setDefaultAudioInput(const QString &deviceId)
             return;
         }
     }
-    setOperationError(tr("The selected microphone is no longer available."));
+    setOperationError(i18nd("meo-desktop", "The selected microphone is no longer available."));
 }
 
 bool SystemStateHub::operationBusy() const
@@ -932,36 +933,35 @@ void SystemStateHub::refreshSecondaryCalendar()
     if (secondary == QStringLiteral("buddhist")) {
         // Buddhist Era is a local display convention: Gregorian date with a
         // 543-year offset.  It uses no location or online data.
-        setSecondaryCalendarResult(tr("Buddhist Era · %1").arg(today.year() + 543),
-                                   QStringLiteral("ready"), tr("Local display"));
+        setSecondaryCalendarResult(i18nd("meo-desktop", "Buddhist Era · %1", today.year() + 543),
+                                   QStringLiteral("ready"), i18nd("meo-desktop", "Local display"));
         return;
     }
     if (secondary == QStringLiteral("islamic-civil")) {
         const QCalendar calendar(QStringLiteral("islamic-civil"));
         if (!calendar.isValid()) {
             setSecondaryCalendarResult({}, QStringLiteral("unavailable"),
-                                       tr("Qt Islamic Civil calendar is unavailable"));
+                                       i18nd("meo-desktop", "Qt Islamic Civil calendar is unavailable"));
             return;
         }
         const auto parts = calendar.partsFromDate(today);
-        setSecondaryCalendarResult(tr("Islamic Civil · %1 %2 %3")
-                                       .arg(parts.day)
-                                       .arg(parts.month)
-                                       .arg(parts.year),
-                                   QStringLiteral("ready"), tr("Local Qt calendar"));
+        setSecondaryCalendarResult(i18nd("meo-desktop", "Islamic Civil · %1 %2 %3",
+                                         parts.day, parts.month, parts.year),
+                                   QStringLiteral("ready"), i18nd("meo-desktop", "Local Qt calendar"));
         return;
     }
     if (secondary == QStringLiteral("hebcal")) {
         if (calendarConfigValue(QStringLiteral("HebcalEnabled")).compare(
                 QStringLiteral("true"), Qt::CaseInsensitive) != 0) {
             setSecondaryCalendarResult({}, QStringLiteral("needs-online-setup"),
-                                       tr("Hebcal is disabled"));
+                                       i18nd("meo-desktop", "Hebcal is disabled"));
             return;
         }
         refreshHebcalCalendar(today);
         return;
     }
-    setSecondaryCalendarResult({}, QStringLiteral("unavailable"), tr("Unknown calendar preference"));
+    setSecondaryCalendarResult({}, QStringLiteral("unavailable"),
+                               i18nd("meo-desktop", "Unknown calendar preference"));
 }
 
 void SystemStateHub::refreshHebcalCalendar(const QDate &today)
@@ -975,8 +975,9 @@ void SystemStateHub::refreshHebcalCalendar(const QDate &today)
         const QString hebrewDate = payload.value(QStringLiteral("hebrew")).toString().trimmed();
         if (hebrewDate.isEmpty())
             return false;
-        setSecondaryCalendarResult(tr("Hebrew · %1").arg(hebrewDate), QStringLiteral("cached"),
-                                   tr("Hebcal data cached on this device"));
+        setSecondaryCalendarResult(i18nd("meo-desktop", "Hebrew · %1", hebrewDate),
+                                   QStringLiteral("cached"),
+                                   i18nd("meo-desktop", "Hebcal data cached on this device"));
         return true;
     };
     const bool hasCache = showCached();
@@ -1008,7 +1009,7 @@ void SystemStateHub::refreshHebcalCalendar(const QDate &today)
         if (!valid) {
             if (!hasCache)
                 setSecondaryCalendarResult({}, QStringLiteral("unavailable"),
-                                           tr("Hebcal could not be reached and no cached date is available"));
+                                           i18nd("meo-desktop", "Hebcal could not be reached and no cached date is available"));
             return;
         }
         QDir().mkpath(QFileInfo(cachePath).dir().absolutePath());
@@ -1017,8 +1018,9 @@ void SystemStateHub::refreshHebcalCalendar(const QDate &today)
             cache.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
             cache.write(QJsonDocument(payload).toJson(QJsonDocument::Compact));
         }
-        setSecondaryCalendarResult(tr("Hebrew · %1").arg(hebrewDate), QStringLiteral("ready"),
-                                   tr("Hebcal online data"));
+        setSecondaryCalendarResult(i18nd("meo-desktop", "Hebrew · %1", hebrewDate),
+                                   QStringLiteral("ready"),
+                                   i18nd("meo-desktop", "Hebcal online data"));
     });
 }
 
@@ -1033,7 +1035,7 @@ void SystemStateHub::refreshWifiDevice()
     }
     if (m_networkBusy && !m_pendingWifiSsid.isEmpty()) {
         discardTemporaryWifiConnection();
-        finishWifiConnectionAttempt(tr("The Wi-Fi device became unavailable."));
+        finishWifiConnectionAttempt(i18nd("meo-desktop", "The Wi-Fi device became unavailable."));
     }
     m_wifiDevice = next;
     bindWifiDevice();
@@ -1234,7 +1236,7 @@ void SystemStateHub::handleWifiDeviceState(NetworkManager::Device::State state,
     m_wifiActivationAccepted = false;
     const auto connection = NetworkManager::findConnection(m_temporaryWifiConnectionPath);
     if (!connection) {
-        finishWifiConnectionAttempt(tr("Connected, but the Wi-Fi profile could not be saved."));
+        finishWifiConnectionAttempt(i18nd("meo-desktop", "Connected, but the Wi-Fi profile could not be saved."));
         return;
     }
     const auto reply = connection->save();
@@ -1243,8 +1245,8 @@ void SystemStateHub::handleWifiDeviceState(NetworkManager::Device::State state,
             [this, watcher](QDBusPendingCallWatcher *) {
                 const QDBusPendingReply<> result = *watcher;
                 finishWifiConnectionAttempt(result.isError()
-                    ? tr("Connected, but the Wi-Fi profile could not be saved: %1")
-                          .arg(result.error().message())
+                    ? i18nd("meo-desktop", "Connected, but the Wi-Fi profile could not be saved: %1",
+                            result.error().message())
                     : QString());
                 watcher->deleteLater();
             });
@@ -1286,22 +1288,22 @@ QString SystemStateHub::wifiFailureMessage(NetworkManager::Device::StateChangeRe
     case NetworkManager::Device::AuthSupplicantConfigFailedReason:
     case NetworkManager::Device::AuthSupplicantFailedReason:
     case NetworkManager::Device::AuthSupplicantTimeoutReason:
-        return tr("The Wi-Fi password was rejected. Check it and try again.");
+        return i18nd("meo-desktop", "The Wi-Fi password was rejected. Check it and try again.");
     case NetworkManager::Device::SsidNotFound:
-        return tr("The Wi-Fi network is no longer visible.");
+        return i18nd("meo-desktop", "The Wi-Fi network is no longer visible.");
     case NetworkManager::Device::ConfigFailedReason:
     case NetworkManager::Device::ConfigUnavailableReason:
     case NetworkManager::Device::ConfigExpiredReason:
-        return tr("NetworkManager could not apply this Wi-Fi configuration.");
+        return i18nd("meo-desktop", "NetworkManager could not apply this Wi-Fi configuration.");
     case NetworkManager::Device::DhcpStartFailedReason:
     case NetworkManager::Device::DhcpErrorReason:
     case NetworkManager::Device::DhcpFailedReason:
-        return tr("The Wi-Fi network did not provide a usable IP address.");
+        return i18nd("meo-desktop", "The Wi-Fi network did not provide a usable IP address.");
     case NetworkManager::Device::DeviceRemovedReason:
     case NetworkManager::Device::NowUnmanagedReason:
-        return tr("The Wi-Fi device became unavailable.");
+        return i18nd("meo-desktop", "The Wi-Fi device became unavailable.");
     default:
-        return tr("Could not connect to the Wi-Fi network.");
+        return i18nd("meo-desktop", "Could not connect to the Wi-Fi network.");
     }
 }
 
@@ -1328,17 +1330,17 @@ NetworkManager::Connection::Ptr SystemStateHub::savedConnectionForSsid(const QSt
 QString SystemStateHub::securityLabel(NetworkManager::WirelessSecurityType security) const
 {
     switch (security) {
-    case NetworkManager::NoneSecurity: return tr("Open");
-    case NetworkManager::WpaPsk: return tr("WPA");
-    case NetworkManager::Wpa2Psk: return tr("WPA2");
-    case NetworkManager::SAE: return tr("WPA3");
-    case NetworkManager::OWE: return tr("Enhanced Open");
+    case NetworkManager::NoneSecurity: return i18nd("meo-desktop", "Open");
+    case NetworkManager::WpaPsk: return i18nd("meo-desktop", "WPA");
+    case NetworkManager::Wpa2Psk: return i18nd("meo-desktop", "WPA2");
+    case NetworkManager::SAE: return i18nd("meo-desktop", "WPA3");
+    case NetworkManager::OWE: return i18nd("meo-desktop", "Enhanced Open");
     case NetworkManager::WpaEap:
     case NetworkManager::Wpa2Eap:
-    case NetworkManager::Wpa3SuiteB192: return tr("Enterprise");
+    case NetworkManager::Wpa3SuiteB192: return i18nd("meo-desktop", "Enterprise");
     case NetworkManager::StaticWep:
-    case NetworkManager::DynamicWep: return tr("WEP");
-    default: return tr("Secured");
+    case NetworkManager::DynamicWep: return i18nd("meo-desktop", "WEP");
+    default: return i18nd("meo-desktop", "Secured");
     }
 }
 

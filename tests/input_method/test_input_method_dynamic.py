@@ -148,7 +148,8 @@ exit 1
             self.assertEqual(node.attrib[attribute], value, filename)
         panel_rect = ET.parse(root / "panel.svg").getroot().find("svg:rect", namespace)
         assert panel_rect is not None
-        self.assertEqual(panel_rect.attrib["stroke"], roles["outline"])
+        self.assertNotIn("stroke", panel_rect.attrib)
+        self.assertNotIn("stroke-width", panel_rect.attrib)
 
     def test_enable_fcitx_preserves_native_options_and_selects_dynamic(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

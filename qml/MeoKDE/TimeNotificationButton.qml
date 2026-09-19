@@ -33,15 +33,26 @@ QQC2.AbstractButton {
     rightPadding: MeoTheme.space4
     hoverEnabled: true
     activeFocusOnTab: true
-    Accessible.name: qsTr("Time, calendar, and notifications")
-    Accessible.description: inhibited
-                            ? qsTr("Do Not Disturb is on")
-                            : (unreadCount > 0
-                               ? qsTr("%1 unread notifications").arg(unreadCount)
-                               : (activeJobsCount > 0
-                                  ? qsTr("%1 background tasks, %2 percent complete")
-                                      .arg(activeJobsCount).arg(jobsPercentage)
-                                  : qsTr("No unread notifications")))
+    Accessible.name: MeoI18n.translator.i18n("Time, calendar, and notifications")
+    Accessible.description: {
+        const time = Qt.formatTime(root.currentDateTime,
+                                   root.use24HourClock
+                                   ? (root.showSeconds ? "hh:mm:ss" : "hh:mm")
+                                   : (root.showSeconds ? "h:mm:ss AP" : "h:mm AP"))
+        const date = root.showDate
+                   ? Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleShortDate) : ""
+        const timeAndDate = date === "" ? time
+                                         : MeoI18n.translator.i18n("%1 · %2").arg(time).arg(date)
+        const notificationState = root.inhibited
+                                ? MeoI18n.translator.i18n("Do Not Disturb is on")
+                                : (root.unreadCount > 0
+                                   ? MeoI18n.translator.i18n("%1 unread notifications").arg(root.unreadCount)
+                                   : (root.activeJobsCount > 0
+                                      ? MeoI18n.translator.i18n("%1 background tasks, %2 percent complete")
+                                          .arg(root.activeJobsCount).arg(root.jobsPercentage)
+                                      : MeoI18n.translator.i18n("No unread notifications")))
+        return MeoI18n.translator.i18n("%1 · %2").arg(timeAndDate).arg(notificationState)
+    }
     onClicked: statusCenterRequested()
 
     PointHandler {
@@ -116,7 +127,7 @@ QQC2.AbstractButton {
 
             MeoText {
                 visible: root.showDate
-                text: Qt.formatDate(root.currentDateTime, "MMM d")
+                text: Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleShortDate)
                 typeRole: "label"
                 typeSize: "small"
                 fontScaleOverride: root.textScale

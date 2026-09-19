@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "contractVersion": "1",
+  "id": "MeoIconManifest",
+  "description": "First-party application identity source sheet. Runtime Original assets are installed by the owning application package.",
+  "applications": [
+    {
+      "desktopId": "org.meo.settings.desktop",
+      "iconName": "org.meo.settings",
+      "canonical": "settings",
+      "runtimeOwner": "meo-settings",
+      "colorSource": "org.meo.settings.svg",
+      "monoGlyphSource": "org.meo.settings-mono.svg",
+      "opticalMasters": {"16": "optical/16/org.meo.settings.svg", "22": "optical/22/org.meo.settings.svg", "32": "optical/32/org.meo.settings.svg"},
+      "opticalCorrections": {"16": ["dense-slider-clearance"], "22": ["dense-slider-clearance"], "32": ["dense-slider-clearance"]},
+      "brandPolicy": "first-party",
+      "overlayEligible": true,
+      "systemSemanticChildren": ["bluetooth", "network-wireless", "audio-volume-high", "video-display", "preferences-desktop-notification", "battery"]
+    },
+    {
+      "desktopId": "org.meo.Accounts.Settings.desktop",
+      "iconName": "org.meo.Accounts.Settings",
+      "canonical": "account",
+      "runtimeOwner": "meo-account",
+      "colorSource": "org.meo.Accounts.Settings.svg",
+      "monoGlyphSource": "org.meo.Accounts.Settings-mono.svg",
+      "opticalMasters": {"16": "optical/16/org.meo.Accounts.Settings.svg", "22": "optical/22/org.meo.Accounts.Settings.svg", "32": "optical/32/org.meo.Accounts.Settings.svg"},
+      "opticalCorrections": {"16": ["paired-profile-separation"], "22": ["paired-profile-separation"], "32": ["paired-profile-separation"]},
+      "brandPolicy": "first-party",
+      "overlayEligible": true,
+      "systemSemanticChildren": ["dialog-password"]
+    },
+    {
+      "desktopId": "omnistore.desktop",
+      "iconName": "org.meo.OmniStore",
+      "canonical": "omnistore",
+      "runtimeOwner": "omnistore-bin",
+      "colorSource": "org.meo.OmniStore.svg",
+      "monoGlyphSource": "org.meo.OmniStore-mono.svg",
+      "aiStructuralMaskSource": "org.meo.OmniStore-mono.svg",
+      "opticalMasters": {"16": "optical/16/org.meo.OmniStore.svg", "22": "optical/22/org.meo.OmniStore.svg", "32": "optical/32/org.meo.OmniStore.svg"},
+      "opticalCorrections": {"16": ["bag-handle-open-space"], "22": ["bag-handle-open-space"], "32": ["bag-handle-open-space"]},
+      "brandPolicy": "first-party",
+      "overlayEligible": true,
+      "systemSemanticChildren": []
+    },
+    {
+      "desktopId": "org.meo.welcome.desktop",
+      "iconName": "org.meo.welcome",
+      "canonical": "welcome",
+      "runtimeOwner": "meo-settings",
+      "colorSource": "org.meo.welcome.svg",
+      "monoGlyphSource": "org.meo.welcome-mono.svg",
+      "opticalMasters": {"16": "optical/16/org.meo.welcome.svg", "22": "optical/22/org.meo.welcome.svg", "32": "optical/32/org.meo.welcome.svg"},
+      "opticalCorrections": {"16": ["petal-overlap-consolidation"], "22": ["petal-overlap-consolidation"], "32": ["petal-overlap-consolidation"]},
+      "brandPolicy": "first-party",
+      "overlayEligible": true,
+      "systemSemanticChildren": []
+    }
+  ]
+}

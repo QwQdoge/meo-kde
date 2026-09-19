@@ -130,7 +130,7 @@ Item {
         visible: root.expandable
         type: "text"
         size: "xs"
-        text: root.expanded ? qsTr("Show less") : qsTr("Show more")
+        text: root.expanded ? MeoI18n.translator.i18n("Show less") : MeoI18n.translator.i18n("Show more")
         Accessible.name: text
         onClicked: root.toggleExpanded()
     }

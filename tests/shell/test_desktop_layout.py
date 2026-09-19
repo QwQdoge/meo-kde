@@ -148,6 +148,16 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("available: root.showBluetooth && root.bluetoothConnected", quick_status)
         self.assertIn("visible: root.showNotifications && root.hasNotificationState", time_button)
 
+    def test_experimental_shelf_uses_a_borderless_tonal_surface(self):
+        shelf = (
+            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("border.width: 0", shelf)
+        self.assertNotIn("border.color: MeoTheme.outlineVariant", shelf)
+        self.assertIn("Layout.preferredWidth: MeoTheme.space8", shelf)
+        self.assertIn("permanent visual divider", shelf)
+
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
         notification_center = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
@@ -312,12 +322,12 @@ class DesktopLayoutTests(unittest.TestCase):
     def test_quick_control_sliders_expose_real_actions_and_names(self):
         home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
 
-        self.assertIn('qsTr("Display brightness")', home)
+        self.assertIn('MeoI18n.translator.i18n("Display brightness")', home)
         self.assertIn("iconActionEnabled: false", home)
-        self.assertIn('accessibleName: qsTr("Output volume")', home)
-        self.assertIn('qsTr("Mute output")', home)
-        self.assertIn('accessibleName: qsTr("Microphone volume")', home)
-        self.assertIn('qsTr("Mute microphone")', home)
+        self.assertIn('accessibleName: MeoI18n.translator.i18n("Output volume")', home)
+        self.assertIn('MeoI18n.translator.i18n("Mute output")', home)
+        self.assertIn('accessibleName: MeoI18n.translator.i18n("Microphone volume")', home)
+        self.assertIn('MeoI18n.translator.i18n("Mute microphone")', home)
 
     def test_bluetooth_quick_settings_uses_meo_for_full_pairing(self):
         bluetooth_page = (TOPBAR / "BluetoothPage.qml").read_text(encoding="utf-8")

@@ -1,5 +1,6 @@
 #include "platformcontroller.h"
 
+#include <KLocalizedString>
 #include <KSystemInhibitor>
 
 #include <QDBusConnection>
@@ -91,7 +92,7 @@ void PlatformController::setBrightness(const QString &displayId, int brightness)
                         static_cast<uint>(0), QStringLiteral("org.meo.quicksettings"));
         return;
     }
-    setError(tr("Brightness display is no longer available."));
+    setError(i18nd("meo-desktop", "Brightness display is no longer available."));
 }
 
 void PlatformController::refreshNightLight()
@@ -147,7 +148,7 @@ void PlatformController::refreshPowerProfiles()
 
 void PlatformController::setActivePowerProfile(const QString &profile)
 {
-    if (!m_powerProfiles.contains(profile)) { setError(tr("Power profile is unavailable.")); return; }
+    if (!m_powerProfiles.contains(profile)) { setError(i18nd("meo-desktop", "Power profile is unavailable.")); return; }
     QDBusInterface properties(powerProfilesService, powerProfilesPath, "org.freedesktop.DBus.Properties", QDBusConnection::systemBus());
     properties.asyncCall("Set", QString::fromLatin1(powerProfilesInterface), QStringLiteral("ActiveProfile"), QVariant::fromValue(QDBusVariant(profile)));
 }
@@ -156,7 +157,7 @@ void PlatformController::setKeepAwake(bool enabled)
 {
     if (enabled == keepAwake()) return;
     if (enabled) m_keepAwakeInhibitor = new KSystemInhibitor(
-        tr("Keep Awake"), KSystemInhibitor::Types(KSystemInhibitor::Type::Idle) | KSystemInhibitor::Type::Suspend,
+        i18nd("meo-desktop", "Keep Awake"), KSystemInhibitor::Types(KSystemInhibitor::Type::Idle) | KSystemInhibitor::Type::Suspend,
         nullptr, this);
     else { delete m_keepAwakeInhibitor; m_keepAwakeInhibitor = nullptr; }
     Q_EMIT keepAwakeChanged();
@@ -165,7 +166,7 @@ void PlatformController::setKeepAwake(bool enabled)
 void PlatformController::lockScreen()
 {
     QDBusInterface iface("org.kde.screensaver", "/ScreenSaver", "org.freedesktop.ScreenSaver", QDBusConnection::sessionBus());
-    if (!iface.isValid()) { setError(tr("Screen locking service is unavailable.")); return; }
+    if (!iface.isValid()) { setError(i18nd("meo-desktop", "Screen locking service is unavailable.")); return; }
     iface.asyncCall("Lock");
 }
 

@@ -17,9 +17,9 @@ PlasmoidItem {
     readonly property real compactHeight: ShellMetrics.topBarHeight
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: qsTr("Meo Quick Settings")
-    toolTipMainText: qsTr("Meo Quick Settings")
-    toolTipSubText: qsTr("Network, audio, display, and power controls")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Quick Settings")
+    toolTipMainText: MeoI18n.translator.i18n("Meo Quick Settings")
+    toolTipSubText: MeoI18n.translator.i18n("Network, audio, display, and power controls")
     // A panel must always use the compact representation.  Without these
     // constraints Plasma can reserve the much larger popup width in the panel.
     preferredRepresentation: compactRepresentation

@@ -7,6 +7,7 @@
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QDir>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QProcess>
 #include <QStandardPaths>
@@ -58,8 +59,13 @@ QString activeColorScheme()
 
 QString refreshManagedApplicationIcons()
 {
-    const QString studio = QStandardPaths::findExecutable(QStringLiteral("meo-app-icon-studio"));
-    if (studio.isEmpty()) {
+    // Settings and the release package contract deliberately use the
+    // package-owned renderer. A PATH lookup could select the developer
+    // bootstrap helper under ~/.local/bin and bypass the installed manifest
+    // and provenance contract after a normal pacman upgrade.
+    const QString studio = QStringLiteral("/usr/bin/meo-app-icon-studio");
+    const QFileInfo studioInfo(studio);
+    if (!studioInfo.isFile() || !studioInfo.isExecutable()) {
         return QStringLiteral("unavailable");
     }
 

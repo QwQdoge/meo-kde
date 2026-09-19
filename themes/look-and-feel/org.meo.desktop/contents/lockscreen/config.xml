@@ -15,23 +15,27 @@
     </entry>
     <entry name="showMediaControls" type="Bool">
       <label>Show current-user media controls on the lock screen.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="showAlbumArtwork" type="Bool">
       <label>Show album artwork on the lock screen.</label>
-      <default>false</default>
+      <default>true</default>
+    </entry>
+    <entry name="showAudioControls" type="Bool">
+      <label>Show output volume and mute controls on the lock screen.</label>
+      <default>true</default>
     </entry>
     <entry name="showWeather" type="Bool">
       <label>Show fresh cached weather on the lock screen.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="showWeatherLocation" type="Bool">
       <label>Show the weather cache location on the lock screen.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="lockScreenNotificationVisibility" type="String">
       <label>Lock-screen notification visibility.</label>
-      <default>count</default>
+      <default>full-content</default>
     </entry>
   </group>
 </kcfg>

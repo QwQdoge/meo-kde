@@ -3,7 +3,9 @@
     "KPlugin": {
         "Id": "org.meo.widgetexplorer",
         "Name": "Meo Widget Explorer",
+        "Name[zh_CN]": "Meo 小组件浏览器",
         "Description": "Add reviewed Meo and installed KDE widgets to the desktop",
+        "Description[zh_CN]": "将已审核的 Meo 和已安装 KDE 小组件添加到桌面",
         "Icon": "widgets",
         "Category": "Utilities",
         "License": "GPL-2.0-or-later",

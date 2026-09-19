@@ -2,7 +2,9 @@
   "KPlugin": {
     "Id": "org.meo.timecenter",
     "Name": "Meo Time, Calendar, and Notifications",
+    "Name[zh_CN]": "Meo 时间、日历与通知",
     "Description": "Adaptive Material 3 time, calendar, and notification center",
+    "Description[zh_CN]": "自适应 Material 3 时间、日历和通知中心",
     "Icon": "preferences-system-time",
     "Authors": [
       {

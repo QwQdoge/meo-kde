@@ -16,15 +16,15 @@ QQC2.ScrollView {
     QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AsNeeded
 
     function profileTitle(profile) {
-        if (profile === "performance") return qsTr("Performance")
-        if (profile === "power-saver") return qsTr("Power saver")
-        return qsTr("Balanced")
+        if (profile === "performance") return MeoI18n.translator.i18n("Performance")
+        if (profile === "power-saver") return MeoI18n.translator.i18n("Power saver")
+        return MeoI18n.translator.i18n("Balanced")
     }
 
     function profileDescription(profile) {
-        if (profile === "performance") return qsTr("Prioritise speed and responsiveness")
-        if (profile === "power-saver") return qsTr("Reduce energy use and background activity")
-        return qsTr("Balance performance and battery life")
+        if (profile === "performance") return MeoI18n.translator.i18n("Prioritise speed and responsiveness")
+        if (profile === "power-saver") return MeoI18n.translator.i18n("Reduce energy use and background activity")
+        return MeoI18n.translator.i18n("Balance performance and battery life")
     }
 
     ColumnLayout {
@@ -34,16 +34,16 @@ QQC2.ScrollView {
 
         PopupPageHeader {
             Layout.fillWidth: true
-            title: qsTr("Power")
+            title: MeoI18n.translator.i18n("Power")
             subtitle: Platform.powerProfilesAvailable
-                      ? root.profileTitle(Platform.activePowerProfile) : qsTr("Session and display controls")
+                      ? root.profileTitle(Platform.activePowerProfile) : MeoI18n.translator.i18n("Session and display controls")
             onBackRequested: root.backRequested()
             trailingContent: Component {
                 MeoIconButton {
                     type: "standard"
                     size: "m"
                     icon.name: "settings"
-                    Accessible.name: qsTr("Open Power in Meo Settings")
+                    Accessible.name: MeoI18n.translator.i18n("Open Power in Meo Settings")
                     onClicked: Qt.openUrlExternally("applications:org.meo.settings.power.desktop")
                 }
             }
@@ -65,7 +65,7 @@ QQC2.ScrollView {
 
         PopupSectionLabel {
             visible: Platform.powerProfilesAvailable
-            sectionText: qsTr("Power mode")
+            sectionText: MeoI18n.translator.i18n("Power mode")
         }
 
         MeoMotionSurface {
@@ -109,11 +109,11 @@ QQC2.ScrollView {
         PopupInlineMessage {
             Layout.fillWidth: true
             visible: !Platform.powerProfilesAvailable
-            text: qsTr("Power profiles are not provided by this system. Session controls remain available below.")
+            text: MeoI18n.translator.i18n("Power profiles are not provided by this system. Session controls remain available below.")
             tone: "info"
         }
 
-        PopupSectionLabel { sectionText: qsTr("Session") }
+        PopupSectionLabel { sectionText: MeoI18n.translator.i18n("Session") }
 
         MeoMotionSurface {
             Layout.fillWidth: true
@@ -130,17 +130,17 @@ QQC2.ScrollView {
                 MeoListItem {
                     Layout.fillWidth: true
                     isDense: true
-                    headline: qsTr("Keep awake")
+                    headline: MeoI18n.translator.i18n("Keep awake")
                     supportingText: Platform.keepAwake
-                                    ? qsTr("Sleep and screen locking are paused")
-                                    : qsTr("Use the normal sleep and screen-lock timers")
+                                    ? MeoI18n.translator.i18n("Sleep and screen locking are paused")
+                                    : MeoI18n.translator.i18n("Use the normal sleep and screen-lock timers")
                     leadingIcon: "coffee"
                     selected: Platform.keepAwake
                     trailingComponent: Component {
                         MeoSwitch {
                             size: "s"
                             checked: Platform.keepAwake
-                            Accessible.name: qsTr("Keep awake")
+                            Accessible.name: MeoI18n.translator.i18n("Keep awake")
                             onToggled: function(checked) { Platform.keepAwake = checked }
                         }
                     }
@@ -150,21 +150,21 @@ QQC2.ScrollView {
                 MeoListItem {
                     Layout.fillWidth: true
                     isDense: true
-                    headline: qsTr("Automatic sleep")
-                    supportingText: qsTr("Power Management sets the schedule. Applications can temporarily delay sleep when they request it.")
+                    headline: MeoI18n.translator.i18n("Automatic sleep")
+                    supportingText: MeoI18n.translator.i18n("Power Management sets the schedule. Applications can temporarily delay sleep when they request it.")
                     leadingIcon: "bedtime"
                     trailingComponent: Component {
                         MeoIcon { icon: "open_in_new"; size: 18; color: MeoTheme.onSurfaceVariant }
                     }
-                    Accessible.description: qsTr("Open Power in Meo Settings. This does not force or stop any system service.")
+                    Accessible.description: MeoI18n.translator.i18n("Open Power in Meo Settings. This does not force or stop any system service.")
                     onClicked: Qt.openUrlExternally("applications:org.meo.settings.power.desktop")
                 }
 
                 MeoListItem {
                     Layout.fillWidth: true
                     isDense: true
-                    headline: qsTr("Lock screen")
-                    supportingText: qsTr("Lock without closing applications")
+                    headline: MeoI18n.translator.i18n("Lock screen")
+                    supportingText: MeoI18n.translator.i18n("Lock without closing applications")
                     leadingIcon: "lock"
                     trailingComponent: Component {
                         MeoIcon { icon: "chevron_right"; size: 18; color: MeoTheme.onSurfaceVariant }

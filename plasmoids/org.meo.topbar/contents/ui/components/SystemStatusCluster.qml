@@ -38,8 +38,8 @@ QQC2.AbstractButton {
             attention: SystemState.wirelessEnabled && !SystemState.networkConnected,
             accessibleName: SystemState.networkName
                             || (SystemState.wirelessEnabled
-                                ? qsTr("Network disconnected")
-                                : qsTr("Wi-Fi off"))
+                                ? MeoI18n.translator.i18n("Network disconnected")
+                                : MeoI18n.translator.i18n("Wi-Fi off"))
         },
         {
             id: "bluetooth",
@@ -48,7 +48,7 @@ QQC2.AbstractButton {
             available: root.showBluetooth && root.bluetoothConnected,
             active: root.bluetoothConnected,
             attention: false,
-            accessibleName: qsTr("Bluetooth connected")
+            accessibleName: MeoI18n.translator.i18n("Bluetooth connected")
         },
         {
             id: "audio",
@@ -59,23 +59,23 @@ QQC2.AbstractButton {
             active: !SystemState.audioMuted,
             attention: false,
             accessibleName: SystemState.audioMuted
-                            ? qsTr("Volume muted")
-                            : qsTr("Volume %1 percent").arg(SystemState.volumePercent)
+                            ? MeoI18n.translator.i18n("Volume muted")
+                            : MeoI18n.translator.i18n("Volume %1 percent").arg(SystemState.volumePercent)
         },
         {
             id: "battery",
             iconName: SystemState.batteryCharging ? "battery_charging_full" : "battery_full",
             text: root.batteryDisplay >= 2
                   ? (root.batteryDisplay === 3 && SystemState.batteryCharging
-                     ? qsTr("Charging · %1%").arg(SystemState.batteryPercent)
+                     ? MeoI18n.translator.i18n("Charging · %1%").arg(SystemState.batteryPercent)
                      : SystemState.batteryPercent + "%")
                   : "",
             available: root.batteryDisplay > 0 && SystemState.batteryAvailable,
             active: SystemState.batteryCharging,
             attention: false,
             accessibleName: SystemState.batteryCharging
-                            ? qsTr("Charging, %1 percent").arg(SystemState.batteryPercent)
-                            : qsTr("Battery %1 percent").arg(SystemState.batteryPercent)
+                            ? MeoI18n.translator.i18n("Charging, %1 percent").arg(SystemState.batteryPercent)
+                            : MeoI18n.translator.i18n("Battery %1 percent").arg(SystemState.batteryPercent)
         }
     ]
 
@@ -83,7 +83,7 @@ QQC2.AbstractButton {
     implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
-    Accessible.name: qsTr("System status")
+    Accessible.name: MeoI18n.translator.i18n("System status")
     Accessible.description: statusContent.statusDescription()
     onClicked: quickSettingsRequested()
 

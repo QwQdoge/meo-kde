@@ -1,6 +1,6 @@
 pkgname=meo-desktop
 pkgver=0.4.0
-pkgrel=4
+pkgrel=5
 pkgdesc="MeoArch KDE Plasma desktop defaults and Meo Qt application style"
 arch=('x86_64')
 url="https://github.com/QwQdoge"
@@ -9,10 +9,10 @@ depends=('meoui-qml>=1.0.4beta1' 'meo-settings' 'plasma-desktop' 'plasma-workspa
          'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'plasma-login-manager' 'breeze'
          'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
          'kwin-effect-rounded-corners' 'qt6-base' 'qt6-declarative' 'polkit-qt6' 'kwindowsystem'
-         'kconfig' 'kirigami' 'libplasma' 'system76-scheduler'
+         'kconfig' 'ki18n' 'kirigami' 'libplasma' 'system76-scheduler'
          'zram-generator' 'dbus-broker-units' 'power-profiles-daemon' 'gamemode')
 makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative' 'polkit-qt6'
-             'kwindowsystem' 'kconfig' 'kirigami' 'libplasma')
+             'kwindowsystem' 'kconfig' 'ki18n' 'kirigami' 'libplasma')
 provides=('polkit-kde-agent')
 conflicts=('polkit-kde-agent')
 replaces=('polkit-kde-agent')
@@ -130,6 +130,11 @@ package() {
   install -d "${pkgdir}/usr/lib/qt6/qml/MeoKDE"
   cp -a "${workspace}/qml/MeoKDE/." "${pkgdir}/usr/lib/qt6/qml/MeoKDE/"
   DESTDIR="${pkgdir}" cmake --install "${srcdir}/native-build"
+  # The cache is only useful if the user service is scheduled.  Package-enable
+  # the timer exactly like the existing dynamic-colors user path unit; it runs
+  # in each user's session and never enables anything on the build host.
+  ln -s ../meo-weather-refresh.timer \
+    "${pkgdir}/usr/lib/systemd/user/default.target.wants/meo-weather-refresh.timer"
   install -d "${pkgdir}/usr/share/fonts/meo"
   install -m644 "${workspace}"/assets/fonts/*.ttf "${pkgdir}/usr/share/fonts/meo/"
   install -Dm644 "${workspace}/LICENSE" \

@@ -18,14 +18,14 @@ MeoMenu {
         const entries = []
         if (sessionManagement.canSuspend) {
             entries.push({
-                "label": qsTr("Sleep now"),
+                "label": MeoI18n.translator.i18n("Sleep now"),
                 "icon": "bedtime",
                 "action": function() { control.finish(function() { sessionManagement.suspend() }) }
             })
         }
         if (sessionManagement.canReboot) {
             entries.push({
-                "label": qsTr("Restart…"),
+                "label": MeoI18n.translator.i18n("Restart…"),
                 "icon": "restart_alt",
                 "action": function() {
                     control.finish(function() {
@@ -36,7 +36,7 @@ MeoMenu {
         }
         if (sessionManagement.canShutdown) {
             entries.push({
-                "label": qsTr("Shut down…"),
+                "label": MeoI18n.translator.i18n("Shut down…"),
                 "icon": "power_settings_new",
                 "action": function() {
                     control.finish(function() {
@@ -49,7 +49,7 @@ MeoMenu {
             entries.push({ "type": "separator" })
         if (sessionManagement.canLogout) {
             entries.push({
-                "label": qsTr("Sign out…"),
+                "label": MeoI18n.translator.i18n("Sign out…"),
                 "icon": "logout",
                 "action": function() {
                     control.finish(function() {

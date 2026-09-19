@@ -129,15 +129,15 @@ Item {
             return ""
         const seconds = Math.max(0, Math.floor((root.currentDateTime.getTime() - timestamp.getTime()) / 1000))
         if (seconds < 60)
-            return qsTr("Now")
+            return MeoI18n.translator.i18n("Now")
         const minutes = Math.floor(seconds / 60)
         if (minutes < 60)
-            return qsTr("%1 min").arg(minutes)
+            return MeoI18n.translator.i18n("%1 min").arg(minutes)
         const hours = Math.floor(minutes / 60)
         if (hours < 24)
-            return qsTr("%1 h").arg(hours)
+            return MeoI18n.translator.i18n("%1 h").arg(hours)
         if (hours < 48)
-            return qsTr("Yesterday")
+            return MeoI18n.translator.i18n("Yesterday")
         return Qt.formatDate(timestamp, Qt.locale().dateFormat(Locale.ShortFormat))
     }
 
@@ -175,7 +175,7 @@ Item {
         if (projectedBody !== "")
             return projectedBody
         if (type === NotificationManager.Notifications.JobType && percentage >= 0)
-            return qsTr("Progress: %1%").arg(percentage)
+            return MeoI18n.translator.i18n("Progress: %1%").arg(percentage)
         return ""
     }
 
@@ -264,7 +264,7 @@ Item {
                     readonly property var sourceIndex: root.modelIndex(index)
                     readonly property string displayIcon: root.safeIconName(iconName, applicationIconName)
                     readonly property string displaySource: root.plainText(originName) !== ""
-                                                            ? qsTr("%1 · %2").arg(root.plainText(applicationName)).arg(root.plainText(originName))
+                                                            ? MeoI18n.translator.i18n("%1 · %2").arg(root.plainText(applicationName)).arg(root.plainText(originName))
                                                             : root.plainText(applicationName)
                     readonly property int notificationType: Number(model.type)
                     readonly property bool isJob: notificationType === NotificationManager.Notifications.JobType
@@ -348,7 +348,7 @@ Item {
                     Accessible.role: Accessible.ListItem
                     Accessible.name: root.plainText(summary !== "" ? summary : applicationName)
                     Accessible.description: root.displayBody(body, notificationType, percentage)
-                                            + (historical ? qsTr(" Earlier notification.") : "")
+                                            + (historical ? MeoI18n.translator.i18n(" Earlier notification.") : "")
                     Accessible.focusable: hasDefaultAction && !historical
                     Accessible.onPressAction: if (hasDefaultAction && !historical && root.notifications
                                                      && root.notifications.invokeDefaultAction)
@@ -410,7 +410,7 @@ Item {
                             MeoText {
                                 Layout.fillWidth: true
                                 text: notificationCard.displaySource !== ""
-                                      ? notificationCard.displaySource : qsTr("System")
+                                      ? notificationCard.displaySource : MeoI18n.translator.i18n("System")
                                 textFormat: Text.PlainText
                                 typeRole: "label"
                                 typeSize: "small"
@@ -421,21 +421,21 @@ Item {
                             }
                             MeoText {
                                 visible: notificationCard.critical
-                                text: qsTr("Critical")
+                                text: MeoI18n.translator.i18n("Critical")
                                 typeRole: "label"
                                 typeSize: "small"
                                 emphasized: true
                                 color: MeoTheme.onErrorContainer
-                                Accessible.name: qsTr("Critical notification")
+                                Accessible.name: MeoI18n.translator.i18n("Critical notification")
                             }
                             MeoText {
                                 visible: notificationCard.historical && !notificationCard.critical
-                                text: qsTr("Earlier")
+                                text: MeoI18n.translator.i18n("Earlier")
                                 typeRole: "label"
                                 typeSize: "small"
                                 emphasized: true
                                 color: MeoTheme.onSurfaceVariant
-                                Accessible.name: qsTr("Notification history")
+                                Accessible.name: MeoI18n.translator.i18n("Notification history")
                             }
                             MeoText {
                                 text: root.relativeTime(notificationCard.effectiveTime)
@@ -449,7 +449,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 icon.name: "settings"
-                                Accessible.name: qsTr("Configure notifications from %1")
+                                Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1")
                                                  .arg(root.plainText(notificationCard.applicationName))
                                 onClicked: if (root.notifications && root.notifications.configure)
                                                root.notifications.configure(notificationCard.sourceIndex)
@@ -459,7 +459,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 icon.name: "close"
-                                Accessible.name: qsTr("Dismiss notification")
+                                Accessible.name: MeoI18n.translator.i18n("Dismiss notification")
                                 onClicked: if (root.notifications && root.notifications.close)
                                                root.notifications.close(notificationCard.sourceIndex)
                             }
@@ -500,7 +500,7 @@ Item {
                                 isThick: true
                             }
                             MeoText {
-                                text: qsTr("%1%").arg(Math.max(0, notificationCard.percentage))
+                                text: MeoI18n.translator.i18n("%1%").arg(Math.max(0, notificationCard.percentage))
                                 typeRole: "label"
                                 typeSize: "small"
                                 color: MeoTheme.onSurfaceVariant
@@ -539,7 +539,7 @@ Item {
                                 type: notificationCard.replyExpanded ? "tonal" : "text"
                                 size: "s"
                                 text: notificationCard.replyActionLabel !== ""
-                                      ? root.buttonLabel(notificationCard.replyActionLabel) : qsTr("Reply")
+                                      ? root.buttonLabel(notificationCard.replyActionLabel) : MeoI18n.translator.i18n("Reply")
                                 onClicked: notificationCard.toggleReply()
                             }
 
@@ -548,7 +548,7 @@ Item {
                                 type: "text"
                                 size: "s"
                                 text: notificationCard.jobState === NotificationManager.Notifications.JobStateSuspended
-                                      ? qsTr("Resume") : qsTr("Pause")
+                                      ? MeoI18n.translator.i18n("Resume") : MeoI18n.translator.i18n("Pause")
                                 onClicked: {
                                     if (!root.notifications)
                                         return
@@ -563,7 +563,7 @@ Item {
                                 visible: !notificationCard.historical && notificationCard.isJob && notificationCard.killable
                                 type: "text"
                                 size: "s"
-                                text: qsTr("Cancel")
+                                text: MeoI18n.translator.i18n("Cancel")
                                 onClicked: if (root.notifications && root.notifications.killJob)
                                                root.notifications.killJob(notificationCard.sourceIndex)
                             }
@@ -581,7 +581,7 @@ Item {
                                 type: "outlined"
                                 placeholder: notificationCard.replyPlaceholderText !== ""
                                              ? root.plainText(notificationCard.replyPlaceholderText)
-                                             : qsTr("Write a reply")
+                                             : MeoI18n.translator.i18n("Write a reply")
                                 Accessible.name: placeholder
                                 onAccepted: notificationCard.submitReply()
                             }
@@ -591,7 +591,7 @@ Item {
                                 size: "s"
                                 enabled: replyField.text.trim() !== ""
                                 text: notificationCard.replySubmitButtonText !== ""
-                                      ? root.buttonLabel(notificationCard.replySubmitButtonText) : qsTr("Send")
+                                      ? root.buttonLabel(notificationCard.replySubmitButtonText) : MeoI18n.translator.i18n("Send")
                                 onClicked: notificationCard.submitReply()
                             }
                         }
@@ -608,15 +608,15 @@ Item {
                 opacity: root.visibleNotificationCount === 0 ? 1 : 0
                 iconName: NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications_none"
                 title: NotificationManager.Server.inhibited
-                       ? qsTr("Do Not Disturb is on")
-                       : (root.notificationCount > 0 ? qsTr("No recent notifications")
-                                                     : qsTr("You’re all caught up"))
+                       ? MeoI18n.translator.i18n("Do Not Disturb is on")
+                       : (root.notificationCount > 0 ? MeoI18n.translator.i18n("No recent notifications")
+                                                     : MeoI18n.translator.i18n("You’re all caught up"))
                 description: NotificationManager.Server.inhibited
-                             ? qsTr("New notifications are collected quietly until you turn it off.")
+                             ? MeoI18n.translator.i18n("New notifications are collected quietly until you turn it off.")
                              : (root.notificationCount > 0
-                                ? qsTr("Older notifications or background jobs are hidden by this view’s preferences.")
-                                : qsTr("New notifications and background jobs will appear here."))
-                actionText: root.showSettingsAction ? qsTr("Notification settings") : ""
+                                ? MeoI18n.translator.i18n("Older notifications or background jobs are hidden by this view’s preferences.")
+                                : MeoI18n.translator.i18n("New notifications and background jobs will appear here."))
+                actionText: root.showSettingsAction ? MeoI18n.translator.i18n("Notification settings") : ""
                 onActionRequested: root.settingsRequested()
                 Behavior on opacity {
                     NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }

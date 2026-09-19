@@ -5,11 +5,12 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import MeoUI 1.0
 import Meo.System 1.0 as MeoSystem
+import MeoKDE 1.0
 
 PlasmoidItem {
     id: root
 
-    Plasmoid.title: qsTr("Meo Media")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Media")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: fullRepresentation
 
@@ -34,7 +35,7 @@ PlasmoidItem {
             frameMode: MeoWidget.Adaptive
             wantsOwnBackground: true
             accessibleName: Plasmoid.title
-            accessibleDescription: qsTr("Current-session media controls")
+            accessibleDescription: MeoI18n.translator.i18n("Current-session media controls")
 
             MeoMediaController {
                 anchors.fill: parent
@@ -69,8 +70,8 @@ PlasmoidItem {
                     width: parent.width - 2 * MeoTheme.space24
                     spacing: MeoTheme.space8
                     MeoIcon { Layout.alignment: Qt.AlignHCenter; icon: "music_off"; size: 28; color: MeoTheme.contentOnSurfaceVariant }
-                    MeoText { Layout.fillWidth: true; text: qsTr("No media playing"); typeRole: "title"; typeSize: "small"; emphasized: true; horizontalAlignment: Text.AlignHCenter }
-                    MeoText { Layout.fillWidth: true; text: qsTr("Media controls appear when a current-session player is available."); typeRole: "body"; typeSize: "small"; color: MeoTheme.contentOnSurfaceVariant; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap }
+                    MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("No media playing"); typeRole: "title"; typeSize: "small"; emphasized: true; horizontalAlignment: Text.AlignHCenter }
+                    MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("Media controls appear when a current-session player is available."); typeRole: "body"; typeSize: "small"; color: MeoTheme.contentOnSurfaceVariant; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap }
                 }
             }
         }

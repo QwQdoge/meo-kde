@@ -2,7 +2,9 @@
     "KPlugin": {
         "Id": "org.meo.topbar",
         "Name": "Meo Quick Settings",
+        "Name[zh_CN]": "Meo 快速设置",
         "Description": "Meo Quick Settings for the Plasma panel",
+        "Description[zh_CN]": "Plasma 面板的 Meo 快速设置",
         "Icon": "meoarch-logo",
         "Authors": [
             {

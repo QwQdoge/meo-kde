@@ -120,37 +120,37 @@ QQC2.ScrollView {
     }
 
     function bluetoothSubtitle() {
-        if (!SystemState.bluetoothEnabled) return qsTr("Off")
+        if (!SystemState.bluetoothEnabled) return MeoI18n.translator.i18n("Off")
         for (const device of SystemState.bluetoothDevices) {
             if (device.connected) return device.name
         }
-        return qsTr("On")
+        return MeoI18n.translator.i18n("On")
     }
 
     function tileTitle(id) {
-        if (id === "wifi") return qsTr("Wi-Fi")
-        if (id === "bluetooth") return qsTr("Bluetooth")
-        if (id === "focus") return qsTr("Focus")
-        if (id === "nightLight") return qsTr("Night Light")
-        if (id === "keepAwake") return qsTr("Keep Awake")
-        if (id === "powerMode") return qsTr("Power Mode")
-        if (id === "microphone") return qsTr("Microphone")
-        if (id === "audioDevices") return qsTr("Sound")
-        if (id === "display") return qsTr("Displays")
-        return qsTr("Screenshot")
+        if (id === "wifi") return MeoI18n.translator.i18n("Wi-Fi")
+        if (id === "bluetooth") return MeoI18n.translator.i18n("Bluetooth")
+        if (id === "focus") return MeoI18n.translator.i18n("Focus")
+        if (id === "nightLight") return MeoI18n.translator.i18n("Night Light")
+        if (id === "keepAwake") return MeoI18n.translator.i18n("Keep Awake")
+        if (id === "powerMode") return MeoI18n.translator.i18n("Power Mode")
+        if (id === "microphone") return MeoI18n.translator.i18n("Microphone")
+        if (id === "audioDevices") return MeoI18n.translator.i18n("Sound")
+        if (id === "display") return MeoI18n.translator.i18n("Displays")
+        return MeoI18n.translator.i18n("Screenshot")
     }
 
     function tileSubtitle(id) {
         if (id === "wifi") return SystemState.networkName !== "" ? SystemState.networkName : SystemState.networkStatus
         if (id === "bluetooth") return bluetoothSubtitle()
-        if (id === "focus") return NotificationManager.Server.inhibited ? qsTr("Do Not Disturb") : qsTr("Notifications on")
-        if (id === "nightLight") return Platform.nightLightRunning ? qsTr("On") : qsTr("Off")
-        if (id === "keepAwake") return Platform.keepAwake ? qsTr("On") : qsTr("Off")
+        if (id === "focus") return NotificationManager.Server.inhibited ? MeoI18n.translator.i18n("Do Not Disturb") : MeoI18n.translator.i18n("Notifications on")
+        if (id === "nightLight") return Platform.nightLightRunning ? MeoI18n.translator.i18n("On") : MeoI18n.translator.i18n("Off")
+        if (id === "keepAwake") return Platform.keepAwake ? MeoI18n.translator.i18n("On") : MeoI18n.translator.i18n("Off")
         if (id === "powerMode") return Platform.activePowerProfile
-        if (id === "microphone") return SystemState.microphoneMuted ? qsTr("Muted") : SystemState.microphoneDevice
-        if (id === "audioDevices") return SystemState.audioMuted ? qsTr("Muted") : SystemState.audioDevice
-        if (id === "display") return qsTr("%1 connected").arg(Platform.brightnessDisplays.length)
-        return qsTr("Capture screen")
+        if (id === "microphone") return SystemState.microphoneMuted ? MeoI18n.translator.i18n("Muted") : SystemState.microphoneDevice
+        if (id === "audioDevices") return SystemState.audioMuted ? MeoI18n.translator.i18n("Muted") : SystemState.audioDevice
+        if (id === "display") return MeoI18n.translator.i18n("%1 connected").arg(Platform.brightnessDisplays.length)
+        return MeoI18n.translator.i18n("Capture screen")
     }
 
     function tileIcon(id) {
@@ -248,8 +248,8 @@ QQC2.ScrollView {
                 iconName: "light_mode"
                 label: root.displayExpanded && Platform.brightnessDisplays.length > 1 ? modelData.label : ""
                 accessibleName: modelData.label
-                    ? qsTr("%1 brightness").arg(modelData.label)
-                    : qsTr("Display brightness")
+                    ? MeoI18n.translator.i18n("%1 brightness").arg(modelData.label)
+                    : MeoI18n.translator.i18n("Display brightness")
                 iconAccessibleName: ""
                 iconActionEnabled: false
                 from: 0
@@ -267,8 +267,8 @@ QQC2.ScrollView {
             visible: SystemState.audioAvailable
             iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
             label: ""
-            accessibleName: qsTr("Output volume")
-            iconAccessibleName: SystemState.audioMuted ? qsTr("Unmute output") : qsTr("Mute output")
+            accessibleName: MeoI18n.translator.i18n("Output volume")
+            iconAccessibleName: SystemState.audioMuted ? MeoI18n.translator.i18n("Unmute output") : MeoI18n.translator.i18n("Mute output")
             from: 0
             to: 100
             value: SystemState.volumePercent
@@ -303,7 +303,7 @@ QQC2.ScrollView {
                 spacing: MeoTheme.space8
                 MeoExposedDropdown {
                     Layout.fillWidth: true
-                    label: qsTr("Output device")
+                    label: MeoI18n.translator.i18n("Output device")
                     model: SystemState.audioOutputDevices.map(function(device) { return device.name })
                     text: SystemState.audioDevice
                     onSelected: function(index, value) { SystemState.setDefaultAudioOutput(SystemState.audioOutputDevices[index].id) }
@@ -313,9 +313,9 @@ QQC2.ScrollView {
                     visible: SystemState.microphoneAvailable
                     iconName: SystemState.microphoneMuted ? "mic_off" : "mic"
                     label: SystemState.microphoneDevice
-                    accessibleName: qsTr("Microphone volume")
+                    accessibleName: MeoI18n.translator.i18n("Microphone volume")
                     iconAccessibleName: SystemState.microphoneMuted
-                        ? qsTr("Unmute microphone") : qsTr("Mute microphone")
+                        ? MeoI18n.translator.i18n("Unmute microphone") : MeoI18n.translator.i18n("Mute microphone")
                     from: 0; to: 100; value: SystemState.microphoneVolumePercent
                     onMoved: function(value) { SystemState.microphoneVolumePercent = Math.round(value) }
                     onIconTriggered: SystemState.microphoneMuted = !SystemState.microphoneMuted
@@ -323,7 +323,7 @@ QQC2.ScrollView {
                 MeoExposedDropdown {
                     Layout.fillWidth: true
                     visible: SystemState.audioInputDevices.length > 1
-                    label: qsTr("Input device")
+                    label: MeoI18n.translator.i18n("Input device")
                     model: SystemState.audioInputDevices.map(function(device) { return device.name })
                     text: SystemState.microphoneDevice
                     onSelected: function(index, value) { SystemState.setDefaultAudioInput(SystemState.audioInputDevices[index].id) }

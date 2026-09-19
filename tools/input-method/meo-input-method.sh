@@ -249,7 +249,7 @@ render_fcitx_theme() {
   mkdir -p "$target" || return 1
   atomic_write "${target}/panel.svg" <<EOF || return 1
 <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
-  <rect x="1" y="1" width="48" height="48" rx="24" fill="${meo_surface_container}" stroke="${meo_outline}" stroke-width="2"/>
+  <rect width="50" height="50" rx="24" fill="${meo_surface_container}"/>
 </svg>
 EOF
   atomic_write "${target}/highlight.svg" <<EOF || return 1

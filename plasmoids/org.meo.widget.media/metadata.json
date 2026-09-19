@@ -3,7 +3,9 @@
     "KPlugin": {
         "Id": "org.meo.widget.media",
         "Name": "Meo Media",
+        "Name[zh_CN]": "Meo 媒体",
         "Description": "Current-session MPRIS media controls",
+        "Description[zh_CN]": "当前会话的 MPRIS 媒体控制",
         "Icon": "media-playback-start",
         "Category": "Multimedia",
         "License": "GPL-2.0-or-later",

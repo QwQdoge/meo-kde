@@ -12,7 +12,7 @@ PlasmoidItem {
     id: root
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: qsTr("Meo Notifications")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Notifications")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: compactRepresentation
     onExpandedChanged: if (root.expanded)

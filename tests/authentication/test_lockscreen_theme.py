@@ -81,10 +81,12 @@ class LockScreenThemeTests(unittest.TestCase):
             "showAlbumArtwork",
             "showWeatherLocation",
             "lockScreenNotificationVisibility",
-            "showMediaControls && !sessionManager.lockScreenUiVisible",
+                "showAudioControls",
+                "SystemState.audioAvailable",
+                "showMedia: lockScreenUi.showMediaControls",
         ):
             with self.subTest(required=required):
-                self.assertIn(required, self.ui + self.main)
+                self.assertIn(required, self.ui + self.main + self.media)
 
         for required in (
             "asyncCall",
@@ -113,17 +115,18 @@ class LockScreenThemeTests(unittest.TestCase):
                 else:
                     self.assertIn(required, self.weather_source)
 
-    def test_p3_defaults_hide_private_media_weather_and_artwork(self):
+    def test_rich_defaults_enable_explicit_current_session_modules(self):
         self.assertIn('<entry name="showMediaControls" type="Bool">', self.config)
         self.assertIn('<entry name="showAlbumArtwork" type="Bool">', self.config)
         self.assertIn('<entry name="showWeather" type="Bool">', self.config)
         self.assertIn('<entry name="showWeatherLocation" type="Bool">', self.config)
         self.assertIn('<entry name="lockScreenNotificationVisibility" type="String">', self.config)
-        for entry in ("showMediaControls", "showAlbumArtwork", "showWeather", "showWeatherLocation"):
+        self.assertIn('<entry name="showAudioControls" type="Bool">', self.config)
+        for entry in ("showMediaControls", "showAlbumArtwork", "showAudioControls", "showWeather", "showWeatherLocation"):
             with self.subTest(entry=entry):
                 section = self.config.split(f'<entry name="{entry}"', 1)[1].split("</entry>", 1)[0]
-                self.assertIn("<default>false</default>", section)
-        self.assertIn('<default>count</default>', self.config)
+                self.assertIn("<default>true</default>", section)
+        self.assertIn('<default>full-content</default>', self.config)
         self.assertIn("groupMode: NotificationManager.Notifications.GroupDisabled", self.notifications)
         for forbidden in ("invokeDefaultAction", "reply(", "urls", "showJobs: true", "showExpired: true"):
             with self.subTest(forbidden=forbidden):

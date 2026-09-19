@@ -27,9 +27,11 @@ has `schemaVersion: 1` and exactly one `scope`:
   precise location, and may reference only a system default or managed asset.
 
 The schema holds presentation preferences only: large/compact clock, date,
-background treatment, media/weather enablement, notification and content
+background treatment, `wallpaperMode`, media/weather/audio enablement, city
+preference for the separate weather refresher, notification and content
 privacy, output-specific wallpaper refs, active-authentication-screen policy
-and Reduce Motion override.  Wallpaper references are symbolic asset IDs;
+and Reduce Motion override. `wallpaperMode: follow-desktop` resolves only the
+wallpaper that KScreenLocker already supplies for that secure output. Wallpaper references are symbolic asset IDs;
 consumers resolve them through their trusted owner and do not accept arbitrary
 QML, URLs or raw filesystem paths from the settings document.  Output keys are
 opaque KScreen identities, never coordinates or raw EDID payloads.
@@ -40,10 +42,11 @@ not prevent a security surface from appearing or a user from authenticating.
 
 ## Defaults and privacy
 
-The user-visible default for lock screen notifications is `count`.  Application
-names/full content, album artwork and precise weather location are opt-in.
-Media and weather start disabled; when added in P3 they remain asynchronous,
-time-bounded and removable without affecting authentication.  Login surfaces
+The rich lock-screen profile defaults to `full-content` notifications, album
+artwork, city-level cached weather, current-session media, and output
+volume/mute. Privacy controls can independently reduce this to application
+name, count, or hidden. Media remains asynchronous and time-bounded; all
+external cards remain removable without affecting authentication. Login surfaces
 never query a prior user's session, MPRIS player, notification store or private
 weather settings.  Login weather, if enabled later, is city-granularity,
 system-cache data only.
@@ -90,9 +93,20 @@ ISO timestamp, city-granularity location, temperature/unit, condition and an
 icon name. Invalid, future-dated or older-than-six-hour data hides the widget;
 the city name itself is opt-in.
 
+`meo-weather-refresh` is a per-user, systemd-timer driven Open-Meteo client.
+Meo Settings stores a bounded city name and can explicitly request a refresh;
+the refresher has a 10-second deadline and atomically replaces the cache only
+after a complete, validated response. It has no greeter integration. A network
+error, invalid provider response, or stale cache simply hides weather on the
+locker.
+
+The audio module is a read-only/output-control projection of the existing
+PipeWire/PulseAudio authority. It exposes only volume (clamped to 100%) and
+mute; it has no output-device, microphone, or input-device selector.
+
 The notification module is a read-only `NotificationManager` projection. It
 never exposes actions, reply controls, URLs, images, jobs or history. `hidden`
-does not instantiate the notification model, `count` is the default, and only
+does not instantiate the notification model, and only
 the explicit `app-name` or `full-content` preference evaluates text fields.
 All text passes through a bounded plain-text projection before it reaches
 MeoUI. Media, weather and notification widgets are shown only on the active

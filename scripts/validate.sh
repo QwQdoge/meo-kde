@@ -52,6 +52,7 @@ run cmake -S "${repo_root}/native/system" -B "${system_build}" -DCMAKE_BUILD_TYP
 run cmake --build "${system_build}" --parallel
 run test -s "${system_import}/Meo/System/plugins.qmltypes"
 run "${system_build}/meo-system-state-smoke"
+run ctest --test-dir "${system_build}" --output-on-failure
 run cmake -S "${repo_root}/native" -B "${application_style_build}" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}" \
   -DMEOUI_IMPORT_ROOT_PATH="${meoui_import}" -DMEO_BUILD_STANDALONE_DOCK=OFF

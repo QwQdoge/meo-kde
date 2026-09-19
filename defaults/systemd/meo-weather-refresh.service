@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh Meo weather cache
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/meo-weather-refresh

@@ -3,7 +3,9 @@
     "KPlugin": {
         "Id": "org.meo.widget.clock",
         "Name": "Meo Clock",
+        "Name[zh_CN]": "Meo 时钟",
         "Description": "Pixel-style time, date, and cached weather",
+        "Description[zh_CN]": "像素风格的时间、日期和缓存天气",
         "Icon": "preferences-system-time",
         "Category": "Date and Time",
         "License": "GPL-2.0-or-later",

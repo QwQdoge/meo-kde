@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "id": "MeoIconContract",
+  "version": "1",
+  "authoring": {
+    "canonicalGrid": "48u",
+    "allowedGeometry": [
+      "named integer u tokens",
+      "named rational expressions",
+      "sqrt(2) derived diagonal offsets"
+    ],
+    "forbidden": [
+      "unexplained hand-authored magic constants",
+      "untracked optical corrections"
+    ],
+    "generatedCoordinateRule": "deterministic finite-precision coordinates are allowed only when reproducible from this contract"
+  },
+  "applicationIdentity": {
+    "canvas": "48u x 48u",
+    "container": {
+      "size": "40u",
+      "inset": "4u"
+    },
+    "foreground": {
+      "standardOpticalBox": "24u",
+      "pixelFlowerOpticalBox": "22u"
+    },
+    "shape": {
+      "circle": {
+        "radius": "20u"
+      },
+      "squircle": {
+        "cornerRadius": "12u"
+      },
+      "roundedSquare": {
+        "cornerRadius": "8u"
+      },
+      "pixelFlower": {
+        "centerDiskRadius": "12u",
+        "lobeRadius": "8u",
+        "lobeCenterOffset": "12u",
+        "diagonalMultiplier": "1/sqrt(2)"
+      }
+    }
+  },
+  "raster": {
+    "canonicalVector": "48u",
+    "opticalMasters": [16, 22, 32],
+    "smallMasterOversampling": "8x",
+    "deliverySizes": [16, 22, 32, 128, 256, 512]
+  },
+  "semantics": {
+    "applicationIdentity": "switchable original/color/mono/approved-ai",
+    "systemSymbols": "MeoSymbols only",
+    "liveStatus": "KDE semantic icon, never AI-replaced"
+  }
+}

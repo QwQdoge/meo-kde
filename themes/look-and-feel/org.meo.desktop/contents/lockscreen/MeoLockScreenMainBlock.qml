@@ -157,17 +157,4 @@ SessionManagementScreen {
         }
     }
 
-    // The card is an optional, presentation-only projection of the current
-    // user session's MPRIS player. It does not take part in password entry.
-    MediaControls {
-        Layout.topMargin: MeoTheme.space8
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignHCenter
-        Layout.minimumWidth: 280 * MeoTheme.globalScale
-        Layout.maximumWidth: 440 * MeoTheme.globalScale
-        // The authentication state is purposefully task-only: presentation
-        // widgets stay on the ambient lock screen while credentials are entered.
-        visible: sessionManager.showMediaControls && !sessionManager.lockScreenUiVisible
-        showArtwork: sessionManager.showAlbumArtwork
-    }
 }

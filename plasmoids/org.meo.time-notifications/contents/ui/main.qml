@@ -12,10 +12,12 @@ import MeoKDE 1.0
 PlasmoidItem {
     id: root
 
-    readonly property bool use24Hour: Plasmoid.configuration.clockFormat !== "12h"
+    readonly property bool use24Hour: Plasmoid.configuration.clockFormat === "24h"
+                                      || (Plasmoid.configuration.clockFormat === "system"
+                                          && Qt.locale().timeFormat(Locale.ShortFormat).indexOf("AP") < 0)
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: qsTr("Meo Time and Notifications")
+    Plasmoid.title: MeoI18n.translator.i18n("Meo Time and Notifications")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: compactRepresentation
     onExpandedChanged: if (root.expanded)

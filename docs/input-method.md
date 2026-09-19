@@ -15,9 +15,11 @@ user-local `MeoInputMethod-Dynamic` theme from the active colour scheme's exact
 is never selected or replaced by `--sync`.
 
 The static framework skins mirror MeoUI's MD3 shape and spacing tokens: the
-candidate surface uses a 24-pixel capsule asset, the selected item uses a
-17-pixel capsule asset, and the visible inset is 7 pixels. Page buttons and the
-Classic UI menu use matching vector icons, container pairs, and outline roles.
+candidate surface uses a borderless 24-pixel capsule asset, the selected item
+uses a 17-pixel capsule asset, and the visible inset is 7 pixels. Its hierarchy
+comes from the dynamic tonal surface rather than a permanent outer frame. Page
+buttons and the Classic UI menu use matching vector icons, container pairs, and
+the outline role only where a separator is semantically needed.
 The selected candidate always pairs `secondaryContainer` with
 `onSecondaryContainer`, including after a dynamic-colour refresh; the menu
 uses the corresponding primary-container pair. This prevents the candidate
@@ -76,7 +78,9 @@ The helper reads the active KDE colour-scheme file and renders a user-local
 `primary/onPrimary`, `primaryContainer/onPrimaryContainer`,
 `secondaryContainer/onSecondaryContainer`, `onSurfaceVariant`, and `outline`
 directly from `[MeoMaterial]`; it does not infer an on-container colour from an
-unrelated KDE colour set. A later `meo-theme-mode light` or `meo-theme-mode
+unrelated KDE colour set. The candidate surface is borderless and relies on its
+tonal role plus shadow for depth; `outline` remains available only for semantic
+separators. A later `meo-theme-mode light` or `meo-theme-mode
 dark` refreshes already selected Meo Fcitx and IBus themes automatically;
 `meo-input-method --sync` does the same after another colour-scheme change.
 

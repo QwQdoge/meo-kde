@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls as QQC2
 import MeoUI 1.0
+import MeoKDE 1.0
 
 // MeoKDE owns the tile identifiers and Plasma configuration wire format.
 // MeoQuickSettingsEditor supplies only the reusable visual/editor treatment.
@@ -77,16 +78,16 @@ QQC2.ScrollView {
     QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AsNeeded
 
     function tileTitle(id) {
-        if (id === "wifi") return qsTr("Wi-Fi")
-        if (id === "bluetooth") return qsTr("Bluetooth")
-        if (id === "focus") return qsTr("Modes")
-        if (id === "nightLight") return qsTr("Night Light")
-        if (id === "keepAwake") return qsTr("Keep Awake")
-        if (id === "powerMode") return qsTr("Power Mode")
-        if (id === "microphone") return qsTr("Microphone")
-        if (id === "audioDevices") return qsTr("Sound")
-        if (id === "display") return qsTr("Displays")
-        return qsTr("Screenshot")
+        if (id === "wifi") return MeoI18n.translator.i18n("Wi-Fi")
+        if (id === "bluetooth") return MeoI18n.translator.i18n("Bluetooth")
+        if (id === "focus") return MeoI18n.translator.i18n("Modes")
+        if (id === "nightLight") return MeoI18n.translator.i18n("Night Light")
+        if (id === "keepAwake") return MeoI18n.translator.i18n("Keep Awake")
+        if (id === "powerMode") return MeoI18n.translator.i18n("Power Mode")
+        if (id === "microphone") return MeoI18n.translator.i18n("Microphone")
+        if (id === "audioDevices") return MeoI18n.translator.i18n("Sound")
+        if (id === "display") return MeoI18n.translator.i18n("Displays")
+        return MeoI18n.translator.i18n("Screenshot")
     }
 
     function tileIcon(id) {

@@ -63,7 +63,9 @@ PlasmoidItem {
         }
     }
 
-    // Root Material 3 Content-Sized Surface Pill Container
+    // Root Material 3 content-sized tonal surface.  Like current Pixel
+    // surfaces, it has no permanent outline: hierarchy comes from the dynamic
+    // surface role while task items provide feedback only when interacted with.
     Rectangle {
         id: surfaceContainer
 
@@ -79,8 +81,7 @@ PlasmoidItem {
         radius: height / 2
 
         color: MeoTheme.surfaceContainer
-        border.color: MeoTheme.outlineVariant
-        border.width: ShellMetrics.panelOutlineWidth
+        border.width: 0
 
         transform: Translate {
             y: (root.currentShelfState === root.stateDodgeHidden || root.currentShelfState === root.stateFullscreenHidden) ? ShellMetrics.shelfPanelHeight : 0
@@ -113,7 +114,7 @@ PlasmoidItem {
             ShelfItem {
                 id: launcherButton
                 isLauncher: true
-                title: "Application Launcher"
+                title: MeoI18n.translator.i18n("Application Launcher")
                 isActive: launcherPopup.visible
 
                 onClicked: {
@@ -121,12 +122,12 @@ PlasmoidItem {
                 }
             }
 
-            // Divider Line
-            Rectangle {
-                Layout.preferredWidth: ShellMetrics.panelOutlineWidth
+            // Preserve a breathable launcher-to-task gap without turning it
+            // into a permanent visual divider.
+            Item {
+                Layout.preferredWidth: MeoTheme.space8
                 Layout.preferredHeight: MeoTheme.space24
                 Layout.alignment: Qt.AlignVCenter
-                color: MeoTheme.outlineVariant
             }
 
             // 2. Tasks Model Repeater (Pinned + Running Apps merged)
@@ -212,7 +213,7 @@ PlasmoidItem {
             for (let index = 0; index < children.length; ++index) {
                 const child = children[index]
                 entries.push({
-                    "label": child.display || qsTr("Window"),
+                    "label": child.display || MeoI18n.translator.i18n("Window"),
                     "icon": "web_asset",
                     "action": function() { tasksModel.requestActivate(taskIndex) }
                 })
@@ -233,18 +234,18 @@ PlasmoidItem {
             const pinned = tasksModel.data(taskIndex, TaskManager.TasksModel.IsPinned) || false
             return [
                 {
-                    "label": qsTr("Open new window"),
+                    "label": MeoI18n.translator.i18n("Open new window"),
                     "icon": "add_box",
                     "action": function() { tasksModel.requestNewInstance(taskIndex) }
                 },
                 {
-                    "label": pinned ? qsTr("Unpin from Shelf") : qsTr("Pin to Shelf"),
+                    "label": pinned ? MeoI18n.translator.i18n("Unpin from Shelf") : MeoI18n.translator.i18n("Pin to Shelf"),
                     "icon": pinned ? "keep_off" : "keep",
                     "action": function() { tasksModel.requestToggleIsPinned(taskIndex) }
                 },
                 { "type": "separator" },
                 {
-                    "label": qsTr("Close window"),
+                    "label": MeoI18n.translator.i18n("Close window"),
                     "icon": "close",
                     "action": function() { tasksModel.requestClose(taskIndex) }
                 }

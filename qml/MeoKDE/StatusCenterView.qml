@@ -29,6 +29,8 @@ MeoStatusCenter {
                                         || centerMode === "timeCalendarNotifications"
     readonly property bool showNotificationPane: centerMode !== "timeCalendar"
     readonly property bool use24HourClock: clockFormat === "24h"
+                                             || (clockFormat === "system"
+                                                 && Qt.locale().timeFormat(Locale.ShortFormat).indexOf("AP") < 0)
     readonly property string timePattern: use24HourClock
                                        ? (showSeconds ? "hh:mm:ss" : "hh:mm")
                                        : (showSeconds ? "h:mm:ss AP" : "h:mm AP")
@@ -88,7 +90,7 @@ MeoStatusCenter {
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.onSurfaceVariant
-                Accessible.name: qsTr("Secondary calendar: %1").arg(SystemState.secondaryCalendarText)
+                Accessible.name: MeoI18n.translator.i18n("Secondary calendar: %1").arg(SystemState.secondaryCalendarText)
             }
         }
     }

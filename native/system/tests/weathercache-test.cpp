@@ -1,12 +1,14 @@
 #include "weathercache.h"
 
+#include <KLocalizedString>
+
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QStandardPaths>
 #include <QTest>
+#include <QTemporaryDir>
 
 class WeatherCacheTest : public QObject
 {
@@ -15,8 +17,20 @@ class WeatherCacheTest : public QObject
 private slots:
     void initTestCase()
     {
-        QStandardPaths::setTestModeEnabled(true);
+        QVERIFY2(m_stateHome.isValid(), "Unable to create isolated XDG state home");
+        qputenv("XDG_STATE_HOME", m_stateHome.path().toUtf8());
         QDir().mkpath(QFileInfo(WeatherCache::cachePath()).absolutePath());
+        KLocalizedString::setApplicationDomain("meo-desktop");
+        KLocalizedString::addDomainLocaleDir(
+            "meo-desktop",
+            QStringLiteral(MEO_I18N_LOCALE_DIR)
+        );
+        KLocalizedString::setLanguages({QStringLiteral("en")});
+    }
+
+    void cleanupTestCase()
+    {
+        qunsetenv("XDG_STATE_HOME");
     }
 
     void cleanup()
@@ -24,8 +38,15 @@ private slots:
         QFile::remove(WeatherCache::cachePath());
     }
 
+    void usesSharedXdgStatePath()
+    {
+        QCOMPARE(WeatherCache::cachePath(),
+                 QDir(m_stateHome.path()).filePath(QStringLiteral("meo/weather/lockscreen.json")));
+    }
+
     void readsFreshBoundedCache()
     {
+        KLocalizedString::setLanguages({QStringLiteral("en")});
         writeCache({
             {QStringLiteral("schemaVersion"), 1},
             {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
@@ -42,6 +63,72 @@ private slots:
         QCOMPARE(cache.temperatureText(), QStringLiteral("28°C"));
         QCOMPARE(cache.condition(), QStringLiteral("Partly cloudy"));
         QCOMPARE(cache.location(), QStringLiteral("Singapore"));
+    }
+
+    void keepsLegacyConditionWhenTheCacheHasNoStableCode()
+    {
+        KLocalizedString::setLanguages({QStringLiteral("zh_CN")});
+        writeCache({
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("unit"), QStringLiteral("C")},
+            {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
+        });
+
+        WeatherCache cache;
+        QVERIFY(cache.available());
+        QCOMPARE(cache.condition(), QStringLiteral("Partly cloudy"));
+    }
+
+    void localizesConditionFromStableWeatherCode()
+    {
+        KLocalizedString::setLanguages({QStringLiteral("zh_CN")});
+        writeCache({
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("unit"), QStringLiteral("C")},
+            {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
+            {QStringLiteral("weatherCode"), 3},
+        });
+
+        WeatherCache cache;
+        QVERIFY(cache.available());
+        QCOMPARE(cache.condition(), QStringLiteral("局部多云"));
+    }
+
+    void keepsEnglishFallbackForStableWeatherCode()
+    {
+        KLocalizedString::setLanguages({QStringLiteral("en")});
+        writeCache({
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("unit"), QStringLiteral("C")},
+            {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
+            {QStringLiteral("weatherCode"), 3},
+        });
+
+        WeatherCache cache;
+        QVERIFY(cache.available());
+        QCOMPARE(cache.condition(), QStringLiteral("Partly cloudy"));
+    }
+
+    void localizesCacheReadErrors()
+    {
+        KLocalizedString::setLanguages({QStringLiteral("zh_CN")});
+        writeCache({
+            {QStringLiteral("schemaVersion"), 2},
+            {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("unit"), QStringLiteral("C")},
+            {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
+        });
+
+        WeatherCache cache;
+        QVERIFY(!cache.available());
+        QCOMPARE(cache.lastError(), QStringLiteral("天气缓存版本不受支持。"));
     }
 
     void hidesStaleCache()
@@ -75,6 +162,8 @@ private slots:
     }
 
 private:
+    QTemporaryDir m_stateHome;
+
     static void writeCache(const QJsonObject &object)
     {
         QFile file(WeatherCache::cachePath());

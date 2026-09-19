@@ -1,7 +1,9 @@
 [Desktop Entry]
 Type=Application
 Name=Meo Dock
+Name[zh_CN]=Meo 程序坞
 Comment=Material You application dock for Meo Desktop
+Comment[zh_CN]=Meo Desktop 的 Material You 应用程序坞
 Exec=meo-dock
 Icon=meoarch-logo
 OnlyShowIn=KDE;

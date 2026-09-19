@@ -29,15 +29,15 @@ QQC2.ScrollView {
 
         PopupPageHeader {
             Layout.fillWidth: true
-            title: qsTr("Sound")
-            subtitle: SystemState.audioAvailable ? SystemState.audioDevice : qsTr("No audio service")
+            title: MeoI18n.translator.i18n("Sound")
+            subtitle: SystemState.audioAvailable ? SystemState.audioDevice : MeoI18n.translator.i18n("No audio service")
             onBackRequested: root.backRequested()
             trailingContent: Component {
                 MeoIconButton {
                     type: "standard"
                     size: "m"
                     icon.name: "settings"
-                    Accessible.name: qsTr("Open Sound Settings")
+                    Accessible.name: MeoI18n.translator.i18n("Open Sound Settings")
                     onClicked: Qt.openUrlExternally("applications:org.meo.settings.sound.desktop")
                 }
             }
@@ -55,15 +55,15 @@ QQC2.ScrollView {
             Layout.preferredHeight: 220 * MeoTheme.globalScale
             visible: !SystemState.audioAvailable
             iconName: "volume_off"
-            title: qsTr("Audio is unavailable")
-            description: qsTr("Open Sound Settings to check PipeWire or PulseAudio devices.")
-            actionText: qsTr("Sound Settings")
+            title: MeoI18n.translator.i18n("Audio is unavailable")
+            description: MeoI18n.translator.i18n("Open Sound Settings to check PipeWire or PulseAudio devices.")
+            actionText: MeoI18n.translator.i18n("Sound Settings")
             onActionRequested: Qt.openUrlExternally("applications:org.meo.settings.sound.desktop")
         }
 
         PopupSectionLabel {
             visible: SystemState.audioAvailable
-            sectionText: qsTr("Output volume")
+            sectionText: MeoI18n.translator.i18n("Output volume")
         }
 
         MeoMotionSurface {
@@ -82,7 +82,7 @@ QQC2.ScrollView {
                     type: "tonal"
                     size: "m"
                     icon.name: SystemState.audioMuted ? "volume_off" : "volume_up"
-                    Accessible.name: SystemState.audioMuted ? qsTr("Unmute") : qsTr("Mute")
+                    Accessible.name: SystemState.audioMuted ? MeoI18n.translator.i18n("Unmute") : MeoI18n.translator.i18n("Mute")
                     onClicked: SystemState.audioMuted = !SystemState.audioMuted
                 }
                 MeoSlider {
@@ -92,7 +92,7 @@ QQC2.ScrollView {
                     value: SystemState.volumePercent
                     valueLabelEnabled: false
                     size: "s"
-                    Accessible.name: qsTr("Output volume")
+                    Accessible.name: MeoI18n.translator.i18n("Output volume")
                     onMoved: function(value) { SystemState.volumePercent = Math.round(value) }
                 }
                 MeoText {
@@ -106,7 +106,7 @@ QQC2.ScrollView {
 
         PopupSectionLabel {
             visible: SystemState.audioAvailable
-            sectionText: qsTr("Output device")
+            sectionText: MeoI18n.translator.i18n("Output device")
         }
 
         Repeater {
@@ -130,13 +130,13 @@ QQC2.ScrollView {
         PopupInlineMessage {
             Layout.fillWidth: true
             visible: SystemState.audioAvailable && SystemState.audioOutputDevices.length === 0
-            text: qsTr("No output device is currently available.")
+            text: MeoI18n.translator.i18n("No output device is currently available.")
             tone: "info"
         }
 
         PopupSectionLabel {
             visible: SystemState.microphoneAvailable
-            sectionText: qsTr("Microphone")
+            sectionText: MeoI18n.translator.i18n("Microphone")
         }
 
         MeoMotionSurface {
@@ -155,7 +155,7 @@ QQC2.ScrollView {
                     type: "tonal"
                     size: "m"
                     icon.name: SystemState.microphoneMuted ? "mic_off" : "mic"
-                    Accessible.name: SystemState.microphoneMuted ? qsTr("Unmute microphone") : qsTr("Mute microphone")
+                    Accessible.name: SystemState.microphoneMuted ? MeoI18n.translator.i18n("Unmute microphone") : MeoI18n.translator.i18n("Mute microphone")
                     onClicked: SystemState.microphoneMuted = !SystemState.microphoneMuted
                 }
                 MeoSlider {
@@ -165,7 +165,7 @@ QQC2.ScrollView {
                     value: SystemState.microphoneVolumePercent
                     valueLabelEnabled: false
                     size: "s"
-                    Accessible.name: qsTr("Microphone volume")
+                    Accessible.name: MeoI18n.translator.i18n("Microphone volume")
                     onMoved: function(value) { SystemState.microphoneVolumePercent = Math.round(value) }
                 }
                 MeoText {

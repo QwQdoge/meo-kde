@@ -107,9 +107,9 @@ MeoMotionPopup {
                 id: searchField
                 Layout.fillWidth: true
                 visualStyle: "launcher"
-                placeholder: qsTr("Search your tabs, files, apps, and more…")
+                placeholder: MeoI18n.translator.i18n("Search your tabs, files, apps, and more…")
                 trailingIcon: ""
-                Accessible.name: qsTr("Search your tabs, files, apps, and more")
+                Accessible.name: MeoI18n.translator.i18n("Search your tabs, files, apps, and more")
                 onAccepted: {
                     if (launcherPopup.searchMatches && searchResultList.currentIndex >= 0)
                         launcherPopup.triggerModel(launcherPopup.searchMatches,
@@ -141,7 +141,7 @@ MeoMotionPopup {
                 clip: true
                 spacing: MeoTheme.space4
                 model: launcherPopup.searchMatches
-                Accessible.name: qsTr("Search results")
+                Accessible.name: MeoI18n.translator.i18n("Search results")
 
                 delegate: Rectangle {
                     id: resultRow
@@ -153,6 +153,12 @@ MeoMotionPopup {
                     width: searchResultList.width
                     height: 56 * MeoTheme.globalScale
                     radius: ShellMetrics.radiusControl
+                    activeFocusOnTab: true
+                    Accessible.role: Accessible.ListItem
+                    Accessible.name: resultRow.display
+                    Accessible.description: resultRow.description
+                    Accessible.focusable: true
+                    Accessible.onPressAction: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
                     color: searchResultList.currentIndex === index
                            ? MeoTheme.secondaryContainer
                            : (resultPointer.containsMouse ? MeoTheme.surfaceContainerHigh : "transparent")
@@ -199,6 +205,10 @@ MeoMotionPopup {
                         hoverEnabled: true
                         onClicked: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
                     }
+
+                    Keys.onReturnPressed: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
+                    Keys.onEnterPressed: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
+                    Keys.onSpacePressed: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
                 }
 
                 Keys.onReturnPressed: {
@@ -225,7 +235,7 @@ MeoMotionPopup {
 
                         MeoText {
                             Layout.fillWidth: true
-                            text: qsTr("Continue where you left off")
+                            text: MeoI18n.translator.i18n("Continue where you left off")
                             typeRole: "body"
                             typeSize: "medium"
                             color: MeoTheme.contentOnSurfaceVariant
@@ -249,6 +259,12 @@ MeoMotionPopup {
                                 width: recentList.width
                                 height: 52 * MeoTheme.globalScale
                                 radius: ShellMetrics.radiusControl
+                                activeFocusOnTab: true
+                                Accessible.role: Accessible.ListItem
+                                Accessible.name: recentRow.display
+                                Accessible.description: recentRow.description
+                                Accessible.focusable: true
+                                Accessible.onPressAction: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
                                 color: recentPointer.containsMouse ? MeoTheme.surfaceContainerHigh : "transparent"
 
                                 RowLayout {
@@ -291,6 +307,10 @@ MeoMotionPopup {
                                     hoverEnabled: true
                                     onClicked: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
                                 }
+
+                                Keys.onReturnPressed: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
+                                Keys.onEnterPressed: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
+                                Keys.onSpacePressed: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
                             }
                         }
                     }
@@ -303,7 +323,7 @@ MeoMotionPopup {
                         cellWidth: Math.floor(width / columnCount)
                         cellHeight: 104 * MeoTheme.globalScale
                         model: launcherPopup.allAppsModel
-                        Accessible.name: qsTr("All apps")
+                        Accessible.name: MeoI18n.translator.i18n("All apps")
 
                         delegate: MeoAppGridItem {
                             id: appTile
@@ -333,7 +353,7 @@ MeoMotionPopup {
                     MeoText {
                         Layout.fillWidth: true
                         visible: launcherPopup.allAppsModel === null
-                        text: qsTr("Loading applications…")
+                        text: MeoI18n.translator.i18n("Loading applications…")
                         typeRole: "body"
                         typeSize: "medium"
                         color: MeoTheme.contentOnSurfaceVariant
