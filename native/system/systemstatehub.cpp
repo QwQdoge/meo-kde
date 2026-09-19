@@ -170,6 +170,11 @@ bool SystemStateHub::networkAvailable() const
     return m_wifiDevice || !NetworkManager::networkInterfaces().isEmpty();
 }
 
+bool SystemStateHub::wirelessAvailable() const
+{
+    return !m_wifiDevice.isNull();
+}
+
 bool SystemStateHub::networkConnected() const
 {
     return NetworkManager::status() >= NetworkManager::ConnectedLinkLocal;
