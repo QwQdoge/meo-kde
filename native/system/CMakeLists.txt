@@ -130,6 +130,14 @@ target_link_libraries(meo-session-actiond PRIVATE Qt6::Core Qt6::DBus KF6::I18n)
 add_executable(meo-weather-refresh weatherrefresh.cpp weathercache.cpp weathercache.h)
 target_link_libraries(meo-weather-refresh PRIVATE Qt6::Core Qt6::Network KF6::I18n)
 
+# scripts/validate.sh configures native/system directly before the full native
+# build. Compile the same KI18n catalogs in that standalone configuration so
+# focused system tests do not silently fall back to English.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../translations"
+                     "${CMAKE_BINARY_DIR}/translations")
+endif()
+
 configure_file(qmldir "${CMAKE_BINARY_DIR}/qml/Meo/System/qmldir" COPYONLY)
 
 # Keep QML tooling on the same contract as the runtime registrations above.
