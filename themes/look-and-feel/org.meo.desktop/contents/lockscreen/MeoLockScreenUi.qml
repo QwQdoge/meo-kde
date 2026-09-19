@@ -442,24 +442,63 @@ Item {
                     authenticator.respond(password)
                 }
 
+                // Presentation is MeoUI; every capability and action still
+                // comes directly from Plasma's SessionManagement.
                 actionItems: [
-                    ActionButton {
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Slee&p")
+                    MeoButton {
+                        type: "text"
+                        size: "s"
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Sleep")
                         icon.name: "system-suspend"
-                        onClicked: sessionManagement.suspend()
+                        onClicked: {
+                            root.clearPassword()
+                            sessionManagement.suspend()
+                        }
                         visible: sessionManagement.canSuspend
                     },
-                    ActionButton {
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "&Hibernate")
+                    MeoButton {
+                        type: "text"
+                        size: "s"
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Hibernate")
                         icon.name: "system-suspend-hibernate"
-                        onClicked: sessionManagement.hibernate()
+                        onClicked: {
+                            root.clearPassword()
+                            sessionManagement.hibernate()
+                        }
                         visible: sessionManagement.canHibernate
                     },
-                    ActionButton {
-                        text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Switch &User")
+                    MeoButton {
+                        type: "text"
+                        size: "s"
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Switch User")
                         icon.name: "system-switch-user"
-                        onClicked: sessionManagement.switchUser()
+                        onClicked: {
+                            root.clearPassword()
+                            sessionManagement.switchUser()
+                        }
                         visible: sessionManagement.canSwitchUser
+                    },
+                    MeoButton {
+                        type: "text"
+                        size: "s"
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Restart")
+                        icon.name: "system-reboot"
+                        onClicked: {
+                            root.clearPassword()
+                            sessionManagement.requestReboot()
+                        }
+                        visible: sessionManagement.canReboot
+                    },
+                    MeoButton {
+                        type: "text"
+                        size: "s"
+                        text: i18nd("plasma_shell_org.kde.plasma.desktop", "Shut Down")
+                        icon.name: "system-shutdown"
+                        onClicked: {
+                            root.clearPassword()
+                            sessionManagement.requestShutdown()
+                        }
+                        visible: sessionManagement.canShutdown
                     }
                 ]
             }
