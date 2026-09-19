@@ -23,6 +23,7 @@ class SystemStateHub final : public QObject
     Q_CLASSINFO("QML.Element", "SystemState")
     Q_CLASSINFO("QML.Singleton", "true")
     Q_PROPERTY(bool networkAvailable READ networkAvailable NOTIFY networkChanged)
+    Q_PROPERTY(bool wirelessAvailable READ wirelessAvailable NOTIFY networkChanged)
     Q_PROPERTY(bool networkConnected READ networkConnected NOTIFY networkChanged)
     Q_PROPERTY(bool wirelessEnabled READ wirelessEnabled WRITE setWirelessEnabled NOTIFY networkChanged)
     Q_PROPERTY(QString networkName READ networkName NOTIFY networkChanged)
@@ -65,6 +66,7 @@ public:
     explicit SystemStateHub(QObject *parent = nullptr);
 
     bool networkAvailable() const;
+    bool wirelessAvailable() const;
     bool networkConnected() const;
     bool wirelessEnabled() const;
     QString networkName() const;
