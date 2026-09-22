@@ -14,6 +14,7 @@ depends=(
   'quickshell-git'
   'caelestia-cli'
   'hyprland'
+  'hyprlock'
   'glibc'
   'gcc-libs'
   'ddcutil'
