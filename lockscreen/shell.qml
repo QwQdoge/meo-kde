@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// MeoArch lock-only entrypoint for the pinned Caelestia Shell source tree.
-// The Caelestia implementation remains GPL-3.0 and keeps its upstream notices.
+// MeoArch lock-only entrypoint for the pinned upstream lock implementation.
+// Third-party source attribution is retained in THIRD_PARTY_NOTICES.md.
 
 //@ pragma DefaultEnv QS_NO_RELOAD_POPUP=1
 //@ pragma DefaultEnv QS_DROP_EXPENSIVE_FONTS=1
@@ -26,8 +26,8 @@ ShellRoot {
         value: root
     }
 
-    // Keep the upstream service graph that the lock cards consume, but do not
-    // instantiate Caelestia's bar, drawers, launcher, background, or picker.
+    // Keep only the service graph consumed by the Meo lock surface. Do not
+    // instantiate the imported desktop bar, drawers, launcher, or picker.
     GSFLoader {}
     ServiceLoader {}
 
@@ -35,8 +35,8 @@ ShellRoot {
         id: lock
     }
 
-    // Preserve upstream idle/suspend locking and battery state used by the
-    // lock screen while keeping this configuration lock-only.
+    // Preserve idle/suspend locking and battery state used by the lock screen
+    // while keeping this configuration lock-only.
     BatteryMonitor {}
     IdleMonitors {
         lock: lock
