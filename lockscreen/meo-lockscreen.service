@@ -10,6 +10,9 @@ ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
 Type=simple
 Environment=QS_DISABLE_FILE_WATCHER=1
 Environment=QS_NO_RELOAD_POPUP=1
+Environment=CAELESTIA_LIB_DIR=/usr/lib/meo-lockscreen
+Environment=QML_IMPORT_PATH=/usr/lib/meo-lockscreen/qml
+Environment=QML2_IMPORT_PATH=/usr/lib/meo-lockscreen/qml
 ExecStart=/usr/bin/qs -n -c meo-lockscreen
 Restart=on-failure
 RestartSec=250ms
