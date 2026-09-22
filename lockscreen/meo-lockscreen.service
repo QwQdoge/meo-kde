@@ -1,0 +1,18 @@
+[Unit]
+Description=MeoArch lock screen
+Documentation=https://github.com/QwQdoge/meo-kde/blob/main/docs/LOCKSCREEN.md
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
+
+[Service]
+Type=simple
+Environment=QS_DISABLE_FILE_WATCHER=1
+Environment=QS_NO_RELOAD_POPUP=1
+ExecStart=/usr/bin/qs -n -c meo-lockscreen
+Restart=on-failure
+RestartSec=250ms
+
+[Install]
+WantedBy=graphical-session.target
