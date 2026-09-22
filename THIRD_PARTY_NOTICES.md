@@ -17,6 +17,24 @@ license text is in
 `packaging/arch/meo-plasma-desktop/LGPL-2.0-or-later.txt` and is installed by
 that package.
 
+## Caelestia Shell lock screen
+
+`meo-lockscreen` intentionally reuses Caelestia Shell's GPL-3.0 lock-screen
+implementation, including its Wayland session-lock surface, PAM integration,
+content cards, services, assets, and lock/unlock animations. MeoArch replaces
+only the top-level shell entrypoint so the process is lock-only and remains
+resident for a warmed-up, low-flash transition.
+
+- Upstream: https://github.com/caelestia-dots/shell
+- Pinned commit: `20e625d6bf1a9d0bb7625a4bb814797d187b075d`
+- License: GPL-3.0
+- Package recipe: `packaging/arch/meo-lockscreen/PKGBUILD`
+- Integration contract: `docs/LOCKSCREEN.md`
+
+The upstream license is installed as
+`/usr/share/licenses/meo-lockscreen/CAELESTIA-GPL-3.0.txt`. Caelestia authorship
+and copyright notices must remain intact in redistributed source and packages.
+
 ## Material Color Utilities
 
 `native/third_party/material-color-utilities` is a scoped C++ subset used by
