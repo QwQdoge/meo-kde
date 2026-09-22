@@ -12,8 +12,8 @@ validation_dir="${output_root}/validation/${run_id}"
 mkdir -p "${work_dir}" "${package_dir}" "${validation_dir}"
 cp -a "${repo_root}/packaging/arch/meo-lockscreen/." "${work_dir}/"
 
-# The PKGBUILD intentionally reads Meo-owned wrapper files from this checkout.
-# Point it back at the source tree after copying the packaging recipe.
+# The PKGBUILD intentionally reads Meo-owned wrapper/config files from this
+# checkout. Point it back at the source tree after copying the recipe.
 export MEO_KDE_SOURCE_DIR="${repo_root}"
 
 (
@@ -33,12 +33,13 @@ for package in "${packages[@]}"; do
 done
 
 {
-    echo "# Meo lockscreen package validation"
+    echo "# Meo session-lock package validation"
     echo
     echo "- Run: ${run_id}"
     echo "- Repository: ${repo_root}"
     echo "- Commit: $(git -C "${repo_root}" rev-parse HEAD)"
-    echo "- Caelestia pin: 20e625d6bf1a9d0bb7625a4bb814797d187b075d"
+    echo "- Upstream lock-source pin: 20e625d6bf1a9d0bb7625a4bb814797d187b075d"
+    echo "- Meo visual contract: shell.json + Meo light/dark role tables"
     echo "- makepkg: passed"
     echo "- Runtime lock/unlock test: not run by this build script"
     echo
