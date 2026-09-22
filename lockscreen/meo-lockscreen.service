@@ -1,5 +1,5 @@
 [Unit]
-Description=MeoArch lock screen
+Description=MeoArch session lock
 Documentation=https://github.com/QwQdoge/meo-kde/blob/main/docs/LOCKSCREEN.md
 PartOf=graphical-session.target
 After=graphical-session.target
@@ -10,10 +10,7 @@ ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
 Type=simple
 Environment=QS_DISABLE_FILE_WATCHER=1
 Environment=QS_NO_RELOAD_POPUP=1
-Environment=CAELESTIA_LIB_DIR=/usr/lib/meo-lockscreen
-Environment=QML_IMPORT_PATH=/usr/lib/meo-lockscreen/qml
-Environment=QML2_IMPORT_PATH=/usr/lib/meo-lockscreen/qml
-ExecStart=/usr/bin/qs -n -c meo-lockscreen
+ExecStart=/usr/bin/meo-lockscreen-launch
 Restart=on-failure
 RestartSec=250ms
 
