@@ -1,15 +1,13 @@
 # Maintainer: MeoArch
 
 pkgname=meo-lockscreen
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
-pkgdesc="MeoArch lock screen using a pinned Caelestia Shell lock surface"
+pkgdesc="MeoArch Wayland session lock with Meo Material 3 styling"
 arch=('x86_64')
 url="https://github.com/QwQdoge/meo-kde"
 license=('GPL-3.0-or-later')
 
-# Caelestia's lock UI is intentionally kept intact, so keep its runtime
-# dependencies instead of replacing real data sources with decorative mocks.
 depends=(
   'quickshell-git'
   'caelestia-cli'
@@ -27,8 +25,7 @@ depends=(
   'libqalculate'
   'power-profiles-daemon'
   'ttf-material-symbols-variable'
-  'ttf-rubik-vf'
-  'ttf-cascadia-code-nerd'
+  'ttf-roboto-mono'
   'qt6-base'
   'qt6-declarative'
   'qt6-imageformats'
@@ -39,21 +36,30 @@ depends=(
 )
 makedepends=('git' 'cmake' 'ninja' 'qt6-shadertools')
 
-_caelestia_commit='20e625d6bf1a9d0bb7625a4bb814797d187b075d'
-source=("caelestia-shell::git+https://github.com/caelestia-dots/shell.git#commit=${_caelestia_commit}")
+# Source provenance is intentionally retained for reproducibility and GPL
+# compliance. It is an implementation dependency, not the product identity.
+_upstream_commit='20e625d6bf1a9d0bb7625a4bb814797d187b075d'
+source=("upstream-lock-shell::git+https://github.com/caelestia-dots/shell.git#commit=${_upstream_commit}")
 sha256sums=('SKIP')
 
 prepare() {
   local actual
-  actual="$(git -C "${srcdir}/caelestia-shell" rev-parse HEAD)"
-  if [[ "${actual}" != "${_caelestia_commit}" ]]; then
-    printf 'Expected Caelestia %s, got %s\n' "${_caelestia_commit}" "${actual}" >&2
+  actual="$(git -C "${srcdir}/upstream-lock-shell" rev-parse HEAD)"
+  if [[ "${actual}" != "${_upstream_commit}" ]]; then
+    printf 'Expected upstream lock source %s, got %s\n' "${_upstream_commit}" "${actual}" >&2
     return 1
   fi
+
+  # Keep upstream QML/module ABI names intact, but make user-visible runtime
+  # storage/config/cache paths Meo-owned. This also changes the built-in
+  # library fallback path to /usr/lib/meo-lockscreen.
+  sed -i 's#/caelestia#/meo-lockscreen#g' \
+    "${srcdir}/upstream-lock-shell/plugin/src/Caelestia/Config/common.cpp" \
+    "${srcdir}/upstream-lock-shell/utils/Paths.qml"
 }
 
 build() {
-  cmake -S "${srcdir}/caelestia-shell" -B "${srcdir}/build" -G Ninja \
+  cmake -S "${srcdir}/upstream-lock-shell" -B "${srcdir}/build" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DDISTRIBUTOR=MeoArch \
@@ -73,27 +79,51 @@ package() {
 
   DESTDIR="${pkgdir}" cmake --install "${srcdir}/build"
 
-  # Replace only Caelestia's top-level shell entrypoint. The complete pinned
-  # lock module, services, components, assets and animations remain upstream.
+  # Meo-owned entrypoints and runtime identity.
   install -Dm644 "${workspace}/lockscreen/shell.qml" \
     "${pkgdir}/etc/xdg/quickshell/meo-lockscreen/shell.qml"
   install -Dm755 "${workspace}/lockscreen/meo-lock" \
     "${pkgdir}/usr/bin/meo-lock"
+  install -Dm755 "${workspace}/lockscreen/meo-lockscreen-launch" \
+    "${pkgdir}/usr/bin/meo-lockscreen-launch"
   install -Dm644 "${workspace}/lockscreen/meo-lockscreen.service" \
     "${pkgdir}/usr/lib/systemd/user/meo-lockscreen.service"
 
-  # MeoArch uses a persistent user process so the screencopy/ICC warm-up from
-  # upstream happens before the user asks to lock. This removes process-start
-  # flashes from the normal lock path. ConditionEnvironment in the unit limits
-  # it to Hyprland Wayland sessions.
+  # Canonical Meo visual contract for the lock surface. The launcher copies
+  # these into an isolated runtime config and selects light/dark from KDE.
+  install -Dm644 "${workspace}/lockscreen/config/shell.json" \
+    "${pkgdir}/usr/share/meo-lockscreen/shell.json"
+  install -Dm644 "${workspace}/lockscreen/config/scheme-light.json" \
+    "${pkgdir}/usr/share/meo-lockscreen/scheme-light.json"
+  install -Dm644 "${workspace}/lockscreen/config/scheme-dark.json" \
+    "${pkgdir}/usr/share/meo-lockscreen/scheme-dark.json"
+
+  # The Meo design system owns product typography. Keep these fonts local to
+  # the OS package rather than depending on the upstream shell's defaults.
+  install -d "${pkgdir}/usr/share/fonts/meo-lockscreen"
+  install -m644 \
+    "${workspace}/assets/fonts/Comfortaa-Bold.ttf" \
+    "${workspace}/assets/fonts/Roboto-Regular.ttf" \
+    "${workspace}/assets/fonts/Roboto-Medium.ttf" \
+    "${workspace}/assets/fonts/Roboto-Bold.ttf" \
+    "${pkgdir}/usr/share/fonts/meo-lockscreen/"
+
+  # Keep the process resident so the screencopy/ICC warm-up completes before
+  # the user asks to lock. This avoids process-start flashes on the normal path.
   install -d "${pkgdir}/usr/lib/systemd/user/graphical-session.target.wants"
   ln -s ../meo-lockscreen.service \
     "${pkgdir}/usr/lib/systemd/user/graphical-session.target.wants/meo-lockscreen.service"
 
-  install -Dm644 "${srcdir}/caelestia-shell/LICENSE" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/CAELESTIA-GPL-3.0.txt"
+  # License/source attribution is deliberately retained even though the
+  # installed product identity and UI are Meo-owned.
+  install -Dm644 "${srcdir}/upstream-lock-shell/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/UPSTREAM-GPL-3.0.txt"
   install -Dm644 "${workspace}/LICENSE" \
     "${pkgdir}/usr/share/licenses/${pkgname}/MEO-GPL-3.0-or-later.txt"
   install -Dm644 "${workspace}/THIRD_PARTY_NOTICES.md" \
     "${pkgdir}/usr/share/licenses/${pkgname}/THIRD_PARTY_NOTICES.md"
+  install -Dm644 "${workspace}/assets/fonts/OFL-Roboto.txt" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/OFL-Roboto.txt"
+  install -Dm644 "${workspace}/assets/fonts/OFL-Comfortaa.txt" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/OFL-Comfortaa.txt"
 }
