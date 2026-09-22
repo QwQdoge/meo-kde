@@ -1,0 +1,98 @@
+# Maintainer: MeoArch
+
+pkgname=meo-lockscreen
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="MeoArch lock screen using a pinned Caelestia Shell lock surface"
+arch=('x86_64')
+url="https://github.com/QwQdoge/meo-kde"
+license=('GPL-3.0-or-later')
+
+# Caelestia's lock UI is intentionally kept intact, so keep its runtime
+# dependencies instead of replacing real data sources with decorative mocks.
+depends=(
+  'quickshell-git'
+  'caelestia-cli'
+  'hyprland'
+  'glibc'
+  'gcc-libs'
+  'ddcutil'
+  'brightnessctl'
+  'libcava'
+  'networkmanager'
+  'lm_sensors'
+  'aubio'
+  'libpipewire'
+  'libqalculate'
+  'power-profiles-daemon'
+  'ttf-material-symbols-variable'
+  'ttf-rubik-vf'
+  'ttf-cascadia-code-nerd'
+  'qt6-base'
+  'qt6-declarative'
+  'qt6-imageformats'
+  'qt6-m3shapes-git'
+  'swappy'
+  'fish'
+  'bash'
+)
+makedepends=('git' 'cmake' 'ninja' 'qt6-shadertools')
+
+_caelestia_commit='20e625d6bf1a9d0bb7625a4bb814797d187b075d'
+source=("caelestia-shell::git+https://github.com/caelestia-dots/shell.git#commit=${_caelestia_commit}")
+sha256sums=('SKIP')
+
+prepare() {
+  local actual
+  actual="$(git -C "${srcdir}/caelestia-shell" rev-parse HEAD)"
+  if [[ "${actual}" != "${_caelestia_commit}" ]]; then
+    printf 'Expected Caelestia %s, got %s\n' "${_caelestia_commit}" "${actual}" >&2
+    return 1
+  fi
+}
+
+build() {
+  cmake -S "${srcdir}/caelestia-shell" -B "${srcdir}/build" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DDISTRIBUTOR=MeoArch \
+    -DINSTALL_LIBDIR=lib/meo-lockscreen \
+    -DINSTALL_QMLDIR=lib/meo-lockscreen/qml \
+    -DINSTALL_QSCONFDIR=/etc/xdg/quickshell/meo-lockscreen
+  cmake --build "${srcdir}/build" --parallel
+}
+
+package() {
+  local workspace
+  if [[ -n "${MEO_KDE_SOURCE_DIR:-}" ]]; then
+    workspace="${MEO_KDE_SOURCE_DIR}"
+  else
+    workspace="$(cd "${startdir}/../../.." && pwd)"
+  fi
+
+  DESTDIR="${pkgdir}" cmake --install "${srcdir}/build"
+
+  # Replace only Caelestia's top-level shell entrypoint. The complete pinned
+  # lock module, services, components, assets and animations remain upstream.
+  install -Dm644 "${workspace}/lockscreen/shell.qml" \
+    "${pkgdir}/etc/xdg/quickshell/meo-lockscreen/shell.qml"
+  install -Dm755 "${workspace}/lockscreen/meo-lock" \
+    "${pkgdir}/usr/bin/meo-lock"
+  install -Dm644 "${workspace}/lockscreen/meo-lockscreen.service" \
+    "${pkgdir}/usr/lib/systemd/user/meo-lockscreen.service"
+
+  # MeoArch uses a persistent user process so the screencopy/ICC warm-up from
+  # upstream happens before the user asks to lock. This removes process-start
+  # flashes from the normal lock path. ConditionEnvironment in the unit limits
+  # it to Hyprland Wayland sessions.
+  install -d "${pkgdir}/usr/lib/systemd/user/graphical-session.target.wants"
+  ln -s ../meo-lockscreen.service \
+    "${pkgdir}/usr/lib/systemd/user/graphical-session.target.wants/meo-lockscreen.service"
+
+  install -Dm644 "${srcdir}/caelestia-shell/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/CAELESTIA-GPL-3.0.txt"
+  install -Dm644 "${workspace}/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/MEO-GPL-3.0-or-later.txt"
+  install -Dm644 "${workspace}/THIRD_PARTY_NOTICES.md" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/THIRD_PARTY_NOTICES.md"
+}
