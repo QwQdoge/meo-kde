@@ -1,18 +1,35 @@
-# MeoArch lock screen
+# MeoArch session lock
 
-## Scope
+## Product identity
 
-`meo-lockscreen` is the Hyprland/Wayland lock surface used by the MeoArch prototype. The first implementation deliberately reuses Caelestia Shell's lock module instead of visually approximating it.
+The product is **Meo Session Lock**. Installed/runtime names are Meo-owned:
 
-Pinned upstream:
+- package: `meo-lockscreen`
+- service: `meo-lockscreen.service`
+- launcher: `meo-lockscreen-launch`
+- lock command: `meo-lock`
+- Quickshell configuration: `meo-lockscreen`
+- state/cache/config namespaces: `meo-lockscreen`
+- private runtime/QML prefix: `/usr/lib/meo-lockscreen`
 
-- Project: `caelestia-dots/shell`
-- Commit: `20e625d6bf1a9d0bb7625a4bb814797d187b075d`
-- License: GPL-3.0
+No upstream project name is part of the visible lock-screen branding, user-facing command names, service description, state paths, or package description. Upstream names that remain inside QML/C++ module ABIs are implementation details and are kept only where renaming them would create unnecessary fork surface.
 
-The package installs the complete pinned Caelestia shell QML/service/plugin source needed by the lock screen into Meo-specific paths, then replaces only the top-level `shell.qml` with `lockscreen/shell.qml`. The lock module itself, including its cards, password UI, PAM flow and lock/unlock motion, remains upstream code.
+## Meo visual contract
 
-This is intentional source reuse, not an uncredited visual copy. Keep `THIRD_PARTY_NOTICES.md` and the upstream license in every distributed package.
+The lock surface must follow MeoUI rather than an upstream theme. The package installs a managed `shell.json` plus Meo Material role tables and the launcher places them in an isolated runtime configuration before starting the resident lock process.
+
+Typography follows the MeoUI contract:
+
+- `Comfortaa` — brand/display/large title and lock clock
+- `Roboto` — body, buttons, inputs, labels and ordinary UI
+- `Roboto Mono` — monospace/status text
+- `Material Symbols Rounded` — symbolic icon face
+
+The package installs the Meo-owned Comfortaa/Roboto font assets already carried by MeoKDE and depends on the system Roboto Mono package. It does not use the upstream Rubik/Google Sans/Cascadia defaults for the lock surface.
+
+Colors use the same Material 3 roles as MeoUI. The checked-in light and dark role tables are derived from the canonical Meo fallback seed and include `primary`, containers, surface hierarchy, outline, error and Meo success roles. The launcher follows the current KDE light/dark scheme by default; `MEO_LOCKSCREEN_COLOR_SCHEME=light|dark` is available for deterministic testing. Dynamic-color parity can replace these fallback tables later, but products must not invent a separate lock-screen palette.
+
+The lock layout and motion may reuse compatible open-source implementation work, but visible typography, semantic colors, paths, names and product copy belong to the Meo design system.
 
 ## Runtime chain
 
@@ -26,11 +43,18 @@ systemd --user graphical-session.target
 meo-lockscreen.service
         |
         v
+meo-lockscreen-launch
+        |
+        +--> install managed Meo typography config into isolated runtime config
+        +--> select Meo light/dark Material role table
+        +--> expose private Meo QML/plugin path
+        |
+        v
 qs -n -c meo-lockscreen        (resident, unlocked)
         |
-        +--> Caelestia ServiceLoader / state services
-        +--> Caelestia Lock + WlSessionLock
-        +--> one early ScreencopyView warm-up
+        +--> security/data services required by the lock cards
+        +--> Wayland WlSessionLock
+        +--> early ScreencopyView warm-up
 
 user / idle trigger
         |
@@ -41,26 +65,26 @@ user / idle trigger
 qs -c meo-lockscreen ipc call lock lock
         |
         v
-WlSessionLock -> LockSurface -> PAM -> unlock animation -> release lock
+WlSessionLock -> lock surface -> PAM -> Meo unlock motion -> release lock
 ```
 
-The service is kept resident rather than launched when the lock key is pressed. Caelestia's `Lock.qml` performs an early screencopy while the session is still unlocked; its upstream comment explains that the ICC/screencopy backend can otherwise be initialized too late, after the compositor has already entered the secure lock state. Keeping the process alive also removes renderer/process startup from the visible lock transition.
+The process stays resident rather than starting when the key binding is pressed. The imported implementation performs an early screencopy while the session is still unlocked; this avoids first-use ICC/screencopy initialization after the compositor has already entered the secure lock state. Keeping the renderer and QML graph warm also removes process startup from the visible transition.
 
-`QS_DISABLE_FILE_WATCHER=1`, `QS_NO_RELOAD_POPUP=1`, and `settings.watchFiles: false` are used in production so a source/package change cannot hot-reload the lock UI while it is securing the session.
+`QS_DISABLE_FILE_WATCHER=1`, `QS_NO_RELOAD_POPUP=1`, and `settings.watchFiles: false` are used in production so source/package changes cannot hot-reload the security surface while it is securing the session.
 
 ## Animation behavior
 
-The animation is Caelestia's own implementation. On lock, the central shape begins as a compact lock icon, rotates/scales into the large rounded lock panel, fades the lock icon away, and brings in the full three-column content. On successful authentication the sequence reverses: content scales/fades away, the compact lock icon returns, the background fades out, and only then is `WlSessionLock.locked` set to `false`.
+The intended Meo motion keeps the compact-lock -> expanded-panel -> compact-unlock sequence from the imported implementation because it already has the correct security ordering. On lock, the compact central lock rotates/scales into the rounded content panel. On successful authentication, content scales/fades away, the compact unlock state returns, the background fades, and only then is the Wayland session lock released.
 
-That ordering is important: the compositor is not asked to reveal the desktop before the visual unlock transition has completed.
+The important rule is **authentication success causes the animation; the animation never causes authentication success**. The desktop must not be exposed before the success transition reaches its teardown point.
 
-This removes avoidable application-level flashing. It cannot promise that every GPU/driver/compositor will never produce a black frame during display mode changes, suspend/resume, VT switching, or a compositor crash.
+This removes avoidable application-level flashing. It cannot guarantee that every driver/compositor path will never produce a black frame during mode changes, suspend/resume, VT switching, or compositor failure.
 
 ## Authentication boundary
 
-Do not replace Caelestia's PAM flow with a QML password comparison. The lock surface uses Quickshell's PAM service and the Wayland session-lock protocol. Password, fingerprint and other authentication behavior stays in the upstream lock implementation and PAM configuration.
+Do not replace PAM with a QML password comparison. The lock surface uses Quickshell's PAM integration and the Wayland session-lock protocol. Password/fingerprint authentication remains backend-authoritative.
 
-The display manager/login greeter is a separate security boundary. The later Meo login-manager work must reproduce this visual language using Plasma Login Manager's existing greeter/authentication API; it must not import this Quickshell lock runtime into the pre-login greeter.
+The display manager/login greeter is a separate boundary. Meo Login Manager should use the same Meo typography, Material roles and motion language while continuing to use Plasma Login Manager's existing authenticator and session-start path.
 
 ## Build and package
 
@@ -70,25 +94,23 @@ From an Arch/MeoArch checkout:
 ./tools/lockscreen/build-package.sh
 ```
 
-The script copies the packaging recipe to the standard Meo output tree, runs `makepkg --cleanbuild --syncdeps`, copies produced packages to:
+The script copies the packaging recipe into the standard Meo output tree, runs `makepkg --cleanbuild --syncdeps`, copies packages to:
 
 ```text
 ~/Projects/outputs/meo-kde/packages/
 ```
 
-and records build evidence under:
+and records evidence under:
 
 ```text
 ~/Projects/outputs/meo-kde/validation/<UTC-run-id>-lockscreen-package/
 ```
 
-The package recipe lives at `packaging/arch/meo-lockscreen/PKGBUILD`. It fetches the exact pinned Caelestia commit and builds its private plugin/runtime into `/usr/lib/meo-lockscreen`, so a normal `caelestia-shell` installation can coexist without file ownership conflicts.
+The package recipe lives at `packaging/arch/meo-lockscreen/PKGBUILD` and installs the private runtime under Meo-owned paths so a separately installed upstream desktop shell can coexist without file ownership conflicts.
 
 ## Install and smoke test
 
-Build first, then install the produced package with pacman. The package enables the user unit through `graphical-session.target.wants`; its environment conditions restrict it to a Wayland Hyprland session.
-
-After entering a Hyprland session:
+After building and installing the package, enter a Hyprland session and run:
 
 ```bash
 systemctl --user status meo-lockscreen.service
@@ -98,18 +120,25 @@ meo-lock
 
 Expected behavior:
 
-1. The service is already running before `meo-lock` is invoked.
-2. `meo-lock` sends IPC to that existing process rather than starting a second renderer.
-3. The lock surface visually matches the pinned Caelestia lock screen.
-4. A bad password does not unlock.
-5. A successful PAM authentication runs the Caelestia unlock animation before the desktop is exposed.
-6. Suspend/resume and multi-monitor behavior must be tested in a VM and then on target hardware before this becomes a release default.
+1. The resident Meo process is already running before `meo-lock` is invoked.
+2. The lock command sends IPC to that process rather than starting a second renderer.
+3. Visible colors are the Meo Material role table, not the imported source defaults.
+4. Clock/display text uses Comfortaa; controls and password UI use Roboto; icons use Material Symbols Rounded.
+5. A bad password never unlocks.
+6. A successful PAM authentication completes the Meo unlock transition before the desktop is exposed.
+7. Suspend/resume and multi-monitor behavior are tested in a VM and then on target hardware before release.
 
-If a non-UWSM Hyprland session does not start `graphical-session.target` with the compositor environment imported, start `meo-lockscreen.service` from that session's existing `exec-once` hook. Do not add a second Quickshell instance.
+If a non-UWSM Hyprland session does not start `graphical-session.target` with the compositor environment imported, start `meo-lockscreen.service` from that session's existing startup hook. Do not start another lock renderer.
+
+## Third-party provenance
+
+The first implementation imports a pinned GPL-3.0 lock-shell implementation from `caelestia-dots/shell`, commit `20e625d6bf1a9d0bb7625a4bb814797d187b075d`, for the underlying lock layout/services/PAM integration and motion implementation. That provenance is intentionally kept in source comments, `THIRD_PARTY_NOTICES.md`, package license files and the reproducible source pin. It is not used as Meo product branding.
+
+This is source reuse under its license, not an attempt to remove attribution. Any redistributed package must retain the upstream GPL text and third-party notice.
 
 ## Release gate
 
-A package build is only source/build evidence. Before promoting the lock screen into an ISO image, record a runtime validation for:
+A package build is only source/build evidence. Before promoting Meo Session Lock into an ISO image, record runtime validation for:
 
 - lock/unlock with correct and incorrect passwords;
 - fingerprint when configured;
@@ -118,6 +147,8 @@ A package build is only source/build evidence. Before promoting the lock screen 
 - one and multiple monitors;
 - repeated lock/unlock cycles;
 - compositor restart/failure recovery;
+- light and dark Meo role tables;
+- Comfortaa/Roboto/Roboto Mono font resolution;
 - no visible desktop frame between the secure lock surface and the completed unlock animation.
 
 Do not describe static QML checks or a successful package build as proof that the real Wayland session-lock path has passed.
