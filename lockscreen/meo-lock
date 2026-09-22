@@ -16,7 +16,7 @@ if call_lock >/dev/null 2>&1; then
 fi
 
 # Recover if the per-user service was not running (for example after a crash).
-/usr/bin/systemctl --user start meo-lockscreen.service
+/usr/bin/systemctl --user start meo-lockscreen.service || true
 
 attempt=0
 while [ "$attempt" -lt 60 ]; do
@@ -27,5 +27,12 @@ while [ "$attempt" -lt 60 ]; do
     sleep 0.05
 done
 
-echo "meo-lock: meo-lockscreen did not become ready" >&2
+# Security wins over presentation. A broken Meo/Caelestia process must not turn
+# the lock shortcut into a no-op. Hyprlock is package-required solely as the
+# emergency fallback and is never launched on the healthy fast path.
+if command -v hyprlock >/dev/null 2>&1; then
+    exec hyprlock
+fi
+
+echo "meo-lock: no usable session locker is available" >&2
 exit 1
