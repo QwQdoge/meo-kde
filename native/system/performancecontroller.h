@@ -25,6 +25,7 @@ class PerformanceController final : public QObject
     Q_PROPERTY(QString cpuModel READ cpuModel NOTIFY metricsChanged)
     Q_PROPERTY(int logicalCores READ logicalCores NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList cpuHistory READ cpuHistory NOTIFY metricsChanged)
+    Q_PROPERTY(QVariantList cpuCores READ cpuCores NOTIFY metricsChanged)
 
     Q_PROPERTY(double memoryUsage READ memoryUsage NOTIFY metricsChanged)
     Q_PROPERTY(qint64 memoryUsedBytes READ memoryUsedBytes NOTIFY metricsChanged)
@@ -80,6 +81,7 @@ public:
     QString cpuModel() const;
     int logicalCores() const;
     QVariantList cpuHistory() const;
+    QVariantList cpuCores() const;
 
     double memoryUsage() const;
     qint64 memoryUsedBytes() const;
@@ -169,6 +171,9 @@ private:
     CpuSnapshot m_lastCpu;
     quint64 m_lastCpuTotalDelta = 0;
     QVariantList m_cpuHistory;
+    QVariantList m_cpuCores;
+    QHash<int, CpuSnapshot> m_lastCoreCpu;
+    QHash<int, QVariantList> m_coreHistories;
 
     double m_memoryUsage = 0;
     qint64 m_memoryUsedBytes = 0;
