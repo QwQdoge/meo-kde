@@ -448,7 +448,7 @@ Item {
         id: gpuTile
         property var gpu: ({})
 
-        implicitHeight: 158 * root.scaleFactor
+        implicitHeight: 214 * root.scaleFactor
         type: "filled"
         radius: MeoTheme.shapeLargeIncreased
 
@@ -508,10 +508,20 @@ Item {
                 }
             }
 
+            PerformanceGraph {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.minimumHeight: 44 * root.scaleFactor
+                values: gpuTile.gpu.history || []
+                primaryColor: MeoTheme.tertiary
+                maximum: 100
+            }
+
             MeoProgressBar {
                 Layout.fillWidth: true
                 visible: Number(gpuTile.gpu.usage) >= 0
                 value: Math.max(0, Math.min(100, Number(gpuTile.gpu.usage))) / 100
+                activeColor: MeoTheme.tertiary
             }
 
             MeoText {
