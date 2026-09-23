@@ -737,7 +737,8 @@ Item {
 
                     MeoIcon {
                         anchors.centerIn: parent
-                        icon: networkTile.network.wireless ? "wifi" : "lan"
+                        icon: networkTile.network.kind === "wifi" ? "wifi"
+                              : networkTile.network.kind === "virtual" ? "vpn_lock" : "lan"
                         size: 22
                         fill: networkTile.network.up
                         color: networkTile.network.up
@@ -771,10 +772,13 @@ Item {
                 }
 
                 MeoChip {
-                    label: networkTile.network.wireless
+                    label: networkTile.network.kind === "wifi"
                            ? MeoI18n.translator.i18n("Wi-Fi")
-                           : MeoI18n.translator.i18n("Wired")
-                    leadingIcon: networkTile.network.wireless ? "wifi" : "lan"
+                           : networkTile.network.kind === "virtual"
+                             ? MeoI18n.translator.i18n("Virtual")
+                             : MeoI18n.translator.i18n("Wired")
+                    leadingIcon: networkTile.network.kind === "wifi" ? "wifi"
+                                 : networkTile.network.kind === "virtual" ? "vpn_lock" : "lan"
                     type: "assist"
                     shape: "pill"
                     visualStyle: "outlined"
