@@ -80,6 +80,7 @@ PlasmoidItem {
         id: managerComponent
 
         PerformanceManager {
+            initialPage: 1
             onCloseRequested: root.managerOpen = false
         }
     }
