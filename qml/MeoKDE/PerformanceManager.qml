@@ -80,9 +80,9 @@ Item {
     onVisibleChanged: syncSubscription()
     onCurrentPageChanged: {
         syncSubscription()
-        if (navigationRail.currentIndex !== currentPage)
+        if (navigationRail && navigationRail.currentIndex !== currentPage)
             navigationRail.currentIndex = currentPage
-        if (compactTabs.currentIndex !== currentPage)
+        if (compactTabs && compactTabs.currentIndex !== currentPage)
             compactTabs.currentIndex = currentPage
     }
 
