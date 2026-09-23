@@ -308,7 +308,7 @@ Item {
                         MeoText {
                             Layout.fillWidth: true
                             text: root.process.appName || root.process.name || ""
-                            typeRole: "headline"
+                            typeRole: "title"
                             typeSize: "small"
                             emphasized: true
                             elide: Text.ElideRight
