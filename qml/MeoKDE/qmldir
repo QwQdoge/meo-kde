@@ -17,4 +17,6 @@ TimeNotificationButton 1.0 TimeNotificationButton.qml
 SessionMenu 1.0 SessionMenu.qml
 PerformanceGraph 1.0 PerformanceGraph.qml
 MetricCard 1.0 MetricCard.qml
+ProcessTable 1.0 ProcessTable.qml
+PerformanceDashboard 1.0 PerformanceDashboard.qml
 PerformanceManager 1.0 PerformanceManager.qml
