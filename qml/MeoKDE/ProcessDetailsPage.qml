@@ -9,6 +9,8 @@ Item {
 
     readonly property real scaleFactor: MeoTheme.globalScale
     readonly property var process: MeoSystem.Tasks.selectedProcessDetails
+    property string sortProperty: "pid"
+    property bool sortAscending: true
 
     function formatBytes(value) {
         const bytes = Math.max(0, Number(value) || 0)
@@ -40,23 +42,151 @@ Item {
         }
     }
 
-    PopupEmptyState {
-        anchors.fill: parent
-        visible: !root.process || !root.process.pid
-        iconName: "ads_click"
-        title: MeoI18n.translator.i18n("Select a process")
-        description: MeoI18n.translator.i18n("Choose a process on the Processes page to inspect its resources and controls.")
+    function detailedRows() {
+        const source = MeoSystem.Tasks.processes || []
+        const query = detailSearch.text.trim().toLowerCase()
+        const rows = []
+        for (let i = 0; i < source.length; ++i) {
+            const item = source[i]
+            const haystack = [
+                item.appName || "",
+                item.name || "",
+                item.command || "",
+                item.user || "",
+                String(item.pid || "")
+            ].join(" ").toLowerCase()
+            if (query !== "" && haystack.indexOf(query) === -1)
+                continue
+            rows.push({
+                pid: Number(item.pid || 0),
+                parentPid: Number(item.parentPid || 0),
+                name: item.appName || item.name || "",
+                user: item.user || "",
+                stateText: stateLabel(item.state),
+                threads: Number(item.threads || 0),
+                nice: Number(item.nice || 0),
+                cpu: Number(item.cpu || 0),
+                cpuText: Number(item.cpu || 0).toFixed(1) + "%",
+                memoryBytes: Number(item.memoryBytes || 0),
+                memoryText: formatBytes(item.memoryBytes),
+                readRate: Number(item.diskReadBytesPerSecond || 0),
+                readText: formatRate(item.diskReadBytesPerSecond),
+                writeRate: Number(item.diskWriteBytesPerSecond || 0),
+                writeText: formatRate(item.diskWriteBytesPerSecond),
+                selected: Number(item.pid || 0) === MeoSystem.Tasks.selectedPid,
+                enabled: true
+            })
+        }
+
+        const numericRoles = {
+            "pid": true, "parentPid": true, "threads": true, "nice": true,
+            "cpuText": true, "memoryText": true, "readText": true, "writeText": true
+        }
+        const valueRole = sortProperty === "cpuText" ? "cpu"
+                        : sortProperty === "memoryText" ? "memoryBytes"
+                        : sortProperty === "readText" ? "readRate"
+                        : sortProperty === "writeText" ? "writeRate"
+                        : sortProperty
+        rows.sort(function(left, right) {
+            const a = left[valueRole]
+            const b = right[valueRole]
+            let result = 0
+            if (numericRoles[sortProperty])
+                result = Number(a || 0) - Number(b || 0)
+            else
+                result = String(a || "").localeCompare(String(b || ""))
+            return sortAscending ? result : -result
+        })
+        return rows
+    }
+
+    readonly property var detailsRows: detailedRows()
+
+    function detailsColumns() {
+        if (width < 760 * scaleFactor) {
+            return [
+                { label: MeoI18n.translator.i18n("Name"), property: "name", sortable: true },
+                { label: "PID", property: "pid", sortable: true },
+                { label: "CPU", property: "cpuText", sortable: true },
+                { label: MeoI18n.translator.i18n("Memory"), property: "memoryText", sortable: true }
+            ]
+        }
+        return [
+            { label: MeoI18n.translator.i18n("Name"), property: "name", sortable: true },
+            { label: "PID", property: "pid", sortable: true },
+            { label: "PPID", property: "parentPid", sortable: true },
+            { label: MeoI18n.translator.i18n("User"), property: "user", sortable: true },
+            { label: MeoI18n.translator.i18n("State"), property: "stateText", sortable: true },
+            { label: MeoI18n.translator.i18n("Threads"), property: "threads", sortable: true },
+            { label: "Nice", property: "nice", sortable: true },
+            { label: "CPU", property: "cpuText", sortable: true },
+            { label: MeoI18n.translator.i18n("Memory"), property: "memoryText", sortable: true },
+            { label: "Read", property: "readText", sortable: true },
+            { label: "Write", property: "writeText", sortable: true }
+        ]
     }
 
     QQC2.ScrollView {
         anchors.fill: parent
-        visible: root.process && root.process.pid > 0
         clip: true
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: MeoTheme.space12
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                MeoTextField {
+                    id: detailSearch
+                    Layout.fillWidth: true
+                    size: "s"
+                    type: "filled"
+                    placeholder: MeoI18n.translator.i18n("Search process details")
+                    leadingIcon: "search"
+                    showClearButton: true
+                }
+
+                MeoChip {
+                    label: MeoI18n.translator.i18n("%1 processes").arg(root.detailsRows.length)
+                    leadingIcon: "list_alt"
+                    type: "assist"
+                    shape: "pill"
+                    elevated: true
+                }
+            }
+
+            MeoDataTable {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.min(340 * root.scaleFactor,
+                                                 56 * root.scaleFactor
+                                                 + root.detailsRows.length * 48 * root.scaleFactor)
+                Layout.minimumHeight: 180 * root.scaleFactor
+                columns: root.detailsColumns()
+                model: root.detailsRows
+                selectable: false
+                showDividers: false
+                rowHeight: 48 * root.scaleFactor
+                cornerRadius: MeoTheme.shapeLarge
+                sortProperty: root.sortProperty
+                sortAscending: root.sortAscending
+                onSortRequested: function(property, ascending) {
+                    root.sortProperty = property
+                    root.sortAscending = ascending
+                }
+                onRowActivated: function(index, row) {
+                    if (row)
+                        MeoSystem.Tasks.selectProcess(row.pid)
+                }
+            }
+
+            PopupSectionLabel {
+                sectionText: root.process && root.process.pid
+                             ? MeoI18n.translator.i18n("Selected process")
+                             : MeoI18n.translator.i18n("Process inspector")
+            }
 
             PopupInlineMessage {
                 Layout.fillWidth: true
