@@ -1393,10 +1393,25 @@ void TaskManagerController::refreshServices()
                 Q_EMIT servicesChanged();
             });
             systemUnitsProcess->start();
+            QTimer::singleShot(5000, systemUnitsProcess, [systemUnitsProcess]() {
+                if (systemUnitsProcess->state() != QProcess::NotRunning) {
+                    systemUnitsProcess->kill();
+                }
+            });
         });
         filesProcess->start();
+        QTimer::singleShot(5000, filesProcess, [filesProcess]() {
+            if (filesProcess->state() != QProcess::NotRunning) {
+                filesProcess->kill();
+            }
+        });
     });
     unitsProcess->start();
+    QTimer::singleShot(5000, unitsProcess, [unitsProcess]() {
+        if (unitsProcess->state() != QProcess::NotRunning) {
+            unitsProcess->kill();
+        }
+    });
 }
 
 void TaskManagerController::serviceAction(const QString &unit, const QString &action)
