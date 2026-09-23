@@ -97,7 +97,7 @@ Item {
                 Layout.fillWidth: true
                 size: "s"
                 type: "filled"
-                placeholder: MeoI18n.translator.i18n("Search user services")
+                placeholder: MeoI18n.translator.i18n("Search services")
                 leadingIcon: "search"
                 showClearButton: true
             }
@@ -169,10 +169,10 @@ Item {
                          && (!MeoSystem.Tasks.servicesAvailable || root.rows.length === 0)
                 iconName: "dns"
                 title: !MeoSystem.Tasks.servicesAvailable
-                       ? MeoI18n.translator.i18n("User services unavailable")
+                       ? MeoI18n.translator.i18n("Services unavailable")
                        : MeoI18n.translator.i18n("No matching services")
                 description: !MeoSystem.Tasks.servicesAvailable
-                             ? MeoI18n.translator.i18n("Meo uses systemd user services here and does not request root access.")
+                             ? MeoI18n.translator.i18n("Meo could not query systemd services. System service controls remain read-only and Meo does not request administrator access.")
                              : MeoI18n.translator.i18n("Try a different search or state filter.")
                 actionText: !MeoSystem.Tasks.servicesAvailable
                             ? MeoI18n.translator.i18n("Try again") : ""
