@@ -32,6 +32,10 @@ MeoMotionPopup {
     // only considered ready once Plasma's canonical all-apps model has actual
     // entries. Slow first loads use MeoUI's anti-flash morphing feedback.
     readonly property int startupLoadingDelay: 900
+    // KRunner exposes an explicit querying state. Give normal fast searches a
+    // brief window to resolve, then use the same morphing feedback rather than
+    // flashing a false "No results" state.
+    readonly property int searchLoadingDelay: 500
 
     readonly property bool searching: searchField.text.trim() !== ""
     readonly property var favoritesModel: rootAppModel.favoritesModel
@@ -568,6 +572,16 @@ MeoMotionPopup {
                         }
                     }
                     Accessible.name: MeoI18n.translator.i18n("Search results")
+                    opacity: searchFeedback.feedbackVisible ? 0 : 1
+
+                    Behavior on opacity {
+                        enabled: !MeoTheme.reduceMotion
+                        NumberAnimation {
+                            duration: MeoTheme.motionDurationLoadingFeedbackFade
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingStandard
+                        }
+                    }
 
                     onCountChanged: {
                         if (count > 0 && currentIndex < 0)
@@ -659,6 +673,8 @@ MeoMotionPopup {
 
                 MeoEmptyState {
                     visible: searchResultList.count === 0
+                             && !runnerModel.querying
+                             && !searchFeedback.feedbackVisible
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     icon: "manage_search"
@@ -675,6 +691,19 @@ MeoMotionPopup {
                     color: MeoTheme.contentOnSurfaceVariant
                     horizontalAlignment: Text.AlignHCenter
                 }
+            }
+
+            MeoLoadingFeedback {
+                id: searchFeedback
+                anchors.fill: parent
+                z: 2
+                active: launcherPopup.searching
+                        && runnerModel.querying
+                        && !runnerModel.resultsPresent
+                delay: launcherPopup.searchLoadingDelay
+                minimumVisibleDuration: 300
+                indicatorVariant: "contained"
+                accessibleName: MeoI18n.translator.i18n("Searching")
             }
         }
     }
