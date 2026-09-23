@@ -146,6 +146,9 @@ endif()
 add_executable(meo-task-role-smoke task-role-smoke.cpp)
 target_link_libraries(meo-task-role-smoke PRIVATE Qt6::Core Qt6::Gui PW::LibTaskManager)
 
+add_executable(meo-system-monitor systemmonitor-main.cpp)
+target_link_libraries(meo-system-monitor PRIVATE Qt6::Core Qt6::Gui Qt6::Qml)
+
 add_executable(meo-session-actiond
     sessionaction-main.cpp
     sessionactionservice.cpp
@@ -199,7 +202,10 @@ include(GNUInstallDirs)
 install(TARGETS meosystemplugin
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/qml/Meo/System"
 )
-install(TARGETS meo-session-actiond meo-weather-refresh RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS meo-session-actiond meo-weather-refresh meo-system-monitor RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../data/applications/org.meo.systemmonitor.desktop"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+)
 install(FILES org.meo.SessionAction1.service
     DESTINATION "${CMAKE_INSTALL_DATADIR}/dbus-1/services"
 )
