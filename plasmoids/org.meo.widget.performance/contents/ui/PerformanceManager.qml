@@ -89,8 +89,8 @@ Item {
                     spacing: 0
                     MeoText {
                         text: MeoI18n.translator.i18n("Performance")
-                        typeRole: "headline"
-                        typeSize: "small"
+                        typeRole: "title"
+                        typeSize: "large"
                         emphasized: true
                     }
                     MeoText {
