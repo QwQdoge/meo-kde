@@ -17,7 +17,6 @@ private slots:
                              {QStringLiteral("cpu"),
                               QStringLiteral("memory"),
                               QStringLiteral("disk"),
-                              QStringLiteral("gpu"),
                               QStringLiteral("system")});
         QVERIFY(controller.monitoring());
         QVERIFY(controller.activeModules().contains(QStringLiteral("cpu")));
