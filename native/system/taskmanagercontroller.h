@@ -22,6 +22,7 @@ class TaskManagerController final : public QObject
 
     Q_PROPERTY(QVariantList processes READ processes NOTIFY dataChanged)
     Q_PROPERTY(QVariantList processTree READ processTree NOTIFY dataChanged)
+    Q_PROPERTY(QVariantList processGroups READ processGroups NOTIFY dataChanged)
     Q_PROPERTY(QVariantList userSummaries READ userSummaries NOTIFY dataChanged)
     Q_PROPERTY(QVariantMap selectedProcessDetails READ selectedProcessDetails NOTIFY selectedProcessDetailsChanged)
     Q_PROPERTY(qint64 selectedPid READ selectedPid NOTIFY selectedProcessDetailsChanged)
@@ -46,6 +47,7 @@ public:
 
     QVariantList processes() const;
     QVariantList processTree() const;
+    QVariantList processGroups() const;
     QVariantList userSummaries() const;
     QVariantMap selectedProcessDetails() const;
     qint64 selectedPid() const;
@@ -65,8 +67,14 @@ public:
     Q_INVOKABLE void selectProcess(qint64 pid);
 
     Q_INVOKABLE bool terminateProcess(qint64 pid, bool force = false);
+    Q_INVOKABLE bool terminateProcessTree(qint64 pid, bool force = false);
+    Q_INVOKABLE bool setProcessSuspended(qint64 pid, bool suspended);
     Q_INVOKABLE bool setProcessPriority(qint64 pid, int niceValue);
     Q_INVOKABLE bool setProcessEfficiency(qint64 pid, bool enabled);
+    Q_INVOKABLE bool setProcessCpuAffinity(qint64 pid, const QVariantList &cpuIndices);
+    Q_INVOKABLE bool setProcessCpuAffinityAll(qint64 pid);
+    Q_INVOKABLE bool openProcessLocation(qint64 pid);
+    Q_INVOKABLE bool openProcessWorkingDirectory(qint64 pid);
 
     Q_INVOKABLE void refreshStartupApps();
     Q_INVOKABLE bool setStartupEnabled(const QString &desktopId, bool enabled);
@@ -118,6 +126,7 @@ private:
 
     QVariantList m_processes;
     QVariantList m_processTree;
+    QVariantList m_processGroups;
     QVariantList m_userSummaries;
     QVariantMap m_selectedProcessDetails;
     qint64 m_selectedPid = -1;
