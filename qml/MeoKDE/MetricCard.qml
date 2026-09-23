@@ -94,6 +94,7 @@ MeoCard {
             visible: root.progressValue >= 0
             value: Math.max(0, Math.min(100, root.progressValue)) / 100
             activeColor: root.accentColor
+            wavy: true
         }
 
         MeoText {
