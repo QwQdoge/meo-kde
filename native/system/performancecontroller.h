@@ -38,6 +38,7 @@ class PerformanceController final : public QObject
     Q_PROPERTY(double networkTxBytesPerSecond READ networkTxBytesPerSecond NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList networkRxHistory READ networkRxHistory NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList networkTxHistory READ networkTxHistory NOTIFY metricsChanged)
+    Q_PROPERTY(QVariantList networkInterfaces READ networkInterfaces NOTIFY metricsChanged)
 
     Q_PROPERTY(double diskReadBytesPerSecond READ diskReadBytesPerSecond NOTIFY metricsChanged)
     Q_PROPERTY(double diskWriteBytesPerSecond READ diskWriteBytesPerSecond NOTIFY metricsChanged)
@@ -46,6 +47,7 @@ class PerformanceController final : public QObject
     Q_PROPERTY(double storageUsage READ storageUsage NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList diskReadHistory READ diskReadHistory NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList diskWriteHistory READ diskWriteHistory NOTIFY metricsChanged)
+    Q_PROPERTY(QVariantList disks READ disks NOTIFY metricsChanged)
 
     Q_PROPERTY(QString gpuName READ gpuName NOTIFY metricsChanged)
     Q_PROPERTY(double gpuUsage READ gpuUsage NOTIFY metricsChanged)
@@ -94,6 +96,7 @@ public:
     double networkTxBytesPerSecond() const;
     QVariantList networkRxHistory() const;
     QVariantList networkTxHistory() const;
+    QVariantList networkInterfaces() const;
 
     double diskReadBytesPerSecond() const;
     double diskWriteBytesPerSecond() const;
@@ -102,6 +105,7 @@ public:
     double storageUsage() const;
     QVariantList diskReadHistory() const;
     QVariantList diskWriteHistory() const;
+    QVariantList disks() const;
 
     QString gpuName() const;
     double gpuUsage() const;
@@ -189,6 +193,11 @@ private:
     double m_networkTxRate = 0;
     QVariantList m_networkRxHistory;
     QVariantList m_networkTxHistory;
+    QVariantList m_networkInterfaces;
+    QHash<QString, quint64> m_lastInterfaceRxBytes;
+    QHash<QString, quint64> m_lastInterfaceTxBytes;
+    QHash<QString, QVariantList> m_interfaceRxHistories;
+    QHash<QString, QVariantList> m_interfaceTxHistories;
 
     quint64 m_lastDiskReadBytes = 0;
     quint64 m_lastDiskWriteBytes = 0;
@@ -200,6 +209,13 @@ private:
     double m_storageUsage = 0;
     QVariantList m_diskReadHistory;
     QVariantList m_diskWriteHistory;
+    QVariantList m_disks;
+    QHash<QString, quint64> m_lastDeviceReadBytes;
+    QHash<QString, quint64> m_lastDeviceWriteBytes;
+    QHash<QString, quint64> m_lastDeviceIoMilliseconds;
+    QHash<QString, QVariantList> m_deviceReadHistories;
+    QHash<QString, QVariantList> m_deviceWriteHistories;
+    QHash<QString, QVariantList> m_deviceUsageHistories;
 
     QString m_gpuName;
     double m_gpuUsage = -1;
