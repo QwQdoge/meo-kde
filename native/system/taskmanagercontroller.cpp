@@ -847,6 +847,14 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
             ++it;
         }
     }
+    for (auto it = m_efficiencyOriginalNice.begin();
+         it != m_efficiencyOriginalNice.end();) {
+        if (!livePids.contains(it.key())) {
+            it = m_efficiencyOriginalNice.erase(it);
+        } else {
+            ++it;
+        }
+    }
 
     m_lastProcessTicks = nextTicks;
     m_lastProcessReadBytes = nextReadBytes;
@@ -1412,8 +1420,9 @@ bool TaskManagerController::setProcessEfficiency(qint64 pid, bool enabled)
     }
 
     int targetNice = currentNice;
+    const bool hadOriginalNice = m_efficiencyOriginalNice.contains(pid);
     if (enabled) {
-        if (!m_efficiencyOriginalNice.contains(pid)) {
+        if (!hadOriginalNice) {
             m_efficiencyOriginalNice.insert(pid, currentNice);
         }
         targetNice = std::max(currentNice, 10);
@@ -1423,6 +1432,9 @@ bool TaskManagerController::setProcessEfficiency(qint64 pid, bool enabled)
 
     errno = 0;
     if (::setpriority(PRIO_PROCESS, static_cast<id_t>(pid), targetNice) != 0) {
+        if (enabled && !hadOriginalNice) {
+            m_efficiencyOriginalNice.remove(pid);
+        }
         setActionError(QStringLiteral("Could not change efficiency mode: %1")
                            .arg(QString::fromLocal8Bit(std::strerror(errno))));
         return false;
