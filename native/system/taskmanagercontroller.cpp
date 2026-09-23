@@ -1004,10 +1004,42 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
     const QString workingDirectory = QFileInfo(procBase + QStringLiteral("/cwd")).symLinkTarget();
     const QVariantList affinity = processAffinity(m_selectedPid);
 
+    quint64 cpuTicks = 0;
+    quint64 startTicks = 0;
+    const QByteArray selectedStat = readBytes(procBase + QStringLiteral("/stat")).trimmed();
+    const int selectedCloseParen = selectedStat.lastIndexOf(')');
+    if (selectedCloseParen >= 0) {
+        const QList<QByteArray> fields =
+            selectedStat.mid(selectedCloseParen + 2).simplified().split(' ');
+        if (fields.size() > 19) {
+            cpuTicks = fields.at(11).toULongLong() + fields.at(12).toULongLong();
+            startTicks = fields.at(19).toULongLong();
+        }
+    }
+    const long ticksPerSecond = std::max<long>(1, sysconf(_SC_CLK_TCK));
+    double uptimeSeconds = 0;
+    bool uptimeOk = false;
+    const QList<QByteArray> uptimeFields =
+        readBytes(QStringLiteral("/proc/uptime")).simplified().split(' ');
+    if (!uptimeFields.isEmpty()) {
+        uptimeSeconds = uptimeFields.constFirst().toDouble(&uptimeOk);
+    }
+    const double elapsedProcessSeconds =
+        uptimeOk && startTicks > 0
+        ? std::max(0.0, uptimeSeconds
+                  - static_cast<double>(startTicks) / static_cast<double>(ticksPerSecond))
+        : 0.0;
+    const QPair<quint64, quint64> totalIo = readProcessIo(procBase);
+
     selected.insert(QStringLiteral("executablePath"), executablePath);
     selected.insert(QStringLiteral("workingDirectory"), workingDirectory);
     selected.insert(QStringLiteral("openFileDescriptorCount"), openFileDescriptorCount(m_selectedPid));
     selected.insert(QStringLiteral("cpuAffinity"), affinity);
+    selected.insert(QStringLiteral("cpuTimeSeconds"),
+                    static_cast<double>(cpuTicks) / static_cast<double>(ticksPerSecond));
+    selected.insert(QStringLiteral("elapsedSeconds"), elapsedProcessSeconds);
+    selected.insert(QStringLiteral("diskReadBytesTotal"), static_cast<qint64>(totalIo.first));
+    selected.insert(QStringLiteral("diskWriteBytesTotal"), static_cast<qint64>(totalIo.second));
     selected.insert(QStringLiteral("logicalCpuCount"),
                     static_cast<int>(std::max<long>(1, sysconf(_SC_NPROCESSORS_CONF))));
     selected.insert(QStringLiteral("suspended"),
