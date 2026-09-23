@@ -372,6 +372,26 @@ Item {
                                    : "—"
                         }
                     }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        visible: MeoSystem.Performance.cpuCaches.length > 0
+                        spacing: MeoTheme.space8
+
+                        Repeater {
+                            model: MeoSystem.Performance.cpuCaches
+
+                            delegate: MeoChip {
+                                required property var modelData
+                                label: (modelData.label || "Cache")
+                                       + " " + root.formatBytes(modelData.sizeBytes)
+                                leadingIcon: "memory"
+                                type: "assist"
+                                shape: "pill"
+                                visualStyle: "outlined"
+                            }
+                        }
+                    }
                 }
             }
 
