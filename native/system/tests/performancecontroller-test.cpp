@@ -35,6 +35,11 @@ private slots:
         QVERIFY(!controller.cpuArchitecture().isEmpty());
         QVERIFY(!controller.cpuCores().isEmpty());
         QVERIFY(controller.cpuCores().size() <= controller.logicalCores());
+        if (!controller.cpuCaches().isEmpty()) {
+            const QVariantMap cache = controller.cpuCaches().constFirst().toMap();
+            QVERIFY(cache.value(QStringLiteral("level")).toInt() >= 1);
+            QVERIFY(cache.value(QStringLiteral("sizeBytes")).toLongLong() > 0);
+        }
         QVERIFY(controller.memoryTotalBytes() > 0);
         QVERIFY(controller.memoryUsedBytes() >= 0);
         QVERIFY(controller.memoryAvailableBytes() >= 0);
@@ -50,6 +55,9 @@ private slots:
             QVERIFY(network.contains(QStringLiteral("name")));
             QVERIFY(network.contains(QStringLiteral("rxBytesPerSecond")));
             QVERIFY(network.contains(QStringLiteral("txBytesPerSecond")));
+            QVERIFY(network.contains(QStringLiteral("kind")));
+            QVERIFY(network.contains(QStringLiteral("addressSummary")));
+            QVERIFY(network.contains(QStringLiteral("hardwareAddress")));
         }
         if (!controller.disks().isEmpty()) {
             const QVariantMap disk = controller.disks().constFirst().toMap();
