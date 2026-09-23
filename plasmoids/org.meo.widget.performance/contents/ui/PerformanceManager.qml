@@ -146,7 +146,7 @@ Item {
                     RowLayout {
                         Layout.fillWidth: true
                         visible: MeoSystem.Platform.powerProfilesAvailable
-                        spacing: MeoTheme.space6
+                        spacing: MeoTheme.space8
                         MeoText {
                             text: MeoI18n.translator.i18n("Power mode")
                             typeRole: "label"
@@ -167,7 +167,7 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: MeoTheme.space6
+                        spacing: MeoTheme.space8
                         MeoText {
                             text: MeoI18n.translator.i18n("Sampling")
                             typeRole: "label"
@@ -192,8 +192,8 @@ Item {
                 id: metricGrid
                 Layout.fillWidth: true
                 columns: width >= 720 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space10
-                columnSpacing: MeoTheme.space10
+                rowSpacing: MeoTheme.space12
+                columnSpacing: MeoTheme.space12
 
                 MetricCard {
                     Layout.fillWidth: true
@@ -298,8 +298,8 @@ Item {
             GridLayout {
                 Layout.fillWidth: true
                 columns: width >= 720 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space10
-                columnSpacing: MeoTheme.space10
+                rowSpacing: MeoTheme.space12
+                columnSpacing: MeoTheme.space12
 
                 MeoCard {
                     Layout.fillWidth: true
@@ -309,7 +309,7 @@ Item {
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: MeoTheme.space12
-                        spacing: MeoTheme.space6
+                        spacing: MeoTheme.space8
 
                         RowLayout {
                             Layout.fillWidth: true
@@ -359,7 +359,7 @@ Item {
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: MeoTheme.space12
-                        spacing: MeoTheme.space6
+                        spacing: MeoTheme.space8
 
                         RowLayout {
                             Layout.fillWidth: true
