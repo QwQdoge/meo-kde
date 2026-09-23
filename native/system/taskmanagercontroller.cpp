@@ -191,7 +191,13 @@ quint64 scaledDrmValue(const QByteArray &valueField)
     return static_cast<quint64>(std::max(0.0, value));
 }
 
-QPair<quint64, quint64> readProcessDrmStats(qint64 pid)
+struct ProcessDrmStats {
+    quint64 busiestEngineNanoseconds = 0;
+    quint64 memoryBytes = 0;
+    QString busiestEngine;
+};
+
+ProcessDrmStats readProcessDrmStats(qint64 pid)
 {
     QHash<QByteArray, quint64> engineTotals;
     quint64 vramBytes = 0;
@@ -233,11 +239,20 @@ QPair<quint64, quint64> readProcessDrmStats(qint64 pid)
             }
         }
     }
-    quint64 busiestEngineNanoseconds = 0;
+    ProcessDrmStats result;
+    result.memoryBytes = vramBytes;
     for (auto it = engineTotals.cbegin(); it != engineTotals.cend(); ++it) {
-        busiestEngineNanoseconds = std::max(busiestEngineNanoseconds, it.value());
+        if (it.value() <= result.busiestEngineNanoseconds) {
+            continue;
+        }
+        result.busiestEngineNanoseconds = it.value();
+        QByteArray engineName = it.key();
+        if (engineName.startsWith("drm-engine-")) {
+            engineName.remove(0, sizeof("drm-engine-") - 1);
+        }
+        result.busiestEngine = QString::fromLatin1(engineName);
     }
-    return {busiestEngineNanoseconds, vramBytes};
+    return result;
 }
 
 QSet<quint64> socketInodesForPid(qint64 pid)
@@ -1239,21 +1254,25 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
     selected.insert(QStringLiteral("networkNote"),
                     QStringLiteral("Linux does not expose generic per-process byte throughput in /proc; sockets are shown without fabricated bandwidth."));
 
-    const auto drm = readProcessDrmStats(m_selectedPid);
+    const ProcessDrmStats drm = readProcessDrmStats(m_selectedPid);
     double gpuUsage = -1;
-    if (drm.first > 0 && m_lastSelectedGpuPid == m_selectedPid
-        && m_lastSelectedGpuEngineNs > 0 && drm.first >= m_lastSelectedGpuEngineNs
+    if (drm.busiestEngineNanoseconds > 0 && m_lastSelectedGpuPid == m_selectedPid
+        && m_lastSelectedGpuEngineNs > 0
+        && drm.busiestEngineNanoseconds >= m_lastSelectedGpuEngineNs
         && elapsedSeconds > 0) {
         gpuUsage = std::clamp(
-            static_cast<double>(drm.first - m_lastSelectedGpuEngineNs)
+            static_cast<double>(drm.busiestEngineNanoseconds - m_lastSelectedGpuEngineNs)
                 / (elapsedSeconds * 1000000000.0) * 100.0,
             0.0, 100.0);
     }
     m_lastSelectedGpuPid = m_selectedPid;
-    m_lastSelectedGpuEngineNs = drm.first;
-    m_selectedProcessGpuAvailable = drm.first > 0 || drm.second > 0;
+    m_lastSelectedGpuEngineNs = drm.busiestEngineNanoseconds;
+    m_selectedProcessGpuAvailable =
+        drm.busiestEngineNanoseconds > 0 || drm.memoryBytes > 0;
     selected.insert(QStringLiteral("gpuUsage"), gpuUsage);
-    selected.insert(QStringLiteral("gpuMemoryBytes"), static_cast<qint64>(drm.second));
+    selected.insert(QStringLiteral("gpuMemoryBytes"),
+                    static_cast<qint64>(drm.memoryBytes));
+    selected.insert(QStringLiteral("gpuEngine"), drm.busiestEngine);
     selected.insert(QStringLiteral("gpuAvailable"), m_selectedProcessGpuAvailable);
 
     m_selectedProcessDetails = selected;
