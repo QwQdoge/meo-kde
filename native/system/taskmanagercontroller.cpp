@@ -614,6 +614,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
     QHash<qint64, quint64> nextReadBytes;
     QHash<qint64, quint64> nextWriteBytes;
     QHash<qint64, QString> userNames;
+    QSet<qint64> livePids;
     const qint64 pageSize = std::max<qint64>(1, sysconf(_SC_PAGESIZE));
     const uid_t currentUid = geteuid();
     QDir proc(QStringLiteral("/proc"));
@@ -662,45 +663,74 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
             rssBytes = static_cast<qint64>(statm.at(1).toULongLong()) * pageSize;
         }
 
-        qint64 uid = -1;
-        const QList<QByteArray> statusLines = readBytes(basePath + QStringLiteral("/status")).split('\n');
-        for (const QByteArray &line : statusLines) {
-            if (!line.startsWith("Uid:")) {
-                continue;
-            }
-            const QList<QByteArray> uidFields = line.mid(4).simplified().split(' ');
-            if (!uidFields.isEmpty()) {
-                bool uidOk = false;
-                const qint64 parsedUid = uidFields.constFirst().toLongLong(&uidOk);
-                if (uidOk) {
-                    uid = parsedUid;
+        const quint64 startTicks = fields.at(19).toULongLong();
+        livePids.insert(pid);
+        ProcessStaticInfo staticInfo = m_processStaticInfo.value(pid);
+        if (staticInfo.startTicks != startTicks) {
+            qint64 uid = -1;
+            const QList<QByteArray> statusLines =
+                readBytes(basePath + QStringLiteral("/status")).split('\n');
+            for (const QByteArray &line : statusLines) {
+                if (!line.startsWith("Uid:")) {
+                    continue;
                 }
+                const QList<QByteArray> uidFields = line.mid(4).simplified().split(' ');
+                if (!uidFields.isEmpty()) {
+                    bool uidOk = false;
+                    const qint64 parsedUid = uidFields.constFirst().toLongLong(&uidOk);
+                    if (uidOk) {
+                        uid = parsedUid;
+                    }
+                }
+                break;
             }
-            break;
-        }
 
-        QByteArray rawCommand = readBytes(basePath + QStringLiteral("/cmdline"));
-        std::replace(rawCommand.begin(), rawCommand.end(), '\0', ' ');
-        QString command = QString::fromUtf8(rawCommand).simplified();
-        if (command.isEmpty()) {
-            command = name;
-        }
+            QByteArray rawCommand = readBytes(basePath + QStringLiteral("/cmdline"));
+            std::replace(rawCommand.begin(), rawCommand.end(), '\0', ' ');
+            QString command = QString::fromUtf8(rawCommand).simplified();
+            if (command.isEmpty()) {
+                command = name;
+            }
 
-        QString executable = QFileInfo(basePath + QStringLiteral("/exe")).symLinkTarget();
-        executable = QFileInfo(executable).fileName();
-        if (executable.isEmpty()) {
-            executable = name;
-        }
+            QString executablePath =
+                QFileInfo(basePath + QStringLiteral("/exe")).symLinkTarget();
+            QString executable = QFileInfo(executablePath).fileName();
+            if (executable.isEmpty()) {
+                executable = name;
+            }
 
-        const DesktopAppInfo appInfo = m_desktopAppsByExecutable.value(executable);
-        const bool isCurrentUser = uid >= 0 && static_cast<uid_t>(uid) == currentUid;
-        QString category;
-        if (!isCurrentUser) {
-            category = QStringLiteral("system");
-        } else if (!appInfo.desktopId.isEmpty()) {
-            category = QStringLiteral("app");
-        } else {
-            category = QStringLiteral("background");
+            const DesktopAppInfo appInfo = m_desktopAppsByExecutable.value(executable);
+            const bool isCurrentUser =
+                uid >= 0 && static_cast<uid_t>(uid) == currentUid;
+            QString category;
+            if (!isCurrentUser) {
+                category = QStringLiteral("system");
+            } else if (!appInfo.desktopId.isEmpty()) {
+                category = QStringLiteral("app");
+            } else {
+                category = QStringLiteral("background");
+            }
+
+            staticInfo.startTicks = startTicks;
+            staticInfo.name = name;
+            staticInfo.appName = appInfo.name.isEmpty() ? name : appInfo.name;
+            staticInfo.appIcon = appInfo.icon;
+            staticInfo.desktopId = appInfo.desktopId;
+            staticInfo.command = command;
+            staticInfo.executable = executable;
+            staticInfo.uid = uid;
+            staticInfo.user = usernameForUid(uid, userNames);
+            staticInfo.category = category;
+            staticInfo.canControl = pid > 1
+                && pid != static_cast<qint64>(QCoreApplication::applicationPid())
+                && isCurrentUser;
+            m_processStaticInfo.insert(pid, staticInfo);
+        } else if (staticInfo.name != name) {
+            staticInfo.name = name;
+            if (staticInfo.desktopId.isEmpty()) {
+                staticInfo.appName = name;
+            }
+            m_processStaticInfo.insert(pid, staticInfo);
         }
 
         const QPair<quint64, quint64> io = readProcessIo(basePath);
@@ -724,23 +754,20 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         bool threadsOk = false;
         const int threads = fields.at(17).toInt(&threadsOk);
         const QString state = QString::fromLatin1(fields.at(0));
-        const bool canControl = pid > 1
-            && pid != static_cast<qint64>(QCoreApplication::applicationPid())
-            && isCurrentUser;
 
         samples.push_back(Sample{
             pid,
             parentOk ? parentPid : 0,
             name,
-            appInfo.name.isEmpty() ? name : appInfo.name,
-            appInfo.icon,
-            appInfo.desktopId,
-            command,
-            executable,
-            usernameForUid(uid, userNames),
+            staticInfo.appName,
+            staticInfo.appIcon,
+            staticInfo.desktopId,
+            staticInfo.command,
+            staticInfo.executable,
+            staticInfo.user,
             state,
-            category,
-            uid,
+            staticInfo.category,
+            staticInfo.uid,
             threadsOk ? std::max(0, threads) : 0,
             niceOk ? niceValue : 0,
             0,
@@ -748,9 +775,17 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
             std::max<qint64>(0, rssBytes),
             diskReadRate,
             diskWriteRate,
-            canControl,
+            staticInfo.canControl,
             (niceOk && niceValue >= 10) || m_efficiencyOriginalNice.contains(pid),
         });
+    }
+
+    for (auto it = m_processStaticInfo.begin(); it != m_processStaticInfo.end();) {
+        if (!livePids.contains(it.key())) {
+            it = m_processStaticInfo.erase(it);
+        } else {
+            ++it;
+        }
     }
 
     m_lastProcessTicks = nextTicks;
