@@ -11,11 +11,17 @@ import MeoKDE 1.0
 MeoMotionPopup {
     id: launcherPopup
 
-    // `shellApplet` is the actual PlasmoidItem, supplied by main.qml. Kicker
-    // uses it for favorites and service ownership; using the Popup itself
-    // gives a visually plausible but non-functional launcher.
+    // Plasma/Kicker remains the launcher backend. Meo only owns presentation,
+    // motion and the small amount of glue needed to expose KDE actions through
+    // MeoUI surfaces.
     property var shellApplet: null
     property int appModelRevision: 0
+    property int browseMode: 0
+    property bool modelsPrimed: false
+    property double lastRefreshMs: 0
+
+    readonly property bool searching: searchField.text.trim() !== ""
+    readonly property var favoritesModel: rootAppModel.favoritesModel
     readonly property var allAppsModel: {
         appModelRevision
         for (let row = 0; row < rootAppModel.count; ++row) {
@@ -27,24 +33,168 @@ MeoMotionPopup {
     }
     readonly property var searchMatches: runnerModel.count > 0
                                        ? runnerModel.modelForRow(0) : null
+    readonly property real availableLauncherHeight: Math.max(
+        360 * MeoTheme.globalScale,
+        Screen.height - ShellMetrics.shelfPanelHeight - 24 * MeoTheme.globalScale)
+    readonly property real desiredLauncherHeight: searching
+                                                  ? 584 * MeoTheme.globalScale
+                                                  : browseMode === 0
+                                                    ? 520 * MeoTheme.globalScale
+                                                    : 640 * MeoTheme.globalScale
 
-    y: -height - 8 * MeoTheme.globalScale
+    y: -height - ShellMetrics.popupGap
     x: (parent.width - width) / 2
-    width: Math.min(640 * MeoTheme.globalScale,
-                    Screen.width - 16 * MeoTheme.globalScale)
-    height: Math.min(688 * MeoTheme.globalScale,
-                     Screen.height - ShellMetrics.shelfPanelHeight - 16 * MeoTheme.globalScale)
+    width: Math.min(680 * MeoTheme.globalScale,
+                    Screen.width - 24 * MeoTheme.globalScale)
+    height: Math.min(desiredLauncherHeight, availableLauncherHeight)
     modal: false
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
     presentation: MeoMotionPopup.Dialog
     transformOrigin: Item.Bottom
 
+    Behavior on height {
+        enabled: !MeoTheme.reduceMotion
+        NumberAnimation {
+            duration: MeoMotion.stateChange
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+        }
+    }
+
+    function refreshModels(force) {
+        if (!shellApplet)
+            return
+
+        const now = Date.now()
+        if (!force && modelsPrimed && now - lastRefreshMs < 30000)
+            return
+
+        rootAppModel.refresh()
+        lastRefreshMs = now
+        modelsPrimed = true
+
+        const favorites = rootAppModel.favoritesModel
+        if (favorites && typeof favorites["initForClient"] === "function")
+            favorites["initForClient"]("org.meo.shelf.favorites")
+    }
+
     function triggerModel(model, row) {
         if (!model || row < 0 || typeof model.trigger !== "function")
-            return
-        if (model.trigger(row, "", null))
+            return false
+        const closeRequested = model.trigger(row, "", null)
+        if (closeRequested)
             launcherPopup.close()
+        return closeRequested
+    }
+
+    function triggerAction(model, row, actionId, actionArgument) {
+        if (!model || row < 0 || !actionId || typeof model.trigger !== "function")
+            return false
+        const closeRequested = model.trigger(row, actionId, actionArgument)
+        if (closeRequested)
+            launcherPopup.close()
+        return closeRequested
+    }
+
+    function transformActionList(model, row, sourceActions) {
+        if (!sourceActions)
+            return []
+
+        let actions = []
+        try {
+            actions = Array.from(sourceActions)
+        } catch (error) {
+            return []
+        }
+
+        const mapped = []
+        for (let index = 0; index < actions.length; ++index) {
+            const sourceAction = actions[index]
+            if (!sourceAction)
+                continue
+
+            if (sourceAction.type === "separator") {
+                mapped.push({ "type": "separator" })
+                continue
+            }
+
+            if (sourceAction.type === "title") {
+                mapped.push({
+                    "type": "label",
+                    "label": sourceAction.text || ""
+                })
+                continue
+            }
+
+            const nested = sourceAction.subActions
+                           ? transformActionList(model, row, sourceAction.subActions)
+                           : []
+            const actionId = sourceAction.actionId || ""
+            const actionArgument = sourceAction.actionArgument
+            const iconName = typeof sourceAction.icon === "string"
+                             ? sourceAction.icon : ""
+
+            mapped.push({
+                "label": sourceAction.text || "",
+                "icon": iconName,
+                "enabled": sourceAction.enabled !== false,
+                "checked": sourceAction.checkable ? !!sourceAction.checked : false,
+                "subItems": nested,
+                "action": function() {
+                    launcherPopup.triggerAction(model, row, actionId, actionArgument)
+                }
+            })
+        }
+        return mapped
+    }
+
+    function contextEntries(model, row, itemModel) {
+        if (!model || !itemModel)
+            return []
+
+        // Read the expensive Kicker action list only when a context menu is
+        // actually requested, matching Plasma Kickoff's lazy action path.
+        const entries = transformActionList(model, row, itemModel.actionList)
+
+        const favoriteId = itemModel.favoriteId || ""
+        const favorites = launcherPopup.favoritesModel
+        if (favoriteId && favorites
+                && favorites.enabled !== false
+                && typeof favorites.isFavorite === "function") {
+            let isFavorite = false
+            try {
+                isFavorite = favorites.isFavorite(favoriteId)
+            } catch (error) {
+                isFavorite = false
+            }
+
+            if (entries.length > 0)
+                entries.push({ "type": "separator" })
+
+            entries.push({
+                "label": isFavorite
+                         ? MeoI18n.translator.i18n("Remove from favorites")
+                         : MeoI18n.translator.i18n("Add to favorites"),
+                "icon": isFavorite ? "keep_off" : "keep",
+                "action": function() {
+                    if (isFavorite && typeof favorites.removeFavorite === "function")
+                        favorites.removeFavorite(favoriteId)
+                    else if (!isFavorite && typeof favorites.addFavorite === "function")
+                        favorites.addFavorite(favoriteId)
+                }
+            })
+        }
+
+        return entries
+    }
+
+    function openContextMenu(anchor, localX, localY, model, row, itemModel) {
+        const entries = contextEntries(model, row, itemModel)
+        if (entries.length === 0)
+            return false
+        itemContextMenu.model = entries
+        return itemContextMenu.openAtPoint(anchor, localX, localY)
     }
 
     Kicker.RootModel {
@@ -72,8 +222,6 @@ MeoMotionPopup {
         query: searchField.text.trim()
     }
 
-    // The Chromium reference calls this area “Continue where you left off”.
-    // This model is real recent-usage data, not a relabelled favorites list.
     Kicker.RecentUsageModel {
         id: recentUsageModel
         shownItems: Kicker.RecentUsageModel.AppsAndDocs
@@ -86,34 +234,53 @@ MeoMotionPopup {
         function onCountChanged() { launcherPopup.appModelRevision++ }
     }
 
+    onShellAppletChanged: {
+        if (shellApplet)
+            Qt.callLater(function() { launcherPopup.refreshModels(true) })
+    }
+
     onOpened: {
-        rootAppModel.refresh()
-        const favorites = rootAppModel.favoritesModel
-        if (favorites && typeof favorites["initForClient"] === "function")
-            favorites["initForClient"]("org.meo.shelf.favorites")
+        refreshModels(false)
         searchField.forceSearchFocus()
     }
 
+    onClosed: {
+        searchField.text = ""
+        itemContextMenu.close()
+    }
+
+    Component.onCompleted: Qt.callLater(function() { launcherPopup.refreshModels(true) })
+
     contentItem: FocusScope {
+        id: launcherContent
         anchors.fill: parent
         focus: true
 
+        Keys.onEscapePressed: {
+            if (searchField.text !== "") {
+                searchField.text = ""
+                searchField.forceSearchFocus()
+            } else {
+                launcherPopup.close()
+            }
+        }
+
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20 * MeoTheme.globalScale
-            spacing: MeoTheme.space16
+            anchors.margins: ShellMetrics.popupContentMargin
+            spacing: MeoTheme.space12
 
             MeoSearchBar {
                 id: searchField
                 Layout.fillWidth: true
                 visualStyle: "launcher"
-                placeholder: MeoI18n.translator.i18n("Search your tabs, files, apps, and more…")
+                placeholder: MeoI18n.translator.i18n("Search apps, files, settings and more…")
                 trailingIcon: ""
-                Accessible.name: MeoI18n.translator.i18n("Search your tabs, files, apps, and more")
+                Accessible.name: MeoI18n.translator.i18n("Search apps, files, settings and more")
+
                 onAccepted: {
-                    if (launcherPopup.searchMatches && searchResultList.currentIndex >= 0)
-                        launcherPopup.triggerModel(launcherPopup.searchMatches,
-                                                   searchResultList.currentIndex)
+                    if (paneLoader.item && typeof paneLoader.item.activateCurrent === "function")
+                        paneLoader.item.activateCurrent()
                 }
 
                 Keys.onEscapePressed: {
@@ -122,243 +289,681 @@ MeoMotionPopup {
                     else
                         launcherPopup.close()
                 }
+
                 Keys.onDownPressed: {
-                    if (searchResultList.visible && searchResultList.count > 0) {
-                        searchResultList.forceActiveFocus()
-                        searchResultList.currentIndex = 0
-                    } else if (allAppsGrid.visible && allAppsGrid.count > 0) {
-                        allAppsGrid.forceActiveFocus()
-                        allAppsGrid.currentIndex = 0
-                    }
+                    if (paneLoader.item && typeof paneLoader.item.focusFirst === "function")
+                        paneLoader.item.focusFirst()
                 }
             }
 
-            ListView {
-                id: searchResultList
-                visible: searchField.text.trim() !== ""
+            MeoTabs {
+                id: modeTabs
+                visible: !launcherPopup.searching
+                Layout.fillWidth: true
+                Layout.preferredHeight: visible ? implicitHeight : 0
+                model: [
+                    {
+                        "label": MeoI18n.translator.i18n("Home"),
+                        "icon": "home"
+                    },
+                    {
+                        "label": MeoI18n.translator.i18n("Apps"),
+                        "icon": "apps"
+                    }
+                ]
+                currentIndex: launcherPopup.browseMode
+                type: "primary"
+                style: "expressive"
+                onClicked: function(index) {
+                    launcherPopup.browseMode = index
+                }
+            }
+
+            Loader {
+                id: paneLoader
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                spacing: MeoTheme.space4
-                model: launcherPopup.searchMatches
-                Accessible.name: MeoI18n.translator.i18n("Search results")
+                sourceComponent: launcherPopup.searching
+                                 ? searchPane
+                                 : launcherPopup.browseMode === 0
+                                   ? homePane
+                                   : appsPane
 
-                delegate: Rectangle {
-                    id: resultRow
-                    required property int index
-                    required property string display
-                    required property string description
-                    required property var decoration
+                opacity: 1
+                scale: 1
 
-                    width: searchResultList.width
-                    height: 56 * MeoTheme.globalScale
-                    radius: ShellMetrics.radiusControl
-                    activeFocusOnTab: true
-                    Accessible.role: Accessible.ListItem
-                    Accessible.name: resultRow.display
-                    Accessible.description: resultRow.description
-                    Accessible.focusable: true
-                    Accessible.onPressAction: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
-                    color: searchResultList.currentIndex === index
-                           ? MeoTheme.secondaryContainer
-                           : (resultPointer.containsMouse ? MeoTheme.surfaceContainerHigh : "transparent")
+                onSourceComponentChanged: {
+                    if (MeoTheme.reduceMotion)
+                        return
+                    opacity = 0
+                    scale = 0.97
+                    paneEnter.restart()
+                }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: MeoTheme.space12
-                        anchors.rightMargin: MeoTheme.space12
-                        spacing: MeoTheme.space12
+                ParallelAnimation {
+                    id: paneEnter
+                    NumberAnimation {
+                        target: paneLoader
+                        property: "opacity"
+                        to: 1
+                        duration: MeoMotion.pageEnter
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate
+                    }
+                    NumberAnimation {
+                        target: paneLoader
+                        property: "scale"
+                        to: 1
+                        duration: MeoMotion.pageEnter
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                    }
+                }
+            }
+        }
 
-                        Kirigami.Icon {
-                            source: resultRow.decoration || "application-x-executable"
-                            implicitWidth: 32 * MeoTheme.globalScale
-                            implicitHeight: implicitWidth
+        MeoContextMenu {
+            id: itemContextMenu
+        }
+    }
+
+    Component {
+        id: searchPane
+
+        FocusScope {
+            id: searchPaneRoot
+
+            function focusFirst() {
+                if (searchResultList.count <= 0)
+                    return false
+                searchResultList.currentIndex = 0
+                searchResultList.forceActiveFocus(Qt.TabFocusReason)
+                return true
+            }
+
+            function activateCurrent() {
+                if (searchResultList.currentIndex < 0 && searchResultList.count > 0)
+                    searchResultList.currentIndex = 0
+                if (searchResultList.currentIndex >= 0)
+                    return launcherPopup.triggerModel(
+                        launcherPopup.searchMatches,
+                        searchResultList.currentIndex)
+                return false
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: MeoTheme.space8
+
+                ListView {
+                    id: searchResultList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    spacing: MeoTheme.space4
+                    model: launcherPopup.searchMatches
+                    keyNavigationWraps: false
+                    currentIndex: count > 0 ? 0 : -1
+                    Accessible.name: MeoI18n.translator.i18n("Search results")
+
+                    onCountChanged: {
+                        if (count > 0 && currentIndex < 0)
+                            currentIndex = 0
+                    }
+
+                    delegate: MeoListItem {
+                        id: resultItem
+                        required property int index
+                        required property var model
+                        required property string display
+                        required property string description
+                        required property var decoration
+
+                        width: searchResultList.width
+                        headline: resultItem.display || ""
+                        supportingText: resultItem.description || ""
+                        supportingTextLines: 1
+                        leadingComponentSize: 32
+                        leadingComponent: Component {
+                            Kirigami.Icon {
+                                implicitWidth: 32 * MeoTheme.globalScale
+                                implicitHeight: implicitWidth
+                                source: resultItem.decoration || "application-x-executable"
+                            }
+                        }
+                        isDense: true
+                        isSegmented: true
+                        roundingStrategy: "all"
+                        outerCornerRadius: MeoTheme.shapeLarge
+                        selected: searchResultList.currentIndex === resultItem.index
+                        isEmphasized: selected
+
+                        onActiveFocusChanged: {
+                            if (activeFocus)
+                                searchResultList.currentIndex = resultItem.index
+                        }
+                        onClicked: {
+                            searchResultList.currentIndex = resultItem.index
+                            launcherPopup.triggerModel(
+                                launcherPopup.searchMatches,
+                                resultItem.index)
                         }
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 0
-                            MeoText {
-                                Layout.fillWidth: true
-                                text: resultRow.display || ""
-                                typeRole: "body"
-                                typeSize: "medium"
-                                emphasized: true
-                                color: MeoTheme.contentOnSurface
-                                elide: Text.ElideRight
-                            }
-                            MeoText {
-                                Layout.fillWidth: true
-                                text: resultRow.description || ""
-                                visible: text !== ""
-                                typeRole: "body"
-                                typeSize: "small"
-                                color: MeoTheme.contentOnSurfaceVariant
-                                elide: Text.ElideRight
+                        TapHandler {
+                            acceptedButtons: Qt.RightButton
+                            onTapped: function(eventPoint) {
+                                searchResultList.currentIndex = resultItem.index
+                                launcherPopup.openContextMenu(
+                                    resultItem,
+                                    eventPoint.position.x,
+                                    eventPoint.position.y,
+                                    launcherPopup.searchMatches,
+                                    resultItem.index,
+                                    resultItem.model)
                             }
                         }
                     }
 
-                    MouseArea {
-                        id: resultPointer
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
+                    Keys.onReturnPressed: searchPaneRoot.activateCurrent()
+                    Keys.onEnterPressed: searchPaneRoot.activateCurrent()
+                    Keys.onDownPressed: {
+                        if (count > 0)
+                            currentIndex = Math.min(count - 1, currentIndex + 1)
+                    }
+                    Keys.onUpPressed: {
+                        if (currentIndex <= 0) {
+                            searchField.forceSearchFocus()
+                        } else {
+                            currentIndex--
+                        }
+                    }
+                    Keys.onPressed: function(event) {
+                        if ((event.key === Qt.Key_Menu || event.key === Qt.Key_F10)
+                                && currentIndex >= 0) {
+                            const item = itemAtIndex(currentIndex)
+                            if (item) {
+                                launcherPopup.openContextMenu(
+                                    item, item.width / 2, item.height / 2,
+                                    launcherPopup.searchMatches,
+                                    currentIndex, item.model)
+                            }
+                            event.accepted = true
+                        }
                     }
 
-                    Keys.onReturnPressed: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
-                    Keys.onEnterPressed: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
-                    Keys.onSpacePressed: launcherPopup.triggerModel(launcherPopup.searchMatches, resultRow.index)
+                    QQC2.ScrollBar.vertical: MeoScrollBar {}
                 }
 
-                Keys.onReturnPressed: {
-                    if (currentIndex >= 0)
-                        launcherPopup.triggerModel(launcherPopup.searchMatches, currentIndex)
+                MeoEmptyState {
+                    visible: searchResultList.count === 0
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    icon: "manage_search"
+                    title: MeoI18n.translator.i18n("No results")
+                    description: MeoI18n.translator.i18n("Try another app, file, setting or command.")
                 }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    visible: searchResultList.count > 0
+                    text: MeoI18n.translator.i18n("↑↓ Navigate   Enter Open   Right-click More")
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+    }
+
+    Component {
+        id: homePane
+
+        FocusScope {
+            id: homePaneRoot
+
+            readonly property bool hasFavorites: launcherPopup.favoritesModel
+                                                 && launcherPopup.favoritesModel.count > 0
+            readonly property bool hasRecents: recentUsageModel.count > 0
+
+            function focusFirst() {
+                if (hasFavorites) {
+                    favoriteList.currentIndex = 0
+                    favoriteList.forceActiveFocus(Qt.TabFocusReason)
+                    return true
+                }
+                if (hasRecents) {
+                    recentList.currentIndex = 0
+                    recentList.forceActiveFocus(Qt.TabFocusReason)
+                    return true
+                }
+                return false
+            }
+
+            function activateCurrent() {
+                if (favoriteList.activeFocus && favoriteList.currentIndex >= 0)
+                    return launcherPopup.triggerModel(
+                        launcherPopup.favoritesModel,
+                        favoriteList.currentIndex)
+                if (recentList.activeFocus && recentList.currentIndex >= 0)
+                    return launcherPopup.triggerModel(
+                        recentUsageModel,
+                        recentList.currentIndex)
+                return false
             }
 
             QQC2.ScrollView {
-                visible: searchField.text.trim() === ""
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                id: homeScroll
+                anchors.fill: parent
                 clip: true
                 QQC2.ScrollBar.vertical: MeoScrollBar {}
 
                 ColumnLayout {
-                    width: parent.width
+                    width: homeScroll.availableWidth
                     spacing: MeoTheme.space16
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        visible: recentUsageModel.count > 0
+                        visible: homePaneRoot.hasFavorites
+                        spacing: MeoTheme.space8
+
+                        RowLayout {
+                            Layout.fillWidth: true
+
+                            MeoText {
+                                text: MeoI18n.translator.i18n("Pinned")
+                                typeRole: "title"
+                                typeSize: "small"
+                                emphasized: true
+                                color: MeoTheme.contentOnSurface
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            MeoText {
+                                text: launcherPopup.favoritesModel
+                                      ? launcherPopup.favoritesModel.count : 0
+                                typeRole: "label"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                            }
+                        }
+
+                        ListView {
+                            id: favoriteList
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 96 * MeoTheme.globalScale
+                            orientation: ListView.Horizontal
+                            spacing: MeoTheme.space4
+                            clip: true
+                            model: launcherPopup.favoritesModel
+                            keyNavigationWraps: false
+                            currentIndex: count > 0 ? 0 : -1
+                            Accessible.name: MeoI18n.translator.i18n("Pinned applications")
+
+                            delegate: MeoAppGridItem {
+                                id: favoriteItem
+                                required property int index
+                                required property var model
+                                required property string display
+                                required property var decoration
+
+                                width: 92 * MeoTheme.globalScale
+                                height: favoriteList.height
+                                compact: true
+                                title: favoriteItem.display || ""
+                                selected: favoriteList.currentIndex === favoriteItem.index
+                                          && (favoriteList.activeFocus || favoriteItem.activeFocus)
+                                iconContent: Component {
+                                    Kirigami.Icon {
+                                        anchors.fill: parent
+                                        source: favoriteItem.decoration
+                                                || "application-x-executable"
+                                    }
+                                }
+                                onTriggered: {
+                                    favoriteList.currentIndex = favoriteItem.index
+                                    launcherPopup.triggerModel(
+                                        launcherPopup.favoritesModel,
+                                        favoriteItem.index)
+                                }
+
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    onTapped: function(eventPoint) {
+                                        favoriteList.currentIndex = favoriteItem.index
+                                        launcherPopup.openContextMenu(
+                                            favoriteItem,
+                                            eventPoint.position.x,
+                                            eventPoint.position.y,
+                                            launcherPopup.favoritesModel,
+                                            favoriteItem.index,
+                                            favoriteItem.model)
+                                    }
+                                }
+                            }
+
+                            Keys.onReturnPressed: homePaneRoot.activateCurrent()
+                            Keys.onEnterPressed: homePaneRoot.activateCurrent()
+                            Keys.onDownPressed: {
+                                if (recentList.count > 0) {
+                                    recentList.currentIndex = 0
+                                    recentList.forceActiveFocus(Qt.TabFocusReason)
+                                }
+                            }
+                            Keys.onUpPressed: searchField.forceSearchFocus()
+                            Keys.onPressed: function(event) {
+                                if ((event.key === Qt.Key_Menu || event.key === Qt.Key_F10)
+                                        && currentIndex >= 0) {
+                                    const item = itemAtIndex(currentIndex)
+                                    if (item) {
+                                        launcherPopup.openContextMenu(
+                                            item, item.width / 2, item.height / 2,
+                                            launcherPopup.favoritesModel,
+                                            currentIndex, item.model)
+                                    }
+                                    event.accepted = true
+                                }
+                            }
+
+                            QQC2.ScrollBar.horizontal: MeoScrollBar {}
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        visible: homePaneRoot.hasRecents
                         spacing: MeoTheme.space8
 
                         MeoText {
                             Layout.fillWidth: true
-                            text: MeoI18n.translator.i18n("Continue where you left off")
-                            typeRole: "body"
-                            typeSize: "medium"
-                            color: MeoTheme.contentOnSurfaceVariant
+                            text: MeoI18n.translator.i18n("Recent")
+                            typeRole: "title"
+                            typeSize: "small"
+                            emphasized: true
+                            color: MeoTheme.contentOnSurface
                         }
 
                         ListView {
                             id: recentList
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.min(contentHeight, 112 * MeoTheme.globalScale)
-                            clip: true
+                            Layout.preferredHeight: Math.min(
+                                4, recentUsageModel.count)
+                                * (52 * MeoTheme.globalScale)
                             model: recentUsageModel
                             spacing: MeoTheme.space4
+                            clip: true
+                            interactive: false
+                            keyNavigationWraps: false
+                            currentIndex: count > 0 ? 0 : -1
+                            Accessible.name: MeoI18n.translator.i18n("Recent items")
 
-                            delegate: Rectangle {
-                                id: recentRow
+                            delegate: MeoListItem {
+                                id: recentItem
                                 required property int index
+                                required property var model
                                 required property string display
-                                required property string description
                                 required property var decoration
 
                                 width: recentList.width
-                                height: 52 * MeoTheme.globalScale
-                                radius: ShellMetrics.radiusControl
-                                activeFocusOnTab: true
-                                Accessible.role: Accessible.ListItem
-                                Accessible.name: recentRow.display
-                                Accessible.description: recentRow.description
-                                Accessible.focusable: true
-                                Accessible.onPressAction: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
-                                color: recentPointer.containsMouse ? MeoTheme.surfaceContainerHigh : "transparent"
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: MeoTheme.space8
-                                    anchors.rightMargin: MeoTheme.space8
-                                    spacing: MeoTheme.space12
-
+                                height: 48 * MeoTheme.globalScale
+                                headline: recentItem.display || ""
+                                leadingComponentSize: 30
+                                leadingComponent: Component {
                                     Kirigami.Icon {
-                                        source: recentRow.decoration || "application-x-executable"
-                                        implicitWidth: 32 * MeoTheme.globalScale
+                                        implicitWidth: 30 * MeoTheme.globalScale
                                         implicitHeight: implicitWidth
-                                    }
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 0
-                                        MeoText {
-                                            Layout.fillWidth: true
-                                            text: recentRow.display || ""
-                                            typeRole: "body"
-                                            typeSize: "medium"
-                                            color: MeoTheme.contentOnSurface
-                                            elide: Text.ElideRight
-                                        }
-                                        MeoText {
-                                            Layout.fillWidth: true
-                                            text: recentRow.description || ""
-                                            visible: text !== ""
-                                            typeRole: "body"
-                                            typeSize: "small"
-                                            color: MeoTheme.contentOnSurfaceVariant
-                                            elide: Text.ElideRight
-                                        }
+                                        source: recentItem.decoration
+                                                || "application-x-executable"
                                     }
                                 }
+                                isDense: true
+                                isSegmented: true
+                                roundingStrategy: "all"
+                                outerCornerRadius: MeoTheme.shapeLarge
+                                selected: recentList.currentIndex === recentItem.index
+                                          && (recentList.activeFocus || recentItem.activeFocus)
 
-                                MouseArea {
-                                    id: recentPointer
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
+                                onActiveFocusChanged: {
+                                    if (activeFocus)
+                                        recentList.currentIndex = recentItem.index
+                                }
+                                onClicked: {
+                                    recentList.currentIndex = recentItem.index
+                                    launcherPopup.triggerModel(
+                                        recentUsageModel,
+                                        recentItem.index)
                                 }
 
-                                Keys.onReturnPressed: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
-                                Keys.onEnterPressed: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
-                                Keys.onSpacePressed: launcherPopup.triggerModel(recentUsageModel, recentRow.index)
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    onTapped: function(eventPoint) {
+                                        recentList.currentIndex = recentItem.index
+                                        launcherPopup.openContextMenu(
+                                            recentItem,
+                                            eventPoint.position.x,
+                                            eventPoint.position.y,
+                                            recentUsageModel,
+                                            recentItem.index,
+                                            recentItem.model)
+                                    }
+                                }
+                            }
+
+                            Keys.onReturnPressed: homePaneRoot.activateCurrent()
+                            Keys.onEnterPressed: homePaneRoot.activateCurrent()
+                            Keys.onUpPressed: {
+                                if (currentIndex <= 0) {
+                                    if (favoriteList.count > 0) {
+                                        favoriteList.currentIndex = 0
+                                        favoriteList.forceActiveFocus(Qt.TabFocusReason)
+                                    } else {
+                                        searchField.forceSearchFocus()
+                                    }
+                                } else {
+                                    currentIndex--
+                                }
+                            }
+                            Keys.onDownPressed: {
+                                if (currentIndex < Math.min(count - 1, 3))
+                                    currentIndex++
+                            }
+                            Keys.onPressed: function(event) {
+                                if ((event.key === Qt.Key_Menu || event.key === Qt.Key_F10)
+                                        && currentIndex >= 0) {
+                                    const item = itemAtIndex(currentIndex)
+                                    if (item) {
+                                        launcherPopup.openContextMenu(
+                                            item, item.width / 2, item.height / 2,
+                                            recentUsageModel,
+                                            currentIndex, item.model)
+                                    }
+                                    event.accepted = true
+                                }
                             }
                         }
                     }
 
-                    GridView {
-                        id: allAppsGrid
+                    MeoEmptyState {
+                        visible: !homePaneRoot.hasFavorites && !homePaneRoot.hasRecents
                         Layout.fillWidth: true
-                        readonly property int columnCount: 5
-                        implicitHeight: Math.ceil(count / columnCount) * (104 * MeoTheme.globalScale)
-                        cellWidth: Math.floor(width / columnCount)
-                        cellHeight: 104 * MeoTheme.globalScale
-                        model: launcherPopup.allAppsModel
-                        Accessible.name: MeoI18n.translator.i18n("All apps")
-
-                        delegate: MeoAppGridItem {
-                            id: appTile
-                            required property int index
-                            required property string display
-                            required property var decoration
-
-                            width: allAppsGrid.cellWidth
-                            height: allAppsGrid.cellHeight
-                            title: appTile.display || ""
-                            enabled: true
-                            iconContent: Component {
-                                Kirigami.Icon {
-                                    anchors.fill: parent
-                                    source: appTile.decoration || "application-x-executable"
-                                }
-                            }
-                            onTriggered: launcherPopup.triggerModel(launcherPopup.allAppsModel, appTile.index)
-                        }
-
-                        Keys.onReturnPressed: {
-                            if (currentIndex >= 0)
-                                launcherPopup.triggerModel(launcherPopup.allAppsModel, currentIndex)
-                        }
+                        Layout.preferredHeight: 260 * MeoTheme.globalScale
+                        icon: "apps"
+                        title: MeoI18n.translator.i18n("Ready when you are")
+                        description: MeoI18n.translator.i18n("Pinned and recently used items will appear here.")
                     }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: appsPane
+
+        FocusScope {
+            id: appsPaneRoot
+
+            function focusFirst() {
+                if (allAppsGrid.count <= 0)
+                    return false
+                allAppsGrid.currentIndex = 0
+                allAppsGrid.forceActiveFocus(Qt.TabFocusReason)
+                return true
+            }
+
+            function activateCurrent() {
+                if (allAppsGrid.currentIndex < 0 && allAppsGrid.count > 0)
+                    allAppsGrid.currentIndex = 0
+                if (allAppsGrid.currentIndex >= 0)
+                    return launcherPopup.triggerModel(
+                        launcherPopup.allAppsModel,
+                        allAppsGrid.currentIndex)
+                return false
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: MeoTheme.space8
+
+                RowLayout {
+                    Layout.fillWidth: true
 
                     MeoText {
-                        Layout.fillWidth: true
-                        visible: launcherPopup.allAppsModel === null
-                        text: MeoI18n.translator.i18n("Loading applications…")
-                        typeRole: "body"
-                        typeSize: "medium"
-                        color: MeoTheme.contentOnSurfaceVariant
-                        horizontalAlignment: Text.AlignHCenter
+                        text: MeoI18n.translator.i18n("All apps")
+                        typeRole: "title"
+                        typeSize: "small"
+                        emphasized: true
+                        color: MeoTheme.contentOnSurface
                     }
+
+                    Item { Layout.fillWidth: true }
+
+                    MeoText {
+                        visible: launcherPopup.allAppsModel !== null
+                        text: launcherPopup.allAppsModel
+                              ? launcherPopup.allAppsModel.count : ""
+                        typeRole: "label"
+                        typeSize: "small"
+                        color: MeoTheme.contentOnSurfaceVariant
+                    }
+                }
+
+                GridView {
+                    id: allAppsGrid
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    readonly property int columnCount: Math.max(
+                        4,
+                        Math.floor(width / (104 * MeoTheme.globalScale)))
+                    cellWidth: width / columnCount
+                    cellHeight: 100 * MeoTheme.globalScale
+                    model: launcherPopup.allAppsModel
+                    currentIndex: count > 0 ? 0 : -1
+                    keyNavigationWraps: false
+                    Accessible.name: MeoI18n.translator.i18n("All applications")
+
+                    delegate: MeoAppGridItem {
+                        id: appTile
+                        required property int index
+                        required property var model
+                        required property string display
+                        required property var decoration
+
+                        width: allAppsGrid.cellWidth
+                        height: allAppsGrid.cellHeight
+                        compact: false
+                        title: appTile.display || ""
+                        selected: allAppsGrid.currentIndex === appTile.index
+                                  && allAppsGrid.activeFocus
+                        iconContent: Component {
+                            Kirigami.Icon {
+                                anchors.fill: parent
+                                source: appTile.decoration
+                                        || "application-x-executable"
+                            }
+                        }
+
+                        onTriggered: {
+                            allAppsGrid.currentIndex = appTile.index
+                            launcherPopup.triggerModel(
+                                launcherPopup.allAppsModel,
+                                appTile.index)
+                        }
+
+                        TapHandler {
+                            acceptedButtons: Qt.RightButton
+                            onTapped: function(eventPoint) {
+                                allAppsGrid.currentIndex = appTile.index
+                                launcherPopup.openContextMenu(
+                                    appTile,
+                                    eventPoint.position.x,
+                                    eventPoint.position.y,
+                                    launcherPopup.allAppsModel,
+                                    appTile.index,
+                                    appTile.model)
+                            }
+                        }
+                    }
+
+                    Keys.onReturnPressed: appsPaneRoot.activateCurrent()
+                    Keys.onEnterPressed: appsPaneRoot.activateCurrent()
+                    Keys.onUpPressed: {
+                        const previous = currentIndex - columnCount
+                        if (previous < 0)
+                            searchField.forceSearchFocus()
+                        else
+                            currentIndex = previous
+                    }
+                    Keys.onDownPressed: {
+                        const next = currentIndex + columnCount
+                        if (next < count)
+                            currentIndex = next
+                    }
+                    Keys.onLeftPressed: {
+                        if (currentIndex > 0)
+                            currentIndex--
+                    }
+                    Keys.onRightPressed: {
+                        if (currentIndex + 1 < count)
+                            currentIndex++
+                    }
+                    Keys.onPressed: function(event) {
+                        if ((event.key === Qt.Key_Menu || event.key === Qt.Key_F10)
+                                && currentIndex >= 0) {
+                            const item = itemAtIndex(currentIndex)
+                            if (item) {
+                                launcherPopup.openContextMenu(
+                                    item, item.width / 2, item.height / 2,
+                                    launcherPopup.allAppsModel,
+                                    currentIndex, item.model)
+                            }
+                            event.accepted = true
+                        }
+                    }
+
+                    QQC2.ScrollBar.vertical: MeoScrollBar {}
+                }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    visible: launcherPopup.allAppsModel === null
+                    text: MeoI18n.translator.i18n("Loading applications…")
+                    typeRole: "body"
+                    typeSize: "medium"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    visible: launcherPopup.allAppsModel !== null
+                    text: MeoI18n.translator.i18n("Arrow keys Navigate   Enter Open   Right-click More")
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }
