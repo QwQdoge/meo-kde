@@ -17,6 +17,10 @@ MeoMotionPopup {
     property var shellApplet: null
     property int appModelRevision: 0
     property int browseMode: 0
+    property string defaultPage: "home"
+    property string widthPreset: "standard"
+    property bool showFavoritesSection: true
+    property bool showRecentSection: true
     property bool modelsPrimed: false
     property double lastRefreshMs: 0
 
@@ -33,6 +37,11 @@ MeoMotionPopup {
     }
     readonly property var searchMatches: runnerModel.count > 0
                                        ? runnerModel.modelForRow(0) : null
+    readonly property real configuredWidth: widthPreset === "compact"
+                                            ? 560 * MeoTheme.globalScale
+                                            : (widthPreset === "wide"
+                                               ? 760 * MeoTheme.globalScale
+                                               : 680 * MeoTheme.globalScale)
     readonly property real availableLauncherHeight: Math.max(
         360 * MeoTheme.globalScale,
         Screen.height - ShellMetrics.shelfPanelHeight - 24 * MeoTheme.globalScale)
@@ -44,7 +53,7 @@ MeoMotionPopup {
 
     y: -height - ShellMetrics.popupGap
     x: (parent.width - width) / 2
-    width: Math.min(680 * MeoTheme.globalScale,
+    width: Math.min(configuredWidth,
                     Screen.width - 24 * MeoTheme.globalScale)
     height: Math.min(desiredLauncherHeight, availableLauncherHeight)
     modal: false
@@ -240,6 +249,7 @@ MeoMotionPopup {
     }
 
     onOpened: {
+        browseMode = defaultPage === "apps" ? 1 : 0
         refreshModels(false)
         searchField.forceSearchFocus()
     }
@@ -523,9 +533,11 @@ MeoMotionPopup {
         FocusScope {
             id: homePaneRoot
 
-            readonly property bool hasFavorites: launcherPopup.favoritesModel
+            readonly property bool hasFavorites: launcherPopup.showFavoritesSection
+                                                 && launcherPopup.favoritesModel
                                                  && launcherPopup.favoritesModel.count > 0
-            readonly property bool hasRecents: recentUsageModel.count > 0
+            readonly property bool hasRecents: launcherPopup.showRecentSection
+                                               && recentUsageModel.count > 0
 
             function focusFirst() {
                 if (hasFavorites) {
