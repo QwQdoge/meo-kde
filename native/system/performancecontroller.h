@@ -139,6 +139,7 @@ private:
     void sampleNetwork(double elapsedSeconds);
     void sampleDisk(double elapsedSeconds);
     void sampleGpu();
+    void startNvidiaGpuSample();
     void sampleSystem();
     void sampleProcesses();
     void appendHistory(QVariantList &history, double value);
@@ -168,6 +169,7 @@ private:
 
     quint64 m_lastNetworkRxBytes = 0;
     quint64 m_lastNetworkTxBytes = 0;
+    bool m_haveNetworkSample = false;
     double m_networkRxRate = 0;
     double m_networkTxRate = 0;
     QVariantList m_networkRxHistory;
@@ -175,6 +177,7 @@ private:
 
     quint64 m_lastDiskReadBytes = 0;
     quint64 m_lastDiskWriteBytes = 0;
+    bool m_haveDiskSample = false;
     double m_diskReadRate = 0;
     double m_diskWriteRate = 0;
     qint64 m_storageUsedBytes = 0;
@@ -190,6 +193,7 @@ private:
     qint64 m_gpuMemoryTotalBytes = 0;
     QVariantList m_gpus;
     QVariantList m_gpuHistory;
+    bool m_nvidiaQuerying = false;
 
     qint64 m_uptimeSeconds = 0;
     double m_load1 = 0;
