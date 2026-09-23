@@ -29,6 +29,48 @@ Item {
         return rate < 1024 ? rate.toFixed(0) + " B/s" : formatBytes(rate) + "/s"
     }
 
+    function affinityContains(cpu) {
+        if (!root.process || !root.process.cpuAffinity)
+            return false
+        const values = root.process.cpuAffinity
+        for (let i = 0; i < values.length; ++i) {
+            if (Number(values[i]) === Number(cpu))
+                return true
+        }
+        return false
+    }
+
+    function toggleAffinity(cpu) {
+        if (!root.process || !root.process.pid)
+            return
+        const values = []
+        const current = root.process.cpuAffinity || []
+        let found = false
+        for (let i = 0; i < current.length; ++i) {
+            const value = Number(current[i])
+            if (value === Number(cpu)) {
+                found = true
+                continue
+            }
+            values.push(value)
+        }
+        if (!found)
+            values.push(Number(cpu))
+        if (values.length > 0)
+            MeoSystem.Tasks.setProcessCpuAffinity(root.process.pid, values)
+    }
+
+    function affinityText() {
+        if (!root.process || !root.process.cpuAffinity || root.process.cpuAffinity.length === 0)
+            return "—"
+        const cpus = root.process.cpuAffinity
+        if (root.process.logicalCpuCount > 0 && cpus.length >= root.process.logicalCpuCount)
+            return MeoI18n.translator.i18n("All CPUs")
+        return cpus.length <= 8
+               ? cpus.join(", ")
+               : MeoI18n.translator.i18n("%1 CPUs").arg(cpus.length)
+    }
+
     function stateLabel(state) {
         switch (String(state || "")) {
         case "R": return MeoI18n.translator.i18n("Running")
@@ -354,6 +396,24 @@ Item {
                                       : MeoI18n.translator.i18n("Background process")
                     progress: -1
                 }
+
+                ResourceTile {
+                    title: MeoI18n.translator.i18n("Files")
+                    iconName: "folder_open"
+                    valueText: MeoI18n.translator.i18n("%1 open FDs")
+                               .arg(root.process.openFileDescriptorCount || 0)
+                    supportingText: root.process.workingDirectory || MeoI18n.translator.i18n("Working directory unavailable")
+                    progress: -1
+                }
+
+                ResourceTile {
+                    title: MeoI18n.translator.i18n("CPU affinity")
+                    iconName: "select_all"
+                    valueText: root.affinityText()
+                    supportingText: MeoI18n.translator.i18n("%1 logical CPUs available")
+                                    .arg(root.process.logicalCpuCount || 0)
+                    progress: -1
+                }
             }
 
             PopupInlineMessage {
@@ -412,6 +472,80 @@ Item {
                         }
                     }
 
+                    PopupSectionLabel { sectionText: MeoI18n.translator.i18n("Process actions") }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: MeoTheme.space8
+
+                        MeoButton {
+                            text: root.process && root.process.suspended
+                                  ? MeoI18n.translator.i18n("Resume")
+                                  : MeoI18n.translator.i18n("Suspend")
+                            type: root.process && root.process.suspended ? "tonal" : "outlined"
+                            size: "s"
+                            icon.name: root.process && root.process.suspended ? "play_arrow" : "pause"
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.setProcessSuspended(
+                                    root.process.pid, !root.process.suspended)
+                        }
+
+                        MeoButton {
+                            text: MeoI18n.translator.i18n("Open file location")
+                            type: "text"
+                            size: "s"
+                            icon.name: "folder_open"
+                            enabled: root.process && root.process.executablePath
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.openProcessLocation(root.process.pid)
+                        }
+
+                        MeoButton {
+                            text: MeoI18n.translator.i18n("Working folder")
+                            type: "text"
+                            size: "s"
+                            icon.name: "folder"
+                            enabled: root.process && root.process.workingDirectory
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.openProcessWorkingDirectory(root.process.pid)
+                        }
+                    }
+
+                    PopupSectionLabel { sectionText: MeoI18n.translator.i18n("CPU affinity") }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: MeoTheme.space8
+
+                        MeoChip {
+                            label: MeoI18n.translator.i18n("All CPUs")
+                            leadingIcon: "select_all"
+                            type: "assist"
+                            shape: "pill"
+                            elevated: root.process
+                                      && root.process.logicalCpuCount > 0
+                                      && root.process.cpuAffinity
+                                      && root.process.cpuAffinity.length >= root.process.logicalCpuCount
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.setProcessCpuAffinityAll(root.process.pid)
+                        }
+
+                        Repeater {
+                            model: root.process ? Math.min(64, Number(root.process.logicalCpuCount || 0)) : 0
+
+                            delegate: MeoChip {
+                                required property int index
+                                label: String(index)
+                                type: "assist"
+                                shape: "pill"
+                                visualStyle: "outlined"
+                                selected: root.affinityContains(index)
+                                elevated: selected
+                                onClicked: root.toggleAffinity(index)
+                            }
+                        }
+                    }
+
                     PopupSectionLabel { sectionText: MeoI18n.translator.i18n("Priority") }
 
                     Flow {
@@ -440,11 +574,9 @@ Item {
 
                     MeoDivider { Layout.fillWidth: true }
 
-                    RowLayout {
+                    Flow {
                         Layout.fillWidth: true
                         spacing: MeoTheme.space8
-
-                        Item { Layout.fillWidth: true }
 
                         MeoButton {
                             text: MeoI18n.translator.i18n("End task")
@@ -452,6 +584,14 @@ Item {
                             size: "s"
                             icon.name: "stop_circle"
                             onClicked: endDialog.open()
+                        }
+
+                        MeoButton {
+                            text: MeoI18n.translator.i18n("End process tree")
+                            type: "outlined"
+                            size: "s"
+                            icon.name: "account_tree"
+                            onClicked: treeDialog.open()
                         }
 
                         MeoButton {
@@ -477,6 +617,18 @@ Item {
         confirmText: MeoI18n.translator.i18n("End task")
         cancelText: MeoI18n.translator.i18n("Cancel")
         onConfirmed: if (root.process) MeoSystem.Tasks.terminateProcess(root.process.pid, false)
+    }
+
+    MeoDialog {
+        id: treeDialog
+        parent: root
+        title: MeoI18n.translator.i18n("End process tree?")
+        message: MeoI18n.translator.i18n("This ends the selected process and its child processes. Unsaved work in any child process can be lost.")
+        icon: "warning"
+        confirmText: MeoI18n.translator.i18n("End process tree")
+        cancelText: MeoI18n.translator.i18n("Cancel")
+        onConfirmed: if (root.process)
+            MeoSystem.Tasks.terminateProcessTree(root.process.pid, false)
     }
 
     MeoDialog {
