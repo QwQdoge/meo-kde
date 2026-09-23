@@ -28,6 +28,20 @@ MeoMotionPopup {
     property double openStartedMs: 0
     property int lastReadyLatencyMs: -1
 
+    // One implementation, two entry surfaces:
+    // - Shelf activation opens the complete Home / All apps launcher.
+    // - Alt+Space can reuse this popup in quickSearchMode: a centered,
+    //   Spotlight-like search pill that expands only after the user types.
+    property bool quickSearchMode: false
+
+    // Default to a centered desktop surface. "top" remains a supported
+    // presentation value so Settings can expose the preference later without
+    // creating a launcher-specific settings application.
+    //
+    // TODO(MeoSettings): bind this to Appearance or Desktop Integration once a
+    // shell launcher/search placement setting exists there.
+    property string placementMode: "center" // "center" | "top"
+
     // The shell and search field should paint immediately. Browse content is
     // only considered ready once Plasma's canonical all-apps model has actual
     // entries. Slow first loads use MeoUI's anti-flash morphing feedback.
@@ -65,14 +79,30 @@ MeoMotionPopup {
     // Keep the surface compact enough to feel like Caelestia rather than a
     // full application window, but leave enough room for Plasma's richer
     // KRunner results and a dense all-apps grid.
-    readonly property real desiredLauncherHeight: searching
-                                                  ? 612 * MeoTheme.globalScale
-                                                  : browseMode === 0
-                                                    ? 548 * MeoTheme.globalScale
-                                                    : 664 * MeoTheme.globalScale
+    readonly property real quickSearchCollapsedHeight: Math.max(
+        80 * MeoTheme.globalScale,
+        48 * MeoTheme.globalScale + 2 * ShellMetrics.popupContentMargin)
+    readonly property real desiredLauncherHeight: quickSearchMode && !searching
+                                                  ? quickSearchCollapsedHeight
+                                                  : searching
+                                                    ? 612 * MeoTheme.globalScale
+                                                    : browseMode === 0
+                                                      ? 548 * MeoTheme.globalScale
+                                                      : 664 * MeoTheme.globalScale
     readonly property bool compactLayout: width < 620 * MeoTheme.globalScale
 
-    y: -height - ShellMetrics.popupGap
+    // This plasmoid lives in the bottom Shelf, so popup coordinates are local
+    // to that bottom-edge surface. Convert the desired screen-space positions
+    // back into that local coordinate system.
+    readonly property real topPlacementMargin: 96 * MeoTheme.globalScale
+    readonly property real centeredPlacementY: parent
+                                               ? parent.height - (Screen.height + height) / 2
+                                               : -height - ShellMetrics.popupGap
+    readonly property real topPlacementY: parent
+                                          ? parent.height - Screen.height + topPlacementMargin
+                                          : -height - ShellMetrics.popupGap
+
+    y: placementMode === "top" ? topPlacementY : centeredPlacementY
     x: (parent.width - width) / 2
     width: Math.min(736 * MeoTheme.globalScale,
                     Screen.width - 24 * MeoTheme.globalScale)
@@ -81,14 +111,13 @@ MeoMotionPopup {
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
     presentation: MeoMotionPopup.Dialog
-    // KRunner gets its immediacy from a short directional window slide rather
-    // than animating the text field itself. Mirror that cue from the bottom
-    // Shelf: a small upward lift plus a restrained Pixel-style scale, without
-    // dragging the launcher in from a physical screen edge.
+    // Keep the KRunner-like immediacy, but center is the Meo default: the
+    // surface fades/scales into place without pretending it came from a screen
+    // edge. The optional top placement gets a very short downward settle.
     motionProfile: "pixel"
-    entranceOffset: -16 * MeoTheme.globalScale
+    entranceOffset: placementMode === "top" ? 12 * MeoTheme.globalScale : 0
     entranceScale: 0.975
-    transformOrigin: Item.Bottom
+    transformOrigin: placementMode === "top" ? Item.Top : Item.Center
 
     Behavior on height {
         enabled: !MeoTheme.reduceMotion
@@ -97,6 +126,28 @@ MeoMotionPopup {
             easing.type: Easing.BezierSpline
             easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
         }
+    }
+
+    function toggleFullLauncher() {
+        quickSearchMode = false
+        if (opened || visible) {
+            close()
+        } else {
+            requestOpen()
+        }
+    }
+
+    function openQuickSearch() {
+        // TODO(MeoKDE shortcut integration): route Alt+Space here once the
+        // shell-wide shortcut owner is wired. Do not introduce a second runner
+        // process; this mode intentionally reuses KRunner/Kicker and this popup.
+        quickSearchMode = true
+        searchField.text = ""
+        if (opened || visible) {
+            searchField.forceSearchFocus()
+            return
+        }
+        requestOpen()
     }
 
     function refreshModels(force) {
@@ -365,6 +416,8 @@ MeoMotionPopup {
             MeoSearchBar {
                 id: searchField
                 Layout.fillWidth: true
+                Layout.maximumWidth: 640 * MeoTheme.globalScale
+                Layout.alignment: Qt.AlignHCenter
                 visualStyle: "launcher"
                 placeholder: MeoI18n.translator.i18n("Search apps, files, settings and more…")
                 trailingIcon: ""
@@ -389,7 +442,7 @@ MeoMotionPopup {
             }
 
             RowLayout {
-                visible: !launcherPopup.searching
+                visible: !launcherPopup.searching && !launcherPopup.quickSearchMode
                 Layout.fillWidth: true
                 Layout.preferredHeight: visible ? 40 * MeoTheme.globalScale : 0
                 spacing: MeoTheme.space8
@@ -442,6 +495,7 @@ MeoMotionPopup {
 
             Item {
                 id: paneStage
+                visible: !launcherPopup.quickSearchMode || launcherPopup.searching
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
