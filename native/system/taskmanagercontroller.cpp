@@ -193,7 +193,7 @@ quint64 scaledDrmValue(const QByteArray &valueField)
 
 QPair<quint64, quint64> readProcessDrmStats(qint64 pid)
 {
-    quint64 engineNanoseconds = 0;
+    QHash<QByteArray, quint64> engineTotals;
     quint64 vramBytes = 0;
     QSet<QByteArray> seenClients;
     QDir fdinfo(QStringLiteral("/proc/%1/fdinfo").arg(pid));
@@ -227,13 +227,17 @@ QPair<quint64, quint64> readProcessDrmStats(qint64 pid)
             const QByteArray key = line.left(colon).trimmed();
             const QByteArray value = line.mid(colon + 1).trimmed();
             if (key.startsWith("drm-engine-")) {
-                engineNanoseconds += scaledDrmValue(value);
+                engineTotals[key] = engineTotals.value(key) + scaledDrmValue(value);
             } else if (key == "drm-memory-vram" || key == "drm-memory-gtt") {
                 vramBytes += scaledDrmValue(value);
             }
         }
     }
-    return {engineNanoseconds, vramBytes};
+    quint64 busiestEngineNanoseconds = 0;
+    for (auto it = engineTotals.cbegin(); it != engineTotals.cend(); ++it) {
+        busiestEngineNanoseconds = std::max(busiestEngineNanoseconds, it.value());
+    }
+    return {busiestEngineNanoseconds, vramBytes};
 }
 
 int socketCountForPid(qint64 pid)
