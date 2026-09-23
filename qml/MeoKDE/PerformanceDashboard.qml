@@ -186,7 +186,10 @@ Item {
                                 shape: "pill"
                                 selected: MeoSystem.Performance.refreshInterval === modelData
                                 elevated: selected
-                                onClicked: MeoSystem.Performance.refreshInterval = modelData
+                                onClicked: {
+                                    MeoSystem.Performance.refreshInterval = modelData
+                                    MeoSystem.Tasks.refreshInterval = modelData
+                                }
                             }
                         }
                     }
