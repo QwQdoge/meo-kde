@@ -7,6 +7,7 @@ Item {
     id: root
 
     property string selectedUnit: ""
+    property string selectedScope: ""
     property string stateFilter: "all"
     property string scopeFilter: "all"
     property string sortProperty: "unit"
@@ -54,7 +55,8 @@ Item {
                              ? MeoI18n.translator.i18n("Failed")
                              : MeoI18n.translator.i18n("Stopped"),
                 startupText: service.enabledState || "—",
-                selected: (service.unit || "") === root.selectedUnit,
+                selected: (service.unit || "") === root.selectedUnit
+                          && scope === root.selectedScope,
                 enabled: true
             })
         }
@@ -72,7 +74,8 @@ Item {
     function selectedService() {
         const source = MeoSystem.Tasks.services || []
         for (let i = 0; i < source.length; ++i) {
-            if (source[i].unit === selectedUnit)
+            if (source[i].unit === selectedUnit
+                    && String(source[i].scope || "user") === selectedScope)
                 return source[i]
         }
         return null
@@ -208,8 +211,10 @@ Item {
                         root.sortAscending = ascending
                     }
                     onRowActivated: function(index, row) {
-                        if (row)
+                        if (row) {
                             root.selectedUnit = row.unit
+                            root.selectedScope = row.scope
+                        }
                     }
                 }
 
