@@ -240,18 +240,82 @@ QPair<quint64, quint64> readProcessDrmStats(qint64 pid)
     return {busiestEngineNanoseconds, vramBytes};
 }
 
-int socketCountForPid(qint64 pid)
+QSet<quint64> socketInodesForPid(qint64 pid)
 {
-    int count = 0;
+    QSet<quint64> inodes;
     QDir fd(QStringLiteral("/proc/%1/fd").arg(pid));
-    const QStringList entries = fd.entryList(QDir::Files | QDir::System | QDir::NoDotAndDotDot, QDir::Name);
+    const QStringList entries =
+        fd.entryList(QDir::Files | QDir::System | QDir::NoDotAndDotDot, QDir::Name);
     for (const QString &entry : entries) {
         const QString target = QFileInfo(fd.filePath(entry)).symLinkTarget();
-        if (target.startsWith(QStringLiteral("socket:["))) {
-            ++count;
+        if (!target.startsWith(QStringLiteral("socket:["))
+            || !target.endsWith(QLatin1Char(']'))) {
+            continue;
+        }
+        bool ok = false;
+        const quint64 inode =
+            target.mid(8, target.size() - 9).toULongLong(&ok);
+        if (ok) {
+            inodes.insert(inode);
         }
     }
-    return count;
+    return inodes;
+}
+
+int socketCountForPid(qint64 pid)
+{
+    return socketInodesForPid(pid).size();
+}
+
+QVariantMap socketProtocolSummary(qint64 pid)
+{
+    const QSet<quint64> inodes = socketInodesForPid(pid);
+    QVariantMap summary{
+        {QStringLiteral("tcp"), 0},
+        {QStringLiteral("tcpEstablished"), 0},
+        {QStringLiteral("tcpListen"), 0},
+        {QStringLiteral("udp"), 0},
+    };
+    if (inodes.isEmpty()) {
+        return summary;
+    }
+
+    auto scan = [&](const QString &path, bool tcp) {
+        const QList<QByteArray> lines = readBytes(path).split('\n');
+        for (int lineIndex = 1; lineIndex < lines.size(); ++lineIndex) {
+            const QList<QByteArray> fields = lines.at(lineIndex).simplified().split(' ');
+            if (fields.size() < 10) {
+                continue;
+            }
+            bool inodeOk = false;
+            const quint64 inode = fields.at(9).toULongLong(&inodeOk);
+            if (!inodeOk || !inodes.contains(inode)) {
+                continue;
+            }
+
+            if (tcp) {
+                summary[QStringLiteral("tcp")] =
+                    summary.value(QStringLiteral("tcp")).toInt() + 1;
+                const QByteArray state = fields.at(3);
+                if (state == "01") {
+                    summary[QStringLiteral("tcpEstablished")] =
+                        summary.value(QStringLiteral("tcpEstablished")).toInt() + 1;
+                } else if (state == "0A") {
+                    summary[QStringLiteral("tcpListen")] =
+                        summary.value(QStringLiteral("tcpListen")).toInt() + 1;
+                }
+            } else {
+                summary[QStringLiteral("udp")] =
+                    summary.value(QStringLiteral("udp")).toInt() + 1;
+            }
+        }
+    };
+
+    scan(QStringLiteral("/proc/net/tcp"), true);
+    scan(QStringLiteral("/proc/net/tcp6"), true);
+    scan(QStringLiteral("/proc/net/udp"), false);
+    scan(QStringLiteral("/proc/net/udp6"), false);
+    return summary;
 }
 
 QString usernameForUid(qint64 uid, QHash<qint64, QString> &cache)
@@ -1142,6 +1206,15 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
                     selected.value(QStringLiteral("state")).toString() == QStringLiteral("T")
                     || selected.value(QStringLiteral("state")).toString() == QStringLiteral("t"));
     selected.insert(QStringLiteral("socketCount"), socketCountForPid(m_selectedPid));
+    const QVariantMap socketSummary = socketProtocolSummary(m_selectedPid);
+    selected.insert(QStringLiteral("tcpSocketCount"),
+                    socketSummary.value(QStringLiteral("tcp")));
+    selected.insert(QStringLiteral("tcpEstablishedCount"),
+                    socketSummary.value(QStringLiteral("tcpEstablished")));
+    selected.insert(QStringLiteral("tcpListenCount"),
+                    socketSummary.value(QStringLiteral("tcpListen")));
+    selected.insert(QStringLiteral("udpSocketCount"),
+                    socketSummary.value(QStringLiteral("udp")));
     selected.insert(QStringLiteral("networkThroughputAvailable"), false);
     selected.insert(QStringLiteral("networkNote"),
                     QStringLiteral("Linux does not expose generic per-process byte throughput in /proc; sockets are shown without fabricated bandwidth."));
