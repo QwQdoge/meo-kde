@@ -29,6 +29,21 @@ Item {
         return rate < 1024 ? rate.toFixed(0) + " B/s" : formatBytes(rate) + "/s"
     }
 
+    function formatDuration(value) {
+        const total = Math.max(0, Math.floor(Number(value) || 0))
+        const days = Math.floor(total / 86400)
+        const hours = Math.floor((total % 86400) / 3600)
+        const minutes = Math.floor((total % 3600) / 60)
+        const seconds = total % 60
+        if (days > 0)
+            return days + "d " + hours + "h"
+        if (hours > 0)
+            return hours + "h " + minutes + "m"
+        if (minutes > 0)
+            return minutes + "m " + seconds + "s"
+        return seconds + "s"
+    }
+
     function affinityContains(cpu) {
         if (!root.process || !root.process.cpuAffinity)
             return false
@@ -344,8 +359,9 @@ Item {
                     title: "CPU"
                     iconName: "memory"
                     valueText: Number(root.process.cpu || 0).toFixed(1) + "%"
-                    supportingText: MeoI18n.translator.i18n("%1 threads · nice %2")
-                                    .arg(root.process.threads || 0).arg(root.process.nice || 0)
+                    supportingText: MeoI18n.translator.i18n("%1 threads · CPU time %2")
+                                    .arg(root.process.threads || 0)
+                                    .arg(root.formatDuration(root.process.cpuTimeSeconds))
                     progress: Math.min(100, Number(root.process.cpu || 0))
                 }
 
@@ -362,6 +378,10 @@ Item {
                     iconName: "hard_drive"
                     valueText: "R " + root.formatRate(root.process.diskReadBytesPerSecond)
                     supportingText: "W " + root.formatRate(root.process.diskWriteBytesPerSecond)
+                                    + " · "
+                                    + MeoI18n.translator.i18n("Total %1 / %2")
+                                        .arg(root.formatBytes(root.process.diskReadBytesTotal))
+                                        .arg(root.formatBytes(root.process.diskWriteBytesTotal))
                     progress: -1
                 }
 
@@ -389,11 +409,14 @@ Item {
                     title: MeoI18n.translator.i18n("Process")
                     iconName: "account_tree"
                     valueText: MeoI18n.translator.i18n("Parent %1").arg(root.process.parentPid || 0)
-                    supportingText: root.process.category === "app"
-                                    ? MeoI18n.translator.i18n("Application")
-                                    : root.process.category === "system"
-                                      ? MeoI18n.translator.i18n("System process")
-                                      : MeoI18n.translator.i18n("Background process")
+                    supportingText: (root.process.category === "app"
+                                     ? MeoI18n.translator.i18n("Application")
+                                     : root.process.category === "system"
+                                       ? MeoI18n.translator.i18n("System process")
+                                       : MeoI18n.translator.i18n("Background process"))
+                                    + " · "
+                                    + MeoI18n.translator.i18n("Running %1")
+                                        .arg(root.formatDuration(root.process.elapsedSeconds))
                     progress: -1
                 }
 
