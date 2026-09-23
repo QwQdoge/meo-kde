@@ -62,6 +62,9 @@ PlasmoidItem {
                 canAdjustVolume: false
                 showVolume: false
                 showSecondaryActions: false
+                showFavoriteAction: false
+                showOutputAction: false
+                enabled: MeoSystem.Media.controllable
                 onPlayRequested: MeoSystem.Media.playPause()
                 onPauseRequested: MeoSystem.Media.playPause()
                 onPreviousRequested: MeoSystem.Media.previous()
