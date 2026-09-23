@@ -51,6 +51,8 @@ Item {
 
         if (currentPage === 0) {
             MeoSystem.Tasks.subscribe(tasksClientId, ["processes"])
+            MeoSystem.Performance.subscribe(performanceClientId,
+                ["cpu", "memory", "network", "disk"])
         } else if (currentPage === 1) {
             MeoSystem.Performance.subscribe(performanceClientId,
                 ["cpu", "memory", "network", "disk", "gpu", "system"])
