@@ -486,7 +486,8 @@ void TaskManagerController::rebuildDesktopAppIndex()
                    && !command.constFirst().startsWith('/')) {
                 command.removeFirst();
             }
-            if (!command.isEmpty() && command.constFirst() == QStringLiteral("env")) {
+            if (!command.isEmpty()
+                && QFileInfo(command.constFirst()).fileName() == QStringLiteral("env")) {
                 command.removeFirst();
                 while (!command.isEmpty() && command.constFirst().contains('=')) {
                     command.removeFirst();
@@ -1010,6 +1011,27 @@ bool TaskManagerController::setProcessEfficiency(qint64 pid, bool enabled)
 
 void TaskManagerController::refreshStartupApps()
 {
+    const QString currentDesktopValue = qEnvironmentVariable("XDG_CURRENT_DESKTOP");
+    QStringList currentDesktops = currentDesktopValue.split(':', Qt::SkipEmptyParts);
+    for (QString &desktop : currentDesktops) {
+        desktop = desktop.trimmed();
+    }
+    if (currentDesktops.isEmpty()) {
+        currentDesktops = {QStringLiteral("KDE")};
+    }
+
+    auto desktopListContainsCurrent = [&currentDesktops](const QString &value) {
+        const QStringList entries = value.split(';', Qt::SkipEmptyParts);
+        for (const QString &entry : entries) {
+            for (const QString &desktop : currentDesktops) {
+                if (entry.trimmed().compare(desktop, Qt::CaseInsensitive) == 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     const QString userConfig = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
     const QString userDir = QDir(userConfig).filePath(QStringLiteral("autostart"));
     QHash<QString, QString> userPaths;
@@ -1059,7 +1081,27 @@ void TaskManagerController::refreshStartupApps()
         const QString comment = desktopEntryValue(content, "Comment");
         const bool hidden = desktopEntryValue(content, "Hidden").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0;
         const QString gnomeEnabled = desktopEntryValue(content, "X-GNOME-Autostart-enabled");
-        const bool enabled = !hidden && gnomeEnabled.compare(QStringLiteral("false"), Qt::CaseInsensitive) != 0;
+        const QString onlyShowIn = desktopEntryValue(content, "OnlyShowIn");
+        const QString notShowIn = desktopEntryValue(content, "NotShowIn");
+        const QString tryExec = desktopEntryValue(content, "TryExec");
+
+        bool eligible = true;
+        if (!onlyShowIn.isEmpty() && !desktopListContainsCurrent(onlyShowIn)) {
+            eligible = false;
+        }
+        if (!notShowIn.isEmpty() && desktopListContainsCurrent(notShowIn)) {
+            eligible = false;
+        }
+        if (!tryExec.isEmpty()
+            && QStandardPaths::findExecutable(QProcess::splitCommand(tryExec).value(0)).isEmpty()) {
+            eligible = false;
+        }
+        if (!eligible) {
+            continue;
+        }
+
+        const bool enabled = !hidden
+            && gnomeEnabled.compare(QStringLiteral("false"), Qt::CaseInsensitive) != 0;
 
         QVariantMap app{
             {QStringLiteral("id"), id},
