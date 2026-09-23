@@ -860,7 +860,11 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         groupMap.insert(key, group);
     }
 
-    m_processGroups = groupMap.values();
+    m_processGroups.clear();
+    m_processGroups.reserve(groupMap.size());
+    for (auto it = groupMap.cbegin(); it != groupMap.cend(); ++it) {
+        m_processGroups.push_back(it.value());
+    }
     std::sort(m_processGroups.begin(), m_processGroups.end(),
               [](const QVariant &left, const QVariant &right) {
         const QVariantMap a = left.toMap();
