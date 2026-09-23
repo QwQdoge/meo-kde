@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="Appearance">
+    <entry name="scalePercent" type="Int">
+      <label>Shelf item and surface scale, in percent.</label>
+      <default>100</default>
+    </entry>
+    <entry name="surfaceStyle" type="String">
+      <label>Shelf surface style: theme, flat, tonal, or translucent.</label>
+      <default>theme</default>
+    </entry>
+    <entry name="surfaceOpacityPercent" type="Int">
+      <label>Shelf surface opacity, in percent.</label>
+      <default>100</default>
+    </entry>
+    <entry name="showLauncher" type="Bool">
+      <label>Show the application launcher button.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showRunningIndicators" type="Bool">
+      <label>Show running and active application indicators.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showTooltips" type="Bool">
+      <label>Show application tooltips on hover.</label>
+      <default>true</default>
+    </entry>
+    <entry name="launcherShowRecent" type="Bool">
+      <label>Show recent applications and documents in the launcher.</label>
+      <default>true</default>
+    </entry>
+    <entry name="launcherColumns" type="Int">
+      <label>Number of columns in the application launcher.</label>
+      <default>5</default>
+    </entry>
+    <entry name="launcherScalePercent" type="Int">
+      <label>Launcher popup size scale, in percent.</label>
+      <default>100</default>
+    </entry>
+  </group>
+</kcfg>
