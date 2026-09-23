@@ -431,6 +431,7 @@ Item {
                 MeoProgressBar {
                     Layout.fillWidth: true
                     value: Math.max(0, Math.min(100, Number(coreTile.core.usage || 0))) / 100
+                    wavy: true
                 }
 
                 MeoText {
@@ -522,6 +523,7 @@ Item {
                 visible: Number(gpuTile.gpu.usage) >= 0
                 value: Math.max(0, Math.min(100, Number(gpuTile.gpu.usage))) / 100
                 activeColor: MeoTheme.tertiary
+                wavy: true
             }
 
             MeoText {
