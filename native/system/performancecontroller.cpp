@@ -102,6 +102,13 @@ double cpuTemperature()
     return fallback;
 }
 
+double cpuFrequencyMHzForCore(int core)
+{
+    const qint64 khz = readInteger(
+        QStringLiteral("/sys/devices/system/cpu/cpu%1/cpufreq/scaling_cur_freq").arg(core));
+    return khz > 0 ? khz / 1000.0 : 0;
+}
+
 double currentCpuFrequencyMHz()
 {
     QDir cpuRoot(QStringLiteral("/sys/devices/system/cpu"));
@@ -228,6 +235,7 @@ double PerformanceController::cpuTemperature() const { return m_cpuTemperature; 
 QString PerformanceController::cpuModel() const { return m_cpuModel; }
 int PerformanceController::logicalCores() const { return m_logicalCores; }
 QVariantList PerformanceController::cpuHistory() const { return m_cpuHistory; }
+QVariantList PerformanceController::cpuCores() const { return m_cpuCores; }
 double PerformanceController::memoryUsage() const { return m_memoryUsage; }
 qint64 PerformanceController::memoryUsedBytes() const { return m_memoryUsedBytes; }
 qint64 PerformanceController::memoryTotalBytes() const { return m_memoryTotalBytes; }
@@ -456,24 +464,29 @@ void PerformanceController::sampleCpu()
     if (lines.isEmpty()) {
         return;
     }
-    const QList<QByteArray> fields = lines.constFirst().simplified().split(' ');
-    if (fields.size() < 5 || fields.constFirst() != "cpu") {
+
+    auto parseSnapshot = [](const QList<QByteArray> &fields) {
+        CpuSnapshot snapshot;
+        for (int index = 1; index < fields.size(); ++index) {
+            bool ok = false;
+            const quint64 value = fields.at(index).toULongLong(&ok);
+            if (!ok) {
+                continue;
+            }
+            snapshot.total += value;
+            if (index == 4 || index == 5) {
+                snapshot.idle += value;
+            }
+        }
+        return snapshot;
+    };
+
+    const QList<QByteArray> aggregateFields = lines.constFirst().simplified().split(' ');
+    if (aggregateFields.size() < 5 || aggregateFields.constFirst() != "cpu") {
         return;
     }
 
-    CpuSnapshot current;
-    for (int index = 1; index < fields.size(); ++index) {
-        bool ok = false;
-        const quint64 value = fields.at(index).toULongLong(&ok);
-        if (!ok) {
-            continue;
-        }
-        current.total += value;
-        if (index == 4 || index == 5) {
-            current.idle += value;
-        }
-    }
-
+    const CpuSnapshot current = parseSnapshot(aggregateFields);
     m_lastCpuTotalDelta = 0;
     if (m_lastCpu.total > 0 && current.total > m_lastCpu.total) {
         const quint64 totalDelta = current.total - m_lastCpu.total;
@@ -485,6 +498,56 @@ void PerformanceController::sampleCpu()
         }
     }
     m_lastCpu = current;
+
+    QVariantList cores;
+    static const QRegularExpression cpuLine(QStringLiteral("^cpu(\\d+)$"));
+    for (const QByteArray &line : lines) {
+        const QList<QByteArray> fields = line.simplified().split(' ');
+        if (fields.size() < 5) {
+            continue;
+        }
+        const QString label = QString::fromLatin1(fields.constFirst());
+        const QRegularExpressionMatch match = cpuLine.match(label);
+        if (!match.hasMatch()) {
+            continue;
+        }
+
+        bool indexOk = false;
+        const int coreIndex = match.captured(1).toInt(&indexOk);
+        if (!indexOk) {
+            continue;
+        }
+
+        const CpuSnapshot coreNow = parseSnapshot(fields);
+        const CpuSnapshot previous = m_lastCoreCpu.value(coreIndex);
+        double usage = 0;
+        if (previous.total > 0 && coreNow.total > previous.total) {
+            const quint64 totalDelta = coreNow.total - previous.total;
+            const quint64 idleDelta = coreNow.idle >= previous.idle
+                ? coreNow.idle - previous.idle : 0;
+            if (totalDelta > 0) {
+                usage = 100.0 * static_cast<double>(totalDelta - std::min(idleDelta, totalDelta))
+                    / static_cast<double>(totalDelta);
+            }
+        }
+        m_lastCoreCpu.insert(coreIndex, coreNow);
+
+        QVariantList history = m_coreHistories.value(coreIndex);
+        if (wantsModule(QStringLiteral("cpu"))) {
+            appendHistory(history, usage);
+            m_coreHistories.insert(coreIndex, history);
+        }
+
+        cores.push_back(QVariantMap{
+            {QStringLiteral("index"), coreIndex},
+            {QStringLiteral("label"), QStringLiteral("CPU %1").arg(coreIndex)},
+            {QStringLiteral("usage"), usage},
+            {QStringLiteral("frequencyMHz"), cpuFrequencyMHzForCore(coreIndex)},
+            {QStringLiteral("history"), history},
+        });
+    }
+    m_cpuCores = cores;
+
     m_cpuFrequencyMHz = currentCpuFrequencyMHz();
     m_cpuTemperature = cpuTemperature();
     if (wantsModule(QStringLiteral("cpu"))) {
