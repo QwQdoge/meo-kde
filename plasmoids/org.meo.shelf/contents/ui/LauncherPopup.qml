@@ -36,15 +36,19 @@ MeoMotionPopup {
     readonly property real availableLauncherHeight: Math.max(
         360 * MeoTheme.globalScale,
         Screen.height - ShellMetrics.shelfPanelHeight - 24 * MeoTheme.globalScale)
+    // Keep the surface compact enough to feel like Caelestia rather than a
+    // full application window, but leave enough room for Plasma's richer
+    // KRunner results and a dense all-apps grid.
     readonly property real desiredLauncherHeight: searching
-                                                  ? 584 * MeoTheme.globalScale
+                                                  ? 612 * MeoTheme.globalScale
                                                   : browseMode === 0
-                                                    ? 520 * MeoTheme.globalScale
-                                                    : 640 * MeoTheme.globalScale
+                                                    ? 548 * MeoTheme.globalScale
+                                                    : 664 * MeoTheme.globalScale
+    readonly property bool compactLayout: width < 620 * MeoTheme.globalScale
 
     y: -height - ShellMetrics.popupGap
     x: (parent.width - width) / 2
-    width: Math.min(680 * MeoTheme.globalScale,
+    width: Math.min(736 * MeoTheme.globalScale,
                     Screen.width - 24 * MeoTheme.globalScale)
     height: Math.min(desiredLauncherHeight, availableLauncherHeight)
     modal: false
@@ -296,26 +300,55 @@ MeoMotionPopup {
                 }
             }
 
-            MeoTabs {
-                id: modeTabs
+            RowLayout {
                 visible: !launcherPopup.searching
                 Layout.fillWidth: true
-                Layout.preferredHeight: visible ? implicitHeight : 0
-                model: [
-                    {
-                        "label": MeoI18n.translator.i18n("Home"),
-                        "icon": "home"
-                    },
-                    {
-                        "label": MeoI18n.translator.i18n("Apps"),
-                        "icon": "apps"
+                Layout.preferredHeight: visible ? 40 * MeoTheme.globalScale : 0
+                spacing: MeoTheme.space8
+
+                MeoSegmentedButtons {
+                    id: modeTabs
+                    Layout.preferredWidth: Math.min(
+                        360 * MeoTheme.globalScale,
+                        launcherContent.width - 120 * MeoTheme.globalScale)
+                    Layout.alignment: Qt.AlignLeft
+                    size: "s"
+                    accessibleName: MeoI18n.translator.i18n("Launcher view")
+                    model: [
+                        {
+                            "label": MeoI18n.translator.i18n("Home"),
+                            "icon": "home"
+                        },
+                        {
+                            "label": MeoI18n.translator.i18n("All apps"),
+                            "icon": "apps"
+                        }
+                    ]
+                    currentIndex: launcherPopup.browseMode
+                    onSelected: function(index, data) {
+                        launcherPopup.browseMode = index
+                        Qt.callLater(function() {
+                            if (paneLoader.item
+                                    && typeof paneLoader.item.focusFirst === "function"
+                                    && !searchField.activeFocus)
+                                paneLoader.item.focusFirst()
+                        })
                     }
-                ]
-                currentIndex: launcherPopup.browseMode
-                type: "primary"
-                style: "expressive"
-                onClicked: function(index) {
-                    launcherPopup.browseMode = index
+                }
+
+                Item { Layout.fillWidth: true }
+
+                MeoText {
+                    text: launcherPopup.browseMode === 0
+                          ? MeoI18n.translator.i18n("Pinned + recent")
+                          : (launcherPopup.allAppsModel
+                             ? MeoI18n.translator.i18n("%1 apps").arg(
+                                   launcherPopup.allAppsModel.count)
+                             : MeoI18n.translator.i18n("Loading…"))
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    horizontalAlignment: Text.AlignRight
                 }
             }
 
@@ -507,7 +540,7 @@ MeoMotionPopup {
                 MeoText {
                     Layout.fillWidth: true
                     visible: searchResultList.count > 0
-                    text: MeoI18n.translator.i18n("↑↓ Navigate   Enter Open   Right-click More")
+                    text: MeoI18n.translator.i18n("↑↓ Navigate   Enter Open   Esc Clear   Menu / Right-click More")
                     typeRole: "label"
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
@@ -855,10 +888,10 @@ MeoMotionPopup {
                     Layout.fillHeight: true
                     clip: true
                     readonly property int columnCount: Math.max(
-                        4,
+                        launcherPopup.compactLayout ? 4 : 5,
                         Math.floor(width / (104 * MeoTheme.globalScale)))
                     cellWidth: width / columnCount
-                    cellHeight: 100 * MeoTheme.globalScale
+                    cellHeight: 104 * MeoTheme.globalScale
                     model: launcherPopup.allAppsModel
                     currentIndex: count > 0 ? 0 : -1
                     keyNavigationWraps: false
@@ -959,7 +992,7 @@ MeoMotionPopup {
                 MeoText {
                     Layout.fillWidth: true
                     visible: launcherPopup.allAppsModel !== null
-                    text: MeoI18n.translator.i18n("Arrow keys Navigate   Enter Open   Right-click More")
+                    text: MeoI18n.translator.i18n("Arrow keys Navigate   Enter Open   Menu / Right-click More")
                     typeRole: "label"
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
