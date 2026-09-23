@@ -17,6 +17,7 @@ private slots:
                              {QStringLiteral("cpu"),
                               QStringLiteral("memory"),
                               QStringLiteral("disk"),
+                              QStringLiteral("network"),
                               QStringLiteral("system"),
                               QStringLiteral("processes")});
         QVERIFY(controller.monitoring());
@@ -32,9 +33,16 @@ private slots:
         QVERIFY(controller.cpuCores().size() <= controller.logicalCores());
         QVERIFY(controller.memoryTotalBytes() > 0);
         QVERIFY(controller.memoryUsedBytes() >= 0);
+        QVERIFY(controller.memoryAvailableBytes() >= 0);
+        QVERIFY(controller.memoryCachedBytes() >= 0);
+        QVERIFY(controller.memoryBuffersBytes() >= 0);
+        QVERIFY(controller.memorySharedBytes() >= 0);
+        QVERIFY(controller.memoryAvailableBytes() <= controller.memoryTotalBytes());
         QVERIFY(controller.memoryUsage() >= 0.0);
         QVERIFY(controller.memoryUsage() <= 100.0);
         QVERIFY(controller.storageTotalBytes() >= 0);
+        QVERIFY(controller.networkInterfaces().size() >= 0);
+        QVERIFY(controller.disks().size() >= 0);
         QVERIFY(controller.uptimeSeconds() >= 0);
         QVERIFY(controller.processCount() > 0);
         QVERIFY(!controller.processes().isEmpty());
