@@ -13,7 +13,6 @@ KCM.SimpleKCM {
     property alias cfg_density: density.currentValue
     property alias cfg_surfaceStyle: surfaceStyle.currentValue
     property alias cfg_surfaceOpacityPercent: surfaceOpacity.value
-    property alias cfg_motionProfile: motionProfile.currentValue
     property alias cfg_showUnreadBadge: showUnreadBadge.checked
     property alias cfg_showJobs: showJobs.checked
     property alias cfg_showNotificationHistory: notificationHistory.checked
@@ -91,12 +90,6 @@ KCM.SimpleKCM {
             model: [{ text: MeoI18n.translator.i18n("Follow theme"), value: "theme" }, { text: MeoI18n.translator.i18n("Flat"), value: "flat" }, { text: MeoI18n.translator.i18n("Tonal"), value: "tonal" }, { text: MeoI18n.translator.i18n("Translucent"), value: "translucent" }]
         }
         MeoSpinBox { id: surfaceOpacity; from: 70; to: 100; stepSize: 5; Kirigami.FormData.label: MeoI18n.translator.i18n("Surface opacity:"); textFromValue: function(value) { return MeoI18n.translator.i18n("%1%", value) } }
-        MeoExposedDropdown {
-            id: motionProfile
-            Kirigami.FormData.label: MeoI18n.translator.i18n("Motion:")
-            textRole: "text"; valueRole: "value"
-            model: [{ text: MeoI18n.translator.i18n("Calm"), value: "calm" }, { text: MeoI18n.translator.i18n("Pixel"), value: "pixel" }, { text: MeoI18n.translator.i18n("Playful"), value: "playful" }]
-        }
         MeoCheckbox {
             id: showNotifications
             text: MeoI18n.translator.i18n("Show notifications")
