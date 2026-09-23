@@ -138,6 +138,7 @@ Item {
 
                     MeoChip {
                         visible: MeoSystem.Platform.powerProfilesAvailable
+                                 && root.width >= 600 * root.scaleFactor
                         label: root.profileLabel(MeoSystem.Platform.activePowerProfile)
                         leadingIcon: root.profileIcon(MeoSystem.Platform.activePowerProfile)
                         type: "assist"
