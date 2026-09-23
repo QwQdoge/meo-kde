@@ -13,7 +13,12 @@
 #include <QtGlobal>
 
 #include <algorithm>
+#include <cerrno>
+#include <csignal>
 #include <cmath>
+#include <cstring>
+#include <pwd.h>
+#include <sys/resource.h>
 #include <unistd.h>
 
 namespace
@@ -255,6 +260,8 @@ int PerformanceController::processCount() const { return m_processCount; }
 QString PerformanceController::systemSummary() const { return m_systemSummary; }
 QVariantList PerformanceController::topCpuProcesses() const { return m_topCpuProcesses; }
 QVariantList PerformanceController::topMemoryProcesses() const { return m_topMemoryProcesses; }
+QVariantList PerformanceController::processes() const { return m_processes; }
+QString PerformanceController::processActionError() const { return m_processActionError; }
 
 void PerformanceController::subscribe(const QString &clientId, const QStringList &modules)
 {
@@ -368,6 +375,79 @@ void PerformanceController::refreshNow()
         sampleProcesses();
     }
     Q_EMIT metricsChanged();
+}
+
+bool PerformanceController::terminateProcess(qint64 pid, bool force)
+{
+    if (pid <= 1 || pid == static_cast<qint64>(getpid())) {
+        setProcessActionError(QStringLiteral("This process cannot be ended from Meo System Monitor."));
+        return false;
+    }
+
+    const QString procPath = QStringLiteral("/proc/%1").arg(pid);
+    if (!QFileInfo::exists(procPath)) {
+        setProcessActionError(QStringLiteral("The process has already exited."));
+        return false;
+    }
+
+    const int signal = force ? SIGKILL : SIGTERM;
+    errno = 0;
+    if (::kill(static_cast<pid_t>(pid), signal) != 0) {
+        setProcessActionError(QStringLiteral("Could not end process %1: %2")
+                                  .arg(pid)
+                                  .arg(QString::fromLocal8Bit(std::strerror(errno))));
+        return false;
+    }
+
+    setProcessActionError({});
+    Q_EMIT processActionCompleted(pid, force ? QStringLiteral("force-stop")
+                                              : QStringLiteral("terminate"));
+    QTimer::singleShot(150, this, [this]() {
+        if (wantsModule(QStringLiteral("processes"))) {
+            refreshNow();
+        }
+    });
+    return true;
+}
+
+bool PerformanceController::setProcessPriority(qint64 pid, int niceValue)
+{
+    if (pid <= 1 || pid == static_cast<qint64>(getpid())) {
+        setProcessActionError(QStringLiteral("This process priority cannot be changed from Meo System Monitor."));
+        return false;
+    }
+
+    const int bounded = qBound(-20, niceValue, 19);
+    errno = 0;
+    if (::setpriority(PRIO_PROCESS, static_cast<id_t>(pid), bounded) != 0) {
+        setProcessActionError(QStringLiteral("Could not change priority for process %1: %2")
+                                  .arg(pid)
+                                  .arg(QString::fromLocal8Bit(std::strerror(errno))));
+        return false;
+    }
+
+    setProcessActionError({});
+    Q_EMIT processActionCompleted(pid, QStringLiteral("priority"));
+    QTimer::singleShot(100, this, [this]() {
+        if (wantsModule(QStringLiteral("processes"))) {
+            refreshNow();
+        }
+    });
+    return true;
+}
+
+void PerformanceController::clearProcessActionError()
+{
+    setProcessActionError({});
+}
+
+void PerformanceController::setProcessActionError(const QString &message)
+{
+    if (m_processActionError == message) {
+        return;
+    }
+    m_processActionError = message;
+    Q_EMIT processActionErrorChanged();
 }
 
 void PerformanceController::sampleCpu()
@@ -781,14 +861,23 @@ void PerformanceController::sampleProcesses()
 {
     struct Sample {
         qint64 pid = 0;
+        qint64 parentPid = 0;
         QString name;
+        QString command;
+        QString user;
+        QString state;
+        qint64 uid = -1;
+        int threads = 0;
+        int niceValue = 0;
         double cpu = 0;
         qint64 memory = 0;
+        bool canControl = false;
     };
 
     QVector<Sample> samples;
     QHash<qint64, quint64> nextTicks;
     const qint64 pageSize = std::max<qint64>(1, sysconf(_SC_PAGESIZE));
+    const uid_t currentUid = geteuid();
     QDir proc(QStringLiteral("/proc"));
     const QStringList entries = proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
     static const QRegularExpression digits(QStringLiteral("^\\d+$"));
@@ -803,7 +892,8 @@ void PerformanceController::sampleProcesses()
             continue;
         }
 
-        const QByteArray stat = readBytes(proc.filePath(entry + QStringLiteral("/stat"))).trimmed();
+        const QString basePath = proc.filePath(entry);
+        const QByteArray stat = readBytes(basePath + QStringLiteral("/stat")).trimmed();
         const int openParen = stat.indexOf('(');
         const int closeParen = stat.lastIndexOf(')');
         if (openParen < 0 || closeParen <= openParen) {
@@ -815,6 +905,8 @@ void PerformanceController::sampleProcesses()
             continue;
         }
 
+        bool parentOk = false;
+        const qint64 parentPid = fields.at(1).toLongLong(&parentOk);
         const quint64 ticks = fields.at(11).toULongLong() + fields.at(12).toULongLong();
         nextTicks.insert(pid, ticks);
         double cpu = 0;
@@ -826,11 +918,66 @@ void PerformanceController::sampleProcesses()
         }
 
         qint64 rssBytes = 0;
-        const QList<QByteArray> statm = readBytes(proc.filePath(entry + QStringLiteral("/statm"))).simplified().split(' ');
+        const QList<QByteArray> statm = readBytes(basePath + QStringLiteral("/statm")).simplified().split(' ');
         if (statm.size() >= 2) {
             rssBytes = static_cast<qint64>(statm.at(1).toULongLong()) * pageSize;
         }
-        samples.push_back(Sample{pid, name, cpu, std::max<qint64>(0, rssBytes)});
+
+        qint64 uid = -1;
+        const QList<QByteArray> statusLines = readBytes(basePath + QStringLiteral("/status")).split('\n');
+        for (const QByteArray &line : statusLines) {
+            if (!line.startsWith("Uid:")) {
+                continue;
+            }
+            const QList<QByteArray> uidFields = line.mid(4).simplified().split(' ');
+            if (!uidFields.isEmpty()) {
+                bool uidOk = false;
+                const qint64 parsedUid = uidFields.constFirst().toLongLong(&uidOk);
+                if (uidOk) {
+                    uid = parsedUid;
+                }
+            }
+            break;
+        }
+
+        QString user = uid >= 0 ? QString::number(uid) : QStringLiteral("?");
+        if (uid >= 0) {
+            if (const passwd *account = getpwuid(static_cast<uid_t>(uid))) {
+                user = QString::fromLocal8Bit(account->pw_name);
+            }
+        }
+
+        QByteArray rawCommand = readBytes(basePath + QStringLiteral("/cmdline"));
+        std::replace(rawCommand.begin(), rawCommand.end(), '\0', ' ');
+        QString command = QString::fromUtf8(rawCommand).simplified();
+        if (command.isEmpty()) {
+            command = name;
+        }
+
+        bool niceOk = false;
+        const int niceValue = fields.at(16).toInt(&niceOk);
+        bool threadsOk = false;
+        const int threads = fields.at(17).toInt(&threadsOk);
+        const QString state = QString::fromLatin1(fields.at(0));
+        const bool canControl = pid > 1
+            && pid != static_cast<qint64>(getpid())
+            && uid >= 0
+            && (currentUid == 0 || static_cast<uid_t>(uid) == currentUid);
+
+        samples.push_back(Sample{
+            pid,
+            parentOk ? parentPid : 0,
+            name,
+            command,
+            user,
+            state,
+            uid,
+            threadsOk ? std::max(0, threads) : 0,
+            niceOk ? niceValue : 0,
+            cpu,
+            std::max<qint64>(0, rssBytes),
+            canControl,
+        });
     }
 
     m_lastProcessTicks = nextTicks;
@@ -858,15 +1005,25 @@ void PerformanceController::sampleProcesses()
         for (const Sample &sample : source) {
             maps.push_back(QVariantMap{
                 {QStringLiteral("pid"), sample.pid},
+                {QStringLiteral("parentPid"), sample.parentPid},
                 {QStringLiteral("name"), sample.name},
+                {QStringLiteral("command"), sample.command},
+                {QStringLiteral("user"), sample.user},
+                {QStringLiteral("uid"), sample.uid},
+                {QStringLiteral("state"), sample.state},
+                {QStringLiteral("threads"), sample.threads},
+                {QStringLiteral("nice"), sample.niceValue},
                 {QStringLiteral("cpu"), sample.cpu},
                 {QStringLiteral("memoryBytes"), sample.memory},
+                {QStringLiteral("canControl"), sample.canControl},
             });
         }
         return maps;
     };
 
-    m_topCpuProcesses = takeProcesses(toMaps(cpuSorted), 10);
+    const QVector<QVariantMap> cpuMaps = toMaps(cpuSorted);
+    m_processes = QVariantList(cpuMaps.cbegin(), cpuMaps.cend());
+    m_topCpuProcesses = takeProcesses(cpuMaps, 10);
     m_topMemoryProcesses = takeProcesses(toMaps(memorySorted), 10);
 }
 
