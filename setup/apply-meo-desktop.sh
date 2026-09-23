@@ -179,6 +179,7 @@ for required in \
   "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time-notifications/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widget.performance/metadata.json" \
   "${repo_root}/assets/wallpapers/installer_background.png"; do
   if [ ! -f "${required}" ]; then
     echo "Required Meo Desktop asset is missing: ${required}" >&2
@@ -218,6 +219,7 @@ runtime_backups=(
   "${data_root}/plasma/plasmoids/org.meo.toptasks|data/plasma/plasmoids/org.meo.toptasks"
   "${data_root}/plasma/plasmoids/org.meo.launcher|data/plasma/plasmoids/org.meo.launcher"
   "${data_root}/plasma/plasmoids/org.meo.quicksettings|data/plasma/plasmoids/org.meo.quicksettings"
+  "${data_root}/plasma/plasmoids/org.meo.widget.performance|data/plasma/plasmoids/org.meo.widget.performance"
   "${data_root}/icons/Meo|data/icons/Meo"
   "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
   "${data_root}/icons/MeoSymbolsDark|data/icons/MeoSymbolsDark"
@@ -380,6 +382,13 @@ for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.n
   run cp -a "${repo_root}/plasmoids/${meo_panel_applet}" \
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"
 done
+
+# Source installs also expose the performance widget. The widget itself is
+# optional on the desktop, but Widget Explorer and the shared performance page
+# must never point at a package that only exists in the Arch package build.
+run rm -rf "${data_root}/plasma/plasmoids/org.meo.widget.performance"
+run cp -a "${repo_root}/plasmoids/org.meo.widget.performance" \
+  "${data_root}/plasma/plasmoids/org.meo.widget.performance"
 
 run cp -a "${meoui_source}/." "${qml_root}/MeoUI/"
 # The QML plugin links against libmeoui.  Keep its runtime next to the module
