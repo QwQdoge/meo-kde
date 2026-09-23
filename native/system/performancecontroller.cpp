@@ -708,23 +708,33 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
         const QString sysPath = QStringLiteral("/sys/class/net/%1").arg(iface);
         const QString state = readText(sysPath + QStringLiteral("/operstate"));
         const qint64 speedMbps = readInteger(sysPath + QStringLiteral("/speed"), -1);
-        const bool wireless = QFileInfo::exists(sysPath + QStringLiteral("/wireless"))
-            || QFileInfo::exists(QStringLiteral("/proc/net/wireless"));
+        const bool wireless = QFileInfo::exists(sysPath + QStringLiteral("/wireless"));
+        const bool physical = QFileInfo::exists(sysPath + QStringLiteral("/device"));
+        const bool active = state == QStringLiteral("up");
+        const bool hasTraffic = rxRate > 0 || txRate > 0;
 
-        interfaces.push_back(QVariantMap{
-            {QStringLiteral("name"), iface},
-            {QStringLiteral("state"), state},
-            {QStringLiteral("up"), state == QStringLiteral("up")},
-            {QStringLiteral("wireless"), wireless
-                && QFileInfo::exists(sysPath + QStringLiteral("/wireless"))},
-            {QStringLiteral("speedMbps"), speedMbps > 0 ? speedMbps : 0},
-            {QStringLiteral("rxBytesPerSecond"), rxRate},
-            {QStringLiteral("txBytesPerSecond"), txRate},
-            {QStringLiteral("rxBytesTotal"), static_cast<qint64>(ifaceRx)},
-            {QStringLiteral("txBytesTotal"), static_cast<qint64>(ifaceTx)},
-            {QStringLiteral("rxHistory"), rxHistory},
-            {QStringLiteral("txHistory"), txHistory},
-        });
+        // Keep the aggregate counters complete, but avoid filling the UI with
+        // disconnected veth/docker bridges. Active VPN/tun interfaces remain
+        // visible because their operstate is up even without a physical device.
+        if (active || hasTraffic || physical || wireless) {
+            interfaces.push_back(QVariantMap{
+                {QStringLiteral("name"), iface},
+                {QStringLiteral("state"), state},
+                {QStringLiteral("up"), active},
+                {QStringLiteral("wireless"), wireless},
+                {QStringLiteral("physical"), physical},
+                {QStringLiteral("kind"), wireless ? QStringLiteral("wifi")
+                    : physical ? QStringLiteral("ethernet")
+                               : QStringLiteral("virtual")},
+                {QStringLiteral("speedMbps"), speedMbps > 0 ? speedMbps : 0},
+                {QStringLiteral("rxBytesPerSecond"), rxRate},
+                {QStringLiteral("txBytesPerSecond"), txRate},
+                {QStringLiteral("rxBytesTotal"), static_cast<qint64>(ifaceRx)},
+                {QStringLiteral("txBytesTotal"), static_cast<qint64>(ifaceTx)},
+                {QStringLiteral("rxHistory"), rxHistory},
+                {QStringLiteral("txHistory"), txHistory},
+            });
+        }
     }
 
     std::sort(interfaces.begin(), interfaces.end(), [](const QVariant &left, const QVariant &right) {
