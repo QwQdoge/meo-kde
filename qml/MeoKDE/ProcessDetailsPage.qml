@@ -509,6 +509,62 @@ Item {
                             onClicked: if (root.process)
                                 MeoSystem.Tasks.openProcessWorkingDirectory(root.process.pid)
                         }
+
+                        MeoButton {
+                            text: MeoI18n.translator.i18n("Copy command")
+                            type: "text"
+                            size: "s"
+                            icon.name: "content_copy"
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.copyProcessCommand(root.process.pid)
+                        }
+
+                        MeoButton {
+                            text: MeoI18n.translator.i18n("Copy path")
+                            type: "text"
+                            size: "s"
+                            icon.name: "content_copy"
+                            enabled: root.process && root.process.executablePath !== ""
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.copyProcessExecutablePath(root.process.pid)
+                        }
+                    }
+
+                    MeoCard {
+                        Layout.fillWidth: true
+                        type: "filled"
+                        radius: MeoTheme.shapeLarge
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: MeoTheme.space12
+                            spacing: MeoTheme.space8
+
+                            MeoText {
+                                text: MeoI18n.translator.i18n("Executable and working directory")
+                                typeRole: "label"
+                                typeSize: "large"
+                                emphasized: true
+                            }
+
+                            MeoText {
+                                Layout.fillWidth: true
+                                text: root.process ? (root.process.executablePath || MeoI18n.translator.i18n("Executable path unavailable")) : ""
+                                typeRole: "body"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                                elide: Text.ElideMiddle
+                            }
+
+                            MeoText {
+                                Layout.fillWidth: true
+                                text: root.process ? (root.process.workingDirectory || MeoI18n.translator.i18n("Working directory unavailable")) : ""
+                                typeRole: "body"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                                elide: Text.ElideMiddle
+                            }
+                        }
                     }
 
                     PopupSectionLabel { sectionText: MeoI18n.translator.i18n("CPU affinity") }
