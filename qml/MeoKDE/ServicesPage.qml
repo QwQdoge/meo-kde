@@ -8,6 +8,8 @@ Item {
 
     property string selectedUnit: ""
     property string stateFilter: "all"
+    property string sortProperty: "unit"
+    property bool sortAscending: true
     readonly property real scaleFactor: MeoTheme.globalScale
 
     function buildRows() {
@@ -47,6 +49,14 @@ Item {
                 enabled: true
             })
         }
+
+        const role = root.sortProperty
+        rows.sort(function(left, right) {
+            const a = String(left[role] || "")
+            const b = String(right[role] || "")
+            const result = a.localeCompare(b)
+            return root.sortAscending ? result : -result
+        })
         return rows
     }
 
@@ -174,6 +184,12 @@ Item {
                     showDividers: false
                     rowHeight: 48 * root.scaleFactor
                     cornerRadius: MeoTheme.shapeLarge
+                    sortProperty: root.sortProperty
+                    sortAscending: root.sortAscending
+                    onSortRequested: function(property, ascending) {
+                        root.sortProperty = property
+                        root.sortAscending = ascending
+                    }
                     onRowActivated: function(index, row) {
                         if (row)
                             root.selectedUnit = row.unit
