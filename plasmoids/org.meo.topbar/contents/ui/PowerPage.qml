@@ -114,7 +114,7 @@ QQC2.ScrollView {
             tone: "info"
         }
 
-        PopupSectionLabel { sectionText: MeoI18n.translator.i18n("Performance") }
+        PopupSectionLabel { sectionText: MeoI18n.translator.i18n("System") }
 
         MeoMotionSurface {
             Layout.fillWidth: true
@@ -131,7 +131,7 @@ QQC2.ScrollView {
                 MeoListItem {
                     Layout.fillWidth: true
                     isDense: true
-                    headline: MeoI18n.translator.i18n("Performance monitor")
+                    headline: MeoI18n.translator.i18n("System monitor")
                     supportingText: MeoI18n.translator.i18n("CPU, GPU, memory, storage, network and processes")
                     leadingIcon: "monitoring"
                     trailingComponent: Component {
