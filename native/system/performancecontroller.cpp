@@ -292,10 +292,10 @@ void PerformanceController::setPaused(bool paused)
         return;
     }
     m_paused = paused;
+    m_rateClock.invalidate();
     if (m_paused) {
         m_refreshTimer.stop();
     } else if (monitoring()) {
-        m_rateClock.restart();
         m_refreshTimer.start();
         refreshNow();
     }
@@ -406,6 +406,9 @@ void PerformanceController::unsubscribe(const QString &clientId)
     if (m_clients.isEmpty()) {
         m_refreshTimer.stop();
         m_rateClock.invalidate();
+        m_lastCpu = {};
+        m_lastCpuTotalDelta = 0;
+        m_lastCoreCpu.clear();
         m_lastNetworkRxBytes = 0;
         m_lastNetworkTxBytes = 0;
         m_haveNetworkSample = false;
