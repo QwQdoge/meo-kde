@@ -589,7 +589,7 @@ Item {
 
         Layout.fillWidth: true
         implicitHeight: 74 * root.scaleFactor
-        type: "filled"
+        type: "outlined"
         radius: MeoTheme.shapeMedium
 
         ColumnLayout {
