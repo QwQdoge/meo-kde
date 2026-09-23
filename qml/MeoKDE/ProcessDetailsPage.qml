@@ -111,6 +111,17 @@ Item {
                 { label: MeoI18n.translator.i18n("Memory"), property: "memoryText", sortable: true }
             ]
         }
+        if (width < 1200 * scaleFactor) {
+            return [
+                { label: MeoI18n.translator.i18n("Name"), property: "name", sortable: true },
+                { label: "PID", property: "pid", sortable: true },
+                { label: MeoI18n.translator.i18n("User"), property: "user", sortable: true },
+                { label: "CPU", property: "cpuText", sortable: true },
+                { label: MeoI18n.translator.i18n("Memory"), property: "memoryText", sortable: true },
+                { label: "Read", property: "readText", sortable: true },
+                { label: "Write", property: "writeText", sortable: true }
+            ]
+        }
         return [
             { label: MeoI18n.translator.i18n("Name"), property: "name", sortable: true },
             { label: "PID", property: "pid", sortable: true },
@@ -403,7 +414,7 @@ Item {
 
                     PopupSectionLabel { sectionText: MeoI18n.translator.i18n("Priority") }
 
-                    RowLayout {
+                    Flow {
                         Layout.fillWidth: true
                         spacing: MeoTheme.space8
 
