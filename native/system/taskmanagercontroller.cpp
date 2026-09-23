@@ -20,6 +20,7 @@
 #include <cstring>
 #include <functional>
 #include <pwd.h>
+#include <sched.h>
 #include <sys/resource.h>
 #include <unistd.h>
 
@@ -269,6 +270,53 @@ bool safeUnitName(const QString &unit)
     static const QRegularExpression pattern(QStringLiteral("^[A-Za-z0-9_.@:+-]+\\.service$"));
     return pattern.match(unit).hasMatch();
 }
+
+qint64 processUid(qint64 pid)
+{
+    const QList<QByteArray> lines =
+        readBytes(QStringLiteral("/proc/%1/status").arg(pid)).split('\n');
+    for (const QByteArray &line : lines) {
+        if (!line.startsWith("Uid:")) {
+            continue;
+        }
+        const QList<QByteArray> fields = line.mid(4).simplified().split(' ');
+        if (fields.isEmpty()) {
+            return -1;
+        }
+        bool ok = false;
+        const qint64 uid = fields.constFirst().toLongLong(&ok);
+        return ok ? uid : -1;
+    }
+    return -1;
+}
+
+bool processOwnedByCurrentUser(qint64 pid)
+{
+    const qint64 uid = processUid(pid);
+    return uid >= 0 && static_cast<uid_t>(uid) == geteuid();
+}
+
+QVariantList processAffinity(qint64 pid)
+{
+    QVariantList result;
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    if (::sched_getaffinity(static_cast<pid_t>(pid), sizeof(set), &set) != 0) {
+        return result;
+    }
+    for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+        if (CPU_ISSET(cpu, &set)) {
+            result.push_back(cpu);
+        }
+    }
+    return result;
+}
+
+int openFileDescriptorCount(qint64 pid)
+{
+    QDir directory(QStringLiteral("/proc/%1/fd").arg(pid));
+    return directory.entryList(QDir::Files | QDir::System | QDir::NoDotAndDotDot).size();
+}
 }
 
 TaskManagerController::TaskManagerController(QObject *parent)
@@ -319,6 +367,7 @@ void TaskManagerController::setRefreshInterval(int interval)
 
 QVariantList TaskManagerController::processes() const { return m_processes; }
 QVariantList TaskManagerController::processTree() const { return m_processTree; }
+QVariantList TaskManagerController::processGroups() const { return m_processGroups; }
 QVariantList TaskManagerController::userSummaries() const { return m_userSummaries; }
 QVariantMap TaskManagerController::selectedProcessDetails() const { return m_selectedProcessDetails; }
 qint64 TaskManagerController::selectedPid() const { return m_selectedPid; }
