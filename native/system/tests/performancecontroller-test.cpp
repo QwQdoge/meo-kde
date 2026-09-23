@@ -74,6 +74,24 @@ private slots:
         QVERIFY(!controller.processActionError().isEmpty());
     }
 
+    void pausesSamplingWithoutDroppingSubscriptions()
+    {
+        PerformanceController controller;
+        controller.subscribe(QStringLiteral("test"),
+                             {QStringLiteral("cpu"), QStringLiteral("memory")});
+        QVERIFY(controller.monitoring());
+        QVERIFY(!controller.paused());
+
+        controller.setPaused(true);
+        QVERIFY(controller.paused());
+        QVERIFY(controller.monitoring());
+        controller.refreshNow();
+        QVERIFY(controller.memoryTotalBytes() > 0);
+
+        controller.setPaused(false);
+        QVERIFY(!controller.paused());
+    }
+
     void boundsRefreshInterval()
     {
         PerformanceController controller;
