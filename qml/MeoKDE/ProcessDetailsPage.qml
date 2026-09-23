@@ -439,6 +439,122 @@ Item {
                 }
             }
 
+            MeoCard {
+                Layout.fillWidth: true
+                visible: root.process && root.process.pid > 0
+                type: "filled"
+                radius: MeoTheme.shapeLargeIncreased
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: MeoTheme.space12
+                    spacing: MeoTheme.space12
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        MeoIcon {
+                            icon: "memory_alt"
+                            size: 22
+                            color: MeoTheme.secondary
+                        }
+
+                        MeoText {
+                            Layout.fillWidth: true
+                            text: MeoI18n.translator.i18n("Process memory")
+                            typeRole: "title"
+                            typeSize: "small"
+                            emphasized: true
+                        }
+
+                        MeoChip {
+                            visible: Number(root.process.swapMemoryBytes || 0) > 0
+                            label: MeoI18n.translator.i18n("Swap %1")
+                                   .arg(root.formatBytes(root.process.swapMemoryBytes))
+                            leadingIcon: "swap_vert"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                        }
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: width >= 760 * root.scaleFactor ? 3 : 2
+                        rowSpacing: MeoTheme.space8
+                        columnSpacing: MeoTheme.space8
+
+                        DetailStat {
+                            label: MeoI18n.translator.i18n("Resident")
+                            value: root.formatBytes(root.process.memoryBytes)
+                        }
+                        DetailStat {
+                            label: MeoI18n.translator.i18n("Peak resident")
+                            value: root.formatBytes(root.process.peakResidentMemoryBytes)
+                        }
+                        DetailStat {
+                            label: MeoI18n.translator.i18n("Virtual")
+                            value: root.formatBytes(root.process.virtualMemoryBytes)
+                        }
+                        DetailStat {
+                            label: MeoI18n.translator.i18n("Anonymous")
+                            value: root.formatBytes(root.process.anonymousMemoryBytes)
+                        }
+                        DetailStat {
+                            label: MeoI18n.translator.i18n("File-backed")
+                            value: root.formatBytes(root.process.fileMemoryBytes)
+                        }
+                        DetailStat {
+                            label: MeoI18n.translator.i18n("Shared")
+                            value: root.formatBytes(root.process.sharedMemoryBytes)
+                        }
+                    }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: MeoTheme.space8
+
+                        MeoChip {
+                            visible: root.process.cgroupPath && root.process.cgroupPath !== ""
+                            label: root.process.cgroupPath
+                            leadingIcon: "account_tree"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                        }
+
+                        MeoChip {
+                            visible: Number(root.process.oomScore) >= 0
+                            label: MeoI18n.translator.i18n("OOM score %1").arg(root.process.oomScore)
+                            leadingIcon: "memory"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                        }
+
+                        MeoChip {
+                            visible: !!root.process.noNewPrivileges
+                            label: MeoI18n.translator.i18n("No new privileges")
+                            leadingIcon: "lock"
+                            type: "assist"
+                            shape: "pill"
+                            elevated: true
+                        }
+
+                        MeoChip {
+                            visible: Number(root.process.seccompMode || 0) > 0
+                            label: root.process.seccompMode === 2
+                                   ? MeoI18n.translator.i18n("Seccomp filter")
+                                   : MeoI18n.translator.i18n("Seccomp")
+                            leadingIcon: "shield"
+                            type: "assist"
+                            shape: "pill"
+                            elevated: true
+                        }
+                    }
+                }
+            }
+
             PopupInlineMessage {
                 Layout.fillWidth: true
                 visible: root.process && !root.process.networkThroughputAvailable
@@ -719,6 +835,37 @@ Item {
         confirmText: MeoI18n.translator.i18n("Force stop")
         cancelText: MeoI18n.translator.i18n("Cancel")
         onConfirmed: if (root.process) MeoSystem.Tasks.terminateProcess(root.process.pid, true)
+    }
+
+    component DetailStat: MeoCard {
+        id: detailStat
+        property string label: ""
+        property string value: ""
+
+        Layout.fillWidth: true
+        implicitHeight: 72 * root.scaleFactor
+        type: "outlined"
+        radius: MeoTheme.shapeMedium
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space8
+            spacing: 0
+
+            MeoText {
+                text: detailStat.value
+                typeRole: "title"
+                typeSize: "small"
+                emphasized: true
+            }
+
+            MeoText {
+                text: detailStat.label
+                typeRole: "label"
+                typeSize: "small"
+                color: MeoTheme.contentOnSurfaceVariant
+            }
+        }
     }
 
     component ResourceTile: MeoCard {
