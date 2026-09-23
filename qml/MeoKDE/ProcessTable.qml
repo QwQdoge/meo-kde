@@ -231,10 +231,11 @@ Item {
             MeoChip {
                 label: MeoI18n.translator.i18n("Process tree")
                 leadingIcon: "account_tree"
-                type: "filter"
+                type: "assist"
                 visualStyle: "outlined"
                 shape: "pill"
                 selected: root.treeMode
+                elevated: root.treeMode
                 onClicked: root.treeMode = !root.treeMode
             }
         }
