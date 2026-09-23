@@ -41,8 +41,19 @@ private slots:
         QVERIFY(controller.memoryUsage() >= 0.0);
         QVERIFY(controller.memoryUsage() <= 100.0);
         QVERIFY(controller.storageTotalBytes() >= 0);
-        QVERIFY(controller.networkInterfaces().size() >= 0);
-        QVERIFY(controller.disks().size() >= 0);
+        if (!controller.networkInterfaces().isEmpty()) {
+            const QVariantMap network = controller.networkInterfaces().constFirst().toMap();
+            QVERIFY(network.contains(QStringLiteral("name")));
+            QVERIFY(network.contains(QStringLiteral("rxBytesPerSecond")));
+            QVERIFY(network.contains(QStringLiteral("txBytesPerSecond")));
+        }
+        if (!controller.disks().isEmpty()) {
+            const QVariantMap disk = controller.disks().constFirst().toMap();
+            QVERIFY(disk.contains(QStringLiteral("name")));
+            QVERIFY(disk.contains(QStringLiteral("usage")));
+            QVERIFY(disk.contains(QStringLiteral("readBytesPerSecond")));
+            QVERIFY(disk.contains(QStringLiteral("writeBytesPerSecond")));
+        }
         QVERIFY(controller.uptimeSeconds() >= 0);
         QVERIFY(controller.processCount() > 0);
         QVERIFY(!controller.processes().isEmpty());
