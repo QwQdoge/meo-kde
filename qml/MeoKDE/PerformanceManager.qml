@@ -128,6 +128,8 @@ Item {
             }
 
             MeoButton {
+                visible: root.currentPage === 0 || root.currentPage === 1
+                         || root.currentPage === 4 || root.currentPage === 5
                 text: root.updatesPaused
                       ? MeoI18n.translator.i18n("Resume")
                       : MeoI18n.translator.i18n("Pause")
