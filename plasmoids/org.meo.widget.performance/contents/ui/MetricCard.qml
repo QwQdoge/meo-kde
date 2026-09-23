@@ -23,7 +23,7 @@ MeoCard {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: MeoTheme.space12
-        spacing: MeoTheme.space6
+        spacing: MeoTheme.space8
 
         RowLayout {
             Layout.fillWidth: true
