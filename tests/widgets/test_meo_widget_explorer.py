@@ -20,6 +20,9 @@ MEO_KDE_QML = REPO_ROOT / "qml/MeoKDE"
 POWER_PAGE = APPLETS / "org.meo.topbar/contents/ui/PowerPage.qml"
 QUICK_SETTINGS = APPLETS / "org.meo.topbar/contents/ui/QuickSettingsCenter.qml"
 SOURCE_INSTALLER = REPO_ROOT / "setup/apply-meo-desktop.sh"
+RESET_INSTALLER = REPO_ROOT / "setup/reset-meo-desktop.sh"
+SYSTEM_CMAKE = REPO_ROOT / "native/system/CMakeLists.txt"
+SYSTEM_MONITOR_DESKTOP = REPO_ROOT / "data/applications/org.meo.systemmonitor.desktop"
 
 
 class MeoWidgetExplorerTests(unittest.TestCase):
@@ -158,6 +161,25 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("drm-engine-", task_backend)
         self.assertIn("networkThroughputAvailable", task_backend)
         self.assertIn("org.meo.widget.performance", installer)
+
+    def test_system_monitor_has_one_shared_standalone_host(self):
+        qmldir = (MEO_KDE_QML / "qmldir").read_text(encoding="utf-8")
+        window = (MEO_KDE_QML / "SystemMonitorWindow.qml").read_text(encoding="utf-8")
+        cmake = SYSTEM_CMAKE.read_text(encoding="utf-8")
+        desktop = SYSTEM_MONITOR_DESKTOP.read_text(encoding="utf-8")
+        installer = SOURCE_INSTALLER.read_text(encoding="utf-8")
+        reset = RESET_INSTALLER.read_text(encoding="utf-8")
+
+        self.assertIn("SystemMonitorWindow 1.0 SystemMonitorWindow.qml", qmldir)
+        self.assertIn("PerformanceManager {", window)
+        self.assertIn("initialPage: 0", window)
+        self.assertIn("meo-system-monitor", cmake)
+        self.assertIn("systemmonitor-main.cpp", cmake)
+        self.assertIn("Exec=meo-system-monitor", desktop)
+        self.assertIn("org.meo.systemmonitor.desktop", installer)
+        self.assertIn("meo-system-monitor", installer)
+        self.assertIn("org.meo.systemmonitor.desktop", reset)
+        self.assertIn("meo-system-monitor", reset)
 
     def test_document_describes_native_plasma_api_and_honest_frame_boundary(self):
         document = PLATFORM_DOC.read_text(encoding="utf-8")
