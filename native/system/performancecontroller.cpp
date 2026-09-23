@@ -1022,7 +1022,11 @@ void PerformanceController::sampleProcesses()
     };
 
     const QVector<QVariantMap> cpuMaps = toMaps(cpuSorted);
-    m_processes = QVariantList(cpuMaps.cbegin(), cpuMaps.cend());
+    m_processes.clear();
+    m_processes.reserve(cpuMaps.size());
+    for (const QVariantMap &process : cpuMaps) {
+        m_processes.push_back(process);
+    }
     m_topCpuProcesses = takeProcesses(cpuMaps, 10);
     m_topMemoryProcesses = takeProcesses(toMaps(memorySorted), 10);
 }
