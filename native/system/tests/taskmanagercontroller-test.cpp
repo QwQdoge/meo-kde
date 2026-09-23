@@ -63,6 +63,23 @@ private slots:
         QVERIFY(!controller.actionError().isEmpty());
     }
 
+    void pausesSamplingWithoutDroppingSubscriptions()
+    {
+        TaskManagerController controller;
+        controller.subscribe(QStringLiteral("test"), {QStringLiteral("processes")});
+        QVERIFY(controller.monitoring());
+        QVERIFY(!controller.paused());
+
+        controller.setPaused(true);
+        QVERIFY(controller.paused());
+        QVERIFY(controller.monitoring());
+        controller.refreshNow();
+        QVERIFY(!controller.processes().isEmpty());
+
+        controller.setPaused(false);
+        QVERIFY(!controller.paused());
+    }
+
     void boundsRefreshInterval()
     {
         TaskManagerController controller;
