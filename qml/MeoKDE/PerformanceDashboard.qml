@@ -817,7 +817,7 @@ Item {
         id: gpuTile
         property var gpu: ({})
 
-        implicitHeight: 214 * root.scaleFactor
+        implicitHeight: 252 * root.scaleFactor
         type: "filled"
         radius: MeoTheme.shapeLargeIncreased
 
@@ -905,6 +905,39 @@ Item {
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
                 elide: Text.ElideRight
+            }
+
+            Flow {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                MeoChip {
+                    visible: Number(gpuTile.gpu.powerWatts || 0) > 0
+                    label: Number(gpuTile.gpu.powerWatts || 0).toFixed(1) + " W"
+                    leadingIcon: "bolt"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
+
+                MeoChip {
+                    visible: Number(gpuTile.gpu.coreClockMHz || 0) > 0
+                    label: Math.round(Number(gpuTile.gpu.coreClockMHz || 0)) + " MHz"
+                    leadingIcon: "speed"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
+
+                MeoChip {
+                    visible: Number(gpuTile.gpu.memoryClockMHz || 0) > 0
+                    label: MeoI18n.translator.i18n("Memory %1 MHz")
+                           .arg(Math.round(Number(gpuTile.gpu.memoryClockMHz || 0)))
+                    leadingIcon: "memory_alt"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
             }
         }
     }
