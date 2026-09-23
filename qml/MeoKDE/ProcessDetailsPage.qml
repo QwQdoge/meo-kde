@@ -391,7 +391,10 @@ Item {
                     valueText: root.process.gpuAvailable && Number(root.process.gpuUsage) >= 0
                                ? Number(root.process.gpuUsage).toFixed(1) + "%" : "—"
                     supportingText: root.process.gpuAvailable
-                                    ? MeoI18n.translator.i18n("Graphics memory %1").arg(root.formatBytes(root.process.gpuMemoryBytes))
+                                    ? MeoI18n.translator.i18n("Graphics memory %1%2")
+                                        .arg(root.formatBytes(root.process.gpuMemoryBytes))
+                                        .arg(root.process.gpuEngine
+                                             ? " · " + root.process.gpuEngine : "")
                                     : MeoI18n.translator.i18n("No DRM fdinfo telemetry for this process")
                     progress: root.process.gpuAvailable && Number(root.process.gpuUsage) >= 0
                               ? Number(root.process.gpuUsage) : -1
