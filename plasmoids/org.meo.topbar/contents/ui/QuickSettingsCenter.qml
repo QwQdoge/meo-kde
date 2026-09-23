@@ -140,7 +140,7 @@ Item {
     }
     Component {
         id: performancePageComponent
-        PerformanceManager { onCloseRequested: stack.pop() }
+        PerformanceManager { initialPage: 1; onCloseRequested: stack.pop() }
     }
     Component {
         id: editorPageComponent
