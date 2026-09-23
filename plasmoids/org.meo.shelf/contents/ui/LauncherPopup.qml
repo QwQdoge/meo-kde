@@ -103,9 +103,9 @@ MeoMotionPopup {
         allAppsGrid.currentIndex = 0
     }
 
-    // Interaction structure adapted from Caelestia Shell's launcher list
-    // (animated selection / bottom search composition) and DMS Launcher V2's
-    // keyboard-first navigation. KDE Kicker/KRunner remain the data authority.
+    // Interaction patterns are informed by Caelestia Shell's animated
+    // selection/bottom-search composition and DMS Launcher V2's keyboard-first
+    // navigation. KDE Kicker/KRunner remain the data and execution authority.
     contentItem: FocusScope {
         id: launcherContent
 
@@ -576,7 +576,8 @@ MeoMotionPopup {
                             }
                             Keys.onEscapePressed: launcherPopup.close()
                             Keys.onPressed: (event) => {
-                                launcherContent.forwardTyping(event)
+                                if (!launcherContent.forwardTyping(event))
+                                    event.accepted = false
                             }
                         }
 
@@ -661,6 +662,8 @@ MeoMotionPopup {
                         } else if (event.key === Qt.Key_PageUp) {
                             launcherContent.selectSearchPage(-1)
                             event.accepted = true
+                        } else {
+                            event.accepted = false
                         }
                     }
                 }
