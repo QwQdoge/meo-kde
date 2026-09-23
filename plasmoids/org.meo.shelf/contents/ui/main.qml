@@ -87,9 +87,7 @@ PlasmoidItem {
 
         width: Math.min(root.width - 2 * MeoTheme.space8,
                         Math.max(72 * MeoTheme.globalScale,
-                                 tasksRepeater.count * ShellMetrics.shelfItemSize
-                                 + root.launcherContribution
-                                 + MeoTheme.space24))
+                                 shelfContent.implicitWidth + MeoTheme.space24))
         height: ShellMetrics.shelfSurfaceHeight
         radius: height / 2
 
