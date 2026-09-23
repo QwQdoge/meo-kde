@@ -479,8 +479,10 @@ void PerformanceController::refreshStaticSystemInfo()
     commitCpuTopology();
 
     m_physicalCores = physicalCoreIds.isEmpty()
-        ? m_logicalCores : std::max(1, physicalCoreIds.size());
-    m_cpuSockets = socketIds.isEmpty() ? 1 : std::max(1, socketIds.size());
+        ? m_logicalCores
+        : std::max(1, static_cast<int>(physicalCoreIds.size()));
+    m_cpuSockets = socketIds.isEmpty()
+        ? 1 : std::max(1, static_cast<int>(socketIds.size()));
 
     const QString product = QSysInfo::prettyProductName().trimmed();
     const QString kernel = QSysInfo::kernelVersion().trimmed();
@@ -1213,7 +1215,7 @@ void PerformanceController::startNvidiaGpuSample()
     m_nvidiaQuerying = true;
     process->setProgram(QStringLiteral("nvidia-smi"));
     process->setArguments({
-        QStringLiteral("--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw,clocks.current.graphics,clocks.current.memory"),
+        QStringLiteral("--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw,clocks.gr,clocks.mem"),
         QStringLiteral("--format=csv,noheader,nounits"),
     });
     process->setStandardErrorFile(QProcess::nullDevice());
