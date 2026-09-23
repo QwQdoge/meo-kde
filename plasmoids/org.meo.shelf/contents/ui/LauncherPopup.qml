@@ -22,6 +22,7 @@ MeoMotionPopup {
     property int appsModelRow: -1
     property string appsCategoryName: ""
     property bool modelsPrimed: false
+    property bool favoritesInitialized: false
     property bool refreshInFlight: false
     property double lastRefreshMs: 0
     property double openStartedMs: 0
@@ -97,15 +98,21 @@ MeoMotionPopup {
         if (!force && modelsPrimed && now - lastRefreshMs < 30000)
             return
 
+        const favorites = rootAppModel.favoritesModel
+        if (!favoritesInitialized && favorites
+                && typeof favorites["initForClient"] === "function") {
+            // Plasma Kickoff initializes its KActivities favorites client
+            // before refreshing RootModel. Do the same so Home does not paint
+            // once and then reshuffle when favorites attach a moment later.
+            favorites["initForClient"]("org.meo.shelf.favorites")
+            favoritesInitialized = true
+        }
+
         refreshInFlight = true
         rootAppModel.refresh()
         lastRefreshMs = now
         if (appContentReady)
             modelsPrimed = true
-
-        const favorites = rootAppModel.favoritesModel
-        if (favorites && typeof favorites["initForClient"] === "function")
-            favorites["initForClient"]("org.meo.shelf.favorites")
     }
 
     function triggerModel(model, row) {
@@ -467,7 +474,7 @@ MeoMotionPopup {
                 MeoLoadingFeedback {
                     id: startupFeedback
                     anchors.fill: parent
-                    active: launcherPopup.visible
+                    active: launcherPopup.openStartedMs > 0
                             && !launcherPopup.searching
                             && !launcherPopup.appContentReady
                     // Fast paths never show a spinner. If Kicker still has not
