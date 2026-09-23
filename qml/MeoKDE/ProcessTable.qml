@@ -6,7 +6,7 @@ import Meo.System 1.0 as MeoSystem
 Item {
     id: root
 
-    property qint64 selectedPid: -1
+    property int selectedPid: -1
     property var selectedProcess: null
     property string sortProperty: "cpuText"
     property bool sortAscending: false
