@@ -38,6 +38,8 @@ add_library(meosystemplugin MODULE
     platformcontroller.h
     performancecontroller.cpp
     performancecontroller.h
+    taskmanagercontroller.cpp
+    taskmanagercontroller.h
     sessionactionclient.cpp
     sessionactionclient.h
     mediacontroller.cpp
@@ -74,6 +76,8 @@ add_executable(meo-system-state-smoke
     platformcontroller.h
     performancecontroller.cpp
     performancecontroller.h
+    taskmanagercontroller.cpp
+    taskmanagercontroller.h
     mediacontroller.cpp
     mediacontroller.h
     weathercache.cpp
@@ -118,6 +122,15 @@ if(BUILD_TESTING)
     target_include_directories(meo-performance-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(meo-performance-controller-test PRIVATE Qt6::Core Qt6::Test)
     add_test(NAME meo-performance-controller COMMAND meo-performance-controller-test)
+
+    add_executable(meo-task-manager-controller-test
+        tests/taskmanagercontroller-test.cpp
+        taskmanagercontroller.cpp
+        taskmanagercontroller.h
+    )
+    target_include_directories(meo-task-manager-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-task-manager-controller-test PRIVATE Qt6::Core Qt6::Test)
+    add_test(NAME meo-task-manager-controller COMMAND meo-task-manager-controller-test)
 
     add_executable(meo-desktop-widget-bridge-test
         tests/desktopwidgetbridge-test.cpp
