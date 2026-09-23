@@ -171,7 +171,7 @@ double gpuTemperatureAt(const QString &devicePath)
 QVariantList takeProcesses(const QVector<QVariantMap> &source, int limit)
 {
     QVariantList result;
-    result.reserve(std::min(limit, source.size()));
+    result.reserve(std::min<qsizetype>(static_cast<qsizetype>(limit), source.size()));
     for (int index = 0; index < source.size() && index < limit; ++index) {
         result.push_back(source.at(index));
     }
