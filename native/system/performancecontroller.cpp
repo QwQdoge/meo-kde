@@ -239,6 +239,10 @@ QVariantList PerformanceController::cpuCores() const { return m_cpuCores; }
 double PerformanceController::memoryUsage() const { return m_memoryUsage; }
 qint64 PerformanceController::memoryUsedBytes() const { return m_memoryUsedBytes; }
 qint64 PerformanceController::memoryTotalBytes() const { return m_memoryTotalBytes; }
+qint64 PerformanceController::memoryAvailableBytes() const { return m_memoryAvailableBytes; }
+qint64 PerformanceController::memoryCachedBytes() const { return m_memoryCachedBytes; }
+qint64 PerformanceController::memoryBuffersBytes() const { return m_memoryBuffersBytes; }
+qint64 PerformanceController::memorySharedBytes() const { return m_memorySharedBytes; }
 qint64 PerformanceController::swapUsedBytes() const { return m_swapUsedBytes; }
 qint64 PerformanceController::swapTotalBytes() const { return m_swapTotalBytes; }
 QVariantList PerformanceController::memoryHistory() const { return m_memoryHistory; }
@@ -588,6 +592,11 @@ void PerformanceController::sampleMemory()
     const quint64 swapTotalKiB = values.value("SwapTotal");
     const quint64 swapFreeKiB = values.value("SwapFree");
     m_memoryTotalBytes = static_cast<qint64>(totalKiB * 1024ULL);
+    m_memoryAvailableBytes = static_cast<qint64>(availableKiB * 1024ULL);
+    m_memoryCachedBytes = static_cast<qint64>(
+        (values.value("Cached") + values.value("SReclaimable")) * 1024ULL);
+    m_memoryBuffersBytes = static_cast<qint64>(values.value("Buffers") * 1024ULL);
+    m_memorySharedBytes = static_cast<qint64>(values.value("Shmem") * 1024ULL);
     m_memoryUsedBytes = static_cast<qint64>((totalKiB > availableKiB ? totalKiB - availableKiB : 0) * 1024ULL);
     m_swapTotalBytes = static_cast<qint64>(swapTotalKiB * 1024ULL);
     m_swapUsedBytes = static_cast<qint64>((swapTotalKiB > swapFreeKiB ? swapTotalKiB - swapFreeKiB : 0) * 1024ULL);
