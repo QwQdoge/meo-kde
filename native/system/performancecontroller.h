@@ -62,6 +62,8 @@ class PerformanceController final : public QObject
     Q_PROPERTY(QString systemSummary READ systemSummary NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList topCpuProcesses READ topCpuProcesses NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList topMemoryProcesses READ topMemoryProcesses NOTIFY metricsChanged)
+    Q_PROPERTY(QVariantList processes READ processes NOTIFY metricsChanged)
+    Q_PROPERTY(QString processActionError READ processActionError NOTIFY processActionErrorChanged)
 
 public:
     explicit PerformanceController(QObject *parent = nullptr);
@@ -115,15 +117,22 @@ public:
     QString systemSummary() const;
     QVariantList topCpuProcesses() const;
     QVariantList topMemoryProcesses() const;
+    QVariantList processes() const;
+    QString processActionError() const;
 
     Q_INVOKABLE void subscribe(const QString &clientId, const QStringList &modules);
     Q_INVOKABLE void unsubscribe(const QString &clientId);
     Q_INVOKABLE void refreshNow();
+    Q_INVOKABLE bool terminateProcess(qint64 pid, bool force = false);
+    Q_INVOKABLE bool setProcessPriority(qint64 pid, int niceValue);
+    Q_INVOKABLE void clearProcessActionError();
 
 Q_SIGNALS:
     void monitoringChanged();
     void refreshIntervalChanged();
     void metricsChanged();
+    void processActionErrorChanged();
+    void processActionCompleted(qint64 pid, const QString &action);
 
 private:
     struct CpuSnapshot {
@@ -143,6 +152,7 @@ private:
     void sampleSystem();
     void sampleProcesses();
     void appendHistory(QVariantList &history, double value);
+    void setProcessActionError(const QString &message);
 
     bool m_available = false;
     int m_refreshInterval = 2000;
@@ -204,5 +214,7 @@ private:
     QString m_systemSummary;
     QVariantList m_topCpuProcesses;
     QVariantList m_topMemoryProcesses;
+    QVariantList m_processes;
+    QString m_processActionError;
     QHash<qint64, quint64> m_lastProcessTicks;
 };
