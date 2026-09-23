@@ -24,3 +24,4 @@ StartupAppsPage 1.0 StartupAppsPage.qml
 ServicesPage 1.0 ServicesPage.qml
 UsersPage 1.0 UsersPage.qml
 ProcessDetailsPage 1.0 ProcessDetailsPage.qml
+SystemMonitorWindow 1.0 SystemMonitorWindow.qml
