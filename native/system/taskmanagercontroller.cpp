@@ -1186,7 +1186,10 @@ void TaskManagerController::refreshServices()
                 if (row.isEmpty()) {
                     continue;
                 }
-                const QList<QByteArray> fields = row.split(' ');
+                QList<QByteArray> fields = row.split(' ');
+                if (!fields.isEmpty() && fields.constFirst() == "●") {
+                    fields.removeFirst();
+                }
                 if (fields.size() < 4) {
                     continue;
                 }
@@ -1221,8 +1224,9 @@ void TaskManagerController::refreshServices()
         });
         filesProcess->setStandardErrorFile(QProcess::nullDevice());
 
+        const bool unitsSucceeded = status == QProcess::NormalExit && exitCode == 0;
         connect(filesProcess, &QProcess::finished, this,
-                [this, filesProcess, units = std::move(units)](int filesExitCode, QProcess::ExitStatus filesStatus) mutable {
+                [this, filesProcess, units = std::move(units), unitsSucceeded](int filesExitCode, QProcess::ExitStatus filesStatus) mutable {
             if (filesStatus == QProcess::NormalExit && filesExitCode == 0) {
                 const QList<QByteArray> rows = filesProcess->readAllStandardOutput().split('\n');
                 for (const QByteArray &rawRow : rows) {
@@ -1255,8 +1259,12 @@ void TaskManagerController::refreshServices()
                 service.insert(QStringLiteral("running"), active == QStringLiteral("active"));
                 m_services.push_back(service);
             }
-            m_servicesAvailable = true;
+            const bool filesSucceeded = filesStatus == QProcess::NormalExit && filesExitCode == 0;
+            m_servicesAvailable = unitsSucceeded || filesSucceeded;
             m_serviceQuerying = false;
+            if (!m_servicesAvailable) {
+                setActionError(QStringLiteral("Could not query the systemd user service manager."));
+            }
             Q_EMIT servicesChanged();
         });
         filesProcess->start();
