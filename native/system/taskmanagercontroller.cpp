@@ -826,7 +826,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
     for (const Sample &sample : samples) {
         const QString key = !sample.desktopId.isEmpty()
             ? QStringLiteral("desktop:") + sample.desktopId
-            : QStringLiteral("%1:%2").arg(sample.category, sample.executable);
+            : QStringLiteral("pid:%1").arg(sample.pid);
         QVariantMap group = groupMap.value(key);
         if (group.isEmpty()) {
             group.insert(QStringLiteral("key"), key);
