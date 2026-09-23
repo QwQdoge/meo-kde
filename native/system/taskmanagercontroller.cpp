@@ -1070,6 +1070,47 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
         : 0.0;
     const QPair<quint64, quint64> totalIo = readProcessIo(procBase);
 
+    QHash<QByteArray, qint64> selectedMemoryKiB;
+    int noNewPrivileges = -1;
+    int seccompMode = -1;
+    const QList<QByteArray> selectedStatusLines =
+        readBytes(procBase + QStringLiteral("/status")).split('\n');
+    for (const QByteArray &line : selectedStatusLines) {
+        const int colon = line.indexOf(':');
+        if (colon <= 0) {
+            continue;
+        }
+        const QByteArray key = line.left(colon).trimmed();
+        const QByteArray value = line.mid(colon + 1).simplified();
+        if (key == "VmSize" || key == "VmHWM" || key == "RssAnon"
+            || key == "RssFile" || key == "RssShmem" || key == "VmSwap") {
+            const QList<QByteArray> fields = value.split(' ');
+            bool ok = false;
+            const qint64 kib = fields.value(0).toLongLong(&ok);
+            if (ok) {
+                selectedMemoryKiB.insert(key, kib);
+            }
+        } else if (key == "NoNewPrivs") {
+            noNewPrivileges = value.toInt();
+        } else if (key == "Seccomp") {
+            seccompMode = value.toInt();
+        }
+    }
+
+    QString cgroupPath;
+    const QList<QByteArray> cgroupLines =
+        readBytes(procBase + QStringLiteral("/cgroup")).split('\n');
+    for (const QByteArray &line : cgroupLines) {
+        if (line.startsWith("0::")) {
+            cgroupPath = QString::fromUtf8(line.mid(3)).trimmed();
+            break;
+        }
+    }
+
+    bool oomOk = false;
+    const int oomScore =
+        readText(procBase + QStringLiteral("/oom_score")).toInt(&oomOk);
+
     selected.insert(QStringLiteral("executablePath"), executablePath);
     selected.insert(QStringLiteral("workingDirectory"), workingDirectory);
     selected.insert(QStringLiteral("openFileDescriptorCount"), openFileDescriptorCount(m_selectedPid));
@@ -1079,6 +1120,22 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
     selected.insert(QStringLiteral("elapsedSeconds"), elapsedProcessSeconds);
     selected.insert(QStringLiteral("diskReadBytesTotal"), static_cast<qint64>(totalIo.first));
     selected.insert(QStringLiteral("diskWriteBytesTotal"), static_cast<qint64>(totalIo.second));
+    selected.insert(QStringLiteral("virtualMemoryBytes"),
+                    selectedMemoryKiB.value("VmSize") * 1024LL);
+    selected.insert(QStringLiteral("peakResidentMemoryBytes"),
+                    selectedMemoryKiB.value("VmHWM") * 1024LL);
+    selected.insert(QStringLiteral("anonymousMemoryBytes"),
+                    selectedMemoryKiB.value("RssAnon") * 1024LL);
+    selected.insert(QStringLiteral("fileMemoryBytes"),
+                    selectedMemoryKiB.value("RssFile") * 1024LL);
+    selected.insert(QStringLiteral("sharedMemoryBytes"),
+                    selectedMemoryKiB.value("RssShmem") * 1024LL);
+    selected.insert(QStringLiteral("swapMemoryBytes"),
+                    selectedMemoryKiB.value("VmSwap") * 1024LL);
+    selected.insert(QStringLiteral("cgroupPath"), cgroupPath);
+    selected.insert(QStringLiteral("oomScore"), oomOk ? oomScore : -1);
+    selected.insert(QStringLiteral("noNewPrivileges"), noNewPrivileges == 1);
+    selected.insert(QStringLiteral("seccompMode"), seccompMode);
     selected.insert(QStringLiteral("logicalCpuCount"),
                     static_cast<int>(std::max<long>(1, sysconf(_SC_NPROCESSORS_CONF))));
     selected.insert(QStringLiteral("suspended"),
