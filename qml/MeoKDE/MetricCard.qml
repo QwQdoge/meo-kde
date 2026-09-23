@@ -17,8 +17,8 @@ MeoCard {
     property color secondaryAccentColor: MeoTheme.tertiary
 
     type: "filled"
-    radius: MeoTheme.cardRadius
-    implicitHeight: 154 * MeoTheme.globalScale
+    radius: MeoTheme.shapeLargeIncreased
+    implicitHeight: 166 * MeoTheme.globalScale
 
     ColumnLayout {
         anchors.fill: parent
@@ -27,27 +27,52 @@ MeoCard {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: MeoTheme.space8
+            spacing: MeoTheme.space10
 
-            MeoIcon {
-                icon: root.iconName
-                size: 22
-                color: root.accentColor
+            Rectangle {
+                width: 38 * MeoTheme.globalScale
+                height: width
+                radius: 13 * MeoTheme.globalScale
+                color: MeoTheme.surfaceContainerHighest
+
+                MeoIcon {
+                    anchors.centerIn: parent
+                    icon: root.iconName
+                    size: 21
+                    fill: true
+                    color: root.accentColor
+                }
             }
 
-            MeoText {
+            ColumnLayout {
                 Layout.fillWidth: true
-                text: root.title
-                typeRole: "label"
-                typeSize: "large"
-                emphasized: true
-                color: MeoTheme.contentOnSurfaceVariant
+                spacing: 0
+
+                MeoText {
+                    Layout.fillWidth: true
+                    text: root.title
+                    typeRole: "label"
+                    typeSize: "large"
+                    emphasized: true
+                    color: MeoTheme.contentOnSurfaceVariant
+                    elide: Text.ElideRight
+                }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    visible: root.subtitle.length > 0
+                    text: root.subtitle
+                    typeRole: "body"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    elide: Text.ElideRight
+                }
             }
 
             MeoText {
                 text: root.valueText
                 typeRole: "title"
-                typeSize: "medium"
+                typeSize: "large"
                 emphasized: true
                 color: MeoTheme.contentOnSurface
             }
@@ -56,7 +81,7 @@ MeoCard {
         PerformanceGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.minimumHeight: 42 * MeoTheme.globalScale
+            Layout.minimumHeight: 46 * MeoTheme.globalScale
             values: root.history
             secondaryValues: root.secondaryHistory
             primaryColor: root.accentColor
@@ -71,25 +96,15 @@ MeoCard {
             activeColor: root.accentColor
         }
 
-        RowLayout {
+        MeoText {
             Layout.fillWidth: true
-            spacing: MeoTheme.space8
-
-            MeoText {
-                Layout.fillWidth: true
-                text: root.subtitle
-                typeRole: "body"
-                typeSize: "small"
-                color: MeoTheme.contentOnSurfaceVariant
-                elide: Text.ElideRight
-            }
-            MeoText {
-                visible: root.detail.length > 0
-                text: root.detail
-                typeRole: "label"
-                typeSize: "small"
-                color: MeoTheme.contentOnSurfaceVariant
-            }
+            visible: root.detail.length > 0
+            text: root.detail
+            typeRole: "label"
+            typeSize: "small"
+            color: MeoTheme.contentOnSurfaceVariant
+            horizontalAlignment: Text.AlignRight
+            elide: Text.ElideRight
         }
     }
 }
