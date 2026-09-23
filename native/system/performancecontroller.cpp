@@ -246,6 +246,7 @@ double PerformanceController::networkRxBytesPerSecond() const { return m_network
 double PerformanceController::networkTxBytesPerSecond() const { return m_networkTxRate; }
 QVariantList PerformanceController::networkRxHistory() const { return m_networkRxHistory; }
 QVariantList PerformanceController::networkTxHistory() const { return m_networkTxHistory; }
+QVariantList PerformanceController::networkInterfaces() const { return m_networkInterfaces; }
 double PerformanceController::diskReadBytesPerSecond() const { return m_diskReadRate; }
 double PerformanceController::diskWriteBytesPerSecond() const { return m_diskWriteRate; }
 qint64 PerformanceController::storageUsedBytes() const { return m_storageUsedBytes; }
@@ -253,6 +254,7 @@ qint64 PerformanceController::storageTotalBytes() const { return m_storageTotalB
 double PerformanceController::storageUsage() const { return m_storageUsage; }
 QVariantList PerformanceController::diskReadHistory() const { return m_diskReadHistory; }
 QVariantList PerformanceController::diskWriteHistory() const { return m_diskWriteHistory; }
+QVariantList PerformanceController::disks() const { return m_disks; }
 QString PerformanceController::gpuName() const { return m_gpuName; }
 double PerformanceController::gpuUsage() const { return m_gpuUsage; }
 double PerformanceController::gpuTemperature() const { return m_gpuTemperature; }
@@ -312,9 +314,14 @@ void PerformanceController::unsubscribe(const QString &clientId)
         m_lastNetworkRxBytes = 0;
         m_lastNetworkTxBytes = 0;
         m_haveNetworkSample = false;
+        m_lastInterfaceRxBytes.clear();
+        m_lastInterfaceTxBytes.clear();
         m_lastDiskReadBytes = 0;
         m_lastDiskWriteBytes = 0;
         m_haveDiskSample = false;
+        m_lastDeviceReadBytes.clear();
+        m_lastDeviceWriteBytes.clear();
+        m_lastDeviceIoMilliseconds.clear();
         m_lastProcessTicks.clear();
     }
     Q_UNUSED(wasMonitoring);
@@ -594,23 +601,95 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
 {
     quint64 rx = 0;
     quint64 tx = 0;
+    QVariantList interfaces;
+    QHash<QString, quint64> nextRx;
+    QHash<QString, quint64> nextTx;
+
     const QList<QByteArray> lines = readBytes(QStringLiteral("/proc/net/dev")).split('\n');
     for (const QByteArray &line : lines) {
         const int colon = line.indexOf(':');
         if (colon <= 0) {
             continue;
         }
-        const QByteArray iface = line.left(colon).trimmed();
-        if (iface == "lo") {
+        const QString iface = QString::fromUtf8(line.left(colon)).trimmed();
+        if (iface == QStringLiteral("lo")) {
             continue;
         }
+
         const QList<QByteArray> fields = line.mid(colon + 1).simplified().split(' ');
         if (fields.size() < 9) {
             continue;
         }
-        rx += fields.at(0).toULongLong();
-        tx += fields.at(8).toULongLong();
+
+        const quint64 ifaceRx = fields.at(0).toULongLong();
+        const quint64 ifaceTx = fields.at(8).toULongLong();
+        nextRx.insert(iface, ifaceRx);
+        nextTx.insert(iface, ifaceTx);
+        rx += ifaceRx;
+        tx += ifaceTx;
+
+        double rxRate = 0;
+        double txRate = 0;
+        if (elapsedSeconds > 0
+            && m_lastInterfaceRxBytes.contains(iface)
+            && m_lastInterfaceTxBytes.contains(iface)) {
+            const quint64 previousRx = m_lastInterfaceRxBytes.value(iface);
+            const quint64 previousTx = m_lastInterfaceTxBytes.value(iface);
+            if (ifaceRx >= previousRx) {
+                rxRate = static_cast<double>(ifaceRx - previousRx) / elapsedSeconds;
+            }
+            if (ifaceTx >= previousTx) {
+                txRate = static_cast<double>(ifaceTx - previousTx) / elapsedSeconds;
+            }
+        }
+
+        QVariantList rxHistory = m_interfaceRxHistories.value(iface);
+        QVariantList txHistory = m_interfaceTxHistories.value(iface);
+        appendHistory(rxHistory, rxRate);
+        appendHistory(txHistory, txRate);
+        m_interfaceRxHistories.insert(iface, rxHistory);
+        m_interfaceTxHistories.insert(iface, txHistory);
+
+        const QString sysPath = QStringLiteral("/sys/class/net/%1").arg(iface);
+        const QString state = readText(sysPath + QStringLiteral("/operstate"));
+        const qint64 speedMbps = readInteger(sysPath + QStringLiteral("/speed"), -1);
+        const bool wireless = QFileInfo::exists(sysPath + QStringLiteral("/wireless"))
+            || QFileInfo::exists(QStringLiteral("/proc/net/wireless"));
+
+        interfaces.push_back(QVariantMap{
+            {QStringLiteral("name"), iface},
+            {QStringLiteral("state"), state},
+            {QStringLiteral("up"), state == QStringLiteral("up")},
+            {QStringLiteral("wireless"), wireless
+                && QFileInfo::exists(sysPath + QStringLiteral("/wireless"))},
+            {QStringLiteral("speedMbps"), speedMbps > 0 ? speedMbps : 0},
+            {QStringLiteral("rxBytesPerSecond"), rxRate},
+            {QStringLiteral("txBytesPerSecond"), txRate},
+            {QStringLiteral("rxBytesTotal"), static_cast<qint64>(ifaceRx)},
+            {QStringLiteral("txBytesTotal"), static_cast<qint64>(ifaceTx)},
+            {QStringLiteral("rxHistory"), rxHistory},
+            {QStringLiteral("txHistory"), txHistory},
+        });
     }
+
+    std::sort(interfaces.begin(), interfaces.end(), [](const QVariant &left, const QVariant &right) {
+        const QVariantMap a = left.toMap();
+        const QVariantMap b = right.toMap();
+        const bool aUp = a.value(QStringLiteral("up")).toBool();
+        const bool bUp = b.value(QStringLiteral("up")).toBool();
+        if (aUp != bUp) {
+            return aUp;
+        }
+        const double aRate = a.value(QStringLiteral("rxBytesPerSecond")).toDouble()
+            + a.value(QStringLiteral("txBytesPerSecond")).toDouble();
+        const double bRate = b.value(QStringLiteral("rxBytesPerSecond")).toDouble()
+            + b.value(QStringLiteral("txBytesPerSecond")).toDouble();
+        if (!qFuzzyCompare(aRate + 1.0, bRate + 1.0)) {
+            return aRate > bRate;
+        }
+        return a.value(QStringLiteral("name")).toString()
+            .localeAwareCompare(b.value(QStringLiteral("name")).toString()) < 0;
+    });
 
     if (elapsedSeconds > 0 && m_haveNetworkSample) {
         m_networkRxRate = rx >= m_lastNetworkRxBytes ? (rx - m_lastNetworkRxBytes) / elapsedSeconds : 0;
@@ -619,8 +698,12 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
         m_networkRxRate = 0;
         m_networkTxRate = 0;
     }
+
     m_lastNetworkRxBytes = rx;
     m_lastNetworkTxBytes = tx;
+    m_lastInterfaceRxBytes = nextRx;
+    m_lastInterfaceTxBytes = nextTx;
+    m_networkInterfaces = interfaces;
     m_haveNetworkSample = true;
     appendHistory(m_networkRxHistory, m_networkRxRate);
     appendHistory(m_networkTxHistory, m_networkTxRate);
@@ -630,12 +713,18 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
 {
     quint64 readBytesTotal = 0;
     quint64 writeBytesTotal = 0;
+    QVariantList devices;
+    QHash<QString, quint64> nextRead;
+    QHash<QString, quint64> nextWrite;
+    QHash<QString, quint64> nextIoMs;
+
     const QList<QByteArray> lines = readBytes(QStringLiteral("/proc/diskstats")).split('\n');
     for (const QByteArray &line : lines) {
         const QList<QByteArray> fields = line.simplified().split(' ');
-        if (fields.size() < 10) {
+        if (fields.size() < 13) {
             continue;
         }
+
         const QString device = QString::fromUtf8(fields.at(2));
         if (device.startsWith(QStringLiteral("loop"))
             || device.startsWith(QStringLiteral("ram"))
@@ -648,9 +737,86 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
         if (QFileInfo::exists(QStringLiteral("/sys/class/block/%1/partition").arg(device))) {
             continue;
         }
-        readBytesTotal += fields.at(5).toULongLong() * 512ULL;
-        writeBytesTotal += fields.at(9).toULongLong() * 512ULL;
+
+        const quint64 readBytesValue = fields.at(5).toULongLong() * 512ULL;
+        const quint64 writeBytesValue = fields.at(9).toULongLong() * 512ULL;
+        const quint64 ioMilliseconds = fields.at(12).toULongLong();
+        nextRead.insert(device, readBytesValue);
+        nextWrite.insert(device, writeBytesValue);
+        nextIoMs.insert(device, ioMilliseconds);
+        readBytesTotal += readBytesValue;
+        writeBytesTotal += writeBytesValue;
+
+        double readRate = 0;
+        double writeRate = 0;
+        double usage = 0;
+        if (elapsedSeconds > 0
+            && m_lastDeviceReadBytes.contains(device)
+            && m_lastDeviceWriteBytes.contains(device)
+            && m_lastDeviceIoMilliseconds.contains(device)) {
+            const quint64 previousRead = m_lastDeviceReadBytes.value(device);
+            const quint64 previousWrite = m_lastDeviceWriteBytes.value(device);
+            const quint64 previousIoMs = m_lastDeviceIoMilliseconds.value(device);
+            if (readBytesValue >= previousRead) {
+                readRate = static_cast<double>(readBytesValue - previousRead) / elapsedSeconds;
+            }
+            if (writeBytesValue >= previousWrite) {
+                writeRate = static_cast<double>(writeBytesValue - previousWrite) / elapsedSeconds;
+            }
+            if (ioMilliseconds >= previousIoMs) {
+                usage = std::clamp(
+                    static_cast<double>(ioMilliseconds - previousIoMs)
+                        / (elapsedSeconds * 1000.0) * 100.0,
+                    0.0, 100.0);
+            }
+        }
+
+        QVariantList readHistory = m_deviceReadHistories.value(device);
+        QVariantList writeHistory = m_deviceWriteHistories.value(device);
+        QVariantList usageHistory = m_deviceUsageHistories.value(device);
+        appendHistory(readHistory, readRate);
+        appendHistory(writeHistory, writeRate);
+        appendHistory(usageHistory, usage);
+        m_deviceReadHistories.insert(device, readHistory);
+        m_deviceWriteHistories.insert(device, writeHistory);
+        m_deviceUsageHistories.insert(device, usageHistory);
+
+        const QString sysPath = QStringLiteral("/sys/class/block/%1").arg(device);
+        QString model = readText(sysPath + QStringLiteral("/device/model"));
+        if (model.isEmpty()) {
+            model = readText(sysPath + QStringLiteral("/device/name"));
+        }
+        const qint64 sizeSectors = readInteger(sysPath + QStringLiteral("/size"), 0);
+        const bool rotational = readInteger(sysPath + QStringLiteral("/queue/rotational"), 0) == 1;
+
+        devices.push_back(QVariantMap{
+            {QStringLiteral("name"), device},
+            {QStringLiteral("model"), model},
+            {QStringLiteral("rotational"), rotational},
+            {QStringLiteral("type"), rotational ? QStringLiteral("HDD") : QStringLiteral("SSD")},
+            {QStringLiteral("sizeBytes"), sizeSectors > 0 ? sizeSectors * 512LL : 0LL},
+            {QStringLiteral("usage"), usage},
+            {QStringLiteral("readBytesPerSecond"), readRate},
+            {QStringLiteral("writeBytesPerSecond"), writeRate},
+            {QStringLiteral("readHistory"), readHistory},
+            {QStringLiteral("writeHistory"), writeHistory},
+            {QStringLiteral("usageHistory"), usageHistory},
+        });
     }
+
+    std::sort(devices.begin(), devices.end(), [](const QVariant &left, const QVariant &right) {
+        const QVariantMap a = left.toMap();
+        const QVariantMap b = right.toMap();
+        const double aRate = a.value(QStringLiteral("readBytesPerSecond")).toDouble()
+            + a.value(QStringLiteral("writeBytesPerSecond")).toDouble();
+        const double bRate = b.value(QStringLiteral("readBytesPerSecond")).toDouble()
+            + b.value(QStringLiteral("writeBytesPerSecond")).toDouble();
+        if (!qFuzzyCompare(aRate + 1.0, bRate + 1.0)) {
+            return aRate > bRate;
+        }
+        return a.value(QStringLiteral("name")).toString()
+            .localeAwareCompare(b.value(QStringLiteral("name")).toString()) < 0;
+    });
 
     if (elapsedSeconds > 0 && m_haveDiskSample) {
         m_diskReadRate = readBytesTotal >= m_lastDiskReadBytes
@@ -661,8 +827,13 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
         m_diskReadRate = 0;
         m_diskWriteRate = 0;
     }
+
     m_lastDiskReadBytes = readBytesTotal;
     m_lastDiskWriteBytes = writeBytesTotal;
+    m_lastDeviceReadBytes = nextRead;
+    m_lastDeviceWriteBytes = nextWrite;
+    m_lastDeviceIoMilliseconds = nextIoMs;
+    m_disks = devices;
     m_haveDiskSample = true;
 
     QStorageInfo storage = QStorageInfo::root();
@@ -674,6 +845,7 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
             ? 100.0 * static_cast<double>(m_storageUsedBytes) / static_cast<double>(m_storageTotalBytes)
             : 0;
     }
+
     appendHistory(m_diskReadHistory, m_diskReadRate);
     appendHistory(m_diskWriteHistory, m_diskWriteRate);
 }
