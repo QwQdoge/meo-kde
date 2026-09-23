@@ -942,7 +942,7 @@ void PerformanceController::sampleProcesses()
 
         QString user = uid >= 0 ? QString::number(uid) : QStringLiteral("?");
         if (uid >= 0) {
-            if (const passwd *account = getpwuid(static_cast<uid_t>(uid))) {
+            if (const struct passwd *account = getpwuid(static_cast<uid_t>(uid))) {
                 user = QString::fromLocal8Bit(account->pw_name);
             }
         }
