@@ -1163,7 +1163,9 @@ void TaskManagerController::refreshServices()
         QStringLiteral("list-units"),
         QStringLiteral("--type=service"),
         QStringLiteral("--all"),
-        QStringLiteral("--output=json"),
+        QStringLiteral("--plain"),
+        QStringLiteral("--full"),
+        QStringLiteral("--no-legend"),
         QStringLiteral("--no-pager"),
     });
     unitsProcess->setStandardErrorFile(QProcess::nullDevice());
@@ -1172,23 +1174,32 @@ void TaskManagerController::refreshServices()
             [this, unitsProcess, systemctl](int exitCode, QProcess::ExitStatus status) {
         QHash<QString, QVariantMap> units;
         if (status == QProcess::NormalExit && exitCode == 0) {
-            const QJsonDocument document = QJsonDocument::fromJson(unitsProcess->readAllStandardOutput());
-            if (document.isArray()) {
-                for (const QJsonValue &value : document.array()) {
-                    const QJsonObject object = value.toObject();
-                    const QString unit = object.value(QStringLiteral("unit")).toString();
-                    if (unit.isEmpty()) {
-                        continue;
-                    }
-                    units.insert(unit, QVariantMap{
-                        {QStringLiteral("unit"), unit},
-                        {QStringLiteral("description"), object.value(QStringLiteral("description")).toString()},
-                        {QStringLiteral("loadState"), object.value(QStringLiteral("load")).toString()},
-                        {QStringLiteral("activeState"), object.value(QStringLiteral("active")).toString()},
-                        {QStringLiteral("subState"), object.value(QStringLiteral("sub")).toString()},
-                        {QStringLiteral("enabledState"), QString()},
-                    });
+            const QList<QByteArray> rows = unitsProcess->readAllStandardOutput().split('\n');
+            for (const QByteArray &rawRow : rows) {
+                const QByteArray row = rawRow.simplified();
+                if (row.isEmpty()) {
+                    continue;
                 }
+                const QList<QByteArray> fields = row.split(' ');
+                if (fields.size() < 4) {
+                    continue;
+                }
+                const QString unit = QString::fromUtf8(fields.at(0));
+                const QString load = QString::fromUtf8(fields.at(1));
+                const QString active = QString::fromUtf8(fields.at(2));
+                const QString sub = QString::fromUtf8(fields.at(3));
+                QString description;
+                if (fields.size() > 4) {
+                    description = QString::fromUtf8(fields.mid(4).join(' '));
+                }
+                units.insert(unit, QVariantMap{
+                    {QStringLiteral("unit"), unit},
+                    {QStringLiteral("description"), description},
+                    {QStringLiteral("loadState"), load},
+                    {QStringLiteral("activeState"), active},
+                    {QStringLiteral("subState"), sub},
+                    {QStringLiteral("enabledState"), QString()},
+                });
             }
         }
         unitsProcess->deleteLater();
@@ -1199,7 +1210,7 @@ void TaskManagerController::refreshServices()
             QStringLiteral("--user"),
             QStringLiteral("list-unit-files"),
             QStringLiteral("--type=service"),
-            QStringLiteral("--output=json"),
+            QStringLiteral("--no-legend"),
             QStringLiteral("--no-pager"),
         });
         filesProcess->setStandardErrorFile(QProcess::nullDevice());
@@ -1207,28 +1218,24 @@ void TaskManagerController::refreshServices()
         connect(filesProcess, &QProcess::finished, this,
                 [this, filesProcess, units = std::move(units)](int filesExitCode, QProcess::ExitStatus filesStatus) mutable {
             if (filesStatus == QProcess::NormalExit && filesExitCode == 0) {
-                const QJsonDocument document = QJsonDocument::fromJson(filesProcess->readAllStandardOutput());
-                if (document.isArray()) {
-                    for (const QJsonValue &value : document.array()) {
-                        const QJsonObject object = value.toObject();
-                        QString unit = object.value(QStringLiteral("unit_file")).toString();
-                        if (unit.isEmpty()) {
-                            unit = object.value(QStringLiteral("unit")).toString();
-                        }
-                        if (unit.isEmpty()) {
-                            continue;
-                        }
-                        QVariantMap service = units.value(unit);
-                        if (service.isEmpty()) {
-                            service.insert(QStringLiteral("unit"), unit);
-                            service.insert(QStringLiteral("description"), QString());
-                            service.insert(QStringLiteral("loadState"), QStringLiteral("loaded"));
-                            service.insert(QStringLiteral("activeState"), QStringLiteral("inactive"));
-                            service.insert(QStringLiteral("subState"), QStringLiteral("dead"));
-                        }
-                        service.insert(QStringLiteral("enabledState"), object.value(QStringLiteral("state")).toString());
-                        units.insert(unit, service);
+                const QList<QByteArray> rows = filesProcess->readAllStandardOutput().split('\n');
+                for (const QByteArray &rawRow : rows) {
+                    const QList<QByteArray> fields = rawRow.simplified().split(' ');
+                    if (fields.size() < 2 || fields.constFirst().isEmpty()) {
+                        continue;
                     }
+                    const QString unit = QString::fromUtf8(fields.at(0));
+                    const QString enabledState = QString::fromUtf8(fields.at(1));
+                    QVariantMap service = units.value(unit);
+                    if (service.isEmpty()) {
+                        service.insert(QStringLiteral("unit"), unit);
+                        service.insert(QStringLiteral("description"), QString());
+                        service.insert(QStringLiteral("loadState"), QStringLiteral("loaded"));
+                        service.insert(QStringLiteral("activeState"), QStringLiteral("inactive"));
+                        service.insert(QStringLiteral("subState"), QStringLiteral("dead"));
+                    }
+                    service.insert(QStringLiteral("enabledState"), enabledState);
+                    units.insert(unit, service);
                 }
             }
             filesProcess->deleteLater();
