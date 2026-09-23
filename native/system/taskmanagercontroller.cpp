@@ -1236,7 +1236,7 @@ void TaskManagerController::refreshServices()
                     continue;
                 }
                 QList<QByteArray> fields = row.split(' ');
-                if (!fields.isEmpty() && fields.constFirst() == "●") {
+                if (!fields.isEmpty() && !fields.constFirst().endsWith(".service")) {
                     fields.removeFirst();
                 }
                 if (fields.size() < 4) {
@@ -1345,7 +1345,7 @@ void TaskManagerController::refreshServices()
                             continue;
                         }
                         QList<QByteArray> fields = row.split(' ');
-                        if (!fields.isEmpty() && fields.constFirst() == "●") {
+                        if (!fields.isEmpty() && !fields.constFirst().endsWith(".service")) {
                             fields.removeFirst();
                         }
                         if (fields.size() < 4) {
