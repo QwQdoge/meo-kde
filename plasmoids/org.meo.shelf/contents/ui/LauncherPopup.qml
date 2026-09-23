@@ -77,6 +77,13 @@ MeoMotionPopup {
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
     presentation: MeoMotionPopup.Dialog
+    // KRunner gets its immediacy from a short directional window slide rather
+    // than animating the text field itself. Mirror that cue from the bottom
+    // Shelf: a small upward lift plus a restrained Pixel-style scale, without
+    // dragging the launcher in from a physical screen edge.
+    motionProfile: "pixel"
+    entranceOffset: -16 * MeoTheme.globalScale
+    entranceScale: 0.975
     transformOrigin: Item.Bottom
 
     Behavior on height {
@@ -311,10 +318,16 @@ MeoMotionPopup {
             Qt.callLater(function() { launcherPopup.refreshModels(false) })
     }
 
-    onOpened: {
+    // Start the startup budget before the enter transition. Waiting for
+    // onOpened would add the animation duration on top of the 900 ms gate and
+    // could make a visibly slow first launch miss the one-second target.
+    onAboutToShow: {
         openStartedMs = Date.now()
         lastReadyLatencyMs = appContentReady ? 0 : -1
         refreshModels(false)
+    }
+
+    onOpened: {
         searchField.forceSearchFocus()
     }
 
