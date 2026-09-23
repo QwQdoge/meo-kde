@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QNetworkInterface>
 #include <QProcess>
 #include <QStorageInfo>
 #include <QStandardPaths>
@@ -767,6 +768,11 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
     QVariantList interfaces;
     QHash<QString, quint64> nextRx;
     QHash<QString, quint64> nextTx;
+    QHash<QString, QNetworkInterface> interfaceMetadata;
+    const QList<QNetworkInterface> qtInterfaces = QNetworkInterface::allInterfaces();
+    for (const QNetworkInterface &networkInterface : qtInterfaces) {
+        interfaceMetadata.insert(networkInterface.name(), networkInterface);
+    }
 
     const QList<QByteArray> lines = readBytes(QStringLiteral("/proc/net/dev")).split('\n');
     for (const QByteArray &line : lines) {
@@ -821,6 +827,25 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
         const bool active = state == QStringLiteral("up");
         const bool hasTraffic = rxRate > 0 || txRate > 0;
 
+        QStringList addresses;
+        QString hardwareAddress;
+        const QNetworkInterface networkInterface = interfaceMetadata.value(iface);
+        if (networkInterface.isValid()) {
+            hardwareAddress = networkInterface.hardwareAddress();
+            const QList<QNetworkAddressEntry> addressEntries =
+                networkInterface.addressEntries();
+            for (const QNetworkAddressEntry &addressEntry : addressEntries) {
+                const QHostAddress address = addressEntry.ip();
+                if (address.isNull() || address.isLoopback()) {
+                    continue;
+                }
+                const QString text = address.toString();
+                if (!text.isEmpty() && !addresses.contains(text)) {
+                    addresses.push_back(text);
+                }
+            }
+        }
+
         // Keep the aggregate counters complete, but avoid filling the UI with
         // disconnected veth/docker bridges. Active VPN/tun interfaces remain
         // visible because their operstate is up even without a physical device.
@@ -835,6 +860,9 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
                     : physical ? QStringLiteral("ethernet")
                                : QStringLiteral("virtual")},
                 {QStringLiteral("speedMbps"), speedMbps > 0 ? speedMbps : 0},
+                {QStringLiteral("addresses"), addresses},
+                {QStringLiteral("addressSummary"), addresses.mid(0, 2).join(QStringLiteral(" · "))},
+                {QStringLiteral("hardwareAddress"), hardwareAddress},
                 {QStringLiteral("rxBytesPerSecond"), rxRate},
                 {QStringLiteral("txBytesPerSecond"), txRate},
                 {QStringLiteral("rxBytesTotal"), static_cast<qint64>(ifaceRx)},
