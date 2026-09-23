@@ -29,6 +29,10 @@ private slots:
         QVERIFY(controller.cpuUsage() >= 0.0);
         QVERIFY(controller.cpuUsage() <= 100.0);
         QVERIFY(controller.logicalCores() >= 1);
+        QVERIFY(controller.physicalCores() >= 1);
+        QVERIFY(controller.cpuSockets() >= 1);
+        QVERIFY(controller.cpuMaxFrequencyMHz() >= 0.0);
+        QVERIFY(!controller.cpuArchitecture().isEmpty());
         QVERIFY(!controller.cpuCores().isEmpty());
         QVERIFY(controller.cpuCores().size() <= controller.logicalCores());
         QVERIFY(controller.memoryTotalBytes() > 0);
@@ -53,6 +57,10 @@ private slots:
             QVERIFY(disk.contains(QStringLiteral("usage")));
             QVERIFY(disk.contains(QStringLiteral("readBytesPerSecond")));
             QVERIFY(disk.contains(QStringLiteral("writeBytesPerSecond")));
+            QVERIFY(disk.contains(QStringLiteral("readIops")));
+            QVERIFY(disk.contains(QStringLiteral("writeIops")));
+            QVERIFY(disk.contains(QStringLiteral("averageLatencyMs")));
+            QVERIFY(disk.contains(QStringLiteral("inFlight")));
         }
         QVERIFY(controller.uptimeSeconds() >= 0);
         QVERIFY(controller.processCount() > 0);
