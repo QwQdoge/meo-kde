@@ -138,7 +138,9 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("Force stop", process_table)
         self.assertIn("Group apps", process_table)
         self.assertIn("processGroups", process_table)
+        self.assertIn("drilldownDesktopId", process_table)
         self.assertIn("networkRxBytesPerSecond", process_table)
+        self.assertIn("Update %1s", process_table)
 
         details_page = (MEO_KDE_QML / "ProcessDetailsPage.qml").read_text(encoding="utf-8")
         services_page = (MEO_KDE_QML / "ServicesPage.qml").read_text(encoding="utf-8")
@@ -176,6 +178,8 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("readIops", performance_page)
         self.assertIn("averageLatencyMs", performance_page)
         self.assertIn("addressSummary", performance_page)
+        self.assertIn("cpuCaches", performance_page)
+        self.assertIn("readIops", performance_page)
 
         task_backend = (REPO_ROOT / "native/system/taskmanagercontroller.cpp").read_text(encoding="utf-8")
         system_plugin = (REPO_ROOT / "native/system/meosystemplugin.cpp").read_text(encoding="utf-8")
