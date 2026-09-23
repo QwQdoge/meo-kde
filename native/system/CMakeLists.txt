@@ -129,7 +129,7 @@ if(BUILD_TESTING)
         taskmanagercontroller.h
     )
     target_include_directories(meo-task-manager-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-    target_link_libraries(meo-task-manager-controller-test PRIVATE Qt6::Core Qt6::Test)
+    target_link_libraries(meo-task-manager-controller-test PRIVATE Qt6::Core Qt6::Gui Qt6::Test)
     add_test(NAME meo-task-manager-controller COMMAND meo-task-manager-controller-test)
 
     add_executable(meo-desktop-widget-bridge-test
