@@ -296,6 +296,99 @@ Item {
                             width: 40 * root.scaleFactor
                             height: width
                             radius: 14 * root.scaleFactor
+                            color: MeoTheme.primaryContainer
+
+                            MeoIcon {
+                                anchors.centerIn: parent
+                                icon: "memory"
+                                size: 22
+                                fill: true
+                                color: MeoTheme.contentOnPrimaryContainer
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+
+                            MeoText {
+                                text: MeoI18n.translator.i18n("CPU details")
+                                typeRole: "title"
+                                typeSize: "small"
+                                emphasized: true
+                            }
+
+                            MeoText {
+                                Layout.fillWidth: true
+                                text: MeoSystem.Performance.cpuModel
+                                typeRole: "body"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        MeoChip {
+                            visible: MeoSystem.Performance.cpuVirtualizationSupported
+                            label: MeoI18n.translator.i18n("Virtualization")
+                            leadingIcon: "developer_mode"
+                            type: "assist"
+                            shape: "pill"
+                            elevated: true
+                        }
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: width >= 720 * root.scaleFactor ? 5 : 2
+                        rowSpacing: MeoTheme.space8
+                        columnSpacing: MeoTheme.space8
+
+                        HardwareStat {
+                            label: MeoI18n.translator.i18n("Architecture")
+                            value: MeoSystem.Performance.cpuArchitecture || "—"
+                        }
+                        HardwareStat {
+                            label: MeoI18n.translator.i18n("Cores")
+                            value: String(MeoSystem.Performance.physicalCores)
+                        }
+                        HardwareStat {
+                            label: MeoI18n.translator.i18n("Logical")
+                            value: String(MeoSystem.Performance.logicalCores)
+                        }
+                        HardwareStat {
+                            label: MeoI18n.translator.i18n("Sockets")
+                            value: String(MeoSystem.Performance.cpuSockets)
+                        }
+                        HardwareStat {
+                            label: MeoI18n.translator.i18n("Max speed")
+                            value: MeoSystem.Performance.cpuMaxFrequencyMHz > 0
+                                   ? (MeoSystem.Performance.cpuMaxFrequencyMHz >= 1000
+                                      ? (MeoSystem.Performance.cpuMaxFrequencyMHz / 1000).toFixed(2) + " GHz"
+                                      : Math.round(MeoSystem.Performance.cpuMaxFrequencyMHz) + " MHz")
+                                   : "—"
+                        }
+                    }
+                }
+            }
+
+            MeoCard {
+                Layout.fillWidth: true
+                type: "filled"
+                radius: MeoTheme.shapeLargeIncreased
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: MeoTheme.space12
+                    spacing: MeoTheme.space12
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Rectangle {
+                            width: 40 * root.scaleFactor
+                            height: width
+                            radius: 14 * root.scaleFactor
                             color: MeoTheme.secondaryContainer
 
                             MeoIcon {
@@ -333,19 +426,19 @@ Item {
                         rowSpacing: MeoTheme.space8
                         columnSpacing: MeoTheme.space8
 
-                        MemoryStat {
+                        HardwareStat {
                             label: MeoI18n.translator.i18n("Available")
                             value: root.formatBytes(MeoSystem.Performance.memoryAvailableBytes)
                         }
-                        MemoryStat {
+                        HardwareStat {
                             label: MeoI18n.translator.i18n("Cached")
                             value: root.formatBytes(MeoSystem.Performance.memoryCachedBytes)
                         }
-                        MemoryStat {
+                        HardwareStat {
                             label: MeoI18n.translator.i18n("Buffers")
                             value: root.formatBytes(MeoSystem.Performance.memoryBuffersBytes)
                         }
-                        MemoryStat {
+                        HardwareStat {
                             label: MeoI18n.translator.i18n("Shared")
                             value: root.formatBytes(MeoSystem.Performance.memorySharedBytes)
                         }
@@ -582,8 +675,8 @@ Item {
         }
     }
 
-    component MemoryStat: MeoCard {
-        id: memoryStat
+    component HardwareStat: MeoCard {
+        id: hardwareStat
         property string label: ""
         property string value: ""
 
@@ -598,14 +691,14 @@ Item {
             spacing: 0
 
             MeoText {
-                text: memoryStat.value
+                text: hardwareStat.value
                 typeRole: "title"
                 typeSize: "small"
                 emphasized: true
             }
 
             MeoText {
-                text: memoryStat.label
+                text: hardwareStat.label
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
@@ -617,7 +710,7 @@ Item {
         id: diskTile
         property var disk: ({})
 
-        implicitHeight: 194 * root.scaleFactor
+        implicitHeight: 240 * root.scaleFactor
         type: "filled"
         radius: MeoTheme.shapeLargeIncreased
 
@@ -705,6 +798,46 @@ Item {
                     typeRole: "label"
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
+                }
+            }
+
+            Flow {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                MeoChip {
+                    label: MeoI18n.translator.i18n("R %1 IOPS")
+                           .arg(Number(diskTile.disk.readIops || 0).toFixed(0))
+                    leadingIcon: "south"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
+
+                MeoChip {
+                    label: MeoI18n.translator.i18n("W %1 IOPS")
+                           .arg(Number(diskTile.disk.writeIops || 0).toFixed(0))
+                    leadingIcon: "north"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
+
+                MeoChip {
+                    label: Number(diskTile.disk.averageLatencyMs || 0).toFixed(1) + " ms"
+                    leadingIcon: "timer"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
+
+                MeoChip {
+                    visible: Number(diskTile.disk.inFlight || 0) > 0
+                    label: MeoI18n.translator.i18n("Queue %1").arg(diskTile.disk.inFlight)
+                    leadingIcon: "format_list_numbered"
+                    type: "assist"
+                    shape: "pill"
+                    elevated: Number(diskTile.disk.inFlight || 0) > 2
                 }
             }
         }
