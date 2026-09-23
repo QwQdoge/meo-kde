@@ -10,6 +10,7 @@ Item {
 
     property string categoryFilter: "all"
     property bool treeMode: false
+    property bool groupMode: true
     property string sortProperty: "cpuText"
     property bool sortAscending: false
     readonly property real scaleFactor: MeoTheme.globalScale
@@ -76,7 +77,8 @@ Item {
 
     function buildRows() {
         const source = treeMode ? (MeoSystem.Tasks.processTree || [])
-                                : (MeoSystem.Tasks.processes || [])
+                     : groupMode ? (MeoSystem.Tasks.processGroups || [])
+                                 : (MeoSystem.Tasks.processes || [])
         const query = processSearch.text.trim().toLowerCase()
         const rows = []
         for (let i = 0; i < source.length; ++i) {
@@ -88,26 +90,37 @@ Item {
                 process.appName || "",
                 process.command || "",
                 process.user || "",
-                String(process.pid || "")
+                String(process.pid || process.mainPid || ""),
+                String(process.processCount || "")
             ].join(" ").toLowerCase()
             if (query !== "" && haystack.indexOf(query) === -1)
                 continue
 
             const readRate = Number(process.diskReadBytesPerSecond || 0)
             const writeRate = Number(process.diskWriteBytesPerSecond || 0)
+            const grouped = root.groupMode && !root.treeMode
+            const displayName = grouped
+                              ? (process.appName || process.name || "")
+                                + (Number(process.processCount || 0) > 1
+                                   ? "  ·  " + MeoI18n.translator.i18n("%1 processes").arg(process.processCount)
+                                   : "")
+                              : indentedName(process)
             rows.push({
-                pid: Number(process.pid || 0),
+                pid: Number(process.pid || process.mainPid || 0),
                 parentPid: Number(process.parentPid || 0),
-                name: process.name || "",
+                name: process.name || process.appName || "",
                 appName: process.appName || process.name || "",
-                displayName: indentedName(process),
+                displayName: displayName,
                 command: process.command || "",
                 executable: process.executable || "",
                 user: process.user || "",
                 state: process.state || "",
-                stateText: stateLabel(process.state),
+                stateText: grouped ? "—" : stateLabel(process.state),
                 category: process.category || "background",
                 categoryText: categoryLabel(process.category),
+                processCount: Number(process.processCount || 1),
+                processCountText: String(process.processCount || 1),
+                pids: process.pids || [],
                 threads: Number(process.threads || 0),
                 nice: Number(process.nice || 0),
                 treeDepth: Number(process.treeDepth || 0),
@@ -121,7 +134,7 @@ Item {
                 diskText: "R " + formatRate(readRate) + " · W " + formatRate(writeRate),
                 canControl: !!process.canControl,
                 efficiency: !!process.efficiency,
-                selected: Number(process.pid || 0) === MeoSystem.Tasks.selectedPid,
+                selected: Number(process.pid || process.mainPid || 0) === MeoSystem.Tasks.selectedPid,
                 enabled: true
             })
         }
@@ -147,6 +160,22 @@ Item {
 
     function tableColumns() {
         const sort = !treeMode
+        if (groupMode && !treeMode) {
+            if (width < 620 * scaleFactor) {
+                return [
+                    { label: MeoI18n.translator.i18n("App"), property: "displayName", sortable: true },
+                    { label: "CPU", property: "cpuText", sortable: true },
+                    { label: MeoI18n.translator.i18n("Memory"), property: "memoryText", sortable: true }
+                ]
+            }
+            return [
+                { label: MeoI18n.translator.i18n("App"), property: "displayName", sortable: true },
+                { label: MeoI18n.translator.i18n("Processes"), property: "processCountText", sortable: true },
+                { label: "CPU", property: "cpuText", sortable: true },
+                { label: MeoI18n.translator.i18n("Memory"), property: "memoryText", sortable: true },
+                { label: MeoI18n.translator.i18n("Disk"), property: "diskText", sortable: true }
+            ]
+        }
         if (width < 620 * scaleFactor) {
             return [
                 { label: MeoI18n.translator.i18n("Name"), property: "displayName", sortable: sort },
@@ -228,6 +257,21 @@ Item {
             }
 
             MeoChip {
+                label: MeoI18n.translator.i18n("Group apps")
+                leadingIcon: "view_list"
+                type: "assist"
+                visualStyle: "outlined"
+                shape: "pill"
+                selected: root.groupMode
+                elevated: root.groupMode
+                onClicked: {
+                    root.groupMode = !root.groupMode
+                    if (root.groupMode)
+                        root.treeMode = false
+                }
+            }
+
+            MeoChip {
                 label: MeoI18n.translator.i18n("Process tree")
                 leadingIcon: "account_tree"
                 type: "assist"
@@ -235,7 +279,11 @@ Item {
                 shape: "pill"
                 selected: root.treeMode
                 elevated: root.treeMode
-                onClicked: root.treeMode = !root.treeMode
+                onClicked: {
+                    root.treeMode = !root.treeMode
+                    if (root.treeMode)
+                        root.groupMode = false
+                }
             }
         }
 
@@ -277,7 +325,7 @@ Item {
 
         MeoCard {
             Layout.fillWidth: true
-            visible: root.selectedProcess && root.selectedProcess.pid > 0
+            visible: !root.groupMode && root.selectedProcess && root.selectedProcess.pid > 0
             type: "filled"
             radius: MeoTheme.shapeLargeIncreased
 
