@@ -131,6 +131,21 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("terminateProcess", process_table)
         self.assertIn("Force stop", process_table)
 
+        details_page = (MEO_KDE_QML / "ProcessDetailsPage.qml").read_text(encoding="utf-8")
+        services_page = (MEO_KDE_QML / "ServicesPage.qml").read_text(encoding="utf-8")
+        startup_page = (MEO_KDE_QML / "StartupAppsPage.qml").read_text(encoding="utf-8")
+        performance_page = (MEO_KDE_QML / "PerformanceDashboard.qml").read_text(encoding="utf-8")
+        self.assertIn("Search process details", details_page)
+        self.assertIn("diskReadBytesPerSecond", details_page)
+        self.assertIn("gpuAvailable", details_page)
+        self.assertIn("Network shows real socket count only", details_page)
+        self.assertIn("All scopes", services_page)
+        self.assertIn("System services are shown read-only", services_page)
+        self.assertIn("setStartupEnabled", startup_page)
+        self.assertIn("cpuCores", performance_page)
+        self.assertIn("gpu.history", performance_page)
+        self.assertIn("wavy: true", performance_page)
+
         task_backend = (REPO_ROOT / "native/system/taskmanagercontroller.cpp").read_text(encoding="utf-8")
         system_plugin = (REPO_ROOT / "native/system/meosystemplugin.cpp").read_text(encoding="utf-8")
         self.assertIn('"Tasks", tasksProvider', system_plugin)
@@ -138,6 +153,10 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("refreshStartupApps", task_backend)
         self.assertIn("refreshServices", task_backend)
         self.assertIn("X-Meo-Override", task_backend)
+        self.assertIn("OnlyShowIn", task_backend)
+        self.assertIn('QStringLiteral("scope"), QStringLiteral("system")', task_backend)
+        self.assertIn("drm-engine-", task_backend)
+        self.assertIn("networkThroughputAvailable", task_backend)
         self.assertIn("org.meo.widget.performance", installer)
 
     def test_document_describes_native_plasma_api_and_honest_frame_boundary(self):
