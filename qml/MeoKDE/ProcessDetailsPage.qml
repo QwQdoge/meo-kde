@@ -401,7 +401,11 @@ Item {
                     title: MeoI18n.translator.i18n("Network")
                     iconName: "lan"
                     valueText: MeoI18n.translator.i18n("%1 sockets").arg(root.process.socketCount || 0)
-                    supportingText: MeoI18n.translator.i18n("Per-process throughput is unavailable without kernel accounting")
+                    supportingText: MeoI18n.translator.i18n("TCP %1 · Established %2 · Listen %3 · UDP %4")
+                                    .arg(root.process.tcpSocketCount || 0)
+                                    .arg(root.process.tcpEstablishedCount || 0)
+                                    .arg(root.process.tcpListenCount || 0)
+                                    .arg(root.process.udpSocketCount || 0)
                     progress: -1
                 }
 
