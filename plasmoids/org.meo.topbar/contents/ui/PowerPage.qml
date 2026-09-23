@@ -132,7 +132,7 @@ QQC2.ScrollView {
                     Layout.fillWidth: true
                     isDense: true
                     headline: MeoI18n.translator.i18n("System monitor")
-                    supportingText: MeoI18n.translator.i18n("CPU, GPU, memory, storage, network and processes")
+                    supportingText: MeoI18n.translator.i18n("Processes, performance, startup apps, services and users")
                     leadingIcon: "monitoring"
                     trailingComponent: Component {
                         MeoIcon { icon: "chevron_right"; size: 18; color: MeoTheme.onSurfaceVariant }
