@@ -262,15 +262,11 @@ QSet<quint64> socketInodesForPid(qint64 pid)
     return inodes;
 }
 
-int socketCountForPid(qint64 pid)
-{
-    return socketInodesForPid(pid).size();
-}
-
 QVariantMap socketProtocolSummary(qint64 pid)
 {
     const QSet<quint64> inodes = socketInodesForPid(pid);
     QVariantMap summary{
+        {QStringLiteral("total"), inodes.size()},
         {QStringLiteral("tcp"), 0},
         {QStringLiteral("tcpEstablished"), 0},
         {QStringLiteral("tcpListen"), 0},
@@ -1205,8 +1201,9 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
     selected.insert(QStringLiteral("suspended"),
                     selected.value(QStringLiteral("state")).toString() == QStringLiteral("T")
                     || selected.value(QStringLiteral("state")).toString() == QStringLiteral("t"));
-    selected.insert(QStringLiteral("socketCount"), socketCountForPid(m_selectedPid));
     const QVariantMap socketSummary = socketProtocolSummary(m_selectedPid);
+    selected.insert(QStringLiteral("socketCount"),
+                    socketSummary.value(QStringLiteral("total")));
     selected.insert(QStringLiteral("tcpSocketCount"),
                     socketSummary.value(QStringLiteral("tcp")));
     selected.insert(QStringLiteral("tcpEstablishedCount"),
