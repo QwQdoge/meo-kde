@@ -21,6 +21,7 @@ private slots:
         controller.refreshNow();
         QVERIFY(!controller.processes().isEmpty());
         QVERIFY(!controller.processTree().isEmpty());
+        QVERIFY(!controller.processGroups().isEmpty());
         QVERIFY(!controller.userSummaries().isEmpty());
 
         const QVariantMap first = controller.processes().constFirst().toMap();
@@ -47,6 +48,18 @@ private slots:
 
         controller.clearActionError();
         QVERIFY(!controller.setProcessEfficiency(1, true));
+        QVERIFY(!controller.actionError().isEmpty());
+
+        controller.clearActionError();
+        QVERIFY(!controller.setProcessSuspended(1, true));
+        QVERIFY(!controller.actionError().isEmpty());
+
+        controller.clearActionError();
+        QVERIFY(!controller.terminateProcessTree(1));
+        QVERIFY(!controller.actionError().isEmpty());
+
+        controller.clearActionError();
+        QVERIFY(!controller.setProcessCpuAffinityAll(1));
         QVERIFY(!controller.actionError().isEmpty());
     }
 
