@@ -629,10 +629,11 @@ void PerformanceController::startNvidiaGpuSample()
     process->setStandardErrorFile(QProcess::nullDevice());
 
     const auto finish = [this, process](bool parseOutput) {
-        if (parseOutput) {
+        if (parseOutput && wantsModule(QStringLiteral("gpu"))) {
             QVariantList updated = m_gpus;
             const QList<QByteArray> rows = process->readAllStandardOutput().split('\n');
             int nvidiaIndex = 0;
+            bool primaryUpdated = false;
             for (const QByteArray &row : rows) {
                 if (row.trimmed().isEmpty()) {
                     continue;
@@ -684,7 +685,8 @@ void PerformanceController::startNvidiaGpuSample()
                     updated.push_back(gpu);
                 }
 
-                if (m_gpuName.isEmpty() || m_gpuName.startsWith(QStringLiteral("NVIDIA"))) {
+                if (!primaryUpdated) {
+                    primaryUpdated = true;
                     m_gpuName = gpu.value(QStringLiteral("name")).toString();
                     m_gpuUsage = gpu.value(QStringLiteral("usage")).toDouble();
                     m_gpuTemperature = gpu.value(QStringLiteral("temperature")).toDouble();
