@@ -185,6 +185,52 @@ double gpuTemperatureAt(const QString &devicePath)
     return value;
 }
 
+double gpuPowerWattsAt(const QString &devicePath)
+{
+    QDir hwmonRoot(devicePath + QStringLiteral("/hwmon"));
+    const QStringList entries = hwmonRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    double best = 0;
+    for (const QString &entry : entries) {
+        const QString base = hwmonRoot.filePath(entry);
+        const qint64 averageMicrowatts = readInteger(base + QStringLiteral("/power1_average"), 0);
+        const qint64 inputMicrowatts = readInteger(base + QStringLiteral("/power1_input"), 0);
+        const qint64 microwatts = averageMicrowatts > 0 ? averageMicrowatts : inputMicrowatts;
+        if (microwatts > 0) {
+            best = std::max(best, microwatts / 1000000.0);
+        }
+    }
+    return best;
+}
+
+double gpuCoreClockMHzAt(const QString &devicePath)
+{
+    const QStringList directCandidates{
+        devicePath + QStringLiteral("/gt_cur_freq_mhz"),
+        devicePath + QStringLiteral("/cur_freq"),
+    };
+    for (const QString &path : directCandidates) {
+        const qint64 value = readInteger(path, 0);
+        if (value > 0) {
+            return value > 100000 ? value / 1000000.0 : value;
+        }
+    }
+
+    const QList<QByteArray> lines =
+        readBytes(devicePath + QStringLiteral("/pp_dpm_sclk")).split('\n');
+    for (const QByteArray &line : lines) {
+        if (!line.contains('*')) {
+            continue;
+        }
+        static const QRegularExpression mhzPattern(QStringLiteral("(\\d+(?:\\.\\d+)?)\\s*MHz"));
+        const QRegularExpressionMatch match =
+            mhzPattern.match(QString::fromUtf8(line));
+        if (match.hasMatch()) {
+            return match.captured(1).toDouble();
+        }
+    }
+    return 0;
+}
+
 QVariantList takeProcesses(const QVector<QVariantMap> &source, int limit)
 {
     QVariantList result;
@@ -895,6 +941,9 @@ void PerformanceController::sampleGpu()
         gpu.insert(QStringLiteral("history"), history);
         const double temperature = gpuTemperatureAt(devicePath);
         gpu.insert(QStringLiteral("temperature"), temperature);
+        gpu.insert(QStringLiteral("powerWatts"), gpuPowerWattsAt(devicePath));
+        gpu.insert(QStringLiteral("coreClockMHz"), gpuCoreClockMHzAt(devicePath));
+        gpu.insert(QStringLiteral("memoryClockMHz"), 0.0);
 
         const qint64 vramTotal = readInteger(devicePath + QStringLiteral("/mem_info_vram_total"), 0);
         const qint64 vramUsed = readInteger(devicePath + QStringLiteral("/mem_info_vram_used"), 0);
@@ -982,7 +1031,7 @@ void PerformanceController::startNvidiaGpuSample()
     m_nvidiaQuerying = true;
     process->setProgram(QStringLiteral("nvidia-smi"));
     process->setArguments({
-        QStringLiteral("--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total"),
+        QStringLiteral("--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw,clocks.current.graphics,clocks.current.memory"),
         QStringLiteral("--format=csv,noheader,nounits"),
     });
     process->setStandardErrorFile(QProcess::nullDevice());
@@ -998,7 +1047,7 @@ void PerformanceController::startNvidiaGpuSample()
                     continue;
                 }
                 const QList<QByteArray> fields = row.split(',');
-                if (fields.size() < 5) {
+                if (fields.size() < 8) {
                     continue;
                 }
 
@@ -1006,10 +1055,16 @@ void PerformanceController::startNvidiaGpuSample()
                 bool temperatureOk = false;
                 bool usedOk = false;
                 bool totalOk = false;
+                bool powerOk = false;
+                bool graphicsClockOk = false;
+                bool memoryClockOk = false;
                 const double usage = fields.at(1).trimmed().toDouble(&usageOk);
                 const double temperature = fields.at(2).trimmed().toDouble(&temperatureOk);
                 const double memoryUsedMiB = fields.at(3).trimmed().toDouble(&usedOk);
                 const double memoryTotalMiB = fields.at(4).trimmed().toDouble(&totalOk);
+                const double powerWatts = fields.at(5).trimmed().toDouble(&powerOk);
+                const double graphicsClockMHz = fields.at(6).trimmed().toDouble(&graphicsClockOk);
+                const double memoryClockMHz = fields.at(7).trimmed().toDouble(&memoryClockOk);
 
                 QVariantMap gpu;
                 int listIndex = -1;
@@ -1034,6 +1089,11 @@ void PerformanceController::startNvidiaGpuSample()
                            usedOk ? static_cast<qint64>(memoryUsedMiB * 1024.0 * 1024.0) : 0);
                 gpu.insert(QStringLiteral("memoryTotalBytes"),
                            totalOk ? static_cast<qint64>(memoryTotalMiB * 1024.0 * 1024.0) : 0);
+                gpu.insert(QStringLiteral("powerWatts"), powerOk ? powerWatts : 0.0);
+                gpu.insert(QStringLiteral("coreClockMHz"),
+                           graphicsClockOk ? graphicsClockMHz : 0.0);
+                gpu.insert(QStringLiteral("memoryClockMHz"),
+                           memoryClockOk ? memoryClockMHz : 0.0);
 
                 if (listIndex < 0) {
                     gpu.insert(QStringLiteral("id"), QStringLiteral("nvidia-%1").arg(nvidiaIndex++));
