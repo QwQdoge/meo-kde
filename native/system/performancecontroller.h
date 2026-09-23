@@ -30,6 +30,10 @@ class PerformanceController final : public QObject
     Q_PROPERTY(double memoryUsage READ memoryUsage NOTIFY metricsChanged)
     Q_PROPERTY(qint64 memoryUsedBytes READ memoryUsedBytes NOTIFY metricsChanged)
     Q_PROPERTY(qint64 memoryTotalBytes READ memoryTotalBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 memoryAvailableBytes READ memoryAvailableBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 memoryCachedBytes READ memoryCachedBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 memoryBuffersBytes READ memoryBuffersBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 memorySharedBytes READ memorySharedBytes NOTIFY metricsChanged)
     Q_PROPERTY(qint64 swapUsedBytes READ swapUsedBytes NOTIFY metricsChanged)
     Q_PROPERTY(qint64 swapTotalBytes READ swapTotalBytes NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList memoryHistory READ memoryHistory NOTIFY metricsChanged)
@@ -88,6 +92,10 @@ public:
     double memoryUsage() const;
     qint64 memoryUsedBytes() const;
     qint64 memoryTotalBytes() const;
+    qint64 memoryAvailableBytes() const;
+    qint64 memoryCachedBytes() const;
+    qint64 memoryBuffersBytes() const;
+    qint64 memorySharedBytes() const;
     qint64 swapUsedBytes() const;
     qint64 swapTotalBytes() const;
     QVariantList memoryHistory() const;
@@ -182,6 +190,10 @@ private:
     double m_memoryUsage = 0;
     qint64 m_memoryUsedBytes = 0;
     qint64 m_memoryTotalBytes = 0;
+    qint64 m_memoryAvailableBytes = 0;
+    qint64 m_memoryCachedBytes = 0;
+    qint64 m_memoryBuffersBytes = 0;
+    qint64 m_memorySharedBytes = 0;
     qint64 m_swapUsedBytes = 0;
     qint64 m_swapTotalBytes = 0;
     QVariantList m_memoryHistory;
