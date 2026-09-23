@@ -876,6 +876,7 @@ void PerformanceController::sampleProcesses()
 
     QVector<Sample> samples;
     QHash<qint64, quint64> nextTicks;
+    QHash<qint64, QString> userNames;
     const qint64 pageSize = std::max<qint64>(1, sysconf(_SC_PAGESIZE));
     const uid_t currentUid = geteuid();
     QDir proc(QStringLiteral("/proc"));
@@ -942,8 +943,14 @@ void PerformanceController::sampleProcesses()
 
         QString user = uid >= 0 ? QString::number(uid) : QStringLiteral("?");
         if (uid >= 0) {
-            if (const struct passwd *account = getpwuid(static_cast<uid_t>(uid))) {
-                user = QString::fromLocal8Bit(account->pw_name);
+            const auto cached = userNames.constFind(uid);
+            if (cached != userNames.cend()) {
+                user = cached.value();
+            } else {
+                if (const struct passwd *account = getpwuid(static_cast<uid_t>(uid))) {
+                    user = QString::fromLocal8Bit(account->pw_name);
+                }
+                userNames.insert(uid, user);
             }
         }
 
