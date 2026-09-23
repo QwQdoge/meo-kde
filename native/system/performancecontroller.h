@@ -194,6 +194,7 @@ private:
     QVariantList m_gpus;
     QVariantList m_gpuHistory;
     bool m_nvidiaQuerying = false;
+    bool m_nvidiaSmiUnavailable = false;
 
     qint64 m_uptimeSeconds = 0;
     double m_load1 = 0;
