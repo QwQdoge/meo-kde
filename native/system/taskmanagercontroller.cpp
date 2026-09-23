@@ -1072,6 +1072,8 @@ void TaskManagerController::refreshStartupApps()
             {QStringLiteral("systemPath"), systemPath},
             {QStringLiteral("meoDisabled"),
              desktopEntryValue(content, "X-Meo-Disabled").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0},
+            {QStringLiteral("meoOverride"),
+             desktopEntryValue(content, "X-Meo-Override").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0},
         };
         m_startupApps.push_back(app);
         m_startupById.insert(id, app);
@@ -1100,7 +1102,7 @@ bool TaskManagerController::setStartupEnabled(const QString &desktopId, bool ena
 
     if (enabled) {
         if (!currentUserPath.isEmpty()
-            && info.value(QStringLiteral("meoDisabled")).toBool()
+            && info.value(QStringLiteral("meoOverride")).toBool()
             && !systemPath.isEmpty()) {
             if (!QFile::remove(currentUserPath)) {
                 setActionError(QStringLiteral("Could not remove the Meo startup override."));
@@ -1115,12 +1117,14 @@ bool TaskManagerController::setStartupEnabled(const QString &desktopId, bool ena
             content = setDesktopEntryKey(content, "Hidden", "false");
             content = setDesktopEntryKey(content, "X-GNOME-Autostart-enabled", "true");
             content = setDesktopEntryKey(content, "X-Meo-Disabled", "false");
+            content = setDesktopEntryKey(content, "X-Meo-Override", "false");
             if (!writeFileAtomically(path, content)) {
                 setActionError(QStringLiteral("Could not enable the startup entry."));
                 return false;
             }
         }
     } else {
+        const bool creatingOverride = currentUserPath.isEmpty() && !systemPath.isEmpty();
         QByteArray content = readBytes(!currentUserPath.isEmpty() ? currentUserPath : systemPath);
         if (content.isEmpty()) {
             setActionError(QStringLiteral("Could not read the startup entry."));
@@ -1128,7 +1132,9 @@ bool TaskManagerController::setStartupEnabled(const QString &desktopId, bool ena
         }
         content = setDesktopEntryKey(content, "Hidden", "true");
         content = setDesktopEntryKey(content, "X-Meo-Disabled", "true");
-        if (!writeFileAtomically(userPath, content)) {
+        content = setDesktopEntryKey(content, "X-Meo-Override", creatingOverride ? "true" : "false");
+        const QString targetPath = !currentUserPath.isEmpty() ? currentUserPath : userPath;
+        if (!writeFileAtomically(targetPath, content)) {
             setActionError(QStringLiteral("Could not create the startup override."));
             return false;
         }
