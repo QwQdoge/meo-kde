@@ -186,11 +186,20 @@ class DesktopLayoutTests(unittest.TestCase):
         # skip feedback entirely; slow loads cross-fade through MeoUI's
         # morphing indicator without a blank -> spinner -> content flash.
         self.assertIn("readonly property int startupLoadingDelay: 900", launcher)
+        self.assertIn("readonly property int searchLoadingDelay: 500", launcher)
         self.assertIn("readonly property bool appContentReady:", launcher)
         self.assertIn("active: launcherPopup.searching || launcherPopup.appContentReady", launcher)
         self.assertIn("!startupFeedback.feedbackVisible", launcher)
         self.assertIn("minimumVisibleDuration: 300", launcher)
         self.assertIn("indicatorVariant: \"contained\"", launcher)
+
+        # KRunner search keeps its native querying/resultsPresent semantics so
+        # an in-flight query never flashes a false no-results state. Slow
+        # searches reuse MeoUI's delayed morphing feedback.
+        self.assertIn("id: searchFeedback", launcher)
+        self.assertIn("runnerModel.querying", launcher)
+        self.assertIn("!runnerModel.resultsPresent", launcher)
+        self.assertIn("!searchFeedback.feedbackVisible", launcher)
 
         # The startup budget begins before the enter transition, and the
         # launcher mirrors KRunner's directional cue from the bottom Shelf
