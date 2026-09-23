@@ -267,8 +267,10 @@ Item {
                 elevated: root.groupMode
                 onClicked: {
                     root.groupMode = !root.groupMode
-                    if (root.groupMode)
+                    if (root.groupMode) {
                         root.treeMode = false
+                        processSearch.text = ""
+                    }
                 }
             }
 
@@ -319,8 +321,13 @@ Item {
                 root.sortAscending = ascending
             }
             onRowActivated: function(index, row) {
-                if (row)
-                    MeoSystem.Tasks.selectProcess(row.pid)
+                if (!row)
+                    return
+                MeoSystem.Tasks.selectProcess(row.pid)
+                if (root.groupMode) {
+                    processSearch.text = row.appName || row.name || ""
+                    root.groupMode = false
+                }
             }
         }
 
