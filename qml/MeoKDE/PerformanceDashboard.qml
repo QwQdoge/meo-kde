@@ -45,6 +45,12 @@ Item {
         return MeoI18n.translator.i18n("Balanced")
     }
 
+    function profileIcon(profile) {
+        if (profile === "power-saver") return "battery_saver"
+        if (profile === "performance") return "speed"
+        return "balance"
+    }
+
     function gpuDetail() {
         const parts = []
         if (MeoSystem.Performance.gpuTemperature > 0)
@@ -53,8 +59,6 @@ Item {
             parts.push(MeoI18n.translator.i18n("VRAM %1 / %2")
                        .arg(formatBytes(MeoSystem.Performance.gpuMemoryUsedBytes))
                        .arg(formatBytes(MeoSystem.Performance.gpuMemoryTotalBytes)))
-        } else if (MeoSystem.Performance.gpus.length > 1) {
-            parts.push(MeoI18n.translator.i18n("%1 GPUs").arg(MeoSystem.Performance.gpus.length))
         }
         return parts.join(" · ")
     }
@@ -86,10 +90,68 @@ Item {
 
             MeoCard {
                 Layout.fillWidth: true
-                visible: MeoSystem.Platform.powerProfilesAvailable
-                         || MeoSystem.Performance.available
                 type: "filled"
-                radius: MeoTheme.cardRadius
+                radius: MeoTheme.shapeExtraLarge
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: MeoTheme.space16
+                    spacing: MeoTheme.space16
+
+                    Rectangle {
+                        width: 56 * root.scaleFactor
+                        height: width
+                        radius: 20 * root.scaleFactor
+                        color: MeoTheme.primaryContainer
+
+                        MeoIcon {
+                            anchors.centerIn: parent
+                            icon: "monitoring"
+                            size: 30
+                            fill: true
+                            color: MeoTheme.contentOnPrimaryContainer
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        MeoText {
+                            text: MeoI18n.translator.i18n("Live performance")
+                            typeRole: "title"
+                            typeSize: "medium"
+                            emphasized: true
+                        }
+
+                        MeoText {
+                            Layout.fillWidth: true
+                            text: MeoSystem.Performance.systemSummary
+                                  + " · " + MeoI18n.translator.i18n("Uptime %1")
+                                      .arg(root.formatUptime(MeoSystem.Performance.uptimeSeconds))
+                            typeRole: "body"
+                            typeSize: "small"
+                            color: MeoTheme.contentOnSurfaceVariant
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MeoChip {
+                        visible: MeoSystem.Platform.powerProfilesAvailable
+                        label: root.profileLabel(MeoSystem.Platform.activePowerProfile)
+                        leadingIcon: root.profileIcon(MeoSystem.Platform.activePowerProfile)
+                        type: "assist"
+                        shape: "pill"
+                        elevated: true
+                    }
+                }
+            }
+
+            MeoCard {
+                Layout.fillWidth: true
+                visible: MeoSystem.Platform.powerProfilesAvailable
+                type: "filled"
+                radius: MeoTheme.shapeLargeIncreased
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -98,50 +160,32 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: MeoTheme.space8
-
-                        MeoIcon {
-                            icon: "speed"
-                            size: 20
-                            color: MeoTheme.primary
-                        }
-
+                        MeoIcon { icon: "speed"; size: 20; color: MeoTheme.primary }
                         MeoText {
                             Layout.fillWidth: true
-                            text: MeoI18n.translator.i18n("Performance controls")
+                            text: MeoI18n.translator.i18n("Performance mode")
                             typeRole: "title"
                             typeSize: "small"
                             emphasized: true
                         }
 
                         MeoText {
-                            text: MeoI18n.translator.i18n("Uptime %1").arg(root.formatUptime(MeoSystem.Performance.uptimeSeconds))
+                            text: MeoI18n.translator.i18n("Sampling")
                             typeRole: "label"
                             typeSize: "small"
                             color: MeoTheme.contentOnSurfaceVariant
                         }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        visible: MeoSystem.Platform.powerProfilesAvailable
-                        spacing: MeoTheme.space8
-
-                        MeoText {
-                            text: MeoI18n.translator.i18n("Power mode")
-                            typeRole: "label"
-                            typeSize: "medium"
-                            color: MeoTheme.contentOnSurfaceVariant
-                        }
 
                         Repeater {
-                            model: MeoSystem.Platform.powerProfiles
-                            delegate: MeoButton {
-                                required property string modelData
-                                text: root.profileLabel(modelData)
-                                size: "xs"
-                                type: MeoSystem.Platform.activePowerProfile === modelData ? "tonal" : "outlined"
-                                onClicked: MeoSystem.Platform.activePowerProfile = modelData
+                            model: [1000, 2000, 5000]
+                            delegate: MeoChip {
+                                required property int modelData
+                                label: (modelData / 1000) + "s"
+                                type: "assist"
+                                shape: "pill"
+                                selected: MeoSystem.Performance.refreshInterval === modelData
+                                elevated: selected
+                                onClicked: MeoSystem.Performance.refreshInterval = modelData
                             }
                         }
                     }
@@ -150,21 +194,16 @@ Item {
                         Layout.fillWidth: true
                         spacing: MeoTheme.space8
 
-                        MeoText {
-                            text: MeoI18n.translator.i18n("Sampling")
-                            typeRole: "label"
-                            typeSize: "medium"
-                            color: MeoTheme.contentOnSurfaceVariant
-                        }
-
                         Repeater {
-                            model: [1000, 2000, 5000]
+                            model: MeoSystem.Platform.powerProfiles
                             delegate: MeoButton {
-                                required property int modelData
-                                text: modelData < 1000 ? modelData + " ms" : (modelData / 1000) + " s"
-                                size: "xs"
-                                type: MeoSystem.Performance.refreshInterval === modelData ? "tonal" : "outlined"
-                                onClicked: MeoSystem.Performance.refreshInterval = modelData
+                                required property string modelData
+                                Layout.fillWidth: true
+                                text: root.profileLabel(modelData)
+                                icon.name: root.profileIcon(modelData)
+                                size: "s"
+                                type: MeoSystem.Platform.activePowerProfile === modelData ? "tonal" : "outlined"
+                                onClicked: MeoSystem.Platform.activePowerProfile = modelData
                             }
                         }
                     }
@@ -172,9 +211,8 @@ Item {
             }
 
             GridLayout {
-                id: metricGrid
                 Layout.fillWidth: true
-                columns: width >= 720 * root.scaleFactor ? 2 : 1
+                columns: width >= 760 * root.scaleFactor ? 2 : 1
                 rowSpacing: MeoTheme.space12
                 columnSpacing: MeoTheme.space12
 
@@ -211,22 +249,6 @@ Item {
 
                 MetricCard {
                     Layout.fillWidth: true
-                    title: MeoI18n.translator.i18n("GPU")
-                    iconName: "developer_board"
-                    valueText: MeoSystem.Performance.gpuUsage >= 0
-                               ? MeoSystem.Performance.gpuUsage.toFixed(0) + "%"
-                               : "—"
-                    subtitle: MeoSystem.Performance.gpuName.length > 0
-                              ? MeoSystem.Performance.gpuName
-                              : MeoI18n.translator.i18n("No supported GPU telemetry")
-                    detail: root.gpuDetail()
-                    progressValue: MeoSystem.Performance.gpuUsage
-                    history: MeoSystem.Performance.gpuHistory
-                    accentColor: MeoTheme.tertiary
-                }
-
-                MetricCard {
-                    Layout.fillWidth: true
                     title: MeoI18n.translator.i18n("Storage")
                     iconName: "hard_drive"
                     valueText: MeoSystem.Performance.storageUsage.toFixed(0) + "%"
@@ -247,36 +269,262 @@ Item {
                     iconName: "swap_horiz"
                     valueText: "↓ " + root.formatRate(MeoSystem.Performance.networkRxBytesPerSecond)
                     subtitle: "↑ " + root.formatRate(MeoSystem.Performance.networkTxBytesPerSecond)
-                    detail: ""
+                    detail: MeoI18n.translator.i18n("System total")
                     history: MeoSystem.Performance.networkRxHistory
                     secondaryHistory: MeoSystem.Performance.networkTxHistory
                     progressValue: -1
                     accentColor: MeoTheme.primary
                     secondaryAccentColor: MeoTheme.tertiary
                 }
+            }
 
-                MetricCard {
-                    Layout.fillWidth: true
-                    title: MeoI18n.translator.i18n("System load")
-                    iconName: "monitor_heart"
-                    valueText: MeoSystem.Performance.loadAverage1.toFixed(2)
-                    subtitle: MeoI18n.translator.i18n("%1 processes · %2 logical CPUs")
-                              .arg(MeoSystem.Performance.processCount)
-                              .arg(MeoSystem.Performance.logicalCores)
-                    detail: MeoSystem.Performance.loadAverage5.toFixed(2)
-                            + " / " + MeoSystem.Performance.loadAverage15.toFixed(2)
-                    progressValue: Math.min(100,
-                        MeoSystem.Performance.logicalCores > 0
-                        ? MeoSystem.Performance.loadAverage1 / MeoSystem.Performance.logicalCores * 100
-                        : 0)
-                    history: []
-                    accentColor: MeoTheme.secondary
+            PopupSectionLabel {
+                sectionText: MeoI18n.translator.i18n("CPU cores")
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                columns: width >= 900 * root.scaleFactor ? 4
+                         : width >= 620 * root.scaleFactor ? 3
+                         : width >= 400 * root.scaleFactor ? 2 : 1
+                rowSpacing: MeoTheme.space8
+                columnSpacing: MeoTheme.space8
+
+                Repeater {
+                    model: MeoSystem.Performance.cpuCores
+
+                    delegate: CoreTile {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        core: modelData
+                    }
                 }
             }
 
-            Item {
+            PopupSectionLabel {
+                sectionText: MeoI18n.translator.i18n("Graphics")
+            }
+
+            PopupEmptyState {
                 Layout.fillWidth: true
-                Layout.preferredHeight: MeoTheme.space8
+                Layout.preferredHeight: 180 * root.scaleFactor
+                visible: MeoSystem.Performance.gpus.length === 0
+                iconName: "developer_board"
+                title: MeoI18n.translator.i18n("No GPU telemetry")
+                description: MeoI18n.translator.i18n("The graphics driver does not expose supported telemetry.")
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                visible: MeoSystem.Performance.gpus.length > 0
+                columns: width >= 760 * root.scaleFactor ? 2 : 1
+                rowSpacing: MeoTheme.space12
+                columnSpacing: MeoTheme.space12
+
+                Repeater {
+                    model: MeoSystem.Performance.gpus
+
+                    delegate: GpuTile {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        gpu: modelData
+                    }
+                }
+            }
+
+            MeoCard {
+                Layout.fillWidth: true
+                type: "filled"
+                radius: MeoTheme.shapeLargeIncreased
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: MeoTheme.space12
+                    spacing: MeoTheme.space12
+
+                    MeoIcon {
+                        icon: "monitor_heart"
+                        size: 24
+                        color: MeoTheme.tertiary
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        MeoText {
+                            text: MeoI18n.translator.i18n("System load")
+                            typeRole: "title"
+                            typeSize: "small"
+                            emphasized: true
+                        }
+
+                        MeoText {
+                            text: MeoI18n.translator.i18n("%1 processes · %2 logical CPUs")
+                                  .arg(MeoSystem.Performance.processCount)
+                                  .arg(MeoSystem.Performance.logicalCores)
+                            typeRole: "body"
+                            typeSize: "small"
+                            color: MeoTheme.contentOnSurfaceVariant
+                        }
+                    }
+
+                    MeoChip {
+                        label: MeoSystem.Performance.loadAverage1.toFixed(2)
+                               + " · " + MeoSystem.Performance.loadAverage5.toFixed(2)
+                               + " · " + MeoSystem.Performance.loadAverage15.toFixed(2)
+                        leadingIcon: "timeline"
+                        type: "assist"
+                        shape: "pill"
+                        elevated: true
+                    }
+                }
+            }
+
+            Item { Layout.fillWidth: true; Layout.preferredHeight: MeoTheme.space8 }
+        }
+    }
+
+    component CoreTile: MeoCard {
+        id: coreTile
+        property var core: ({})
+
+        implicitHeight: 132 * root.scaleFactor
+        type: "filled"
+        radius: MeoTheme.shapeLarge
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space12
+            spacing: MeoTheme.space6
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                MeoText {
+                    Layout.fillWidth: true
+                    text: coreTile.core.label || ("CPU " + coreTile.core.index)
+                    typeRole: "label"
+                    typeSize: "large"
+                    emphasized: true
+                }
+
+                MeoText {
+                    text: Number(coreTile.core.usage || 0).toFixed(0) + "%"
+                    typeRole: "title"
+                    typeSize: "small"
+                    emphasized: true
+                }
+            }
+
+            PerformanceGraph {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.minimumHeight: 38 * root.scaleFactor
+                values: coreTile.core.history || []
+                primaryColor: MeoTheme.primary
+                maximum: 100
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                MeoProgressBar {
+                    Layout.fillWidth: true
+                    value: Math.max(0, Math.min(100, Number(coreTile.core.usage || 0))) / 100
+                }
+
+                MeoText {
+                    visible: Number(coreTile.core.frequencyMHz || 0) > 0
+                    text: Math.round(Number(coreTile.core.frequencyMHz || 0)) + " MHz"
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                }
+            }
+        }
+    }
+
+    component GpuTile: MeoCard {
+        id: gpuTile
+        property var gpu: ({})
+
+        implicitHeight: 158 * root.scaleFactor
+        type: "filled"
+        radius: MeoTheme.shapeLargeIncreased
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space12
+            spacing: MeoTheme.space8
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                Rectangle {
+                    width: 40 * root.scaleFactor
+                    height: width
+                    radius: 14 * root.scaleFactor
+                    color: MeoTheme.tertiaryContainer
+
+                    MeoIcon {
+                        anchors.centerIn: parent
+                        icon: "developer_board"
+                        size: 22
+                        fill: true
+                        color: MeoTheme.contentOnTertiaryContainer
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    MeoText {
+                        Layout.fillWidth: true
+                        text: gpuTile.gpu.name || MeoI18n.translator.i18n("GPU")
+                        typeRole: "title"
+                        typeSize: "small"
+                        emphasized: true
+                        elide: Text.ElideRight
+                    }
+
+                    MeoText {
+                        text: (gpuTile.gpu.driver || "")
+                              + (gpuTile.gpu.temperature > 0
+                                 ? " · " + Math.round(gpuTile.gpu.temperature) + "°C" : "")
+                        typeRole: "label"
+                        typeSize: "small"
+                        color: MeoTheme.contentOnSurfaceVariant
+                    }
+                }
+
+                MeoText {
+                    text: Number(gpuTile.gpu.usage) >= 0
+                          ? Number(gpuTile.gpu.usage).toFixed(0) + "%" : "—"
+                    typeRole: "title"
+                    typeSize: "medium"
+                    emphasized: true
+                }
+            }
+
+            MeoProgressBar {
+                Layout.fillWidth: true
+                visible: Number(gpuTile.gpu.usage) >= 0
+                value: Math.max(0, Math.min(100, Number(gpuTile.gpu.usage))) / 100
+            }
+
+            MeoText {
+                Layout.fillWidth: true
+                text: Number(gpuTile.gpu.memoryTotalBytes || 0) > 0
+                      ? MeoI18n.translator.i18n("VRAM %1 / %2")
+                          .arg(root.formatBytes(gpuTile.gpu.memoryUsedBytes))
+                          .arg(root.formatBytes(gpuTile.gpu.memoryTotalBytes))
+                      : MeoI18n.translator.i18n("VRAM telemetry unavailable")
+                typeRole: "body"
+                typeSize: "small"
+                color: MeoTheme.contentOnSurfaceVariant
+                elide: Text.ElideRight
             }
         }
     }
