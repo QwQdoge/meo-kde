@@ -419,6 +419,20 @@ QStringList TaskManagerController::activeModules() const
 }
 
 int TaskManagerController::refreshInterval() const { return m_refreshInterval; }
+bool TaskManagerController::paused() const { return m_paused; }
+
+void TaskManagerController::setPaused(bool paused)
+{
+    if (m_paused == paused) {
+        return;
+    }
+    m_paused = paused;
+    updateTimer();
+    if (!m_paused && wantsProcessSampling()) {
+        refreshNow();
+    }
+    Q_EMIT pausedChanged();
+}
 
 void TaskManagerController::setRefreshInterval(int interval)
 {
@@ -530,7 +544,7 @@ bool TaskManagerController::wantsProcessSampling() const
 
 void TaskManagerController::updateTimer()
 {
-    if (wantsProcessSampling()) {
+    if (wantsProcessSampling() && !m_paused) {
         if (!m_refreshTimer.isActive()) {
             m_refreshTimer.start();
         }
