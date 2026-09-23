@@ -704,7 +704,14 @@ void PerformanceController::sampleGpu()
         gpu.insert(QStringLiteral("driver"), driver);
 
         const qint64 busy = readInteger(devicePath + QStringLiteral("/gpu_busy_percent"));
-        gpu.insert(QStringLiteral("usage"), busy >= 0 ? qBound<qint64>(0, busy, 100) : -1);
+        const double usage = busy >= 0 ? qBound<qint64>(0, busy, 100) : -1;
+        gpu.insert(QStringLiteral("usage"), usage);
+        QVariantList history = m_gpuHistories.value(card);
+        if (usage >= 0) {
+            appendHistory(history, usage);
+            m_gpuHistories.insert(card, history);
+        }
+        gpu.insert(QStringLiteral("history"), history);
         const double temperature = gpuTemperatureAt(devicePath);
         gpu.insert(QStringLiteral("temperature"), temperature);
 
@@ -847,12 +854,23 @@ void PerformanceController::startNvidiaGpuSample()
                 gpu.insert(QStringLiteral("memoryTotalBytes"),
                            totalOk ? static_cast<qint64>(memoryTotalMiB * 1024.0 * 1024.0) : 0);
 
-                if (listIndex >= 0) {
-                    updated[listIndex] = gpu;
-                } else {
+                if (listIndex < 0) {
                     gpu.insert(QStringLiteral("id"), QStringLiteral("nvidia-%1").arg(nvidiaIndex++));
                     gpu.insert(QStringLiteral("vendorId"), QStringLiteral("0x10de"));
                     gpu.insert(QStringLiteral("driver"), QStringLiteral("nvidia"));
+                }
+
+                const QString gpuId = gpu.value(QStringLiteral("id")).toString();
+                QVariantList history = m_gpuHistories.value(gpuId);
+                if (usageOk) {
+                    appendHistory(history, std::clamp(usage, 0.0, 100.0));
+                    m_gpuHistories.insert(gpuId, history);
+                }
+                gpu.insert(QStringLiteral("history"), history);
+
+                if (listIndex >= 0) {
+                    updated[listIndex] = gpu;
+                } else {
                     updated.push_back(gpu);
                 }
 
