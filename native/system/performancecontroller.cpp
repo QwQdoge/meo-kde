@@ -6,6 +6,7 @@
 #include <QRegularExpression>
 #include <QProcess>
 #include <QStorageInfo>
+#include <QStandardPaths>
 #include <QSysInfo>
 #include <QThread>
 #include <QVariantMap>
@@ -87,7 +88,11 @@ double cpuTemperature()
             || name == QStringLiteral("zenpower")) {
             return value;
         }
-        fallback = std::max(fallback, value);
+        if (name.contains(QStringLiteral("cpu"))
+            || name.contains(QStringLiteral("soc"))
+            || name == QStringLiteral("acpitz")) {
+            fallback = std::max(fallback, value);
+        }
     }
     return fallback;
 }
@@ -578,6 +583,25 @@ void PerformanceController::sampleGpu()
         }
     }
     if (hasNvidia) {
+        if (m_gpuName.isEmpty()) {
+            for (const QVariant &entry : result) {
+                const QVariantMap candidate = entry.toMap();
+                if (candidate.value(QStringLiteral("vendorId")).toString()
+                        .compare(QStringLiteral("0x10de"), Qt::CaseInsensitive) != 0) {
+                    continue;
+                }
+                m_gpuName = candidate.value(QStringLiteral("name")).toString();
+                const QString driver = candidate.value(QStringLiteral("driver")).toString();
+                if (!driver.isEmpty()) {
+                    m_gpuName += QStringLiteral(" · ") + driver;
+                }
+                m_gpuUsage = candidate.value(QStringLiteral("usage")).toDouble();
+                m_gpuTemperature = candidate.value(QStringLiteral("temperature")).toDouble();
+                m_gpuMemoryUsedBytes = candidate.value(QStringLiteral("memoryUsedBytes")).toLongLong();
+                m_gpuMemoryTotalBytes = candidate.value(QStringLiteral("memoryTotalBytes")).toLongLong();
+                break;
+            }
+        }
         startNvidiaGpuSample();
         return;
     }
@@ -615,7 +639,11 @@ void PerformanceController::sampleGpu()
 
 void PerformanceController::startNvidiaGpuSample()
 {
-    if (m_nvidiaQuerying) {
+    if (m_nvidiaQuerying || m_nvidiaSmiUnavailable) {
+        return;
+    }
+    if (QStandardPaths::findExecutable(QStringLiteral("nvidia-smi")).isEmpty()) {
+        m_nvidiaSmiUnavailable = true;
         return;
     }
 
@@ -731,15 +759,22 @@ void PerformanceController::sampleSystem()
     }
 
     const QList<QByteArray> loadFields = readBytes(QStringLiteral("/proc/loadavg")).simplified().split(' ');
-    if (loadFields.size() >= 4) {
+    if (loadFields.size() >= 3) {
         m_load1 = loadFields.at(0).toDouble();
         m_load5 = loadFields.at(1).toDouble();
         m_load15 = loadFields.at(2).toDouble();
-        const QList<QByteArray> processFields = loadFields.at(3).split('/');
-        if (processFields.size() == 2) {
-            m_processCount = processFields.at(1).toInt();
+    }
+
+    int processCount = 0;
+    QDir proc(QStringLiteral("/proc"));
+    const QStringList entries = proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    static const QRegularExpression digits(QStringLiteral("^\\d+$"));
+    for (const QString &entry : entries) {
+        if (digits.match(entry).hasMatch()) {
+            ++processCount;
         }
     }
+    m_processCount = processCount;
 }
 
 void PerformanceController::sampleProcesses()
