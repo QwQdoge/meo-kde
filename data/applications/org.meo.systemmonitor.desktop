@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=System Monitor
+GenericName=Task Manager
+Comment=View performance, processes, startup apps, services, users and process details
+Exec=meo-system-monitor
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;Utility;
+Keywords=task;process;performance;system;monitor;startup;service;
+StartupNotify=true
