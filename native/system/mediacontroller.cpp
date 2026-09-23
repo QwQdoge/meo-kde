@@ -13,6 +13,7 @@
 #include <QUrl>
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 
 namespace
