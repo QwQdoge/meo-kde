@@ -427,6 +427,7 @@ void TaskManagerController::setPaused(bool paused)
         return;
     }
     m_paused = paused;
+    m_rateClock.invalidate();
     updateTimer();
     if (!m_paused && wantsProcessSampling()) {
         refreshNow();
