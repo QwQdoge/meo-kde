@@ -15,6 +15,8 @@ Item {
     readonly property real scaleFactor: MeoTheme.globalScale
     readonly property bool useNavigationRail: width >= 760 * scaleFactor
     readonly property bool expandedRail: width >= 1080 * scaleFactor
+    readonly property bool updatesPaused: MeoSystem.Tasks.paused
+                                          && MeoSystem.Performance.paused
 
     readonly property var navigationModel: [
         { id: "processes", label: MeoI18n.translator.i18n("Processes"), icon: "apps" },
@@ -122,6 +124,20 @@ Item {
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
                     elide: Text.ElideRight
+                }
+            }
+
+            MeoButton {
+                text: root.updatesPaused
+                      ? MeoI18n.translator.i18n("Resume")
+                      : MeoI18n.translator.i18n("Pause")
+                type: root.updatesPaused ? "tonal" : "text"
+                size: "xs"
+                icon.name: root.updatesPaused ? "play_arrow" : "pause"
+                onClicked: {
+                    const nextPaused = !root.updatesPaused
+                    MeoSystem.Tasks.paused = nextPaused
+                    MeoSystem.Performance.paused = nextPaused
                 }
             }
 
