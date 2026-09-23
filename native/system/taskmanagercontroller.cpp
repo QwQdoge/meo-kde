@@ -1418,6 +1418,11 @@ bool TaskManagerController::setProcessCpuAffinityAll(qint64 pid)
 
 bool TaskManagerController::openProcessLocation(qint64 pid)
 {
+    if (pid <= 1 || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("The executable path is unavailable."));
+        return false;
+    }
+
     const QString target = QFileInfo(QStringLiteral("/proc/%1/exe").arg(pid)).symLinkTarget();
     if (target.isEmpty()) {
         setActionError(QStringLiteral("The executable path is unavailable."));
@@ -1435,6 +1440,11 @@ bool TaskManagerController::openProcessLocation(qint64 pid)
 
 bool TaskManagerController::openProcessWorkingDirectory(qint64 pid)
 {
+    if (pid <= 1 || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("The working directory is unavailable."));
+        return false;
+    }
+
     const QString target = QFileInfo(QStringLiteral("/proc/%1/cwd").arg(pid)).symLinkTarget();
     if (target.isEmpty()) {
         setActionError(QStringLiteral("The working directory is unavailable."));
@@ -1451,6 +1461,11 @@ bool TaskManagerController::openProcessWorkingDirectory(qint64 pid)
 
 bool TaskManagerController::copyProcessCommand(qint64 pid)
 {
+    if (pid <= 1 || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("The process command line is unavailable."));
+        return false;
+    }
+
     QByteArray raw = readBytes(QStringLiteral("/proc/%1/cmdline").arg(pid));
     std::replace(raw.begin(), raw.end(), '\0', ' ');
     const QString value = QString::fromUtf8(raw).simplified();
@@ -1465,6 +1480,11 @@ bool TaskManagerController::copyProcessCommand(qint64 pid)
 
 bool TaskManagerController::copyProcessExecutablePath(qint64 pid)
 {
+    if (pid <= 1 || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("The executable path is unavailable."));
+        return false;
+    }
+
     const QString value = QFileInfo(QStringLiteral("/proc/%1/exe").arg(pid)).symLinkTarget();
     if (value.isEmpty() || !QGuiApplication::clipboard()) {
         setActionError(QStringLiteral("The executable path is unavailable."));
@@ -1477,6 +1497,11 @@ bool TaskManagerController::copyProcessExecutablePath(qint64 pid)
 
 bool TaskManagerController::copyProcessWorkingDirectory(qint64 pid)
 {
+    if (pid <= 1 || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("The working directory is unavailable."));
+        return false;
+    }
+
     const QString value = QFileInfo(QStringLiteral("/proc/%1/cwd").arg(pid)).symLinkTarget();
     if (value.isEmpty() || !QGuiApplication::clipboard()) {
         setActionError(QStringLiteral("The working directory is unavailable."));
