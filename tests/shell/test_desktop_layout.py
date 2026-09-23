@@ -172,17 +172,31 @@ class DesktopLayoutTests(unittest.TestCase):
 
         for component in (
             "MeoSearchBar",
-            "MeoTabs",
+            "MeoSegmentedButtons",
+            "MeoChip",
             "MeoListItem",
             "MeoAppGridItem",
             "MeoContextMenu",
         ):
             self.assertIn(component, launcher)
 
+        # Launcher intelligence must remain KDE-native: KRunner owns broad
+        # search, KActivities owns recent/frequent ranking, and RootModel owns
+        # application categories. Meo only presents those models.
+        self.assertIn("onRequestUpdateQuery", launcher)
+        self.assertIn("id: frequentUsageModel", launcher)
+        self.assertIn("ordering: 1", launcher)
+        self.assertIn('section.property: "group"', launcher)
+        self.assertIn("rootAppModel.modelForRow(appsModelRow)", launcher)
+        self.assertIn("model: rootAppModel", launcher)
+        self.assertIn("model: launcherPopup.activeAppsModel", launcher)
+        self.assertGreaterEqual(launcher.count("reuseItems: true"), 6)
+
         self.assertIn("model.trigger(row, actionId, actionArgument)", launcher)
         self.assertIn("sourceComponent: launcherPopup.searching", launcher)
         self.assertNotIn("Process {", launcher)
         self.assertNotIn("DesktopEntry", launcher)
+        self.assertNotIn("get_apps.py", launcher)
 
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
