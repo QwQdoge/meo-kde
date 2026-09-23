@@ -1,5 +1,6 @@
 #include "taskmanagercontroller.h"
 
+#include <QCoreApplication>
 #include <QTest>
 
 class TaskManagerControllerTest : public QObject
@@ -78,6 +79,31 @@ private slots:
 
         controller.setPaused(false);
         QVERIFY(!controller.paused());
+    }
+
+    void selectedProcessExposesAdvancedDiagnostics()
+    {
+        TaskManagerController controller;
+        controller.subscribe(QStringLiteral("details"),
+                             {QStringLiteral("processes"), QStringLiteral("details")});
+        controller.refreshNow();
+        controller.selectProcess(QCoreApplication::applicationPid());
+
+        const QVariantMap details = controller.selectedProcessDetails();
+        QCOMPARE(details.value(QStringLiteral("pid")).toLongLong(),
+                 static_cast<qint64>(QCoreApplication::applicationPid()));
+        QVERIFY(details.contains(QStringLiteral("executablePath")));
+        QVERIFY(details.contains(QStringLiteral("workingDirectory")));
+        QVERIFY(details.contains(QStringLiteral("openFileDescriptorCount")));
+        QVERIFY(details.contains(QStringLiteral("cpuAffinity")));
+        QVERIFY(details.contains(QStringLiteral("cpuTimeSeconds")));
+        QVERIFY(details.contains(QStringLiteral("elapsedSeconds")));
+        QVERIFY(details.contains(QStringLiteral("virtualMemoryBytes")));
+        QVERIFY(details.contains(QStringLiteral("peakResidentMemoryBytes")));
+        QVERIFY(details.contains(QStringLiteral("tcpSocketCount")));
+        QVERIFY(details.contains(QStringLiteral("udpSocketCount")));
+        QVERIFY(details.contains(QStringLiteral("cgroupPath")));
+        QVERIFY(details.contains(QStringLiteral("oomScore")));
     }
 
     void boundsRefreshInterval()
