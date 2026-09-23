@@ -101,16 +101,20 @@ Item {
             }
         }
 
-        ProcessTable {
+        StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: root.currentPage === 0
-        }
+            currentIndex: root.currentPage
 
-        PerformanceDashboard {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            visible: root.currentPage === 1
+            ProcessTable {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+
+            PerformanceDashboard {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
         }
     }
 }
