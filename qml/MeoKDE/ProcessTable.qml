@@ -202,31 +202,30 @@ Item {
             }
         }
 
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
             spacing: MeoTheme.space8
 
-            MeoSegmentedButtons {
-                Layout.fillWidth: root.width < 760 * root.scaleFactor
-                Layout.maximumWidth: 520 * root.scaleFactor
-                size: "s"
-                currentIndex: root.categoryFilter === "all" ? 0
-                              : root.categoryFilter === "app" ? 1
-                              : root.categoryFilter === "background" ? 2 : 3
+            Repeater {
                 model: [
-                    { label: MeoI18n.translator.i18n("All"), icon: "apps" },
-                    { label: MeoI18n.translator.i18n("Apps"), icon: "window" },
-                    { label: MeoI18n.translator.i18n("Background"), icon: "settings" },
-                    { label: MeoI18n.translator.i18n("System"), icon: "dns" }
+                    { key: "all", label: MeoI18n.translator.i18n("All"), icon: "apps" },
+                    { key: "app", label: MeoI18n.translator.i18n("Apps"), icon: "window" },
+                    { key: "background", label: MeoI18n.translator.i18n("Background"), icon: "settings" },
+                    { key: "system", label: MeoI18n.translator.i18n("System"), icon: "dns" }
                 ]
-                onSelected: function(index) {
-                    root.categoryFilter = index === 0 ? "all"
-                                        : index === 1 ? "app"
-                                        : index === 2 ? "background" : "system"
+
+                delegate: MeoChip {
+                    required property var modelData
+                    label: modelData.label
+                    leadingIcon: modelData.icon
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                    selected: root.categoryFilter === modelData.key
+                    elevated: selected
+                    onClicked: root.categoryFilter = modelData.key
                 }
             }
-
-            Item { Layout.fillWidth: root.width >= 760 * root.scaleFactor }
 
             MeoChip {
                 label: MeoI18n.translator.i18n("Process tree")
