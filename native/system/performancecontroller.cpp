@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QHostAddress>
 #include <QNetworkInterface>
 #include <QProcess>
 #include <QStorageInfo>
