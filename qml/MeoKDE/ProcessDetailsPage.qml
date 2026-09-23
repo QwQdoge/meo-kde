@@ -515,15 +515,6 @@ Item {
                         spacing: MeoTheme.space8
 
                         MeoChip {
-                            visible: root.process.cgroupPath && root.process.cgroupPath !== ""
-                            label: root.process.cgroupPath
-                            leadingIcon: "account_tree"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                        }
-
-                        MeoChip {
                             visible: Number(root.process.oomScore) >= 0
                             label: MeoI18n.translator.i18n("OOM score %1").arg(root.process.oomScore)
                             leadingIcon: "memory"
@@ -550,6 +541,27 @@ Item {
                             type: "assist"
                             shape: "pill"
                             elevated: true
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        visible: root.process.cgroupPath && root.process.cgroupPath !== ""
+                        spacing: MeoTheme.space8
+
+                        MeoIcon {
+                            icon: "account_tree"
+                            size: 18
+                            color: MeoTheme.contentOnSurfaceVariant
+                        }
+
+                        MeoText {
+                            Layout.fillWidth: true
+                            text: root.process.cgroupPath || ""
+                            typeRole: "label"
+                            typeSize: "small"
+                            color: MeoTheme.contentOnSurfaceVariant
+                            elide: Text.ElideMiddle
                         }
                     }
                 }
