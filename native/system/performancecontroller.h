@@ -23,7 +23,12 @@ class PerformanceController final : public QObject
     Q_PROPERTY(double cpuFrequencyMHz READ cpuFrequencyMHz NOTIFY metricsChanged)
     Q_PROPERTY(double cpuTemperature READ cpuTemperature NOTIFY metricsChanged)
     Q_PROPERTY(QString cpuModel READ cpuModel NOTIFY metricsChanged)
+    Q_PROPERTY(QString cpuArchitecture READ cpuArchitecture NOTIFY metricsChanged)
     Q_PROPERTY(int logicalCores READ logicalCores NOTIFY metricsChanged)
+    Q_PROPERTY(int physicalCores READ physicalCores NOTIFY metricsChanged)
+    Q_PROPERTY(int cpuSockets READ cpuSockets NOTIFY metricsChanged)
+    Q_PROPERTY(double cpuMaxFrequencyMHz READ cpuMaxFrequencyMHz NOTIFY metricsChanged)
+    Q_PROPERTY(bool cpuVirtualizationSupported READ cpuVirtualizationSupported NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList cpuHistory READ cpuHistory NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList cpuCores READ cpuCores NOTIFY metricsChanged)
 
@@ -85,7 +90,12 @@ public:
     double cpuFrequencyMHz() const;
     double cpuTemperature() const;
     QString cpuModel() const;
+    QString cpuArchitecture() const;
     int logicalCores() const;
+    int physicalCores() const;
+    int cpuSockets() const;
+    double cpuMaxFrequencyMHz() const;
+    bool cpuVirtualizationSupported() const;
     QVariantList cpuHistory() const;
     QVariantList cpuCores() const;
 
@@ -176,7 +186,12 @@ private:
     QSet<QString> m_activeModules;
 
     QString m_cpuModel;
+    QString m_cpuArchitecture;
     int m_logicalCores = 1;
+    int m_physicalCores = 1;
+    int m_cpuSockets = 1;
+    double m_cpuMaxFrequencyMHz = 0;
+    bool m_cpuVirtualizationSupported = false;
     double m_cpuUsage = 0;
     double m_cpuFrequencyMHz = 0;
     double m_cpuTemperature = 0;
@@ -225,6 +240,10 @@ private:
     QHash<QString, quint64> m_lastDeviceReadBytes;
     QHash<QString, quint64> m_lastDeviceWriteBytes;
     QHash<QString, quint64> m_lastDeviceIoMilliseconds;
+    QHash<QString, quint64> m_lastDeviceReadOps;
+    QHash<QString, quint64> m_lastDeviceWriteOps;
+    QHash<QString, quint64> m_lastDeviceReadMilliseconds;
+    QHash<QString, quint64> m_lastDeviceWriteMilliseconds;
     QHash<QString, QVariantList> m_deviceReadHistories;
     QHash<QString, QVariantList> m_deviceWriteHistories;
     QHash<QString, QVariantList> m_deviceUsageHistories;
