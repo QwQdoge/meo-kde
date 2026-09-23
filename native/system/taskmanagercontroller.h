@@ -19,6 +19,7 @@ class TaskManagerController final : public QObject
     Q_PROPERTY(bool monitoring READ monitoring NOTIFY monitoringChanged)
     Q_PROPERTY(QStringList activeModules READ activeModules NOTIFY monitoringChanged)
     Q_PROPERTY(int refreshInterval READ refreshInterval WRITE setRefreshInterval NOTIFY refreshIntervalChanged)
+    Q_PROPERTY(bool paused READ paused WRITE setPaused NOTIFY pausedChanged)
 
     Q_PROPERTY(QVariantList processes READ processes NOTIFY dataChanged)
     Q_PROPERTY(QVariantList processTree READ processTree NOTIFY dataChanged)
@@ -44,6 +45,8 @@ public:
     QStringList activeModules() const;
     int refreshInterval() const;
     void setRefreshInterval(int interval);
+    bool paused() const;
+    void setPaused(bool paused);
 
     QVariantList processes() const;
     QVariantList processTree() const;
@@ -90,6 +93,7 @@ public:
 Q_SIGNALS:
     void monitoringChanged();
     void refreshIntervalChanged();
+    void pausedChanged();
     void dataChanged();
     void selectedProcessDetailsChanged();
     void startupAppsChanged();
@@ -136,6 +140,7 @@ private:
 
     bool m_available = false;
     int m_refreshInterval = 2000;
+    bool m_paused = false;
     QTimer m_refreshTimer;
     QElapsedTimer m_rateClock;
     QHash<QString, QStringList> m_clients;
