@@ -28,6 +28,8 @@ private slots:
         QVERIFY(controller.cpuUsage() >= 0.0);
         QVERIFY(controller.cpuUsage() <= 100.0);
         QVERIFY(controller.logicalCores() >= 1);
+        QVERIFY(!controller.cpuCores().isEmpty());
+        QCOMPARE(controller.cpuCores().size(), controller.logicalCores());
         QVERIFY(controller.memoryTotalBytes() > 0);
         QVERIFY(controller.memoryUsedBytes() >= 0);
         QVERIFY(controller.memoryUsage() >= 0.0);
