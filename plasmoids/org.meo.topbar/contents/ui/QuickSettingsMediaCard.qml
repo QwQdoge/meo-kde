@@ -16,7 +16,7 @@ MeoMotionSurface {
     Layout.fillWidth: true
     clip: true
     opacity: shown ? 1 : 0
-    implicitHeight: shown ? 236 * MeoTheme.globalScale : 0
+    implicitHeight: shown ? 248 * MeoTheme.globalScale : 0
     radius: ShellMetrics.radiusLarge
     color: "transparent"
     elevation: 0
