@@ -15,12 +15,16 @@ Item {
     property bool isActive: false
     property int winCount: 1
     property bool isPinned: false
+    property real itemSize: ShellMetrics.shelfItemSize
+    property real iconSize: ShellMetrics.shelfIconSize
+    property bool showRunningIndicator: true
+    property bool showTooltip: true
 
     signal clicked(var mouse)
     signal rightClicked(var mouse)
 
-    implicitWidth: ShellMetrics.shelfItemSize
-    implicitHeight: ShellMetrics.shelfItemSize
+    implicitWidth: itemSize
+    implicitHeight: itemSize
     activeFocusOnTab: title !== ""
     Accessible.role: Accessible.Button
     Accessible.name: root.title
@@ -48,8 +52,8 @@ Item {
         id: bgContainer
 
         anchors.centerIn: parent
-        width: ShellMetrics.shelfItemSize
-        height: ShellMetrics.shelfItemSize
+        width: root.itemSize
+        height: root.itemSize
         radius: ShellMetrics.radiusMedium
 
         color: {
@@ -72,8 +76,8 @@ Item {
         // Icon representation
         Item {
             anchors.centerIn: parent
-            width: ShellMetrics.shelfIconSize
-            height: ShellMetrics.shelfIconSize
+            width: root.iconSize
+            height: root.iconSize
 
             Kirigami.Icon {
                 anchors.fill: parent
@@ -87,7 +91,7 @@ Item {
     // Running indicator (Pill / Dot)
     Rectangle {
         id: runningDot
-        visible: !root.isLauncher && root.isRunning
+        visible: root.showRunningIndicator && !root.isLauncher && root.isRunning
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 2
         anchors.horizontalCenter: parent.horizontalCenter
@@ -117,7 +121,7 @@ Item {
     }
 
     MeoTooltip {
-        visible: mouseArea.containsMouse && root.title !== ""
+        visible: root.showTooltip && mouseArea.containsMouse && root.title !== ""
         delay: MeoTheme.motionDurationLong1
         text: root.winCount > 1
               ? root.title + "\n" + MeoI18n.translator.i18n("%1 windows").arg(root.winCount)
