@@ -78,7 +78,13 @@ Item {
         MeoSystem.Tasks.unsubscribe(tasksClientId)
     }
     onVisibleChanged: syncSubscription()
-    onCurrentPageChanged: syncSubscription()
+    onCurrentPageChanged: {
+        syncSubscription()
+        if (navigationRail.currentIndex !== currentPage)
+            navigationRail.currentIndex = currentPage
+        if (compactTabs.currentIndex !== currentPage)
+            compactTabs.currentIndex = currentPage
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -154,6 +160,7 @@ Item {
                 spacing: MeoTheme.space12
 
                 MeoTabs {
+                    id: compactTabs
                     Layout.fillWidth: true
                     visible: !root.useNavigationRail
                     type: "secondary"
