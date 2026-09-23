@@ -60,6 +60,7 @@ Item {
         if (role === "cpuText") return "cpu"
         if (role === "memoryText") return "memoryBytes"
         if (role === "diskText") return "diskTotal"
+        if (role === "processCountText") return "processCount"
         if (role === "stateText") return "state"
         return role
     }
