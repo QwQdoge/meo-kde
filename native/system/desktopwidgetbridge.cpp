@@ -43,7 +43,7 @@ const std::array<MeoWidgetDefinition, 3> kMeoWidgetCatalog = {
                         "music_note", "media", "MeoMediaController", QSizeF(384, 176), true},
     MeoWidgetDefinition{"performance", "org.meo.widget.performance", "Meo performance",
                         "Live CPU, memory, GPU, storage, and network performance.",
-                        "monitoring", "performance", "", QSizeF(500, 330), false},
+                        "monitoring", "system", "", QSizeF(500, 330), false},
 };
 
 const MeoWidgetDefinition *meoDefinitionFor(const QString &id)
