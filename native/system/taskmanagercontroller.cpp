@@ -820,6 +820,60 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         m_processes.push_back(toMap(sample));
     }
 
+    QHash<QString, QVariantMap> groupMap;
+    for (const Sample &sample : samples) {
+        const QString key = !sample.desktopId.isEmpty()
+            ? QStringLiteral("desktop:") + sample.desktopId
+            : QStringLiteral("%1:%2").arg(sample.category, sample.executable);
+        QVariantMap group = groupMap.value(key);
+        if (group.isEmpty()) {
+            group.insert(QStringLiteral("key"), key);
+            group.insert(QStringLiteral("appName"), sample.appName);
+            group.insert(QStringLiteral("appIcon"), sample.appIcon);
+            group.insert(QStringLiteral("desktopId"), sample.desktopId);
+            group.insert(QStringLiteral("category"), sample.category);
+            group.insert(QStringLiteral("processCount"), 0);
+            group.insert(QStringLiteral("pids"), QVariantList{});
+            group.insert(QStringLiteral("mainPid"), sample.pid);
+            group.insert(QStringLiteral("cpu"), 0.0);
+            group.insert(QStringLiteral("memoryBytes"), static_cast<qint64>(0));
+            group.insert(QStringLiteral("diskReadBytesPerSecond"), 0.0);
+            group.insert(QStringLiteral("diskWriteBytesPerSecond"), 0.0);
+            group.insert(QStringLiteral("canControl"), sample.canControl);
+        }
+
+        QVariantList pids = group.value(QStringLiteral("pids")).toList();
+        pids.push_back(sample.pid);
+        group[QStringLiteral("pids")] = pids;
+        group[QStringLiteral("processCount")] =
+            group.value(QStringLiteral("processCount")).toInt() + 1;
+        group[QStringLiteral("cpu")] =
+            group.value(QStringLiteral("cpu")).toDouble() + sample.cpu;
+        group[QStringLiteral("memoryBytes")] =
+            group.value(QStringLiteral("memoryBytes")).toLongLong() + sample.memory;
+        group[QStringLiteral("diskReadBytesPerSecond")] =
+            group.value(QStringLiteral("diskReadBytesPerSecond")).toDouble() + sample.diskReadRate;
+        group[QStringLiteral("diskWriteBytesPerSecond")] =
+            group.value(QStringLiteral("diskWriteBytesPerSecond")).toDouble() + sample.diskWriteRate;
+        group[QStringLiteral("canControl")] =
+            group.value(QStringLiteral("canControl")).toBool() && sample.canControl;
+        groupMap.insert(key, group);
+    }
+
+    m_processGroups = groupMap.values();
+    std::sort(m_processGroups.begin(), m_processGroups.end(),
+              [](const QVariant &left, const QVariant &right) {
+        const QVariantMap a = left.toMap();
+        const QVariantMap b = right.toMap();
+        const double aCpu = a.value(QStringLiteral("cpu")).toDouble();
+        const double bCpu = b.value(QStringLiteral("cpu")).toDouble();
+        if (!qFuzzyCompare(aCpu + 1.0, bCpu + 1.0)) {
+            return aCpu > bCpu;
+        }
+        return a.value(QStringLiteral("memoryBytes")).toLongLong()
+            > b.value(QStringLiteral("memoryBytes")).toLongLong();
+    });
+
     QHash<qint64, QVector<qint64>> children;
     QVector<qint64> roots;
     for (const Sample &sample : samples) {
