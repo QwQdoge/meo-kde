@@ -8,6 +8,7 @@ Item {
 
     property string selectedUnit: ""
     property string stateFilter: "all"
+    property string scopeFilter: "all"
     property string sortProperty: "unit"
     property bool sortAscending: true
     readonly property real scaleFactor: MeoTheme.globalScale
@@ -19,6 +20,9 @@ Item {
         for (let i = 0; i < source.length; ++i) {
             const service = source[i]
             const active = String(service.activeState || "")
+            const scope = String(service.scope || "user")
+            if (scopeFilter !== "all" && scope !== scopeFilter)
+                continue
             if (stateFilter === "running" && active !== "active")
                 continue
             if (stateFilter === "failed" && active !== "failed")
@@ -39,6 +43,11 @@ Item {
                 activeState: active,
                 subState: service.subState || "",
                 enabledState: service.enabledState || "",
+                scope: scope,
+                scopeText: scope === "system"
+                           ? MeoI18n.translator.i18n("System")
+                           : MeoI18n.translator.i18n("User"),
+                actionable: service.actionable !== false,
                 stateText: active === "active"
                            ? MeoI18n.translator.i18n("Running")
                            : active === "failed"
@@ -121,12 +130,19 @@ Item {
 
             Item { Layout.fillWidth: true }
 
-            MeoChip {
-                label: MeoI18n.translator.i18n("User services")
-                leadingIcon: "person"
-                type: "assist"
-                shape: "pill"
-                elevated: true
+            MeoSegmentedButtons {
+                Layout.maximumWidth: 360 * root.scaleFactor
+                size: "s"
+                currentIndex: root.scopeFilter === "all" ? 0
+                              : root.scopeFilter === "user" ? 1 : 2
+                model: [
+                    { label: MeoI18n.translator.i18n("All scopes"), icon: "dns" },
+                    { label: MeoI18n.translator.i18n("User"), icon: "person" },
+                    { label: MeoI18n.translator.i18n("System"), icon: "computer" }
+                ]
+                onSelected: function(index) {
+                    root.scopeFilter = index === 0 ? "all" : index === 1 ? "user" : "system"
+                }
             }
         }
 
@@ -172,6 +188,7 @@ Item {
                                    { label: MeoI18n.translator.i18n("Service"), property: "unit", sortable: true },
                                    { label: MeoI18n.translator.i18n("Description"), property: "description", sortable: true },
                                    { label: MeoI18n.translator.i18n("State"), property: "stateText", sortable: true },
+                                   { label: MeoI18n.translator.i18n("Scope"), property: "scopeText", sortable: true },
                                    { label: MeoI18n.translator.i18n("Startup"), property: "startupText", sortable: true }
                                ]
                              : [
@@ -254,6 +271,17 @@ Item {
                             }
 
                             MeoChip {
+                                label: root.currentService && root.currentService.scope === "system"
+                                       ? MeoI18n.translator.i18n("System")
+                                       : MeoI18n.translator.i18n("User")
+                                leadingIcon: root.currentService && root.currentService.scope === "system"
+                                             ? "computer" : "person"
+                                type: "assist"
+                                shape: "pill"
+                                visualStyle: "outlined"
+                            }
+
+                            MeoChip {
                                 label: root.currentService && root.currentService.activeState === "active"
                                        ? MeoI18n.translator.i18n("Running")
                                        : root.currentService && root.currentService.activeState === "failed"
@@ -269,8 +297,16 @@ Item {
                             }
                         }
 
+                        PopupInlineMessage {
+                            Layout.fillWidth: true
+                            visible: root.currentService && root.currentService.scope === "system"
+                            tone: "info"
+                            text: MeoI18n.translator.i18n("System services are shown read-only. Meo does not request administrator access from the task manager.")
+                        }
+
                         RowLayout {
                             Layout.fillWidth: true
+                            visible: root.currentService && root.currentService.actionable !== false
                             spacing: MeoTheme.space8
 
                             MeoButton {
