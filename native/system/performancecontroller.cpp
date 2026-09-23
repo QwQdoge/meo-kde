@@ -412,6 +412,12 @@ qint64 PerformanceController::memoryBuffersBytes() const { return m_memoryBuffer
 qint64 PerformanceController::memorySharedBytes() const { return m_memorySharedBytes; }
 qint64 PerformanceController::swapUsedBytes() const { return m_swapUsedBytes; }
 qint64 PerformanceController::swapTotalBytes() const { return m_swapTotalBytes; }
+qint64 PerformanceController::zramDiskSizeBytes() const { return m_zramDiskSizeBytes; }
+qint64 PerformanceController::zramOriginalBytes() const { return m_zramOriginalBytes; }
+qint64 PerformanceController::zramCompressedBytes() const { return m_zramCompressedBytes; }
+qint64 PerformanceController::zramMemoryUsedBytes() const { return m_zramMemoryUsedBytes; }
+double PerformanceController::zramCompressionRatio() const { return m_zramCompressionRatio; }
+bool PerformanceController::zswapEnabled() const { return m_zswapEnabled; }
 QVariantList PerformanceController::memoryHistory() const { return m_memoryHistory; }
 double PerformanceController::networkRxBytesPerSecond() const { return m_networkRxRate; }
 double PerformanceController::networkTxBytesPerSecond() const { return m_networkTxRate; }
@@ -833,6 +839,38 @@ void PerformanceController::sampleMemory()
     m_memoryUsedBytes = static_cast<qint64>((totalKiB > availableKiB ? totalKiB - availableKiB : 0) * 1024ULL);
     m_swapTotalBytes = static_cast<qint64>(swapTotalKiB * 1024ULL);
     m_swapUsedBytes = static_cast<qint64>((swapTotalKiB > swapFreeKiB ? swapTotalKiB - swapFreeKiB : 0) * 1024ULL);
+
+    m_zramDiskSizeBytes = 0;
+    m_zramOriginalBytes = 0;
+    m_zramCompressedBytes = 0;
+    m_zramMemoryUsedBytes = 0;
+    QDir blockRoot(QStringLiteral("/sys/block"));
+    const QStringList zramDevices =
+        blockRoot.entryList({QStringLiteral("zram*")},
+                            QDir::Dirs | QDir::NoDotAndDotDot,
+                            QDir::Name);
+    for (const QString &device : zramDevices) {
+        const QString base = blockRoot.filePath(device);
+        m_zramDiskSizeBytes += readInteger(base + QStringLiteral("/disksize"), 0);
+        const QList<QByteArray> mmFields =
+            readBytes(base + QStringLiteral("/mm_stat")).simplified().split(' ');
+        if (mmFields.size() >= 3) {
+            m_zramOriginalBytes += static_cast<qint64>(mmFields.at(0).toULongLong());
+            m_zramCompressedBytes += static_cast<qint64>(mmFields.at(1).toULongLong());
+            m_zramMemoryUsedBytes += static_cast<qint64>(mmFields.at(2).toULongLong());
+        }
+    }
+    m_zramCompressionRatio = m_zramCompressedBytes > 0
+        ? static_cast<double>(m_zramOriginalBytes)
+            / static_cast<double>(m_zramCompressedBytes)
+        : 0;
+
+    const QString zswapValue =
+        readText(QStringLiteral("/sys/module/zswap/parameters/enabled")).toLower();
+    m_zswapEnabled = zswapValue == QStringLiteral("y")
+        || zswapValue == QStringLiteral("yes")
+        || zswapValue == QStringLiteral("1");
+
     m_memoryUsage = totalKiB > 0 ? 100.0 * static_cast<double>(totalKiB - std::min(totalKiB, availableKiB))
                                        / static_cast<double>(totalKiB)
                                  : 0;
