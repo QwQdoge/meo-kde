@@ -139,7 +139,7 @@ MeoMotionPopup {
                 "label": sourceAction.text || "",
                 "icon": iconName,
                 "enabled": sourceAction.enabled !== false,
-                "checked": sourceAction.checkable ? !!sourceAction.checked : false,
+                "checked": sourceAction.checkable ? !!sourceAction.checked : undefined,
                 "subItems": nested,
                 "action": function() {
                     launcherPopup.triggerAction(model, row, actionId, actionArgument)
