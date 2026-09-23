@@ -61,19 +61,27 @@ private slots:
     {
         DesktopWidgetBridge bridge;
         const QVariantList meoCatalog = bridge.meoCatalog();
-        QCOMPARE(meoCatalog.size(), 2);
+        QCOMPARE(meoCatalog.size(), 3);
 
         QSet<QString> ids;
         for (const QVariant &entry : meoCatalog) {
             const QVariantMap item = entry.toMap();
             QCOMPARE(item.value(QStringLiteral("host")).toString(), QStringLiteral("meo"));
-            QVERIFY(item.value(QStringLiteral("lockScreenEligible")).toBool());
-            QVERIFY(!item.value(QStringLiteral("lockScreenAdapter")).toString().isEmpty());
+            const QString id = item.value(QStringLiteral("id")).toString();
+            if (id == QStringLiteral("performance")) {
+                QVERIFY(!item.value(QStringLiteral("lockScreenEligible")).toBool());
+                QVERIFY(item.value(QStringLiteral("lockScreenAdapter")).toString().isEmpty());
+            } else {
+                QVERIFY(item.value(QStringLiteral("lockScreenEligible")).toBool());
+                QVERIFY(!item.value(QStringLiteral("lockScreenAdapter")).toString().isEmpty());
+            }
             QVERIFY(item.value(QStringLiteral("presentationModes")).toStringList()
                         .contains(QStringLiteral("meoFramed")));
-            ids.insert(item.value(QStringLiteral("id")).toString());
+            ids.insert(id);
         }
-        QCOMPARE(ids, QSet<QString>({QStringLiteral("clock"), QStringLiteral("media")}));
+        QCOMPARE(ids, QSet<QString>({QStringLiteral("clock"),
+                                     QStringLiteral("media"),
+                                     QStringLiteral("performance")}));
 
         for (const QVariant &entry : bridge.plasmaCatalog()) {
             const QVariantMap item = entry.toMap();
