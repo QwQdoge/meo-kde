@@ -993,6 +993,20 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
         return;
     }
 
+    const QString procBase = QStringLiteral("/proc/%1").arg(m_selectedPid);
+    const QString executablePath = QFileInfo(procBase + QStringLiteral("/exe")).symLinkTarget();
+    const QString workingDirectory = QFileInfo(procBase + QStringLiteral("/cwd")).symLinkTarget();
+    const QVariantList affinity = processAffinity(m_selectedPid);
+
+    selected.insert(QStringLiteral("executablePath"), executablePath);
+    selected.insert(QStringLiteral("workingDirectory"), workingDirectory);
+    selected.insert(QStringLiteral("openFileDescriptorCount"), openFileDescriptorCount(m_selectedPid));
+    selected.insert(QStringLiteral("cpuAffinity"), affinity);
+    selected.insert(QStringLiteral("logicalCpuCount"),
+                    static_cast<int>(std::max<long>(1, sysconf(_SC_NPROCESSORS_CONF))));
+    selected.insert(QStringLiteral("suspended"),
+                    selected.value(QStringLiteral("state")).toString() == QStringLiteral("T")
+                    || selected.value(QStringLiteral("state")).toString() == QStringLiteral("t"));
     selected.insert(QStringLiteral("socketCount"), socketCountForPid(m_selectedPid));
     selected.insert(QStringLiteral("networkThroughputAvailable"), false);
     selected.insert(QStringLiteral("networkNote"),
@@ -1021,7 +1035,8 @@ void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
 
 bool TaskManagerController::terminateProcess(qint64 pid, bool force)
 {
-    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())) {
+    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+        || !processOwnedByCurrentUser(pid)) {
         setActionError(QStringLiteral("This process cannot be ended from Meo System Monitor."));
         return false;
     }
@@ -1045,9 +1060,115 @@ bool TaskManagerController::terminateProcess(qint64 pid, bool force)
     return true;
 }
 
+bool TaskManagerController::terminateProcessTree(qint64 pid, bool force)
+{
+    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+        || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("This process tree cannot be ended from Meo System Monitor."));
+        return false;
+    }
+
+    QHash<qint64, QVector<qint64>> children;
+    QDir proc(QStringLiteral("/proc"));
+    static const QRegularExpression digits(QStringLiteral("^\\d+$"));
+    const QStringList entries = proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QString &entry : entries) {
+        if (!digits.match(entry).hasMatch()) {
+            continue;
+        }
+        bool childOk = false;
+        const qint64 childPid = entry.toLongLong(&childOk);
+        if (!childOk || childPid <= 1) {
+            continue;
+        }
+        const QByteArray stat = readBytes(proc.filePath(entry) + QStringLiteral("/stat")).trimmed();
+        const int closeParen = stat.lastIndexOf(')');
+        if (closeParen < 0) {
+            continue;
+        }
+        const QList<QByteArray> fields = stat.mid(closeParen + 2).simplified().split(' ');
+        if (fields.size() < 2) {
+            continue;
+        }
+        bool parentOk = false;
+        const qint64 parentPid = fields.at(1).toLongLong(&parentOk);
+        if (parentOk) {
+            children[parentPid].push_back(childPid);
+        }
+    }
+
+    QVector<qint64> ordered;
+    QSet<qint64> visited;
+    std::function<void(qint64)> appendPostOrder = [&](qint64 current) {
+        if (visited.contains(current)) {
+            return;
+        }
+        visited.insert(current);
+        for (qint64 child : children.value(current)) {
+            appendPostOrder(child);
+        }
+        ordered.push_back(current);
+    };
+    appendPostOrder(pid);
+
+    const int signal = force ? SIGKILL : SIGTERM;
+    int failed = 0;
+    int signalled = 0;
+    for (qint64 target : ordered) {
+        if (target <= 1 || target == static_cast<qint64>(QCoreApplication::applicationPid())
+            || !processOwnedByCurrentUser(target)) {
+            continue;
+        }
+        errno = 0;
+        if (::kill(static_cast<pid_t>(target), signal) == 0) {
+            ++signalled;
+        } else if (errno != ESRCH) {
+            ++failed;
+        }
+    }
+
+    if (signalled == 0 || failed > 0) {
+        setActionError(failed > 0
+            ? QStringLiteral("Some processes in the tree could not be ended.")
+            : QStringLiteral("No controllable processes were found in this tree."));
+        return false;
+    }
+
+    setActionError({});
+    Q_EMIT processActionCompleted(pid, force ? QStringLiteral("force-stop-tree")
+                                              : QStringLiteral("terminate-tree"));
+    QTimer::singleShot(150, this, &TaskManagerController::refreshNow);
+    return true;
+}
+
+bool TaskManagerController::setProcessSuspended(qint64 pid, bool suspended)
+{
+    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+        || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("This process cannot be suspended or resumed."));
+        return false;
+    }
+
+    errno = 0;
+    if (::kill(static_cast<pid_t>(pid), suspended ? SIGSTOP : SIGCONT) != 0) {
+        setActionError(QStringLiteral("Could not %1 process %2: %3")
+                           .arg(suspended ? QStringLiteral("suspend") : QStringLiteral("resume"))
+                           .arg(pid)
+                           .arg(QString::fromLocal8Bit(std::strerror(errno))));
+        return false;
+    }
+
+    setActionError({});
+    Q_EMIT processActionCompleted(pid, suspended ? QStringLiteral("suspend")
+                                                  : QStringLiteral("resume"));
+    QTimer::singleShot(100, this, &TaskManagerController::refreshNow);
+    return true;
+}
+
 bool TaskManagerController::setProcessPriority(qint64 pid, int niceValue)
 {
-    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())) {
+    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+        || !processOwnedByCurrentUser(pid)) {
         setActionError(QStringLiteral("This process priority cannot be changed from Meo System Monitor."));
         return false;
     }
@@ -1072,7 +1193,8 @@ bool TaskManagerController::setProcessPriority(qint64 pid, int niceValue)
 
 bool TaskManagerController::setProcessEfficiency(qint64 pid, bool enabled)
 {
-    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())) {
+    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+        || !processOwnedByCurrentUser(pid)) {
         setActionError(QStringLiteral("Efficiency mode cannot be changed for this process."));
         return false;
     }
@@ -1109,6 +1231,87 @@ bool TaskManagerController::setProcessEfficiency(qint64 pid, bool enabled)
     Q_EMIT processActionCompleted(pid, enabled ? QStringLiteral("efficiency-on")
                                                 : QStringLiteral("efficiency-off"));
     QTimer::singleShot(100, this, &TaskManagerController::refreshNow);
+    return true;
+}
+
+bool TaskManagerController::setProcessCpuAffinity(qint64 pid, const QVariantList &cpuIndices)
+{
+    if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+        || !processOwnedByCurrentUser(pid)) {
+        setActionError(QStringLiteral("CPU affinity cannot be changed for this process."));
+        return false;
+    }
+
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    int count = 0;
+    for (const QVariant &entry : cpuIndices) {
+        bool ok = false;
+        const int cpu = entry.toInt(&ok);
+        if (!ok || cpu < 0 || cpu >= CPU_SETSIZE) {
+            continue;
+        }
+        CPU_SET(cpu, &set);
+        ++count;
+    }
+    if (count == 0) {
+        setActionError(QStringLiteral("Select at least one CPU."));
+        return false;
+    }
+
+    errno = 0;
+    if (::sched_setaffinity(static_cast<pid_t>(pid), sizeof(set), &set) != 0) {
+        setActionError(QStringLiteral("Could not change CPU affinity: %1")
+                           .arg(QString::fromLocal8Bit(std::strerror(errno))));
+        return false;
+    }
+
+    setActionError({});
+    Q_EMIT processActionCompleted(pid, QStringLiteral("cpu-affinity"));
+    QTimer::singleShot(100, this, &TaskManagerController::refreshNow);
+    return true;
+}
+
+bool TaskManagerController::setProcessCpuAffinityAll(qint64 pid)
+{
+    QVariantList cpus;
+    const long count = std::max<long>(1, sysconf(_SC_NPROCESSORS_CONF));
+    for (int cpu = 0; cpu < std::min<long>(count, CPU_SETSIZE); ++cpu) {
+        cpus.push_back(cpu);
+    }
+    return setProcessCpuAffinity(pid, cpus);
+}
+
+bool TaskManagerController::openProcessLocation(qint64 pid)
+{
+    const QString target = QFileInfo(QStringLiteral("/proc/%1/exe").arg(pid)).symLinkTarget();
+    if (target.isEmpty()) {
+        setActionError(QStringLiteral("The executable path is unavailable."));
+        return false;
+    }
+    const QString opener = QStandardPaths::findExecutable(QStringLiteral("xdg-open"));
+    if (opener.isEmpty()
+        || !QProcess::startDetached(opener, {QFileInfo(target).absolutePath()})) {
+        setActionError(QStringLiteral("Could not open the executable location."));
+        return false;
+    }
+    setActionError({});
+    return true;
+}
+
+bool TaskManagerController::openProcessWorkingDirectory(qint64 pid)
+{
+    const QString target = QFileInfo(QStringLiteral("/proc/%1/cwd").arg(pid)).symLinkTarget();
+    if (target.isEmpty()) {
+        setActionError(QStringLiteral("The working directory is unavailable."));
+        return false;
+    }
+    const QString opener = QStandardPaths::findExecutable(QStringLiteral("xdg-open"));
+    if (opener.isEmpty() || !QProcess::startDetached(opener, {target})) {
+        setActionError(QStringLiteral("Could not open the working directory."));
+        return false;
+    }
+    setActionError({});
     return true;
 }
 
