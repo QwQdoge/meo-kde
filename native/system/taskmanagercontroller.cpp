@@ -857,7 +857,12 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
     });
     m_userSummaries.clear();
     for (qint64 uid : userIds) {
-        m_userSummaries.push_back(userMap.value(uid));
+        const QVariantMap summary = userMap.value(uid);
+        if (!summary.value(QStringLiteral("currentUser")).toBool()
+            && !summary.value(QStringLiteral("sessionActive")).toBool()) {
+            continue;
+        }
+        m_userSummaries.push_back(summary);
     }
 
     updateSelectedProcessDetails(elapsedSeconds);
