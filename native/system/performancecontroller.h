@@ -18,6 +18,7 @@ class PerformanceController final : public QObject
     Q_PROPERTY(bool monitoring READ monitoring NOTIFY monitoringChanged)
     Q_PROPERTY(QStringList activeModules READ activeModules NOTIFY monitoringChanged)
     Q_PROPERTY(int refreshInterval READ refreshInterval WRITE setRefreshInterval NOTIFY refreshIntervalChanged)
+    Q_PROPERTY(bool paused READ paused WRITE setPaused NOTIFY pausedChanged)
 
     Q_PROPERTY(double cpuUsage READ cpuUsage NOTIFY metricsChanged)
     Q_PROPERTY(double cpuFrequencyMHz READ cpuFrequencyMHz NOTIFY metricsChanged)
@@ -85,6 +86,8 @@ public:
     QStringList activeModules() const;
     int refreshInterval() const;
     void setRefreshInterval(int interval);
+    bool paused() const;
+    void setPaused(bool paused);
 
     double cpuUsage() const;
     double cpuFrequencyMHz() const;
@@ -154,6 +157,7 @@ public:
 Q_SIGNALS:
     void monitoringChanged();
     void refreshIntervalChanged();
+    void pausedChanged();
     void metricsChanged();
     void processActionErrorChanged();
     void processActionCompleted(qint64 pid, const QString &action);
@@ -180,6 +184,7 @@ private:
 
     bool m_available = false;
     int m_refreshInterval = 2000;
+    bool m_paused = false;
     QTimer m_refreshTimer;
     QElapsedTimer m_rateClock;
     QHash<QString, QStringList> m_clients;
