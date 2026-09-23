@@ -284,6 +284,23 @@ QStringList PerformanceController::activeModules() const
 }
 
 int PerformanceController::refreshInterval() const { return m_refreshInterval; }
+bool PerformanceController::paused() const { return m_paused; }
+
+void PerformanceController::setPaused(bool paused)
+{
+    if (m_paused == paused) {
+        return;
+    }
+    m_paused = paused;
+    if (m_paused) {
+        m_refreshTimer.stop();
+    } else if (monitoring()) {
+        m_rateClock.restart();
+        m_refreshTimer.start();
+        refreshNow();
+    }
+    Q_EMIT pausedChanged();
+}
 
 void PerformanceController::setRefreshInterval(int interval)
 {
@@ -371,7 +388,9 @@ void PerformanceController::subscribe(const QString &clientId, const QStringList
     rebuildActiveModules();
     if (!wasMonitoring) {
         m_rateClock.restart();
-        m_refreshTimer.start();
+        if (!m_paused) {
+            m_refreshTimer.start();
+        }
         refreshNow();
     }
     Q_EMIT monitoringChanged();
