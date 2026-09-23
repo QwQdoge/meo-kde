@@ -111,13 +111,15 @@ Item {
             }
         }
 
-        RowLayout {
+        GridLayout {
             Layout.fillWidth: true
-            spacing: MeoTheme.space8
+            columns: root.width >= 760 * root.scaleFactor ? 2 : 1
+            rowSpacing: MeoTheme.space8
+            columnSpacing: MeoTheme.space8
 
             MeoSegmentedButtons {
+                Layout.fillWidth: true
                 Layout.maximumWidth: 430 * root.scaleFactor
-                Layout.fillWidth: root.width < 620 * root.scaleFactor
                 size: "s"
                 currentIndex: root.stateFilter === "all" ? 0
                               : root.stateFilter === "running" ? 1 : 2
@@ -131,9 +133,8 @@ Item {
                 }
             }
 
-            Item { Layout.fillWidth: true }
-
             MeoSegmentedButtons {
+                Layout.fillWidth: true
                 Layout.maximumWidth: 360 * root.scaleFactor
                 size: "s"
                 currentIndex: root.scopeFilter === "all" ? 0
