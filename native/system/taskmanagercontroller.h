@@ -75,6 +75,9 @@ public:
     Q_INVOKABLE bool setProcessCpuAffinityAll(qint64 pid);
     Q_INVOKABLE bool openProcessLocation(qint64 pid);
     Q_INVOKABLE bool openProcessWorkingDirectory(qint64 pid);
+    Q_INVOKABLE bool copyProcessCommand(qint64 pid);
+    Q_INVOKABLE bool copyProcessExecutablePath(qint64 pid);
+    Q_INVOKABLE bool copyProcessWorkingDirectory(qint64 pid);
 
     Q_INVOKABLE void refreshStartupApps();
     Q_INVOKABLE bool setStartupEnabled(const QString &desktopId, bool enabled);
