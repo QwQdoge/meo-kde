@@ -191,6 +191,10 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("!startupFeedback.feedbackVisible", launcher)
         self.assertIn("minimumVisibleDuration: 300", launcher)
         self.assertIn("indicatorVariant: \"contained\"", launcher)
+        self.assertLess(
+            launcher.index('favorites["initForClient"]'),
+            launcher.index("rootAppModel.refresh()"),
+        )
 
         # Launcher intelligence must remain KDE-native: KRunner owns broad
         # search, KActivities owns recent/frequent ranking, and RootModel owns
