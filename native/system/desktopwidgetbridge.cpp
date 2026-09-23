@@ -34,13 +34,16 @@ struct MeoWidgetDefinition {
 // a MeoUI contract rendered by a first-party adapter package on desktop. A
 // lock screen, when listed, loads the named reviewed adapter instead of the
 // desktop applet package.
-const std::array<MeoWidgetDefinition, 2> kMeoWidgetCatalog = {
+const std::array<MeoWidgetDefinition, 3> kMeoWidgetCatalog = {
     MeoWidgetDefinition{"clock", "org.meo.widget.clock", "Meo clock",
                         "Large date, time, and optional cached weather.",
                         "schedule", "clock", "MeoAmbientClock", QSizeF(320, 224), true},
     MeoWidgetDefinition{"media", "org.meo.widget.media", "Meo media",
                         "Current-session MPRIS controls with bounded local artwork.",
                         "music_note", "media", "MeoMediaController", QSizeF(384, 176), true},
+    MeoWidgetDefinition{"performance", "org.meo.widget.performance", "Meo performance",
+                        "Live CPU, memory, GPU, storage, and network performance.",
+                        "monitoring", "performance", "", QSizeF(500, 330), false},
 };
 
 const MeoWidgetDefinition *meoDefinitionFor(const QString &id)
