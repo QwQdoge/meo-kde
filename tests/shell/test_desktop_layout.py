@@ -191,6 +191,20 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("!startupFeedback.feedbackVisible", launcher)
         self.assertIn("minimumVisibleDuration: 300", launcher)
         self.assertIn("indicatorVariant: \"contained\"", launcher)
+
+        # The startup budget begins before the enter transition, and the
+        # launcher mirrors KRunner's directional cue from the bottom Shelf
+        # without relying on a full screen-edge slide.
+        self.assertIn("onAboutToShow:", launcher)
+        self.assertIn("openStartedMs = Date.now()", launcher)
+        self.assertLess(
+            launcher.index("onAboutToShow:"),
+            launcher.index("onOpened:"),
+        )
+        self.assertIn("motionProfile: \"pixel\"", launcher)
+        self.assertIn("entranceOffset: -16 * MeoTheme.globalScale", launcher)
+        self.assertIn("entranceScale: 0.975", launcher)
+
         self.assertLess(
             launcher.index('favorites["initForClient"]'),
             launcher.index("rootAppModel.refresh()"),
