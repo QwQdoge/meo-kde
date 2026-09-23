@@ -109,6 +109,27 @@ double cpuFrequencyMHzForCore(int core)
     return khz > 0 ? khz / 1000.0 : 0;
 }
 
+double maximumCpuFrequencyMHz()
+{
+    QDir cpuRoot(QStringLiteral("/sys/devices/system/cpu"));
+    const QStringList cpus = cpuRoot.entryList({QStringLiteral("cpu[0-9]*")},
+                                                QDir::Dirs | QDir::NoDotAndDotDot,
+                                                QDir::Name);
+    double maximum = 0;
+    for (const QString &cpu : cpus) {
+        qint64 khz = readInteger(
+            cpuRoot.filePath(cpu + QStringLiteral("/cpufreq/cpuinfo_max_freq")), 0);
+        if (khz <= 0) {
+            khz = readInteger(
+                cpuRoot.filePath(cpu + QStringLiteral("/cpufreq/scaling_max_freq")), 0);
+        }
+        if (khz > 0) {
+            maximum = std::max(maximum, khz / 1000.0);
+        }
+    }
+    return maximum;
+}
+
 double currentCpuFrequencyMHz()
 {
     QDir cpuRoot(QStringLiteral("/sys/devices/system/cpu"));
@@ -279,7 +300,12 @@ double PerformanceController::cpuUsage() const { return m_cpuUsage; }
 double PerformanceController::cpuFrequencyMHz() const { return m_cpuFrequencyMHz; }
 double PerformanceController::cpuTemperature() const { return m_cpuTemperature; }
 QString PerformanceController::cpuModel() const { return m_cpuModel; }
+QString PerformanceController::cpuArchitecture() const { return m_cpuArchitecture; }
 int PerformanceController::logicalCores() const { return m_logicalCores; }
+int PerformanceController::physicalCores() const { return m_physicalCores; }
+int PerformanceController::cpuSockets() const { return m_cpuSockets; }
+double PerformanceController::cpuMaxFrequencyMHz() const { return m_cpuMaxFrequencyMHz; }
+bool PerformanceController::cpuVirtualizationSupported() const { return m_cpuVirtualizationSupported; }
 QVariantList PerformanceController::cpuHistory() const { return m_cpuHistory; }
 QVariantList PerformanceController::cpuCores() const { return m_cpuCores; }
 double PerformanceController::memoryUsage() const { return m_memoryUsage; }
@@ -397,7 +423,61 @@ bool PerformanceController::wantsModule(const QString &module) const
 void PerformanceController::refreshStaticSystemInfo()
 {
     m_cpuModel = cpuModelName();
+    m_cpuArchitecture = QSysInfo::currentCpuArchitecture();
     m_logicalCores = std::max(1, QThread::idealThreadCount());
+    m_cpuMaxFrequencyMHz = maximumCpuFrequencyMHz();
+
+    QSet<QString> physicalCoreIds;
+    QSet<QString> socketIds;
+    QString physicalId;
+    QString coreId;
+    const QList<QByteArray> cpuInfoLines =
+        readBytes(QStringLiteral("/proc/cpuinfo")).split('\n');
+
+    auto commitCpuTopology = [&]() {
+        if (!physicalId.isEmpty()) {
+            socketIds.insert(physicalId);
+        }
+        if (!coreId.isEmpty()) {
+            physicalCoreIds.insert(
+                (physicalId.isEmpty() ? QStringLiteral("socket0") : physicalId)
+                + QStringLiteral(":") + coreId);
+        }
+        physicalId.clear();
+        coreId.clear();
+    };
+
+    for (const QByteArray &rawLine : cpuInfoLines) {
+        const QByteArray line = rawLine.trimmed();
+        if (line.isEmpty()) {
+            commitCpuTopology();
+            continue;
+        }
+
+        const int colon = line.indexOf(':');
+        if (colon <= 0) {
+            continue;
+        }
+        const QByteArray key = line.left(colon).trimmed();
+        const QString value = QString::fromUtf8(line.mid(colon + 1)).trimmed();
+        if (key == "physical id") {
+            physicalId = value;
+        } else if (key == "core id") {
+            coreId = value;
+        } else if (key == "flags" || key == "Features") {
+            const QString padded = QStringLiteral(" ") + value.toLower() + QStringLiteral(" ");
+            if (padded.contains(QStringLiteral(" vmx "))
+                || padded.contains(QStringLiteral(" svm "))) {
+                m_cpuVirtualizationSupported = true;
+            }
+        }
+    }
+    commitCpuTopology();
+
+    m_physicalCores = physicalCoreIds.isEmpty()
+        ? m_logicalCores : std::max(1, physicalCoreIds.size());
+    m_cpuSockets = socketIds.isEmpty() ? 1 : std::max(1, socketIds.size());
+
     const QString product = QSysInfo::prettyProductName().trimmed();
     const QString kernel = QSysInfo::kernelVersion().trimmed();
     m_systemSummary = product.isEmpty() ? kernel
