@@ -88,6 +88,7 @@ add_executable(meo-system-state-smoke
 target_link_libraries(meo-system-state-smoke PRIVATE
     Qt6::Core
     Qt6::DBus
+    Qt6::Gui
     Qt6::Network
     KF6::NetworkManagerQt
     KF6::BluezQt
