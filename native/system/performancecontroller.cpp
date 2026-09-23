@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QProcess>
 #include <QStorageInfo>
 #include <QSysInfo>
 #include <QThread>
@@ -273,8 +274,8 @@ void PerformanceController::subscribe(const QString &clientId, const QStringList
     if (!wasMonitoring) {
         m_rateClock.restart();
         m_refreshTimer.start();
+        refreshNow();
     }
-    refreshNow();
     Q_EMIT monitoringChanged();
 }
 
@@ -290,22 +291,21 @@ void PerformanceController::unsubscribe(const QString &clientId)
         m_rateClock.invalidate();
         m_lastNetworkRxBytes = 0;
         m_lastNetworkTxBytes = 0;
+        m_haveNetworkSample = false;
         m_lastDiskReadBytes = 0;
         m_lastDiskWriteBytes = 0;
+        m_haveDiskSample = false;
         m_lastProcessTicks.clear();
     }
-    if (wasMonitoring != monitoring()) {
-        Q_EMIT monitoringChanged();
-    } else {
-        Q_EMIT monitoringChanged();
-    }
+    Q_UNUSED(wasMonitoring);
+    Q_EMIT monitoringChanged();
 }
 
 void PerformanceController::rebuildActiveModules()
 {
     QSet<QString> modules;
-    for (const QStringList &clientModules : std::as_const(m_clients)) {
-        for (const QString &module : clientModules) {
+    for (auto it = m_clients.cbegin(); it != m_clients.cend(); ++it) {
+        for (const QString &module : it.value()) {
             modules.insert(module);
         }
     }
@@ -464,7 +464,7 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
         tx += fields.at(8).toULongLong();
     }
 
-    if (elapsedSeconds > 0 && m_lastNetworkRxBytes > 0 && m_lastNetworkTxBytes > 0) {
+    if (elapsedSeconds > 0 && m_haveNetworkSample) {
         m_networkRxRate = rx >= m_lastNetworkRxBytes ? (rx - m_lastNetworkRxBytes) / elapsedSeconds : 0;
         m_networkTxRate = tx >= m_lastNetworkTxBytes ? (tx - m_lastNetworkTxBytes) / elapsedSeconds : 0;
     } else {
@@ -473,6 +473,7 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
     }
     m_lastNetworkRxBytes = rx;
     m_lastNetworkTxBytes = tx;
+    m_haveNetworkSample = true;
     appendHistory(m_networkRxHistory, m_networkRxRate);
     appendHistory(m_networkTxHistory, m_networkTxRate);
 }
@@ -503,7 +504,7 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
         writeBytesTotal += fields.at(9).toULongLong() * 512ULL;
     }
 
-    if (elapsedSeconds > 0 && m_lastDiskReadBytes > 0 && m_lastDiskWriteBytes > 0) {
+    if (elapsedSeconds > 0 && m_haveDiskSample) {
         m_diskReadRate = readBytesTotal >= m_lastDiskReadBytes
             ? (readBytesTotal - m_lastDiskReadBytes) / elapsedSeconds : 0;
         m_diskWriteRate = writeBytesTotal >= m_lastDiskWriteBytes
@@ -514,6 +515,7 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
     }
     m_lastDiskReadBytes = readBytesTotal;
     m_lastDiskWriteBytes = writeBytesTotal;
+    m_haveDiskSample = true;
 
     QStorageInfo storage = QStorageInfo::root();
     storage.refresh();
@@ -566,6 +568,20 @@ void PerformanceController::sampleGpu()
     }
 
     m_gpus = result;
+
+    bool hasNvidia = false;
+    for (const QVariant &entry : result) {
+        if (entry.toMap().value(QStringLiteral("vendorId")).toString()
+                .compare(QStringLiteral("0x10de"), Qt::CaseInsensitive) == 0) {
+            hasNvidia = true;
+            break;
+        }
+    }
+    if (hasNvidia) {
+        startNvidiaGpuSample();
+        return;
+    }
+
     m_gpuName.clear();
     m_gpuUsage = -1;
     m_gpuTemperature = 0;
@@ -595,6 +611,110 @@ void PerformanceController::sampleGpu()
     if (m_gpuUsage >= 0) {
         appendHistory(m_gpuHistory, m_gpuUsage);
     }
+}
+
+void PerformanceController::startNvidiaGpuSample()
+{
+    if (m_nvidiaQuerying) {
+        return;
+    }
+
+    auto *process = new QProcess(this);
+    m_nvidiaQuerying = true;
+    process->setProgram(QStringLiteral("nvidia-smi"));
+    process->setArguments({
+        QStringLiteral("--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total"),
+        QStringLiteral("--format=csv,noheader,nounits"),
+    });
+    process->setStandardErrorFile(QProcess::nullDevice());
+
+    const auto finish = [this, process](bool parseOutput) {
+        if (parseOutput) {
+            QVariantList updated = m_gpus;
+            const QList<QByteArray> rows = process->readAllStandardOutput().split('\n');
+            int nvidiaIndex = 0;
+            for (const QByteArray &row : rows) {
+                if (row.trimmed().isEmpty()) {
+                    continue;
+                }
+                const QList<QByteArray> fields = row.split(',');
+                if (fields.size() < 5) {
+                    continue;
+                }
+
+                bool usageOk = false;
+                bool temperatureOk = false;
+                bool usedOk = false;
+                bool totalOk = false;
+                const double usage = fields.at(1).trimmed().toDouble(&usageOk);
+                const double temperature = fields.at(2).trimmed().toDouble(&temperatureOk);
+                const double memoryUsedMiB = fields.at(3).trimmed().toDouble(&usedOk);
+                const double memoryTotalMiB = fields.at(4).trimmed().toDouble(&totalOk);
+
+                QVariantMap gpu;
+                int listIndex = -1;
+                for (int index = nvidiaIndex; index < updated.size(); ++index) {
+                    const QVariantMap candidate = updated.at(index).toMap();
+                    if (candidate.value(QStringLiteral("vendorId")).toString()
+                            .compare(QStringLiteral("0x10de"), Qt::CaseInsensitive) == 0) {
+                        gpu = candidate;
+                        listIndex = index;
+                        nvidiaIndex = index + 1;
+                        break;
+                    }
+                }
+
+                const QString name = QString::fromUtf8(fields.at(0)).trimmed();
+                if (!name.isEmpty()) {
+                    gpu.insert(QStringLiteral("name"), name);
+                }
+                gpu.insert(QStringLiteral("usage"), usageOk ? std::clamp(usage, 0.0, 100.0) : -1.0);
+                gpu.insert(QStringLiteral("temperature"), temperatureOk ? temperature : 0.0);
+                gpu.insert(QStringLiteral("memoryUsedBytes"),
+                           usedOk ? static_cast<qint64>(memoryUsedMiB * 1024.0 * 1024.0) : 0);
+                gpu.insert(QStringLiteral("memoryTotalBytes"),
+                           totalOk ? static_cast<qint64>(memoryTotalMiB * 1024.0 * 1024.0) : 0);
+
+                if (listIndex >= 0) {
+                    updated[listIndex] = gpu;
+                } else {
+                    gpu.insert(QStringLiteral("id"), QStringLiteral("nvidia-%1").arg(nvidiaIndex++));
+                    gpu.insert(QStringLiteral("vendorId"), QStringLiteral("0x10de"));
+                    gpu.insert(QStringLiteral("driver"), QStringLiteral("nvidia"));
+                    updated.push_back(gpu);
+                }
+
+                if (m_gpuName.isEmpty() || m_gpuName.startsWith(QStringLiteral("NVIDIA"))) {
+                    m_gpuName = gpu.value(QStringLiteral("name")).toString();
+                    m_gpuUsage = gpu.value(QStringLiteral("usage")).toDouble();
+                    m_gpuTemperature = gpu.value(QStringLiteral("temperature")).toDouble();
+                    m_gpuMemoryUsedBytes = gpu.value(QStringLiteral("memoryUsedBytes")).toLongLong();
+                    m_gpuMemoryTotalBytes = gpu.value(QStringLiteral("memoryTotalBytes")).toLongLong();
+                }
+            }
+
+            m_gpus = updated;
+            if (m_gpuUsage >= 0) {
+                appendHistory(m_gpuHistory, m_gpuUsage);
+            }
+            Q_EMIT metricsChanged();
+        }
+
+        m_nvidiaQuerying = false;
+        process->deleteLater();
+    };
+
+    connect(process, &QProcess::finished, this,
+            [finish](int exitCode, QProcess::ExitStatus status) {
+                finish(status == QProcess::NormalExit && exitCode == 0);
+            });
+    connect(process, &QProcess::errorOccurred, this,
+            [finish](QProcess::ProcessError error) {
+                if (error == QProcess::FailedToStart) {
+                    finish(false);
+                }
+            });
+    process->start();
 }
 
 void PerformanceController::sampleSystem()
