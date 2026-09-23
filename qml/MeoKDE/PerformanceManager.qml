@@ -10,26 +10,73 @@ Item {
 
     property int initialPage: 0
     property int currentPage: initialPage
-    readonly property string clientId: "performance-manager-" + root.toString()
+    readonly property string performanceClientId: "system-monitor-performance-" + root.toString()
+    readonly property string tasksClientId: "system-monitor-tasks-" + root.toString()
     readonly property real scaleFactor: MeoTheme.globalScale
+    readonly property bool useNavigationRail: width >= 760 * scaleFactor
+    readonly property bool expandedRail: width >= 1080 * scaleFactor
+
+    readonly property var navigationModel: [
+        { id: "processes", label: MeoI18n.translator.i18n("Processes"), icon: "apps" },
+        { id: "performance", label: MeoI18n.translator.i18n("Performance"), icon: "monitoring" },
+        { id: "startup", label: MeoI18n.translator.i18n("Startup"), icon: "rocket_launch" },
+        { id: "services", label: MeoI18n.translator.i18n("Services"), icon: "dns" },
+        { id: "users", label: MeoI18n.translator.i18n("Users"), icon: "group" },
+        { id: "details", label: MeoI18n.translator.i18n("Details"), icon: "info" }
+    ]
+
+    function currentSubtitle() {
+        if (currentPage === 0)
+            return MeoI18n.translator.i18n("%1 processes").arg(MeoSystem.Tasks.processes.length)
+        if (currentPage === 1)
+            return MeoSystem.Performance.systemSummary
+        if (currentPage === 2)
+            return MeoI18n.translator.i18n("%1 startup entries").arg(MeoSystem.Tasks.startupApps.length)
+        if (currentPage === 3)
+            return MeoI18n.translator.i18n("%1 user services").arg(MeoSystem.Tasks.services.length)
+        if (currentPage === 4)
+            return MeoI18n.translator.i18n("%1 users with running processes").arg(MeoSystem.Tasks.userSummaries.length)
+        const process = MeoSystem.Tasks.selectedProcessDetails
+        return process && process.pid
+               ? (process.appName || process.name || ("PID " + process.pid))
+               : MeoI18n.translator.i18n("Select a process to inspect")
+    }
 
     function syncSubscription() {
-        if (!visible) {
-            MeoSystem.Performance.unsubscribe(clientId)
+        MeoSystem.Performance.unsubscribe(performanceClientId)
+        MeoSystem.Tasks.unsubscribe(tasksClientId)
+
+        if (!visible)
             return
-        }
 
         if (currentPage === 0) {
-            MeoSystem.Performance.subscribe(clientId,
-                ["cpu", "memory", "system", "processes"])
-        } else {
-            MeoSystem.Performance.subscribe(clientId,
+            MeoSystem.Tasks.subscribe(tasksClientId, ["processes"])
+        } else if (currentPage === 1) {
+            MeoSystem.Performance.subscribe(performanceClientId,
                 ["cpu", "memory", "network", "disk", "gpu", "system"])
+        } else if (currentPage === 2) {
+            MeoSystem.Tasks.subscribe(tasksClientId, ["startup"])
+        } else if (currentPage === 3) {
+            MeoSystem.Tasks.subscribe(tasksClientId, ["services"])
+        } else if (currentPage === 4) {
+            MeoSystem.Tasks.subscribe(tasksClientId, ["users"])
+        } else if (currentPage === 5) {
+            MeoSystem.Tasks.subscribe(tasksClientId, ["details"])
         }
     }
 
+    function refreshCurrentPage() {
+        if (currentPage === 1)
+            MeoSystem.Performance.refreshNow()
+        else
+            MeoSystem.Tasks.refreshNow()
+    }
+
     Component.onCompleted: syncSubscription()
-    Component.onDestruction: MeoSystem.Performance.unsubscribe(clientId)
+    Component.onDestruction: {
+        MeoSystem.Performance.unsubscribe(performanceClientId)
+        MeoSystem.Tasks.unsubscribe(tasksClientId)
+    }
     onVisibleChanged: syncSubscription()
     onCurrentPageChanged: syncSubscription()
 
@@ -62,9 +109,7 @@ Item {
 
                 MeoText {
                     Layout.fillWidth: true
-                    text: root.currentPage === 0
-                          ? MeoI18n.translator.i18n("%1 processes").arg(MeoSystem.Performance.processCount)
-                          : MeoSystem.Performance.systemSummary
+                    text: root.currentSubtitle()
                     typeRole: "body"
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
@@ -77,43 +122,86 @@ Item {
                 type: "tonal"
                 size: "xs"
                 icon.name: "refresh"
-                onClicked: MeoSystem.Performance.refreshNow()
+                onClicked: root.refreshCurrentPage()
             }
         }
 
-        MeoTabs {
-            Layout.fillWidth: true
-            type: "secondary"
-            style: "standard"
-            currentIndex: root.currentPage
-            model: [
-                {
-                    label: MeoI18n.translator.i18n("Processes"),
-                    icon: "apps"
-                },
-                {
-                    label: MeoI18n.translator.i18n("Performance"),
-                    icon: "monitoring"
-                }
-            ]
-            onClicked: function(index) {
-                root.currentPage = index
-            }
-        }
-
-        StackLayout {
+        RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: root.currentPage
+            spacing: root.useNavigationRail ? MeoTheme.space12 : 0
 
-            ProcessTable {
-                Layout.fillWidth: true
+            MeoNavigationRail {
+                id: navigationRail
                 Layout.fillHeight: true
+                Layout.preferredWidth: root.expandedRail
+                                       ? 252 * root.scaleFactor
+                                       : 96 * root.scaleFactor
+                visible: root.useNavigationRail
+                model: root.navigationModel
+                currentIndex: root.currentPage
+                isExpanded: root.expandedRail
+                expandedWidth: 252 * root.scaleFactor
+                labelType: root.expandedRail ? "always" : "selected"
+                onClicked: function(index) {
+                    root.currentPage = index
+                }
             }
 
-            PerformanceDashboard {
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                spacing: MeoTheme.space12
+
+                MeoTabs {
+                    Layout.fillWidth: true
+                    visible: !root.useNavigationRail
+                    type: "secondary"
+                    style: "standard"
+                    isScrollable: true
+                    currentIndex: root.currentPage
+                    model: root.navigationModel
+                    onClicked: function(index) {
+                        root.currentPage = index
+                    }
+                }
+
+                StackLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    currentIndex: root.currentPage
+
+                    ProcessTable {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        onDetailsRequested: root.currentPage = 5
+                    }
+
+                    PerformanceDashboard {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    StartupAppsPage {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    ServicesPage {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    UsersPage {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    ProcessDetailsPage {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+                }
             }
         }
     }
