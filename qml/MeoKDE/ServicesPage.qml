@@ -276,6 +276,12 @@ Item {
                                 }
                             }
 
+                        }
+
+                        Flow {
+                            Layout.fillWidth: true
+                            spacing: MeoTheme.space8
+
                             MeoChip {
                                 label: root.currentService && root.currentService.scope === "system"
                                        ? MeoI18n.translator.i18n("System")
@@ -310,7 +316,7 @@ Item {
                             text: MeoI18n.translator.i18n("System services are shown read-only. Meo does not request administrator access from the task manager.")
                         }
 
-                        RowLayout {
+                        Flow {
                             Layout.fillWidth: true
                             visible: root.currentService && root.currentService.actionable !== false
                             spacing: MeoTheme.space8
@@ -337,8 +343,6 @@ Item {
                                 onClicked: if (root.currentService)
                                     MeoSystem.Tasks.serviceAction(root.currentService.unit, "restart")
                             }
-
-                            Item { Layout.fillWidth: true }
 
                             MeoButton {
                                 visible: root.currentService
