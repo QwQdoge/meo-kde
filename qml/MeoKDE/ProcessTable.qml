@@ -385,6 +385,25 @@ Item {
                     }
                 }
             }
+
+            MeoChip {
+                label: MeoI18n.translator.i18n("Update %1s")
+                       .arg((MeoSystem.Tasks.refreshInterval / 1000).toFixed(
+                                MeoSystem.Tasks.refreshInterval < 1000 ? 1 : 0))
+                leadingIcon: "update"
+                type: "assist"
+                shape: "pill"
+                visualStyle: "outlined"
+                onClicked: {
+                    let next = 1000
+                    if (MeoSystem.Tasks.refreshInterval <= 1000)
+                        next = 2000
+                    else if (MeoSystem.Tasks.refreshInterval <= 2000)
+                        next = 5000
+                    MeoSystem.Tasks.refreshInterval = next
+                    MeoSystem.Performance.refreshInterval = next
+                }
+            }
         }
 
         PopupInlineMessage {
