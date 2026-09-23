@@ -201,18 +201,30 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("!runnerModel.resultsPresent", launcher)
         self.assertIn("!searchFeedback.feedbackVisible", launcher)
 
-        # The startup budget begins before the enter transition, and the
-        # launcher mirrors KRunner's directional cue from the bottom Shelf
-        # without relying on a full screen-edge slide.
+        # The startup budget begins before the enter transition. Meo defaults
+        # to a centered, Spotlight-like presentation; top placement remains a
+        # future Settings preference without creating a standalone config app.
         self.assertIn("onAboutToShow:", launcher)
         self.assertIn("openStartedMs = Date.now()", launcher)
         self.assertLess(
             launcher.index("onAboutToShow:"),
             launcher.index("onOpened:"),
         )
+        self.assertIn('property string placementMode: "center"', launcher)
+        self.assertIn('placementMode === "top" ? topPlacementY : centeredPlacementY', launcher)
+        self.assertIn("TODO(MeoSettings)", launcher)
         self.assertIn("motionProfile: \"pixel\"", launcher)
-        self.assertIn("entranceOffset: -16 * MeoTheme.globalScale", launcher)
+        self.assertIn('entranceOffset: placementMode === "top"', launcher)
         self.assertIn("entranceScale: 0.975", launcher)
+
+        # Alt+Space can later call the same popup in search-only mode: one
+        # centered MeoSearchBar first, with KRunner results expanding in place.
+        self.assertIn("property bool quickSearchMode: false", launcher)
+        self.assertIn("function openQuickSearch()", launcher)
+        self.assertIn("TODO(MeoKDE shortcut integration)", launcher)
+        self.assertIn("quickSearchMode && !searching", launcher)
+        self.assertIn("Layout.maximumWidth: 640 * MeoTheme.globalScale", launcher)
+        self.assertIn("!launcherPopup.quickSearchMode || launcherPopup.searching", launcher)
 
         self.assertLess(
             launcher.index('favorites["initForClient"]'),
