@@ -117,9 +117,7 @@ PlasmoidItem {
                 title: MeoI18n.translator.i18n("Application Launcher")
                 isActive: launcherPopup.visible
 
-                onClicked: {
-                    launcherPopup.visible = !launcherPopup.visible
-                }
+                onClicked: launcherPopup.toggleFullLauncher()
             }
 
             // Preserve a breathable launcher-to-task gap without turning it
