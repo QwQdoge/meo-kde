@@ -27,7 +27,7 @@ MeoCard {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: MeoTheme.space10
+            spacing: MeoTheme.space8
 
             Rectangle {
                 width: 38 * MeoTheme.globalScale
