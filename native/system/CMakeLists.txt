@@ -121,7 +121,7 @@ if(BUILD_TESTING)
         performancecontroller.h
     )
     target_include_directories(meo-performance-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-    target_link_libraries(meo-performance-controller-test PRIVATE Qt6::Core Qt6::Test)
+    target_link_libraries(meo-performance-controller-test PRIVATE Qt6::Core Qt6::Network Qt6::Test)
     add_test(NAME meo-performance-controller COMMAND meo-performance-controller-test)
 
     add_executable(meo-task-manager-controller-test
