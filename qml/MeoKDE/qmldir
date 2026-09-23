@@ -20,3 +20,7 @@ MetricCard 1.0 MetricCard.qml
 ProcessTable 1.0 ProcessTable.qml
 PerformanceDashboard 1.0 PerformanceDashboard.qml
 PerformanceManager 1.0 PerformanceManager.qml
+StartupAppsPage 1.0 StartupAppsPage.qml
+ServicesPage 1.0 ServicesPage.qml
+UsersPage 1.0 UsersPage.qml
+ProcessDetailsPage 1.0 ProcessDetailsPage.qml
