@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="Appearance">
+    <entry name="showLauncherButton" type="Bool">
+      <label>Show the application launcher button.</label>
+      <default>true</default>
+    </entry>
+    <entry name="filterTasksByVirtualDesktop" type="Bool">
+      <label>Show only tasks from the current virtual desktop.</label>
+      <default>false</default>
+    </entry>
+    <entry name="showRunningIndicators" type="Bool">
+      <label>Show running and active application indicators.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showTooltips" type="Bool">
+      <label>Show application title tooltips.</label>
+      <default>true</default>
+    </entry>
+    <entry name="launcherDefaultPage" type="String">
+      <label>Default launcher page: home or apps.</label>
+      <default>home</default>
+    </entry>
+    <entry name="launcherWidth" type="String">
+      <label>Launcher width preset: compact, standard, or wide.</label>
+      <default>standard</default>
+    </entry>
+    <entry name="launcherShowFavorites" type="Bool">
+      <label>Show pinned applications on the launcher home page.</label>
+      <default>true</default>
+    </entry>
+    <entry name="launcherShowRecents" type="Bool">
+      <label>Show recent applications and documents on the launcher home page.</label>
+      <default>true</default>
+    </entry>
+  </group>
+</kcfg>
