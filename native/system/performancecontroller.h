@@ -208,6 +208,7 @@ private:
     qint64 m_gpuMemoryTotalBytes = 0;
     QVariantList m_gpus;
     QVariantList m_gpuHistory;
+    QHash<QString, QVariantList> m_gpuHistories;
     bool m_nvidiaQuerying = false;
     bool m_nvidiaSmiUnavailable = false;
 
