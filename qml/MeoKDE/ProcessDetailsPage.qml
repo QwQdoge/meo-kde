@@ -339,6 +339,7 @@ Item {
     }
 
     component ResourceTile: MeoCard {
+        id: tile
         property string title: ""
         property string iconName: "monitoring"
         property string valueText: ""
@@ -357,10 +358,10 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
-                MeoIcon { icon: parent.parent.parent.iconName; size: 20; color: MeoTheme.primary }
+                MeoIcon { icon: tile.iconName; size: 20; color: MeoTheme.primary }
                 MeoText {
                     Layout.fillWidth: true
-                    text: parent.parent.parent.title
+                    text: tile.title
                     typeRole: "label"
                     typeSize: "large"
                     color: MeoTheme.contentOnSurfaceVariant
@@ -369,7 +370,7 @@ Item {
 
             MeoText {
                 Layout.fillWidth: true
-                text: parent.parent.valueText
+                text: tile.valueText
                 typeRole: "title"
                 typeSize: "medium"
                 emphasized: true
@@ -378,13 +379,13 @@ Item {
 
             MeoProgressBar {
                 Layout.fillWidth: true
-                visible: parent.parent.progress >= 0
-                value: Math.max(0, Math.min(100, parent.parent.progress)) / 100
+                visible: tile.progress >= 0
+                value: Math.max(0, Math.min(100, tile.progress)) / 100
             }
 
             MeoText {
                 Layout.fillWidth: true
-                text: parent.parent.supportingText
+                text: tile.supportingText
                 typeRole: "body"
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
