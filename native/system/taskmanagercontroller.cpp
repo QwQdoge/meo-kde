@@ -1199,10 +1199,14 @@ void TaskManagerController::refreshServices()
                 const QString load = QString::fromUtf8(fields.at(1));
                 const QString active = QString::fromUtf8(fields.at(2));
                 const QString sub = QString::fromUtf8(fields.at(3));
-                QString description;
-                if (fields.size() > 4) {
-                    description = QString::fromUtf8(fields.mid(4).join(' '));
+                QByteArray descriptionBytes;
+                for (int fieldIndex = 4; fieldIndex < fields.size(); ++fieldIndex) {
+                    if (!descriptionBytes.isEmpty()) {
+                        descriptionBytes += ' ';
+                    }
+                    descriptionBytes += fields.at(fieldIndex);
                 }
+                const QString description = QString::fromUtf8(descriptionBytes);
                 units.insert(unit, QVariantMap{
                     {QStringLiteral("unit"), unit},
                     {QStringLiteral("description"), description},
@@ -1254,20 +1258,99 @@ void TaskManagerController::refreshServices()
 
             QStringList names = units.keys();
             names.sort(Qt::CaseInsensitive);
-            m_services.clear();
+            QVariantList userServices;
             for (const QString &name : names) {
                 QVariantMap service = units.value(name);
                 const QString active = service.value(QStringLiteral("activeState")).toString();
                 service.insert(QStringLiteral("running"), active == QStringLiteral("active"));
-                m_services.push_back(service);
+                service.insert(QStringLiteral("scope"), QStringLiteral("user"));
+                service.insert(QStringLiteral("actionable"), true);
+                userServices.push_back(service);
             }
             const bool filesSucceeded = filesStatus == QProcess::NormalExit && filesExitCode == 0;
-            m_servicesAvailable = unitsSucceeded || filesSucceeded;
-            m_serviceQuerying = false;
-            if (!m_servicesAvailable) {
-                setActionError(QStringLiteral("Could not query the systemd user service manager."));
-            }
-            Q_EMIT servicesChanged();
+            const bool userQuerySucceeded = unitsSucceeded || filesSucceeded;
+
+            auto *systemUnitsProcess = new QProcess(this);
+            systemUnitsProcess->setProgram(QStandardPaths::findExecutable(QStringLiteral("systemctl")));
+            systemUnitsProcess->setArguments({
+                QStringLiteral("list-units"),
+                QStringLiteral("--type=service"),
+                QStringLiteral("--all"),
+                QStringLiteral("--plain"),
+                QStringLiteral("--full"),
+                QStringLiteral("--no-legend"),
+                QStringLiteral("--no-pager"),
+            });
+            systemUnitsProcess->setStandardErrorFile(QProcess::nullDevice());
+
+            connect(systemUnitsProcess, &QProcess::finished, this,
+                    [this, systemUnitsProcess, userServices, userQuerySucceeded]
+                    (int systemExitCode, QProcess::ExitStatus systemStatus) mutable {
+                QVariantList combined = userServices;
+                const bool systemQuerySucceeded =
+                    systemStatus == QProcess::NormalExit && systemExitCode == 0;
+
+                if (systemQuerySucceeded) {
+                    const QList<QByteArray> rows = systemUnitsProcess->readAllStandardOutput().split('\n');
+                    for (const QByteArray &rawRow : rows) {
+                        const QByteArray row = rawRow.simplified();
+                        if (row.isEmpty()) {
+                            continue;
+                        }
+                        QList<QByteArray> fields = row.split(' ');
+                        if (!fields.isEmpty() && fields.constFirst() == "●") {
+                            fields.removeFirst();
+                        }
+                        if (fields.size() < 4) {
+                            continue;
+                        }
+
+                        QByteArray descriptionBytes;
+                        for (int fieldIndex = 4; fieldIndex < fields.size(); ++fieldIndex) {
+                            if (!descriptionBytes.isEmpty()) {
+                                descriptionBytes += ' ';
+                            }
+                            descriptionBytes += fields.at(fieldIndex);
+                        }
+
+                        const QString unit = QString::fromUtf8(fields.at(0));
+                        const QString active = QString::fromUtf8(fields.at(2));
+                        combined.push_back(QVariantMap{
+                            {QStringLiteral("unit"), unit},
+                            {QStringLiteral("description"), QString::fromUtf8(descriptionBytes)},
+                            {QStringLiteral("loadState"), QString::fromUtf8(fields.at(1))},
+                            {QStringLiteral("activeState"), active},
+                            {QStringLiteral("subState"), QString::fromUtf8(fields.at(3))},
+                            {QStringLiteral("enabledState"), QString()},
+                            {QStringLiteral("running"), active == QStringLiteral("active")},
+                            {QStringLiteral("scope"), QStringLiteral("system")},
+                            {QStringLiteral("actionable"), false},
+                        });
+                    }
+                }
+                systemUnitsProcess->deleteLater();
+
+                std::sort(combined.begin(), combined.end(), [](const QVariant &left, const QVariant &right) {
+                    const QVariantMap a = left.toMap();
+                    const QVariantMap b = right.toMap();
+                    const QString aScope = a.value(QStringLiteral("scope")).toString();
+                    const QString bScope = b.value(QStringLiteral("scope")).toString();
+                    if (aScope != bScope) {
+                        return aScope == QStringLiteral("user");
+                    }
+                    return a.value(QStringLiteral("unit")).toString()
+                        .localeAwareCompare(b.value(QStringLiteral("unit")).toString()) < 0;
+                });
+
+                m_services = combined;
+                m_servicesAvailable = userQuerySucceeded || systemQuerySucceeded;
+                m_serviceQuerying = false;
+                if (!m_servicesAvailable) {
+                    setActionError(QStringLiteral("Could not query systemd services."));
+                }
+                Q_EMIT servicesChanged();
+            });
+            systemUnitsProcess->start();
         });
         filesProcess->start();
     });
