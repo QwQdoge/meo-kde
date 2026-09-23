@@ -16,6 +16,10 @@ PLASMA_DESKTOP_PACKAGE = REPO_ROOT / "packaging/arch/meo-plasma-desktop"
 PLASMA_DESKTOP_PATCH = PLASMA_DESKTOP_PACKAGE / "0001-meo-widget-presentation.patch"
 PLATFORM_DOC = REPO_ROOT / "docs/widget-platform.md"
 MEO_WIDGET = REPO_ROOT.parent / "meo-ui/components/MeoWidget.qml"
+MEO_KDE_QML = REPO_ROOT / "qml/MeoKDE"
+POWER_PAGE = APPLETS / "org.meo.topbar/contents/ui/PowerPage.qml"
+QUICK_SETTINGS = APPLETS / "org.meo.topbar/contents/ui/QuickSettingsCenter.qml"
+SOURCE_INSTALLER = REPO_ROOT / "setup/apply-meo-desktop.sh"
 
 
 class MeoWidgetExplorerTests(unittest.TestCase):
@@ -84,6 +88,26 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("supportedSurfaces: [MeoWidget.Desktop]", performance)
         self.assertNotIn("MeoWidget.LockScreen", performance)
         self.assertIn('existingDesktops[i].addWidget("org.meo.widgetexplorer")', LAYOUT.read_text(encoding="utf-8"))
+
+    def test_performance_manager_is_shared_and_reachable(self):
+        qmldir = (MEO_KDE_QML / "qmldir").read_text(encoding="utf-8")
+        manager = (MEO_KDE_QML / "PerformanceManager.qml").read_text(encoding="utf-8")
+        performance_widget = (APPLETS / "org.meo.widget.performance/contents/ui/main.qml").read_text(encoding="utf-8")
+        power_page = POWER_PAGE.read_text(encoding="utf-8")
+        quick_settings = QUICK_SETTINGS.read_text(encoding="utf-8")
+        installer = SOURCE_INSTALLER.read_text(encoding="utf-8")
+
+        self.assertIn("PerformanceManager 1.0 PerformanceManager.qml", qmldir)
+        self.assertIn("MetricCard 1.0 MetricCard.qml", qmldir)
+        self.assertIn("PerformanceGraph 1.0 PerformanceGraph.qml", qmldir)
+        self.assertIn("MeoSystem.Performance.subscribe", manager)
+        self.assertIn("PerformanceManager {", performance_widget)
+        self.assertFalse((APPLETS / "org.meo.widget.performance/contents/ui/PerformanceManager.qml").exists())
+        self.assertIn("signal performanceRequested()", power_page)
+        self.assertIn("Performance monitor", power_page)
+        self.assertIn("performancePageComponent", quick_settings)
+        self.assertIn("PerformanceManager { onCloseRequested: stack.pop() }", quick_settings)
+        self.assertIn("org.meo.widget.performance", installer)
 
     def test_document_describes_native_plasma_api_and_honest_frame_boundary(self):
         document = PLATFORM_DOC.read_text(encoding="utf-8")
