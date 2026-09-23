@@ -169,6 +169,81 @@ double currentCpuFrequencyMHz()
     return count > 0 ? sumMHz / count : 0;
 }
 
+qint64 parseCacheSizeBytes(const QString &text)
+{
+    static const QRegularExpression pattern(
+        QStringLiteral("^([0-9]+(?:\\.[0-9]+)?)\\s*([KMG]?)B?$"),
+        QRegularExpression::CaseInsensitiveOption);
+    const QRegularExpressionMatch match = pattern.match(text.trimmed());
+    if (!match.hasMatch()) {
+        return 0;
+    }
+
+    bool ok = false;
+    double value = match.captured(1).toDouble(&ok);
+    if (!ok) {
+        return 0;
+    }
+    const QString suffix = match.captured(2).toUpper();
+    if (suffix == QStringLiteral("K")) {
+        value *= 1024.0;
+    } else if (suffix == QStringLiteral("M")) {
+        value *= 1024.0 * 1024.0;
+    } else if (suffix == QStringLiteral("G")) {
+        value *= 1024.0 * 1024.0 * 1024.0;
+    }
+    return static_cast<qint64>(value);
+}
+
+QVariantList cpuCacheSummary()
+{
+    QHash<int, qint64> totals;
+    QSet<QString> seenCaches;
+
+    QDir cpuRoot(QStringLiteral("/sys/devices/system/cpu"));
+    const QStringList cpus = cpuRoot.entryList({QStringLiteral("cpu[0-9]*")},
+                                                QDir::Dirs | QDir::NoDotAndDotDot,
+                                                QDir::Name);
+    for (const QString &cpu : cpus) {
+        QDir cacheRoot(cpuRoot.filePath(cpu + QStringLiteral("/cache")));
+        const QStringList indexes =
+            cacheRoot.entryList({QStringLiteral("index*")},
+                                QDir::Dirs | QDir::NoDotAndDotDot,
+                                QDir::Name);
+        for (const QString &index : indexes) {
+            const QString base = cacheRoot.filePath(index);
+            const int level = static_cast<int>(readInteger(base + QStringLiteral("/level"), 0));
+            const QString type = readText(base + QStringLiteral("/type"));
+            const QString shared = readText(base + QStringLiteral("/shared_cpu_list"));
+            const qint64 bytes = parseCacheSizeBytes(readText(base + QStringLiteral("/size")));
+            if (level <= 0 || bytes <= 0) {
+                continue;
+            }
+
+            const QString key = QString::number(level)
+                + QLatin1Char(':') + type
+                + QLatin1Char(':') + (shared.isEmpty() ? cpu : shared);
+            if (seenCaches.contains(key)) {
+                continue;
+            }
+            seenCaches.insert(key);
+            totals[level] = totals.value(level) + bytes;
+        }
+    }
+
+    QList<int> levels = totals.keys();
+    std::sort(levels.begin(), levels.end());
+    QVariantList result;
+    for (int level : levels) {
+        result.push_back(QVariantMap{
+            {QStringLiteral("level"), level},
+            {QStringLiteral("label"), QStringLiteral("L%1").arg(level)},
+            {QStringLiteral("sizeBytes"), totals.value(level)},
+        });
+    }
+    return result;
+}
+
 QString cpuModelName()
 {
     const QList<QByteArray> lines = readBytes(QStringLiteral("/proc/cpuinfo")).split('\n');
@@ -325,6 +400,7 @@ int PerformanceController::physicalCores() const { return m_physicalCores; }
 int PerformanceController::cpuSockets() const { return m_cpuSockets; }
 double PerformanceController::cpuMaxFrequencyMHz() const { return m_cpuMaxFrequencyMHz; }
 bool PerformanceController::cpuVirtualizationSupported() const { return m_cpuVirtualizationSupported; }
+QVariantList PerformanceController::cpuCaches() const { return m_cpuCaches; }
 QVariantList PerformanceController::cpuHistory() const { return m_cpuHistory; }
 QVariantList PerformanceController::cpuCores() const { return m_cpuCores; }
 double PerformanceController::memoryUsage() const { return m_memoryUsage; }
@@ -454,6 +530,7 @@ void PerformanceController::refreshStaticSystemInfo()
     m_cpuArchitecture = QSysInfo::currentCpuArchitecture();
     m_logicalCores = std::max(1, QThread::idealThreadCount());
     m_cpuMaxFrequencyMHz = maximumCpuFrequencyMHz();
+    m_cpuCaches = cpuCacheSummary();
 
     QSet<QString> physicalCoreIds;
     QSet<QString> socketIds;
