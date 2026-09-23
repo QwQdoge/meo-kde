@@ -111,6 +111,20 @@ private:
         QString desktopId;
     };
 
+    struct ProcessStaticInfo {
+        quint64 startTicks = 0;
+        QString name;
+        QString appName;
+        QString appIcon;
+        QString desktopId;
+        QString command;
+        QString executable;
+        QString user;
+        QString category;
+        qint64 uid = -1;
+        bool canControl = false;
+    };
+
     void rebuildActiveModules();
     bool wantsModule(const QString &module) const;
     bool wantsProcessSampling() const;
@@ -144,6 +158,7 @@ private:
     quint64 m_lastSelectedGpuEngineNs = 0;
     QHash<qint64, int> m_efficiencyOriginalNice;
     QHash<QString, DesktopAppInfo> m_desktopAppsByExecutable;
+    QHash<qint64, ProcessStaticInfo> m_processStaticInfo;
 
     QVariantList m_startupApps;
     QHash<QString, QVariantMap> m_startupById;
