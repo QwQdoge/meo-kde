@@ -209,6 +209,47 @@ Item {
         anchors.fill: parent
         spacing: MeoTheme.space8
 
+        Flow {
+            Layout.fillWidth: true
+            spacing: MeoTheme.space8
+
+            MeoChip {
+                label: "CPU " + MeoSystem.Performance.cpuUsage.toFixed(0) + "%"
+                leadingIcon: "memory"
+                type: "assist"
+                shape: "pill"
+                elevated: MeoSystem.Performance.cpuUsage >= 70
+            }
+
+            MeoChip {
+                label: MeoI18n.translator.i18n("Memory %1%")
+                       .arg(MeoSystem.Performance.memoryUsage.toFixed(0))
+                leadingIcon: "memory_alt"
+                type: "assist"
+                shape: "pill"
+                elevated: MeoSystem.Performance.memoryUsage >= 75
+            }
+
+            MeoChip {
+                label: MeoI18n.translator.i18n("Disk R %1 · W %2")
+                       .arg(root.formatRate(MeoSystem.Performance.diskReadBytesPerSecond))
+                       .arg(root.formatRate(MeoSystem.Performance.diskWriteBytesPerSecond))
+                leadingIcon: "hard_drive"
+                type: "assist"
+                shape: "pill"
+                visualStyle: "outlined"
+            }
+
+            MeoChip {
+                label: "↓ " + root.formatRate(MeoSystem.Performance.networkRxBytesPerSecond)
+                       + " · ↑ " + root.formatRate(MeoSystem.Performance.networkTxBytesPerSecond)
+                leadingIcon: "swap_horiz"
+                type: "assist"
+                shape: "pill"
+                visualStyle: "outlined"
+            }
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: MeoTheme.space8
