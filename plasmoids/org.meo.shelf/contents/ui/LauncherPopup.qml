@@ -236,7 +236,7 @@ MeoMotionPopup {
 
     onShellAppletChanged: {
         if (shellApplet)
-            Qt.callLater(function() { launcherPopup.refreshModels(true) })
+            Qt.callLater(function() { launcherPopup.refreshModels(false) })
     }
 
     onOpened: {
@@ -249,7 +249,7 @@ MeoMotionPopup {
         itemContextMenu.close()
     }
 
-    Component.onCompleted: Qt.callLater(function() { launcherPopup.refreshModels(true) })
+    Component.onCompleted: Qt.callLater(function() { launcherPopup.refreshModels(false) })
 
     contentItem: FocusScope {
         id: launcherContent
