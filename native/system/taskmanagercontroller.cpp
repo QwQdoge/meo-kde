@@ -666,7 +666,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         const quint64 startTicks = fields.at(19).toULongLong();
         livePids.insert(pid);
         ProcessStaticInfo staticInfo = m_processStaticInfo.value(pid);
-        if (staticInfo.startTicks != startTicks) {
+        if (staticInfo.startTicks != startTicks || staticInfo.command.isEmpty()) {
             qint64 uid = -1;
             const QList<QByteArray> statusLines =
                 readBytes(basePath + QStringLiteral("/status")).split('\n');
