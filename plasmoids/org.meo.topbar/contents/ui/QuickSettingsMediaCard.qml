@@ -3,8 +3,9 @@ import QtQuick.Layouts
 import MeoUI 1.0
 import MeoKDE 1.0
 
-// This card is a direct projection of the real MPRIS bridge. It intentionally
-// owns no playback state, timers, or fallback demo data.
+// Unified media projection for Quick Settings. The host owns only the real
+// MPRIS bridge; presentation and interaction stay in MeoUI so desktop widgets,
+// Quick Settings, and the lock screen share one media language.
 MeoMotionSurface {
     id: root
 
@@ -15,33 +16,59 @@ MeoMotionSurface {
     Layout.fillWidth: true
     clip: true
     opacity: shown ? 1 : 0
-    implicitHeight: shown ? 72 * MeoTheme.globalScale : 0
+    implicitHeight: shown ? 236 * MeoTheme.globalScale : 0
     radius: ShellMetrics.radiusLarge
-    color: MeoTheme.surfaceContainerHigh
+    color: "transparent"
     elevation: 0
 
     Behavior on opacity {
-        NumberAnimation { duration: MeoTheme.motionDurationState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
+        NumberAnimation {
+            duration: MeoTheme.motionDurationState
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: MeoTheme.motionEasingStandard
+        }
     }
     Behavior on implicitHeight {
-        NumberAnimation { duration: MeoTheme.motionDurationDialogEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+        NumberAnimation {
+            duration: MeoTheme.motionDurationDialogEnter
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+        }
     }
 
-    RowLayout {
+    MeoMediaController {
         anchors.fill: parent
-        anchors.leftMargin: MeoTheme.space12
-        anchors.rightMargin: MeoTheme.space8
-        spacing: MeoTheme.space8
+        presentation: "controlCenter"
+        title: root.media.title !== "" ? root.media.title : root.media.playerName
+        artist: root.media.artist !== "" ? root.media.artist : root.media.playerName
+        album: root.media.album
+        sourceName: root.media.playerName
+        coverSource: root.media.remoteArtUrl !== "" ? root.media.remoteArtUrl : root.media.artUrl
+        isPlaying: root.media.playing
+        duration: Number(root.media.durationMs)
+        position: Number(root.media.positionMs)
+        canSeek: root.media.canSeek
+        canSkipPrevious: root.media.canGoPrevious
+        canSkipNext: root.media.canGoNext
+        canShuffle: root.media.shuffleSupported
+        canRepeat: root.media.repeatSupported
+        shuffleEnabled: root.media.shuffle
+        repeatMode: root.media.repeatMode
+        sourceCount: root.media.playerCount
+        canAdjustVolume: false
+        showVolume: false
+        showFavoriteAction: false
+        showOutputAction: false
+        enabled: root.media.controllable
 
-        MeoIcon { icon: root.media.iconName !== "" ? root.media.iconName : "music_note"; size: 24; color: MeoTheme.primary }
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
-            MeoText { Layout.fillWidth: true; text: root.media.title !== "" ? root.media.title : root.media.playerName; typeRole: "label"; typeSize: "medium"; emphasized: true; color: MeoTheme.onSurface; elide: Text.ElideRight }
-            MeoText { Layout.fillWidth: true; text: root.media.artist !== "" ? root.media.artist : root.media.playerName; typeRole: "body"; typeSize: "small"; color: MeoTheme.onSurfaceVariant; elide: Text.ElideRight }
-        }
-        MeoIconButton { visible: root.media.canGoPrevious; type: "standard"; size: "s"; icon.name: "skip_previous"; Accessible.name: MeoI18n.translator.i18n("Previous track"); onClicked: root.media.previous() }
-        MeoIconButton { type: "tonal"; size: "m"; icon.name: root.media.playing ? "pause" : "play_arrow"; Accessible.name: root.media.playing ? MeoI18n.translator.i18n("Pause") : MeoI18n.translator.i18n("Play"); onClicked: root.media.playPause() }
-        MeoIconButton { visible: root.media.canGoNext; type: "standard"; size: "s"; icon.name: "skip_next"; Accessible.name: MeoI18n.translator.i18n("Next track"); onClicked: root.media.next() }
+        onPlayRequested: root.media.playPause()
+        onPauseRequested: root.media.playPause()
+        onPreviousRequested: root.media.previous()
+        onNextRequested: root.media.next()
+        onSeekRequested: newPosition => root.media.seekTo(newPosition)
+        onShuffleRequested: enabled => root.media.setShuffle(enabled)
+        onRepeatRequested: mode => root.media.setRepeatMode(mode)
+        onPreviousSourceRequested: root.media.selectPreviousPlayer()
+        onNextSourceRequested: root.media.selectNextPlayer()
     }
 }
