@@ -850,7 +850,7 @@ Item {
         id: networkTile
         property var network: ({})
 
-        implicitHeight: 182 * root.scaleFactor
+        implicitHeight: 216 * root.scaleFactor
         type: "filled"
         radius: MeoTheme.shapeLargeIncreased
 
@@ -919,6 +919,20 @@ Item {
                     shape: "pill"
                     visualStyle: "outlined"
                 }
+            }
+
+            MeoText {
+                Layout.fillWidth: true
+                visible: (networkTile.network.addressSummary || "") !== ""
+                         || (networkTile.network.hardwareAddress || "") !== ""
+                text: (networkTile.network.addressSummary || "")
+                      + ((networkTile.network.addressSummary || "") !== ""
+                         && (networkTile.network.hardwareAddress || "") !== "" ? " · " : "")
+                      + (networkTile.network.hardwareAddress || "")
+                typeRole: "label"
+                typeSize: "small"
+                color: MeoTheme.contentOnSurfaceVariant
+                elide: Text.ElideMiddle
             }
 
             PerformanceGraph {
