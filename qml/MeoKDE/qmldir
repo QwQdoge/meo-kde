@@ -15,3 +15,6 @@ StatusCenterView 1.0 StatusCenterView.qml
 NotificationCompactButton 1.0 NotificationCompactButton.qml
 TimeNotificationButton 1.0 TimeNotificationButton.qml
 SessionMenu 1.0 SessionMenu.qml
+PerformanceGraph 1.0 PerformanceGraph.qml
+MetricCard 1.0 MetricCard.qml
+PerformanceManager 1.0 PerformanceManager.qml
