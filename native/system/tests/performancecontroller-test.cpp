@@ -17,7 +17,8 @@ private slots:
                              {QStringLiteral("cpu"),
                               QStringLiteral("memory"),
                               QStringLiteral("disk"),
-                              QStringLiteral("system")});
+                              QStringLiteral("system"),
+                              QStringLiteral("processes")});
         QVERIFY(controller.monitoring());
         QVERIFY(controller.activeModules().contains(QStringLiteral("cpu")));
         QVERIFY(controller.refreshInterval() >= 500);
@@ -33,9 +34,23 @@ private slots:
         QVERIFY(controller.memoryUsage() <= 100.0);
         QVERIFY(controller.storageTotalBytes() >= 0);
         QVERIFY(controller.uptimeSeconds() >= 0);
+        QVERIFY(controller.processCount() > 0);
+        QVERIFY(!controller.processes().isEmpty());
 
         controller.unsubscribe(QStringLiteral("test"));
         QVERIFY(!controller.monitoring());
+    }
+
+    void protectsEssentialProcesses()
+    {
+        PerformanceController controller;
+        QVERIFY(!controller.terminateProcess(1));
+        QVERIFY(!controller.processActionError().isEmpty());
+        controller.clearProcessActionError();
+        QVERIFY(controller.processActionError().isEmpty());
+
+        QVERIFY(!controller.setProcessPriority(1, 10));
+        QVERIFY(!controller.processActionError().isEmpty());
     }
 
     void boundsRefreshInterval()
