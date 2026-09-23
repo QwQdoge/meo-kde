@@ -279,6 +279,80 @@ Item {
                 }
             }
 
+            MeoCard {
+                Layout.fillWidth: true
+                type: "filled"
+                radius: MeoTheme.shapeLargeIncreased
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: MeoTheme.space12
+                    spacing: MeoTheme.space12
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Rectangle {
+                            width: 40 * root.scaleFactor
+                            height: width
+                            radius: 14 * root.scaleFactor
+                            color: MeoTheme.secondaryContainer
+
+                            MeoIcon {
+                                anchors.centerIn: parent
+                                icon: "memory_alt"
+                                size: 22
+                                fill: true
+                                color: MeoTheme.contentOnSecondaryContainer
+                            }
+                        }
+
+                        MeoText {
+                            Layout.fillWidth: true
+                            text: MeoI18n.translator.i18n("Memory details")
+                            typeRole: "title"
+                            typeSize: "small"
+                            emphasized: true
+                        }
+
+                        MeoChip {
+                            visible: MeoSystem.Performance.swapTotalBytes > 0
+                            label: MeoI18n.translator.i18n("Swap %1 / %2")
+                                   .arg(root.formatBytes(MeoSystem.Performance.swapUsedBytes))
+                                   .arg(root.formatBytes(MeoSystem.Performance.swapTotalBytes))
+                            leadingIcon: "swap_vert"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                        }
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: width >= 720 * root.scaleFactor ? 4 : 2
+                        rowSpacing: MeoTheme.space8
+                        columnSpacing: MeoTheme.space8
+
+                        MemoryStat {
+                            label: MeoI18n.translator.i18n("Available")
+                            value: root.formatBytes(MeoSystem.Performance.memoryAvailableBytes)
+                        }
+                        MemoryStat {
+                            label: MeoI18n.translator.i18n("Cached")
+                            value: root.formatBytes(MeoSystem.Performance.memoryCachedBytes)
+                        }
+                        MemoryStat {
+                            label: MeoI18n.translator.i18n("Buffers")
+                            value: root.formatBytes(MeoSystem.Performance.memoryBuffersBytes)
+                        }
+                        MemoryStat {
+                            label: MeoI18n.translator.i18n("Shared")
+                            value: root.formatBytes(MeoSystem.Performance.memorySharedBytes)
+                        }
+                    }
+                }
+            }
+
             PopupSectionLabel {
                 sectionText: MeoI18n.translator.i18n("Storage devices")
             }
@@ -504,6 +578,37 @@ Item {
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
                 }
+            }
+        }
+    }
+
+    component MemoryStat: MeoCard {
+        id: memoryStat
+        property string label: ""
+        property string value: ""
+
+        Layout.fillWidth: true
+        implicitHeight: 74 * root.scaleFactor
+        type: "filled"
+        radius: MeoTheme.shapeMedium
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space8
+            spacing: 0
+
+            MeoText {
+                text: memoryStat.value
+                typeRole: "title"
+                typeSize: "small"
+                emphasized: true
+            }
+
+            MeoText {
+                text: memoryStat.label
+                typeRole: "label"
+                typeSize: "small"
+                color: MeoTheme.contentOnSurfaceVariant
             }
         }
     }
