@@ -40,12 +40,22 @@ Item {
             presentation: "lockScreen"
             title: Media.title !== "" ? Media.title : Media.playerName
             artist: Media.artist !== "" ? Media.artist : Media.playerName
+            album: Media.album
             sourceName: Media.playerName
             coverSource: root.showArtwork ? Media.artUrl : ""
             showArtwork: root.showArtwork
+            showBackdropArtwork: true
             isPlaying: Media.playing
+            duration: Number(Media.durationMs)
+            position: Number(Media.positionMs)
+            canSeek: Media.canSeek
             canSkipPrevious: Media.canGoPrevious
             canSkipNext: Media.canGoNext
+            canShuffle: Media.shuffleSupported
+            canRepeat: Media.repeatSupported
+            shuffleEnabled: Media.shuffle
+            repeatMode: Media.repeatMode
+            sourceCount: Media.playerCount
             showVolume: root.showVolume && SystemState.audioAvailable
             volume: Math.min(100, SystemState.volumePercent) / 100
             canAdjustVolume: SystemState.audioAvailable
@@ -56,6 +66,11 @@ Item {
             onPauseRequested: Media.playPause()
             onPreviousRequested: Media.previous()
             onNextRequested: Media.next()
+            onSeekRequested: newPosition => Media.seekTo(newPosition)
+            onShuffleRequested: enabled => Media.setShuffle(enabled)
+            onRepeatRequested: mode => Media.setRepeatMode(mode)
+            onPreviousSourceRequested: Media.selectPreviousPlayer()
+            onNextSourceRequested: Media.selectNextPlayer()
             onVolumeRequested: value => SystemState.volumePercent = Math.round(value * 100)
         }
 
