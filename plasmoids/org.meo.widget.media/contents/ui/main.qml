@@ -14,14 +14,14 @@ PlasmoidItem {
     toolTipMainText: Plasmoid.title
     preferredRepresentation: fullRepresentation
 
-    Layout.minimumWidth: 280 * MeoTheme.globalScale
-    Layout.minimumHeight: 132 * MeoTheme.globalScale
-    Layout.preferredWidth: 384 * MeoTheme.globalScale
-    Layout.preferredHeight: 176 * MeoTheme.globalScale
+    Layout.minimumWidth: 320 * MeoTheme.globalScale
+    Layout.minimumHeight: 148 * MeoTheme.globalScale
+    Layout.preferredWidth: 720 * MeoTheme.globalScale
+    Layout.preferredHeight: 300 * MeoTheme.globalScale
 
     fullRepresentation: Item {
-        implicitWidth: 384 * MeoTheme.globalScale
-        implicitHeight: 176 * MeoTheme.globalScale
+        implicitWidth: 720 * MeoTheme.globalScale
+        implicitHeight: 300 * MeoTheme.globalScale
 
         MeoWidget {
             anchors.fill: parent
@@ -41,15 +41,24 @@ PlasmoidItem {
                 anchors.fill: parent
                 anchors.margins: MeoTheme.space4
                 visible: MeoSystem.Media.available
-                presentation: "compact"
+                presentation: "adaptive"
                 title: MeoSystem.Media.title
                 artist: MeoSystem.Media.artist
+                album: MeoSystem.Media.album
                 sourceName: MeoSystem.Media.playerName
-                coverSource: MeoSystem.Media.artUrl
+                coverSource: MeoSystem.Media.remoteArtUrl !== ""
+                             ? MeoSystem.Media.remoteArtUrl : MeoSystem.Media.artUrl
                 isPlaying: MeoSystem.Media.playing
-                canSeek: false
+                duration: Number(MeoSystem.Media.durationMs)
+                position: Number(MeoSystem.Media.positionMs)
+                canSeek: MeoSystem.Media.canSeek
                 canSkipPrevious: MeoSystem.Media.canGoPrevious
                 canSkipNext: MeoSystem.Media.canGoNext
+                canShuffle: MeoSystem.Media.shuffleSupported
+                canRepeat: MeoSystem.Media.repeatSupported
+                shuffleEnabled: MeoSystem.Media.shuffle
+                repeatMode: MeoSystem.Media.repeatMode
+                sourceCount: MeoSystem.Media.playerCount
                 canAdjustVolume: false
                 showVolume: false
                 showSecondaryActions: false
@@ -57,6 +66,11 @@ PlasmoidItem {
                 onPauseRequested: MeoSystem.Media.playPause()
                 onPreviousRequested: MeoSystem.Media.previous()
                 onNextRequested: MeoSystem.Media.next()
+                onSeekRequested: newPosition => MeoSystem.Media.seekTo(newPosition)
+                onShuffleRequested: enabled => MeoSystem.Media.setShuffle(enabled)
+                onRepeatRequested: mode => MeoSystem.Media.setRepeatMode(mode)
+                onPreviousSourceRequested: MeoSystem.Media.selectPreviousPlayer()
+                onNextSourceRequested: MeoSystem.Media.selectNextPlayer()
             }
 
             MeoCard {
@@ -69,7 +83,23 @@ PlasmoidItem {
                     anchors.centerIn: parent
                     width: parent.width - 2 * MeoTheme.space24
                     spacing: MeoTheme.space8
-                    MeoIcon { Layout.alignment: Qt.AlignHCenter; icon: "music_off"; size: 28; color: MeoTheme.contentOnSurfaceVariant }
+                    Item {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 72 * MeoTheme.globalScale
+                        Layout.preferredHeight: 72 * MeoTheme.globalScale
+
+                        MeoShape {
+                            anchors.fill: parent
+                            type: "ClamShell"
+                            color: MeoTheme.primaryContainer
+                        }
+                        MeoIcon {
+                            anchors.centerIn: parent
+                            icon: "queue_music"
+                            size: 30
+                            color: MeoTheme.contentOnPrimaryContainer
+                        }
+                    }
                     MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("No media playing"); typeRole: "title"; typeSize: "small"; emphasized: true; horizontalAlignment: Text.AlignHCenter }
                     MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("Media controls appear when a current-session player is available."); typeRole: "body"; typeSize: "small"; color: MeoTheme.contentOnSurfaceVariant; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap }
                 }
