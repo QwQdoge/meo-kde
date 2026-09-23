@@ -158,6 +158,32 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("Layout.preferredWidth: MeoTheme.space8", shelf)
         self.assertIn("permanent visual divider", shelf)
 
+    def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
+        launcher = (
+            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml"
+        ).read_text(encoding="utf-8")
+
+        for backend in (
+            "Kicker.RootModel",
+            "Kicker.RunnerModel",
+            "Kicker.RecentUsageModel",
+        ):
+            self.assertIn(backend, launcher)
+
+        for component in (
+            "MeoSearchBar",
+            "MeoTabs",
+            "MeoListItem",
+            "MeoAppGridItem",
+            "MeoContextMenu",
+        ):
+            self.assertIn(component, launcher)
+
+        self.assertIn("model.trigger(row, actionId, actionArgument)", launcher)
+        self.assertIn("sourceComponent: launcherPopup.searching", launcher)
+        self.assertNotIn("Process {", launcher)
+        self.assertNotIn("DesktopEntry", launcher)
+
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
         notification_center = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
