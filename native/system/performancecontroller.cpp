@@ -764,6 +764,21 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
         m_networkTxRate = 0;
     }
 
+    for (auto it = m_interfaceRxHistories.begin(); it != m_interfaceRxHistories.end();) {
+        if (!nextRx.contains(it.key())) {
+            it = m_interfaceRxHistories.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = m_interfaceTxHistories.begin(); it != m_interfaceTxHistories.end();) {
+        if (!nextTx.contains(it.key())) {
+            it = m_interfaceTxHistories.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     m_lastNetworkRxBytes = rx;
     m_lastNetworkTxBytes = tx;
     m_lastInterfaceRxBytes = nextRx;
@@ -891,6 +906,28 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
     } else {
         m_diskReadRate = 0;
         m_diskWriteRate = 0;
+    }
+
+    for (auto it = m_deviceReadHistories.begin(); it != m_deviceReadHistories.end();) {
+        if (!nextRead.contains(it.key())) {
+            it = m_deviceReadHistories.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = m_deviceWriteHistories.begin(); it != m_deviceWriteHistories.end();) {
+        if (!nextWrite.contains(it.key())) {
+            it = m_deviceWriteHistories.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = m_deviceUsageHistories.begin(); it != m_deviceUsageHistories.end();) {
+        if (!nextIoMs.contains(it.key())) {
+            it = m_deviceUsageHistories.erase(it);
+        } else {
+            ++it;
+        }
     }
 
     m_lastDiskReadBytes = readBytesTotal;
