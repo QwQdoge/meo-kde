@@ -188,6 +188,15 @@ Item {
                              : MeoI18n.translator.i18n("Process inspector")
             }
 
+            PopupEmptyState {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 180 * root.scaleFactor
+                visible: !root.process || !root.process.pid
+                iconName: "ads_click"
+                title: MeoI18n.translator.i18n("Select a process")
+                description: MeoI18n.translator.i18n("Choose a row above or a process on the Processes page to inspect its resources and controls.")
+            }
+
             PopupInlineMessage {
                 Layout.fillWidth: true
                 visible: MeoSystem.Tasks.actionError !== ""
@@ -199,6 +208,7 @@ Item {
 
             MeoCard {
                 Layout.fillWidth: true
+                visible: root.process && root.process.pid > 0
                 type: "filled"
                 radius: MeoTheme.shapeExtraLarge
 
@@ -272,6 +282,7 @@ Item {
 
             GridLayout {
                 Layout.fillWidth: true
+                visible: root.process && root.process.pid > 0
                 columns: width >= 760 * root.scaleFactor ? 3 : width >= 480 * root.scaleFactor ? 2 : 1
                 rowSpacing: MeoTheme.space8
                 columnSpacing: MeoTheme.space8
