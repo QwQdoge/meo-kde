@@ -12,6 +12,7 @@ Item {
     property bool treeMode: false
     property bool groupMode: true
     property var drilldownPids: []
+    property string drilldownDesktopId: ""
     property string drilldownLabel: ""
     property string sortProperty: "cpuText"
     property bool sortAscending: false
@@ -88,17 +89,22 @@ Item {
             const process = source[i]
             if (categoryFilter !== "all" && process.category !== categoryFilter)
                 continue
-            if (!groupMode && !treeMode && drilldownPids.length > 0) {
-                const candidatePid = Number(process.pid || 0)
-                let inGroup = false
-                for (let pidIndex = 0; pidIndex < drilldownPids.length; ++pidIndex) {
-                    if (Number(drilldownPids[pidIndex]) === candidatePid) {
-                        inGroup = true
-                        break
+            if (!groupMode && !treeMode) {
+                if (drilldownDesktopId !== "") {
+                    if ((process.desktopId || "") !== drilldownDesktopId)
+                        continue
+                } else if (drilldownPids.length > 0) {
+                    const candidatePid = Number(process.pid || 0)
+                    let inGroup = false
+                    for (let pidIndex = 0; pidIndex < drilldownPids.length; ++pidIndex) {
+                        if (Number(drilldownPids[pidIndex]) === candidatePid) {
+                            inGroup = true
+                            break
+                        }
                     }
+                    if (!inGroup)
+                        continue
                 }
-                if (!inGroup)
-                    continue
             }
             const haystack = [
                 process.name || "",
@@ -125,6 +131,7 @@ Item {
                 parentPid: Number(process.parentPid || 0),
                 name: process.name || process.appName || "",
                 appName: process.appName || process.name || "",
+                desktopId: process.desktopId || "",
                 displayName: displayName,
                 command: process.command || "",
                 executable: process.executable || "",
@@ -266,7 +273,8 @@ Item {
 
         MeoCard {
             Layout.fillWidth: true
-            visible: root.drilldownPids.length > 0 && !root.groupMode && !root.treeMode
+            visible: (root.drilldownDesktopId !== "" || root.drilldownPids.length > 0)
+                     && !root.groupMode && !root.treeMode
             type: "filled"
             radius: MeoTheme.shapeLarge
 
@@ -282,6 +290,7 @@ Item {
                     icon.name: "arrow_back"
                     onClicked: {
                         root.drilldownPids = []
+                        root.drilldownDesktopId = ""
                         root.drilldownLabel = ""
                         root.groupMode = true
                         processSearch.text = ""
@@ -362,6 +371,7 @@ Item {
                     if (root.groupMode) {
                         root.treeMode = false
                         root.drilldownPids = []
+                        root.drilldownDesktopId = ""
                         root.drilldownLabel = ""
                         processSearch.text = ""
                     }
@@ -381,6 +391,7 @@ Item {
                     if (root.treeMode) {
                         root.groupMode = false
                         root.drilldownPids = []
+                        root.drilldownDesktopId = ""
                         root.drilldownLabel = ""
                     }
                 }
@@ -442,6 +453,7 @@ Item {
                 MeoSystem.Tasks.selectProcess(row.pid)
                 if (root.groupMode) {
                     root.drilldownPids = row.pids || [row.pid]
+                    root.drilldownDesktopId = row.desktopId || ""
                     root.drilldownLabel = row.appName || row.name || ""
                     processSearch.text = ""
                     root.groupMode = false
