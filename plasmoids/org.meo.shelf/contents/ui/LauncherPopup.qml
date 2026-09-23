@@ -17,6 +17,10 @@ MeoMotionPopup {
     property var shellApplet: null
     property int appModelRevision: 0
     property int browseMode: 0
+    // -1 keeps the canonical KICKER_ALL_MODEL selected. Positive rows point
+    // directly at RootModel category models; no duplicate app index is kept.
+    property int appsModelRow: -1
+    property string appsCategoryName: ""
     property bool modelsPrimed: false
     property double lastRefreshMs: 0
 
@@ -30,6 +34,13 @@ MeoMotionPopup {
                 return candidate
         }
         return null
+    }
+    readonly property var activeAppsModel: {
+        appModelRevision
+        if (appsModelRow < 0)
+            return allAppsModel
+        const candidate = rootAppModel.modelForRow(appsModelRow)
+        return candidate || allAppsModel
     }
     readonly property var searchMatches: runnerModel.count > 0
                                        ? runnerModel.modelForRow(0) : null
@@ -248,8 +259,20 @@ MeoMotionPopup {
 
     Connections {
         target: rootAppModel
-        function onRefreshed() { launcherPopup.appModelRevision++ }
-        function onCountChanged() { launcherPopup.appModelRevision++ }
+        function onRefreshed() {
+            launcherPopup.appModelRevision++
+            if (launcherPopup.appsModelRow >= rootAppModel.count) {
+                launcherPopup.appsModelRow = -1
+                launcherPopup.appsCategoryName = ""
+            }
+        }
+        function onCountChanged() {
+            launcherPopup.appModelRevision++
+            if (launcherPopup.appsModelRow >= rootAppModel.count) {
+                launcherPopup.appsModelRow = -1
+                launcherPopup.appsCategoryName = ""
+            }
+        }
     }
 
     onShellAppletChanged: {
@@ -355,9 +378,9 @@ MeoMotionPopup {
                 MeoText {
                     text: launcherPopup.browseMode === 0
                           ? MeoI18n.translator.i18n("Pinned + activity")
-                          : (launcherPopup.allAppsModel
+                          : (launcherPopup.activeAppsModel
                              ? MeoI18n.translator.i18n("%1 apps").arg(
-                                   launcherPopup.allAppsModel.count)
+                                   launcherPopup.activeAppsModel.count)
                              : MeoI18n.translator.i18n("Loading…"))
                     typeRole: "label"
                     typeSize: "small"
@@ -1022,7 +1045,7 @@ MeoMotionPopup {
                     allAppsGrid.currentIndex = 0
                 if (allAppsGrid.currentIndex >= 0)
                     return launcherPopup.triggerModel(
-                        launcherPopup.allAppsModel,
+                        launcherPopup.activeAppsModel,
                         allAppsGrid.currentIndex)
                 return false
             }
@@ -1035,7 +1058,9 @@ MeoMotionPopup {
                     Layout.fillWidth: true
 
                     MeoText {
-                        text: MeoI18n.translator.i18n("All apps")
+                        text: launcherPopup.appsModelRow < 0
+                              ? MeoI18n.translator.i18n("All apps")
+                              : launcherPopup.appsCategoryName
                         typeRole: "title"
                         typeSize: "small"
                         emphasized: true
@@ -1045,12 +1070,76 @@ MeoMotionPopup {
                     Item { Layout.fillWidth: true }
 
                     MeoText {
-                        visible: launcherPopup.allAppsModel !== null
-                        text: launcherPopup.allAppsModel
-                              ? launcherPopup.allAppsModel.count : ""
+                        visible: launcherPopup.activeAppsModel !== null
+                        text: launcherPopup.activeAppsModel
+                              ? launcherPopup.activeAppsModel.count : ""
                         typeRole: "label"
                         typeSize: "small"
                         color: MeoTheme.contentOnSurfaceVariant
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 36 * MeoTheme.globalScale
+                    spacing: MeoTheme.space6
+
+                    MeoChip {
+                        id: allAppsChip
+                        type: "assist"
+                        size: "s"
+                        label: MeoI18n.translator.i18n("All")
+                        selected: launcherPopup.appsModelRow < 0
+                        Accessible.name: MeoI18n.translator.i18n("Show all applications")
+                        onClicked: {
+                            launcherPopup.appsModelRow = -1
+                            launcherPopup.appsCategoryName = ""
+                            allAppsGrid.currentIndex = allAppsGrid.count > 0 ? 0 : -1
+                            allAppsGrid.positionViewAtBeginning()
+                        }
+                    }
+
+                    ListView {
+                        id: appCategoryList
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        orientation: ListView.Horizontal
+                        spacing: MeoTheme.space6
+                        clip: true
+                        reuseItems: true
+                        model: rootAppModel
+                        boundsBehavior: Flickable.StopAtBounds
+                        Accessible.name: MeoI18n.translator.i18n("Application categories")
+
+                        // RootModel rows 0 and 1 are Favorites and All Apps in
+                        // Plasma Kickoff. Rows 2+ are KDE's category models.
+                        delegate: MeoChip {
+                            id: categoryChip
+                            required property int index
+                            required property string display
+
+                            readonly property bool isCategory:
+                                index >= 2 && display.trim() !== ""
+
+                            width: isCategory ? implicitWidth : 0
+                            height: appCategoryList.height
+                            visible: isCategory
+                            enabled: isCategory
+                            type: "assist"
+                            size: "s"
+                            label: display
+                            selected: launcherPopup.appsModelRow === index
+                            Accessible.name: display
+
+                            onClicked: {
+                                launcherPopup.appsModelRow = index
+                                launcherPopup.appsCategoryName = display
+                                allAppsGrid.currentIndex = allAppsGrid.count > 0 ? 0 : -1
+                                allAppsGrid.positionViewAtBeginning()
+                            }
+                        }
+
+                        QQC2.ScrollBar.horizontal: MeoScrollBar {}
                     }
                 }
 
@@ -1064,7 +1153,7 @@ MeoMotionPopup {
                         Math.floor(width / (104 * MeoTheme.globalScale)))
                     cellWidth: width / columnCount
                     cellHeight: 104 * MeoTheme.globalScale
-                    model: launcherPopup.allAppsModel
+                    model: launcherPopup.activeAppsModel
                     reuseItems: true
                     currentIndex: count > 0 ? 0 : -1
                     keyNavigationWraps: false
@@ -1094,7 +1183,7 @@ MeoMotionPopup {
                         onTriggered: {
                             allAppsGrid.currentIndex = appTile.index
                             launcherPopup.triggerModel(
-                                launcherPopup.allAppsModel,
+                                launcherPopup.activeAppsModel,
                                 appTile.index)
                         }
 
@@ -1106,7 +1195,7 @@ MeoMotionPopup {
                                     appTile,
                                     eventPoint.position.x,
                                     eventPoint.position.y,
-                                    launcherPopup.allAppsModel,
+                                    launcherPopup.activeAppsModel,
                                     appTile.index,
                                     appTile.model)
                             }
@@ -1142,7 +1231,7 @@ MeoMotionPopup {
                             if (item) {
                                 launcherPopup.openContextMenu(
                                     item, item.width / 2, item.height / 2,
-                                    launcherPopup.allAppsModel,
+                                    launcherPopup.activeAppsModel,
                                     currentIndex, item.model)
                             }
                             event.accepted = true
@@ -1154,7 +1243,7 @@ MeoMotionPopup {
 
                 MeoText {
                     Layout.fillWidth: true
-                    visible: launcherPopup.allAppsModel === null
+                    visible: launcherPopup.activeAppsModel === null
                     text: MeoI18n.translator.i18n("Loading applications…")
                     typeRole: "body"
                     typeSize: "medium"
@@ -1164,7 +1253,7 @@ MeoMotionPopup {
 
                 MeoText {
                     Layout.fillWidth: true
-                    visible: launcherPopup.allAppsModel !== null
+                    visible: launcherPopup.activeAppsModel !== null
                     text: MeoI18n.translator.i18n("Arrow keys Navigate   Enter Open   Menu / Right-click More")
                     typeRole: "label"
                     typeSize: "small"
