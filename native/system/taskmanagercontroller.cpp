@@ -1102,6 +1102,13 @@ void TaskManagerController::refreshStartupApps()
 
         const bool enabled = !hidden
             && gnomeEnabled.compare(QStringLiteral("false"), Qt::CaseInsensitive) != 0;
+        const bool meoDisabled =
+            desktopEntryValue(content, "X-Meo-Disabled").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0;
+        const bool meoOverride =
+            desktopEntryValue(content, "X-Meo-Override").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0;
+        const QString source = meoOverride && !systemPath.isEmpty()
+            ? QStringLiteral("system")
+            : (userPath.isEmpty() ? QStringLiteral("system") : QStringLiteral("user"));
 
         QVariantMap app{
             {QStringLiteral("id"), id},
@@ -1110,14 +1117,12 @@ void TaskManagerController::refreshStartupApps()
             {QStringLiteral("icon"), icon},
             {QStringLiteral("description"), comment},
             {QStringLiteral("enabled"), enabled},
-            {QStringLiteral("source"), userPath.isEmpty() ? QStringLiteral("system") : QStringLiteral("user")},
+            {QStringLiteral("source"), source},
             {QStringLiteral("path"), effectivePath},
             {QStringLiteral("userPath"), userPath},
             {QStringLiteral("systemPath"), systemPath},
-            {QStringLiteral("meoDisabled"),
-             desktopEntryValue(content, "X-Meo-Disabled").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0},
-            {QStringLiteral("meoOverride"),
-             desktopEntryValue(content, "X-Meo-Override").compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0},
+            {QStringLiteral("meoDisabled"), meoDisabled},
+            {QStringLiteral("meoOverride"), meoOverride},
         };
         m_startupApps.push_back(app);
         m_startupById.insert(id, app);
