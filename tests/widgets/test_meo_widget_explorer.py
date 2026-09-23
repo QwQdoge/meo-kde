@@ -25,6 +25,7 @@ class MeoWidgetExplorerTests(unittest.TestCase):
             "org.meo.widgetexplorer",
             "org.meo.widget.clock",
             "org.meo.widget.media",
+            "org.meo.widget.performance",
         ):
             metadata = json.loads((APPLETS / package_id / "metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["KPlugin"]["Id"], package_id)
@@ -69,15 +70,19 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         bridge = BRIDGE.read_text(encoding="utf-8")
         clock = (APPLETS / "org.meo.widget.clock/contents/ui/main.qml").read_text(encoding="utf-8")
         media = (APPLETS / "org.meo.widget.media/contents/ui/main.qml").read_text(encoding="utf-8")
+        performance = (APPLETS / "org.meo.widget.performance/contents/ui/main.qml").read_text(encoding="utf-8")
 
         self.assertIn('"clock", "org.meo.widget.clock"', bridge)
         self.assertIn('"previewKind"', bridge)
         self.assertIn('"MeoAmbientClock"', bridge)
         self.assertIn('"media", "org.meo.widget.media"', bridge)
         self.assertIn('"MeoMediaController"', bridge)
+        self.assertIn('"performance", "org.meo.widget.performance"', bridge)
         self.assertIn('"lockScreenEligible"), false', bridge)
         self.assertIn("MeoWidget.LockScreen", clock)
         self.assertIn("MeoWidget.LockScreen", media)
+        self.assertIn("supportedSurfaces: [MeoWidget.Desktop]", performance)
+        self.assertNotIn("MeoWidget.LockScreen", performance)
         self.assertIn('existingDesktops[i].addWidget("org.meo.widgetexplorer")', LAYOUT.read_text(encoding="utf-8"))
 
     def test_document_describes_native_plasma_api_and_honest_frame_boundary(self):
