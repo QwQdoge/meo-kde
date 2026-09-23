@@ -202,16 +202,16 @@ double gpuPowerWattsAt(const QString &devicePath)
     return best;
 }
 
-double gpuCoreClockMHzAt(const QString &devicePath)
+double gpuCoreClockMHzAt(const QString &devicePath, const QString &cardPath)
 {
     const QStringList directCandidates{
+        cardPath + QStringLiteral("/gt_cur_freq_mhz"),
         devicePath + QStringLiteral("/gt_cur_freq_mhz"),
-        devicePath + QStringLiteral("/cur_freq"),
     };
     for (const QString &path : directCandidates) {
         const qint64 value = readInteger(path, 0);
         if (value > 0) {
-            return value > 100000 ? value / 1000000.0 : value;
+            return value;
         }
     }
 
@@ -913,7 +913,8 @@ void PerformanceController::sampleGpu()
                                              QDir::Dirs | QDir::NoDotAndDotDot,
                                              QDir::Name);
     for (const QString &card : cards) {
-        const QString devicePath = drm.filePath(card + QStringLiteral("/device"));
+        const QString cardPath = drm.filePath(card);
+        const QString devicePath = cardPath + QStringLiteral("/device");
         if (!QFileInfo::exists(devicePath)) {
             continue;
         }
@@ -942,7 +943,7 @@ void PerformanceController::sampleGpu()
         const double temperature = gpuTemperatureAt(devicePath);
         gpu.insert(QStringLiteral("temperature"), temperature);
         gpu.insert(QStringLiteral("powerWatts"), gpuPowerWattsAt(devicePath));
-        gpu.insert(QStringLiteral("coreClockMHz"), gpuCoreClockMHzAt(devicePath));
+        gpu.insert(QStringLiteral("coreClockMHz"), gpuCoreClockMHzAt(devicePath, cardPath));
         gpu.insert(QStringLiteral("memoryClockMHz"), 0.0);
 
         const qint64 vramTotal = readInteger(devicePath + QStringLiteral("/mem_info_vram_total"), 0);
