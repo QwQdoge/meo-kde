@@ -404,6 +404,7 @@ done
 run cp -a "${repo_root}/qml/MeoKDE/." "${qml_root}/MeoKDE/"
 run install -Dm0755 "${native_build_root}/system/meo-system-monitor" "${local_bin_root}/meo-system-monitor"
 run install -Dm0644 "${repo_root}/data/applications/org.meo.systemmonitor.desktop" "${data_root}/applications/org.meo.systemmonitor.desktop"
+run sed -i "s|^Exec=meo-system-monitor$|Exec=${local_bin_root}/meo-system-monitor|" "${data_root}/applications/org.meo.systemmonitor.desktop"
 run install -Dm755 "${repo_root}/tools/input-method/meo-input-method.sh" "${local_bin_root}/meo-input-method"
 run install -Dm755 "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "${local_bin_root}/meo-desktop-layout"
 run install -Dm755 "${repo_root}/tools/theme/apply-meo-desktop.sh" "${local_bin_root}/meo-desktop-apply"
