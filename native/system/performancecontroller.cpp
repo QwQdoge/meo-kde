@@ -398,6 +398,10 @@ void PerformanceController::unsubscribe(const QString &clientId)
         m_lastDeviceReadBytes.clear();
         m_lastDeviceWriteBytes.clear();
         m_lastDeviceIoMilliseconds.clear();
+        m_lastDeviceReadOps.clear();
+        m_lastDeviceWriteOps.clear();
+        m_lastDeviceReadMilliseconds.clear();
+        m_lastDeviceWriteMilliseconds.clear();
         m_lastProcessTicks.clear();
     }
     Q_UNUSED(wasMonitoring);
@@ -877,6 +881,10 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
     QHash<QString, quint64> nextRead;
     QHash<QString, quint64> nextWrite;
     QHash<QString, quint64> nextIoMs;
+    QHash<QString, quint64> nextReadOps;
+    QHash<QString, quint64> nextWriteOps;
+    QHash<QString, quint64> nextReadMs;
+    QHash<QString, quint64> nextWriteMs;
 
     const QList<QByteArray> lines = readBytes(QStringLiteral("/proc/diskstats")).split('\n');
     for (const QByteArray &line : lines) {
@@ -898,25 +906,45 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
             continue;
         }
 
+        const quint64 readOps = fields.at(3).toULongLong();
         const quint64 readBytesValue = fields.at(5).toULongLong() * 512ULL;
+        const quint64 readMilliseconds = fields.at(6).toULongLong();
+        const quint64 writeOps = fields.at(7).toULongLong();
         const quint64 writeBytesValue = fields.at(9).toULongLong() * 512ULL;
+        const quint64 writeMilliseconds = fields.at(10).toULongLong();
+        const quint64 inFlight = fields.at(11).toULongLong();
         const quint64 ioMilliseconds = fields.at(12).toULongLong();
         nextRead.insert(device, readBytesValue);
         nextWrite.insert(device, writeBytesValue);
         nextIoMs.insert(device, ioMilliseconds);
+        nextReadOps.insert(device, readOps);
+        nextWriteOps.insert(device, writeOps);
+        nextReadMs.insert(device, readMilliseconds);
+        nextWriteMs.insert(device, writeMilliseconds);
         readBytesTotal += readBytesValue;
         writeBytesTotal += writeBytesValue;
 
         double readRate = 0;
         double writeRate = 0;
         double usage = 0;
+        double readIops = 0;
+        double writeIops = 0;
+        double averageLatencyMs = 0;
         if (elapsedSeconds > 0
             && m_lastDeviceReadBytes.contains(device)
             && m_lastDeviceWriteBytes.contains(device)
-            && m_lastDeviceIoMilliseconds.contains(device)) {
+            && m_lastDeviceIoMilliseconds.contains(device)
+            && m_lastDeviceReadOps.contains(device)
+            && m_lastDeviceWriteOps.contains(device)
+            && m_lastDeviceReadMilliseconds.contains(device)
+            && m_lastDeviceWriteMilliseconds.contains(device)) {
             const quint64 previousRead = m_lastDeviceReadBytes.value(device);
             const quint64 previousWrite = m_lastDeviceWriteBytes.value(device);
             const quint64 previousIoMs = m_lastDeviceIoMilliseconds.value(device);
+            const quint64 previousReadOps = m_lastDeviceReadOps.value(device);
+            const quint64 previousWriteOps = m_lastDeviceWriteOps.value(device);
+            const quint64 previousReadMs = m_lastDeviceReadMilliseconds.value(device);
+            const quint64 previousWriteMs = m_lastDeviceWriteMilliseconds.value(device);
             if (readBytesValue >= previousRead) {
                 readRate = static_cast<double>(readBytesValue - previousRead) / elapsedSeconds;
             }
@@ -928,6 +956,24 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
                     static_cast<double>(ioMilliseconds - previousIoMs)
                         / (elapsedSeconds * 1000.0) * 100.0,
                     0.0, 100.0);
+            }
+
+            const quint64 readOpsDelta =
+                readOps >= previousReadOps ? readOps - previousReadOps : 0;
+            const quint64 writeOpsDelta =
+                writeOps >= previousWriteOps ? writeOps - previousWriteOps : 0;
+            readIops = static_cast<double>(readOpsDelta) / elapsedSeconds;
+            writeIops = static_cast<double>(writeOpsDelta) / elapsedSeconds;
+
+            const quint64 readMsDelta =
+                readMilliseconds >= previousReadMs ? readMilliseconds - previousReadMs : 0;
+            const quint64 writeMsDelta =
+                writeMilliseconds >= previousWriteMs ? writeMilliseconds - previousWriteMs : 0;
+            const quint64 completedOps = readOpsDelta + writeOpsDelta;
+            if (completedOps > 0) {
+                averageLatencyMs =
+                    static_cast<double>(readMsDelta + writeMsDelta)
+                    / static_cast<double>(completedOps);
             }
         }
 
@@ -958,6 +1004,10 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
             {QStringLiteral("usage"), usage},
             {QStringLiteral("readBytesPerSecond"), readRate},
             {QStringLiteral("writeBytesPerSecond"), writeRate},
+            {QStringLiteral("readIops"), readIops},
+            {QStringLiteral("writeIops"), writeIops},
+            {QStringLiteral("averageLatencyMs"), averageLatencyMs},
+            {QStringLiteral("inFlight"), static_cast<qint64>(inFlight)},
             {QStringLiteral("readHistory"), readHistory},
             {QStringLiteral("writeHistory"), writeHistory},
             {QStringLiteral("usageHistory"), usageHistory},
@@ -1015,6 +1065,10 @@ void PerformanceController::sampleDisk(double elapsedSeconds)
     m_lastDeviceReadBytes = nextRead;
     m_lastDeviceWriteBytes = nextWrite;
     m_lastDeviceIoMilliseconds = nextIoMs;
+    m_lastDeviceReadOps = nextReadOps;
+    m_lastDeviceWriteOps = nextWriteOps;
+    m_lastDeviceReadMilliseconds = nextReadMs;
+    m_lastDeviceWriteMilliseconds = nextWriteMs;
     m_disks = devices;
     m_haveDiskSample = true;
 
