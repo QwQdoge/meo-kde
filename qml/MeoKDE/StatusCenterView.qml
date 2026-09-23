@@ -19,6 +19,17 @@ MeoStatusCenter {
     property string notificationView: "cards"
     property string notificationPreview: "full"
     property string density: "comfortable"
+    // Shell-local surface controls. These are presentation only; the active
+    // Meo HCT palette remains the color authority.
+    property string surfaceStyle: "theme"
+    property int surfaceOpacityPercent: 100
+    readonly property color configuredSurfaceBase: surfaceStyle === "flat"
+                                                   ? MeoTheme.surface
+                                                   : (surfaceStyle === "tonal"
+                                                      ? MeoTheme.surfaceContainerHigh
+                                                      : MeoTheme.surfaceContainerLow)
+    readonly property real configuredSurfaceOpacity: Math.max(
+        0.70, Math.min(1.0, Number(surfaceOpacityPercent) / 100.0))
     property bool showWeekNumbers: false
     property bool showSecondaryCalendar: true
     property string defaultPage: "notifications"
@@ -34,6 +45,11 @@ MeoStatusCenter {
     readonly property string timePattern: use24HourClock
                                        ? (showSeconds ? "hh:mm:ss" : "hh:mm")
                                        : (showSeconds ? "h:mm:ss AP" : "h:mm AP")
+
+    color: Qt.rgba(configuredSurfaceBase.r,
+                   configuredSurfaceBase.g,
+                   configuredSurfaceBase.b,
+                   surfaceStyle === "translucent" ? configuredSurfaceOpacity : 1.0)
 
     mode: centerMode === "notificationsOnly"
           ? MeoStatusCenter.Notifications
