@@ -65,7 +65,7 @@ Item {
                 name: process.name || "",
                 command: process.command || "",
                 user: process.user || "",
-                uid: Number(process.uid || -1),
+                uid: process.uid === undefined || process.uid === null ? -1 : Number(process.uid),
                 state: process.state || "",
                 stateText: root.stateLabel(process.state),
                 threads: Number(process.threads || 0),
