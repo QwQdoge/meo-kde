@@ -280,6 +280,68 @@ Item {
             }
 
             PopupSectionLabel {
+                sectionText: MeoI18n.translator.i18n("Storage devices")
+            }
+
+            PopupEmptyState {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 150 * root.scaleFactor
+                visible: MeoSystem.Performance.disks.length === 0
+                iconName: "hard_drive"
+                title: MeoI18n.translator.i18n("No disk telemetry")
+                description: MeoI18n.translator.i18n("Physical block-device activity will appear here when available.")
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                visible: MeoSystem.Performance.disks.length > 0
+                columns: width >= 760 * root.scaleFactor ? 2 : 1
+                rowSpacing: MeoTheme.space12
+                columnSpacing: MeoTheme.space12
+
+                Repeater {
+                    model: MeoSystem.Performance.disks
+
+                    delegate: DiskTile {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        disk: modelData
+                    }
+                }
+            }
+
+            PopupSectionLabel {
+                sectionText: MeoI18n.translator.i18n("Network interfaces")
+            }
+
+            PopupEmptyState {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 150 * root.scaleFactor
+                visible: MeoSystem.Performance.networkInterfaces.length === 0
+                iconName: "lan"
+                title: MeoI18n.translator.i18n("No network telemetry")
+                description: MeoI18n.translator.i18n("Active network interfaces will appear here.")
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                visible: MeoSystem.Performance.networkInterfaces.length > 0
+                columns: width >= 760 * root.scaleFactor ? 2 : 1
+                rowSpacing: MeoTheme.space12
+                columnSpacing: MeoTheme.space12
+
+                Repeater {
+                    model: MeoSystem.Performance.networkInterfaces
+
+                    delegate: NetworkTile {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        network: modelData
+                    }
+                }
+            }
+
+            PopupSectionLabel {
                 sectionText: MeoI18n.translator.i18n("CPU cores")
             }
 
@@ -438,6 +500,206 @@ Item {
                 MeoText {
                     visible: Number(coreTile.core.frequencyMHz || 0) > 0
                     text: Math.round(Number(coreTile.core.frequencyMHz || 0)) + " MHz"
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                }
+            }
+        }
+    }
+
+    component DiskTile: MeoCard {
+        id: diskTile
+        property var disk: ({})
+
+        implicitHeight: 194 * root.scaleFactor
+        type: "filled"
+        radius: MeoTheme.shapeLargeIncreased
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space12
+            spacing: MeoTheme.space8
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                Rectangle {
+                    width: 40 * root.scaleFactor
+                    height: width
+                    radius: 14 * root.scaleFactor
+                    color: MeoTheme.secondaryContainer
+
+                    MeoIcon {
+                        anchors.centerIn: parent
+                        icon: "hard_drive"
+                        size: 22
+                        fill: true
+                        color: MeoTheme.contentOnSecondaryContainer
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    MeoText {
+                        Layout.fillWidth: true
+                        text: diskTile.disk.model || diskTile.disk.name || MeoI18n.translator.i18n("Disk")
+                        typeRole: "title"
+                        typeSize: "small"
+                        emphasized: true
+                        elide: Text.ElideRight
+                    }
+
+                    MeoText {
+                        text: (diskTile.disk.name || "")
+                              + " · " + (diskTile.disk.type || "")
+                              + (Number(diskTile.disk.sizeBytes || 0) > 0
+                                 ? " · " + root.formatBytes(diskTile.disk.sizeBytes) : "")
+                        typeRole: "label"
+                        typeSize: "small"
+                        color: MeoTheme.contentOnSurfaceVariant
+                    }
+                }
+
+                MeoText {
+                    text: Number(diskTile.disk.usage || 0).toFixed(0) + "%"
+                    typeRole: "title"
+                    typeSize: "medium"
+                    emphasized: true
+                }
+            }
+
+            PerformanceGraph {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.minimumHeight: 42 * root.scaleFactor
+                values: diskTile.disk.readHistory || []
+                secondaryValues: diskTile.disk.writeHistory || []
+                primaryColor: MeoTheme.secondary
+                secondaryColor: MeoTheme.tertiary
+                maximum: 0
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                MeoProgressBar {
+                    Layout.fillWidth: true
+                    value: Math.max(0, Math.min(100, Number(diskTile.disk.usage || 0))) / 100
+                    activeColor: MeoTheme.secondary
+                    wavy: true
+                }
+
+                MeoText {
+                    text: "R " + root.formatRate(diskTile.disk.readBytesPerSecond)
+                          + " · W " + root.formatRate(diskTile.disk.writeBytesPerSecond)
+                    typeRole: "label"
+                    typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                }
+            }
+        }
+    }
+
+    component NetworkTile: MeoCard {
+        id: networkTile
+        property var network: ({})
+
+        implicitHeight: 182 * root.scaleFactor
+        type: "filled"
+        radius: MeoTheme.shapeLargeIncreased
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space12
+            spacing: MeoTheme.space8
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
+
+                Rectangle {
+                    width: 40 * root.scaleFactor
+                    height: width
+                    radius: 14 * root.scaleFactor
+                    color: networkTile.network.up
+                           ? MeoTheme.primaryContainer
+                           : MeoTheme.surfaceContainerHighest
+
+                    MeoIcon {
+                        anchors.centerIn: parent
+                        icon: networkTile.network.wireless ? "wifi" : "lan"
+                        size: 22
+                        fill: networkTile.network.up
+                        color: networkTile.network.up
+                               ? MeoTheme.contentOnPrimaryContainer
+                               : MeoTheme.contentOnSurfaceVariant
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    MeoText {
+                        text: networkTile.network.name || MeoI18n.translator.i18n("Network")
+                        typeRole: "title"
+                        typeSize: "small"
+                        emphasized: true
+                    }
+
+                    MeoText {
+                        text: networkTile.network.up
+                              ? (Number(networkTile.network.speedMbps || 0) > 0
+                                 ? MeoI18n.translator.i18n("Connected · %1 Mbps")
+                                     .arg(networkTile.network.speedMbps)
+                                 : MeoI18n.translator.i18n("Connected"))
+                              : MeoI18n.translator.i18n("Inactive")
+                        typeRole: "label"
+                        typeSize: "small"
+                        color: MeoTheme.contentOnSurfaceVariant
+                    }
+                }
+
+                MeoChip {
+                    label: networkTile.network.wireless
+                           ? MeoI18n.translator.i18n("Wi-Fi")
+                           : MeoI18n.translator.i18n("Wired")
+                    leadingIcon: networkTile.network.wireless ? "wifi" : "lan"
+                    type: "assist"
+                    shape: "pill"
+                    visualStyle: "outlined"
+                }
+            }
+
+            PerformanceGraph {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.minimumHeight: 42 * root.scaleFactor
+                values: networkTile.network.rxHistory || []
+                secondaryValues: networkTile.network.txHistory || []
+                primaryColor: MeoTheme.primary
+                secondaryColor: MeoTheme.tertiary
+                maximum: 0
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                MeoText {
+                    Layout.fillWidth: true
+                    text: "↓ " + root.formatRate(networkTile.network.rxBytesPerSecond)
+                    typeRole: "label"
+                    typeSize: "small"
+                    emphasized: true
+                }
+
+                MeoText {
+                    text: "↑ " + root.formatRate(networkTile.network.txBytesPerSecond)
                     typeRole: "label"
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
