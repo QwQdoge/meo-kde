@@ -57,6 +57,20 @@ Item {
         return MeoI18n.translator.i18n("Balanced")
     }
 
+    function gpuDetail() {
+        const parts = []
+        if (MeoSystem.Performance.gpuTemperature > 0)
+            parts.push(Math.round(MeoSystem.Performance.gpuTemperature) + "°C")
+        if (MeoSystem.Performance.gpuMemoryTotalBytes > 0) {
+            parts.push(MeoI18n.translator.i18n("VRAM %1 / %2")
+                       .arg(formatBytes(MeoSystem.Performance.gpuMemoryUsedBytes))
+                       .arg(formatBytes(MeoSystem.Performance.gpuMemoryTotalBytes)))
+        } else if (MeoSystem.Performance.gpus.length > 1) {
+            parts.push(MeoI18n.translator.i18n("%1 GPUs").arg(MeoSystem.Performance.gpus.length))
+        }
+        return parts.join(" · ")
+    }
+
     Component.onCompleted: syncSubscription()
     Component.onDestruction: MeoSystem.Performance.unsubscribe(clientId)
     onVisibleChanged: syncSubscription()
@@ -109,6 +123,21 @@ Item {
                     icon.name: "refresh"
                     onClicked: MeoSystem.Performance.refreshNow()
                 }
+            }
+
+            PopupInlineMessage {
+                Layout.fillWidth: true
+                visible: MeoSystem.Platform.lastError !== ""
+                text: MeoSystem.Platform.lastError
+                dismissible: true
+                onDismissed: MeoSystem.Platform.clearError()
+            }
+
+            PopupInlineMessage {
+                Layout.fillWidth: true
+                visible: MeoSystem.Platform.powerProfileDegradedReason !== ""
+                text: MeoSystem.Platform.powerProfileDegradedReason
+                tone: "warning"
             }
 
             MeoCard {
@@ -235,11 +264,7 @@ Item {
                     subtitle: MeoSystem.Performance.gpuName.length > 0
                               ? MeoSystem.Performance.gpuName
                               : MeoI18n.translator.i18n("No supported GPU telemetry")
-                    detail: MeoSystem.Performance.gpuTemperature > 0
-                            ? Math.round(MeoSystem.Performance.gpuTemperature) + "°C"
-                            : (MeoSystem.Performance.gpus.length > 0
-                               ? MeoI18n.translator.i18n("%1 GPU(s)").arg(MeoSystem.Performance.gpus.length)
-                               : "")
+                    detail: root.gpuDetail()
                     progressValue: MeoSystem.Performance.gpuUsage
                     history: MeoSystem.Performance.gpuHistory
                     accentColor: MeoTheme.tertiary
@@ -257,7 +282,7 @@ Item {
                     progressValue: MeoSystem.Performance.storageUsage
                     history: MeoSystem.Performance.diskReadHistory
                     secondaryHistory: MeoSystem.Performance.diskWriteHistory
-                    accentColor: MeoTheme.error
+                    accentColor: MeoTheme.secondary
                     secondaryAccentColor: MeoTheme.tertiary
                 }
 
