@@ -11,6 +11,8 @@ Item {
     property string categoryFilter: "all"
     property bool treeMode: false
     property bool groupMode: true
+    property var drilldownPids: []
+    property string drilldownLabel: ""
     property string sortProperty: "cpuText"
     property bool sortAscending: false
     readonly property real scaleFactor: MeoTheme.globalScale
@@ -86,6 +88,18 @@ Item {
             const process = source[i]
             if (categoryFilter !== "all" && process.category !== categoryFilter)
                 continue
+            if (!groupMode && !treeMode && drilldownPids.length > 0) {
+                const candidatePid = Number(process.pid || 0)
+                let inGroup = false
+                for (let pidIndex = 0; pidIndex < drilldownPids.length; ++pidIndex) {
+                    if (Number(drilldownPids[pidIndex]) === candidatePid) {
+                        inGroup = true
+                        break
+                    }
+                }
+                if (!inGroup)
+                    continue
+            }
             const haystack = [
                 process.name || "",
                 process.appName || "",
@@ -250,6 +264,43 @@ Item {
             }
         }
 
+        MeoCard {
+            Layout.fillWidth: true
+            visible: root.drilldownPids.length > 0 && !root.groupMode && !root.treeMode
+            type: "filled"
+            radius: MeoTheme.shapeLarge
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: MeoTheme.space8
+                spacing: MeoTheme.space8
+
+                MeoButton {
+                    text: MeoI18n.translator.i18n("Back to apps")
+                    type: "text"
+                    size: "xs"
+                    icon.name: "arrow_back"
+                    onClicked: {
+                        root.drilldownPids = []
+                        root.drilldownLabel = ""
+                        root.groupMode = true
+                        processSearch.text = ""
+                    }
+                }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    text: root.drilldownLabel
+                          + " · "
+                          + MeoI18n.translator.i18n("%1 processes").arg(root.processRows.length)
+                    typeRole: "label"
+                    typeSize: "large"
+                    emphasized: true
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: MeoTheme.space8
@@ -310,6 +361,8 @@ Item {
                     root.groupMode = !root.groupMode
                     if (root.groupMode) {
                         root.treeMode = false
+                        root.drilldownPids = []
+                        root.drilldownLabel = ""
                         processSearch.text = ""
                     }
                 }
@@ -325,8 +378,11 @@ Item {
                 elevated: root.treeMode
                 onClicked: {
                     root.treeMode = !root.treeMode
-                    if (root.treeMode)
+                    if (root.treeMode) {
                         root.groupMode = false
+                        root.drilldownPids = []
+                        root.drilldownLabel = ""
+                    }
                 }
             }
         }
@@ -366,7 +422,9 @@ Item {
                     return
                 MeoSystem.Tasks.selectProcess(row.pid)
                 if (root.groupMode) {
-                    processSearch.text = row.appName || row.name || ""
+                    root.drilldownPids = row.pids || [row.pid]
+                    root.drilldownLabel = row.appName || row.name || ""
+                    processSearch.text = ""
                     root.groupMode = false
                 }
             }
