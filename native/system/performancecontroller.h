@@ -30,6 +30,7 @@ class PerformanceController final : public QObject
     Q_PROPERTY(int cpuSockets READ cpuSockets NOTIFY metricsChanged)
     Q_PROPERTY(double cpuMaxFrequencyMHz READ cpuMaxFrequencyMHz NOTIFY metricsChanged)
     Q_PROPERTY(bool cpuVirtualizationSupported READ cpuVirtualizationSupported NOTIFY metricsChanged)
+    Q_PROPERTY(QVariantList cpuCaches READ cpuCaches NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList cpuHistory READ cpuHistory NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList cpuCores READ cpuCores NOTIFY metricsChanged)
 
@@ -99,6 +100,7 @@ public:
     int cpuSockets() const;
     double cpuMaxFrequencyMHz() const;
     bool cpuVirtualizationSupported() const;
+    QVariantList cpuCaches() const;
     QVariantList cpuHistory() const;
     QVariantList cpuCores() const;
 
@@ -197,6 +199,7 @@ private:
     int m_cpuSockets = 1;
     double m_cpuMaxFrequencyMHz = 0;
     bool m_cpuVirtualizationSupported = false;
+    QVariantList m_cpuCaches;
     double m_cpuUsage = 0;
     double m_cpuFrequencyMHz = 0;
     double m_cpuTemperature = 0;
