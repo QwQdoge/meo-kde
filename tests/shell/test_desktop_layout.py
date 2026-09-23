@@ -177,8 +177,20 @@ class DesktopLayoutTests(unittest.TestCase):
             "MeoListItem",
             "MeoAppGridItem",
             "MeoContextMenu",
+            "MeoLoadingFeedback",
         ):
             self.assertIn(component, launcher)
+
+        # The launcher paints its stable shell immediately but never presents a
+        # fake empty Home state while Kicker is still populating. Fast loads
+        # skip feedback entirely; slow loads cross-fade through MeoUI's
+        # morphing indicator without a blank -> spinner -> content flash.
+        self.assertIn("readonly property int startupLoadingDelay: 900", launcher)
+        self.assertIn("readonly property bool appContentReady:", launcher)
+        self.assertIn("active: launcherPopup.searching || launcherPopup.appContentReady", launcher)
+        self.assertIn("!startupFeedback.feedbackVisible", launcher)
+        self.assertIn("minimumVisibleDuration: 300", launcher)
+        self.assertIn("indicatorVariant: \"contained\"", launcher)
 
         # Launcher intelligence must remain KDE-native: KRunner owns broad
         # search, KActivities owns recent/frequent ranking, and RootModel owns
