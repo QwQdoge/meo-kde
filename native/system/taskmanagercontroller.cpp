@@ -42,9 +42,14 @@ QString readText(const QString &path)
     return QString::fromUtf8(readBytes(path)).trimmed();
 }
 
-TaskManagerController::CpuSnapshot readCpuSnapshot()
+struct RawCpuSnapshot {
+    quint64 idle = 0;
+    quint64 total = 0;
+};
+
+RawCpuSnapshot readCpuSnapshot()
 {
-    TaskManagerController::CpuSnapshot snapshot;
+    RawCpuSnapshot snapshot;
     const QList<QByteArray> lines = readBytes(QStringLiteral("/proc/stat")).split('\n');
     if (lines.isEmpty()) {
         return snapshot;
@@ -543,12 +548,13 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         bool efficiency = false;
     };
 
-    const CpuSnapshot currentCpu = readCpuSnapshot();
+    const RawCpuSnapshot currentCpu = readCpuSnapshot();
     m_lastCpuTotalDelta = 0;
     if (m_lastCpu.total > 0 && currentCpu.total > m_lastCpu.total) {
         m_lastCpuTotalDelta = currentCpu.total - m_lastCpu.total;
     }
-    m_lastCpu = currentCpu;
+    m_lastCpu.idle = currentCpu.idle;
+    m_lastCpu.total = currentCpu.total;
 
     QVector<Sample> samples;
     QHash<qint64, quint64> nextTicks;
