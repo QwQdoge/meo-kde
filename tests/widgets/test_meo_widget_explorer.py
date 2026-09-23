@@ -108,7 +108,7 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("PerformanceManager {", performance_widget)
         self.assertFalse((APPLETS / "org.meo.widget.performance/contents/ui/PerformanceManager.qml").exists())
         self.assertIn("signal performanceRequested()", power_page)
-        self.assertIn("Performance monitor", power_page)
+        self.assertIn("System monitor", power_page)
         self.assertIn("performancePageComponent", quick_settings)
         self.assertIn("PerformanceManager { initialPage: 1; onCloseRequested: stack.pop() }", quick_settings)
         self.assertIn("initialPage: 1", performance_widget)
