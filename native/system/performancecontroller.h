@@ -43,6 +43,12 @@ class PerformanceController final : public QObject
     Q_PROPERTY(qint64 memorySharedBytes READ memorySharedBytes NOTIFY metricsChanged)
     Q_PROPERTY(qint64 swapUsedBytes READ swapUsedBytes NOTIFY metricsChanged)
     Q_PROPERTY(qint64 swapTotalBytes READ swapTotalBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 zramDiskSizeBytes READ zramDiskSizeBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 zramOriginalBytes READ zramOriginalBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 zramCompressedBytes READ zramCompressedBytes NOTIFY metricsChanged)
+    Q_PROPERTY(qint64 zramMemoryUsedBytes READ zramMemoryUsedBytes NOTIFY metricsChanged)
+    Q_PROPERTY(double zramCompressionRatio READ zramCompressionRatio NOTIFY metricsChanged)
+    Q_PROPERTY(bool zswapEnabled READ zswapEnabled NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList memoryHistory READ memoryHistory NOTIFY metricsChanged)
 
     Q_PROPERTY(double networkRxBytesPerSecond READ networkRxBytesPerSecond NOTIFY metricsChanged)
@@ -113,6 +119,12 @@ public:
     qint64 memorySharedBytes() const;
     qint64 swapUsedBytes() const;
     qint64 swapTotalBytes() const;
+    qint64 zramDiskSizeBytes() const;
+    qint64 zramOriginalBytes() const;
+    qint64 zramCompressedBytes() const;
+    qint64 zramMemoryUsedBytes() const;
+    double zramCompressionRatio() const;
+    bool zswapEnabled() const;
     QVariantList memoryHistory() const;
 
     double networkRxBytesPerSecond() const;
@@ -219,6 +231,12 @@ private:
     qint64 m_memorySharedBytes = 0;
     qint64 m_swapUsedBytes = 0;
     qint64 m_swapTotalBytes = 0;
+    qint64 m_zramDiskSizeBytes = 0;
+    qint64 m_zramOriginalBytes = 0;
+    qint64 m_zramCompressedBytes = 0;
+    qint64 m_zramMemoryUsedBytes = 0;
+    double m_zramCompressionRatio = 0;
+    bool m_zswapEnabled = false;
     QVariantList m_memoryHistory;
 
     quint64 m_lastNetworkRxBytes = 0;
