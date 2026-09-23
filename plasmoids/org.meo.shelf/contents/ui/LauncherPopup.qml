@@ -22,7 +22,15 @@ MeoMotionPopup {
     property int appsModelRow: -1
     property string appsCategoryName: ""
     property bool modelsPrimed: false
+    property bool refreshInFlight: false
     property double lastRefreshMs: 0
+    property double openStartedMs: 0
+    property int lastReadyLatencyMs: -1
+
+    // The shell and search field should paint immediately. Browse content is
+    // only considered ready once Plasma's canonical all-apps model has actual
+    // entries. Slow first loads use MeoUI's anti-flash morphing feedback.
+    readonly property int startupLoadingDelay: 900
 
     readonly property bool searching: searchField.text.trim() !== ""
     readonly property var favoritesModel: rootAppModel.favoritesModel
@@ -44,6 +52,8 @@ MeoMotionPopup {
     }
     readonly property var searchMatches: runnerModel.count > 0
                                        ? runnerModel.modelForRow(0) : null
+    readonly property bool appContentReady: allAppsModel !== null
+                                            && allAppsModel.count > 0
     readonly property real availableLauncherHeight: Math.max(
         360 * MeoTheme.globalScale,
         Screen.height - ShellMetrics.shelfPanelHeight - 24 * MeoTheme.globalScale)
@@ -82,12 +92,16 @@ MeoMotionPopup {
             return
 
         const now = Date.now()
+        if (!force && refreshInFlight)
+            return
         if (!force && modelsPrimed && now - lastRefreshMs < 30000)
             return
 
+        refreshInFlight = true
         rootAppModel.refresh()
         lastRefreshMs = now
-        modelsPrimed = true
+        if (appContentReady)
+            modelsPrimed = true
 
         const favorites = rootAppModel.favoritesModel
         if (favorites && typeof favorites["initForClient"] === "function")
@@ -260,6 +274,7 @@ MeoMotionPopup {
     Connections {
         target: rootAppModel
         function onRefreshed() {
+            launcherPopup.refreshInFlight = false
             launcherPopup.appModelRevision++
             if (launcherPopup.appsModelRow >= rootAppModel.count) {
                 launcherPopup.appsModelRow = -1
@@ -275,17 +290,29 @@ MeoMotionPopup {
         }
     }
 
+    onAppContentReadyChanged: {
+        if (!appContentReady)
+            return
+        modelsPrimed = true
+        refreshInFlight = false
+        if (visible && openStartedMs > 0)
+            lastReadyLatencyMs = Math.max(0, Math.round(Date.now() - openStartedMs))
+    }
+
     onShellAppletChanged: {
         if (shellApplet)
             Qt.callLater(function() { launcherPopup.refreshModels(false) })
     }
 
     onOpened: {
+        openStartedMs = Date.now()
+        lastReadyLatencyMs = appContentReady ? 0 : -1
         refreshModels(false)
         searchField.forceSearchFocus()
     }
 
     onClosed: {
+        openStartedMs = 0
         searchField.text = ""
         itemContextMenu.close()
     }
@@ -389,46 +416,69 @@ MeoMotionPopup {
                 }
             }
 
-            Loader {
-                id: paneLoader
+            Item {
+                id: paneStage
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                sourceComponent: launcherPopup.searching
-                                 ? searchPane
-                                 : launcherPopup.browseMode === 0
-                                   ? homePane
-                                   : appsPane
 
-                opacity: 1
-                scale: 1
+                // Instantiate browse panes only after Kicker has real app
+                // content. This prevents Home's empty state from flashing
+                // before the first model refresh finishes.
+                Loader {
+                    id: paneLoader
+                    anchors.fill: parent
+                    active: launcherPopup.searching || launcherPopup.appContentReady
+                    sourceComponent: launcherPopup.searching
+                                     ? searchPane
+                                     : launcherPopup.browseMode === 0
+                                       ? homePane
+                                       : appsPane
 
-                onSourceComponentChanged: {
-                    if (MeoTheme.reduceMotion)
-                        return
-                    opacity = 0
-                    scale = 0.97
-                    paneEnter.restart()
+                    // If the delayed loading indicator has already appeared,
+                    // keep the completed pane hidden until MeoLoadingFeedback
+                    // releases its minimum-visible hold. The two then
+                    // cross-fade instead of blank -> loader -> content.
+                    opacity: active
+                             && (launcherPopup.searching
+                                 || !startupFeedback.feedbackVisible)
+                             ? 1 : 0
+                    scale: opacity > 0 ? 1 : 0.985
+
+                    Behavior on opacity {
+                        enabled: !MeoTheme.reduceMotion
+                        NumberAnimation {
+                            duration: MeoTheme.motionDurationLoadingFeedbackFade
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingStandard
+                        }
+                    }
+
+                    Behavior on scale {
+                        enabled: !MeoTheme.reduceMotion
+                        NumberAnimation {
+                            duration: MeoMotion.pageEnter
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                        }
+                    }
                 }
 
-                ParallelAnimation {
-                    id: paneEnter
-                    NumberAnimation {
-                        target: paneLoader
-                        property: "opacity"
-                        to: 1
-                        duration: MeoMotion.pageEnter
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate
-                    }
-                    NumberAnimation {
-                        target: paneLoader
-                        property: "scale"
-                        to: 1
-                        duration: MeoMotion.pageEnter
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
-                    }
+                MeoLoadingFeedback {
+                    id: startupFeedback
+                    anchors.fill: parent
+                    active: launcherPopup.visible
+                            && !launcherPopup.searching
+                            && !launcherPopup.appContentReady
+                    // Fast paths never show a spinner. If Kicker still has not
+                    // populated by ~1 second, use the existing M3 Expressive
+                    // morphing indicator and hold it long enough to avoid a
+                    // one-frame flash when the model finishes immediately
+                    // afterwards.
+                    delay: launcherPopup.startupLoadingDelay
+                    minimumVisibleDuration: 300
+                    indicatorVariant: "contained"
+                    accessibleName: MeoI18n.translator.i18n("Loading applications")
                 }
             }
         }
