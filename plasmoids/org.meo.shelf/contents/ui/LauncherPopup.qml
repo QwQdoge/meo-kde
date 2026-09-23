@@ -224,12 +224,26 @@ MeoMotionPopup {
         favoritesModel: rootAppModel.favoritesModel
         mergeResults: true
         query: searchField.text.trim()
+        // Some KRunner providers refine or replace the active query. Keep the
+        // visible field authoritative, matching Plasma Kickoff's native path.
+        onRequestUpdateQuery: function(query) {
+            searchField.text = query
+        }
     }
 
     Kicker.RecentUsageModel {
         id: recentUsageModel
+        favoritesModel: rootAppModel.favoritesModel
         shownItems: Kicker.RecentUsageModel.AppsAndDocs
         ordering: Kicker.RecentUsageModel.Recent
+    }
+
+    // Reuse Plasma's KActivities-backed popularity ranking instead of
+    // maintaining a second DMS-style usage database in Meo.
+    Kicker.RecentUsageModel {
+        id: frequentUsageModel
+        favoritesModel: rootAppModel.favoritesModel
+        ordering: 1 // Popular / Frequently Used, same contract as Kickoff.
     }
 
     Connections {
@@ -340,7 +354,7 @@ MeoMotionPopup {
 
                 MeoText {
                     text: launcherPopup.browseMode === 0
-                          ? MeoI18n.translator.i18n("Pinned + recent")
+                          ? MeoI18n.translator.i18n("Pinned + activity")
                           : (launcherPopup.allAppsModel
                              ? MeoI18n.translator.i18n("%1 apps").arg(
                                    launcherPopup.allAppsModel.count)
@@ -436,8 +450,30 @@ MeoMotionPopup {
                     clip: true
                     spacing: MeoTheme.space4
                     model: launcherPopup.searchMatches
+                    reuseItems: true
                     keyNavigationWraps: false
                     currentIndex: count > 0 ? 0 : -1
+                    section.property: "group"
+                    section.criteria: ViewSection.FullString
+                    section.delegate: Item {
+                        required property string section
+                        width: searchResultList.width
+                        height: section.trim() === "" ? 0 : 30 * MeoTheme.globalScale
+                        visible: height > 0
+
+                        MeoText {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: MeoTheme.space4
+                            text: parent.section
+                            typeRole: "label"
+                            typeSize: "small"
+                            emphasized: true
+                            color: MeoTheme.contentOnSurfaceVariant
+                            elide: Text.ElideRight
+                        }
+                    }
                     Accessible.name: MeoI18n.translator.i18n("Search results")
 
                     onCountChanged: {
@@ -558,12 +594,18 @@ MeoMotionPopup {
 
             readonly property bool hasFavorites: launcherPopup.favoritesModel
                                                  && launcherPopup.favoritesModel.count > 0
+            readonly property bool hasFrequent: frequentUsageModel.count > 0
             readonly property bool hasRecents: recentUsageModel.count > 0
 
             function focusFirst() {
                 if (hasFavorites) {
                     favoriteList.currentIndex = 0
                     favoriteList.forceActiveFocus(Qt.TabFocusReason)
+                    return true
+                }
+                if (hasFrequent) {
+                    frequentList.currentIndex = 0
+                    frequentList.forceActiveFocus(Qt.TabFocusReason)
                     return true
                 }
                 if (hasRecents) {
@@ -579,6 +621,10 @@ MeoMotionPopup {
                     return launcherPopup.triggerModel(
                         launcherPopup.favoritesModel,
                         favoriteList.currentIndex)
+                if (frequentList.activeFocus && frequentList.currentIndex >= 0)
+                    return launcherPopup.triggerModel(
+                        frequentUsageModel,
+                        frequentList.currentIndex)
                 if (recentList.activeFocus && recentList.currentIndex >= 0)
                     return launcherPopup.triggerModel(
                         recentUsageModel,
@@ -631,6 +677,7 @@ MeoMotionPopup {
                             spacing: MeoTheme.space4
                             clip: true
                             model: launcherPopup.favoritesModel
+                            reuseItems: true
                             keyNavigationWraps: false
                             currentIndex: count > 0 ? 0 : -1
                             Accessible.name: MeoI18n.translator.i18n("Pinned applications")
@@ -680,7 +727,10 @@ MeoMotionPopup {
                             Keys.onReturnPressed: homePaneRoot.activateCurrent()
                             Keys.onEnterPressed: homePaneRoot.activateCurrent()
                             Keys.onDownPressed: {
-                                if (recentList.count > 0) {
+                                if (frequentList.count > 0) {
+                                    frequentList.currentIndex = 0
+                                    frequentList.forceActiveFocus(Qt.TabFocusReason)
+                                } else if (recentList.count > 0) {
                                     recentList.currentIndex = 0
                                     recentList.forceActiveFocus(Qt.TabFocusReason)
                                 }
@@ -694,6 +744,122 @@ MeoMotionPopup {
                                         launcherPopup.openContextMenu(
                                             item, item.width / 2, item.height / 2,
                                             launcherPopup.favoritesModel,
+                                            currentIndex, item.model)
+                                    }
+                                    event.accepted = true
+                                }
+                            }
+
+                            QQC2.ScrollBar.horizontal: MeoScrollBar {}
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        visible: homePaneRoot.hasFrequent
+                        spacing: MeoTheme.space8
+
+                        RowLayout {
+                            Layout.fillWidth: true
+
+                            MeoText {
+                                text: MeoI18n.translator.i18n("Frequently used")
+                                typeRole: "title"
+                                typeSize: "small"
+                                emphasized: true
+                                color: MeoTheme.contentOnSurface
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            MeoText {
+                                text: frequentUsageModel.count
+                                typeRole: "label"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                            }
+                        }
+
+                        ListView {
+                            id: frequentList
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 96 * MeoTheme.globalScale
+                            orientation: ListView.Horizontal
+                            spacing: MeoTheme.space4
+                            clip: true
+                            reuseItems: true
+                            model: frequentUsageModel
+                            keyNavigationWraps: false
+                            currentIndex: count > 0 ? 0 : -1
+                            Accessible.name: MeoI18n.translator.i18n("Frequently used applications")
+
+                            delegate: MeoAppGridItem {
+                                id: frequentItem
+                                required property int index
+                                required property var model
+                                required property string display
+                                required property var decoration
+
+                                width: 92 * MeoTheme.globalScale
+                                height: frequentList.height
+                                compact: true
+                                title: frequentItem.display || ""
+                                selected: frequentList.currentIndex === frequentItem.index
+                                          && (frequentList.activeFocus || frequentItem.activeFocus)
+                                iconContent: Component {
+                                    Kirigami.Icon {
+                                        anchors.fill: parent
+                                        source: frequentItem.decoration
+                                                || "application-x-executable"
+                                    }
+                                }
+
+                                onTriggered: {
+                                    frequentList.currentIndex = frequentItem.index
+                                    launcherPopup.triggerModel(
+                                        frequentUsageModel,
+                                        frequentItem.index)
+                                }
+
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    onTapped: function(eventPoint) {
+                                        frequentList.currentIndex = frequentItem.index
+                                        launcherPopup.openContextMenu(
+                                            frequentItem,
+                                            eventPoint.position.x,
+                                            eventPoint.position.y,
+                                            frequentUsageModel,
+                                            frequentItem.index,
+                                            frequentItem.model)
+                                    }
+                                }
+                            }
+
+                            Keys.onReturnPressed: homePaneRoot.activateCurrent()
+                            Keys.onEnterPressed: homePaneRoot.activateCurrent()
+                            Keys.onUpPressed: {
+                                if (favoriteList.count > 0) {
+                                    favoriteList.currentIndex = 0
+                                    favoriteList.forceActiveFocus(Qt.TabFocusReason)
+                                } else {
+                                    searchField.forceSearchFocus()
+                                }
+                            }
+                            Keys.onDownPressed: {
+                                if (recentList.count > 0) {
+                                    recentList.currentIndex = 0
+                                    recentList.forceActiveFocus(Qt.TabFocusReason)
+                                }
+                            }
+                            Keys.onPressed: function(event) {
+                                if ((event.key === Qt.Key_Menu || event.key === Qt.Key_F10)
+                                        && currentIndex >= 0) {
+                                    const item = itemAtIndex(currentIndex)
+                                    if (item) {
+                                        launcherPopup.openContextMenu(
+                                            item, item.width / 2, item.height / 2,
+                                            frequentUsageModel,
                                             currentIndex, item.model)
                                     }
                                     event.accepted = true
@@ -725,6 +891,7 @@ MeoMotionPopup {
                                 4, recentUsageModel.count)
                                 * (52 * MeoTheme.globalScale)
                             model: recentUsageModel
+                            reuseItems: true
                             spacing: MeoTheme.space4
                             clip: true
                             interactive: false
@@ -788,7 +955,10 @@ MeoMotionPopup {
                             Keys.onEnterPressed: homePaneRoot.activateCurrent()
                             Keys.onUpPressed: {
                                 if (currentIndex <= 0) {
-                                    if (favoriteList.count > 0) {
+                                    if (frequentList.count > 0) {
+                                        frequentList.currentIndex = 0
+                                        frequentList.forceActiveFocus(Qt.TabFocusReason)
+                                    } else if (favoriteList.count > 0) {
                                         favoriteList.currentIndex = 0
                                         favoriteList.forceActiveFocus(Qt.TabFocusReason)
                                     } else {
@@ -819,12 +989,14 @@ MeoMotionPopup {
                     }
 
                     MeoEmptyState {
-                        visible: !homePaneRoot.hasFavorites && !homePaneRoot.hasRecents
+                        visible: !homePaneRoot.hasFavorites
+                                 && !homePaneRoot.hasFrequent
+                                 && !homePaneRoot.hasRecents
                         Layout.fillWidth: true
                         Layout.preferredHeight: 260 * MeoTheme.globalScale
                         icon: "apps"
                         title: MeoI18n.translator.i18n("Ready when you are")
-                        description: MeoI18n.translator.i18n("Pinned and recently used items will appear here.")
+                        description: MeoI18n.translator.i18n("Pinned, frequently used, and recent items will appear here.")
                     }
                 }
             }
@@ -893,6 +1065,7 @@ MeoMotionPopup {
                     cellWidth: width / columnCount
                     cellHeight: 104 * MeoTheme.globalScale
                     model: launcherPopup.allAppsModel
+                    reuseItems: true
                     currentIndex: count > 0 ? 0 : -1
                     keyNavigationWraps: false
                     Accessible.name: MeoI18n.translator.i18n("All applications")
