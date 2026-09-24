@@ -210,6 +210,7 @@ Item {
                     currentIndex: root.currentPage
 
                     ProcessTable {
+                        id: processPage
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         onDetailsRequested: root.currentPage = 5
@@ -233,6 +234,12 @@ Item {
                     UsersPage {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        onProcessesRequested: function(user) {
+                            processPage.userFilter = user
+                            processPage.groupMode = false
+                            processPage.treeMode = false
+                            root.currentPage = 0
+                        }
                     }
 
                     ProcessDetailsPage {
