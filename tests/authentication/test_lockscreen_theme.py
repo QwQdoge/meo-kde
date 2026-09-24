@@ -103,6 +103,8 @@ class LockScreenThemeTests(unittest.TestCase):
             "MeoIconButton",
             "arrow_forward",
             "signal unlockRequested()",
+            "property alias unlockButton: submitButton",
+            "cursorVisible: visible",
             "Accessible.name",
         ):
             with self.subTest(required=required):
@@ -110,6 +112,12 @@ class LockScreenThemeTests(unittest.TestCase):
         for forbidden in ("PasswordSync", "authenticator", "PamAuthenticator", "QDBus"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.password_field)
+
+    def test_password_pill_keeps_kscreenlocker_focus_and_keyboard_contract(self):
+        self.assertIn("passwordBox.unlockButton.forceActiveFocus()", self.main)
+        self.assertIn("mapFromItem(passwordBox.unlockButton", self.main)
+        self.assertIn("TextField {", self.password_field)
+        self.assertIn("passwordField: mainBlock.mainPasswordBox", self.ui)
 
     def test_p3_data_adapters_are_explicitly_bounded_and_optional(self):
         for required in (

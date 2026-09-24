@@ -16,6 +16,10 @@ TextField {
 
     property bool passwordVisible: false
     property string accessibleLabel: qsTr("Password")
+    // SessionManagementScreen needs a non-TextField focus target before a
+    // successful unlock response. This preserves the upstream Qt
+    // shutdown workaround while keeping the visual submit affordance local.
+    property alias unlockButton: submitButton
 
     signal unlockRequested()
 
@@ -25,6 +29,9 @@ TextField {
     rightPadding: 64 * MeoTheme.globalScale
     verticalAlignment: TextInput.AlignVCenter
     selectByMouse: true
+    // KScreenLocker uses an invisible focused field to wake from the ambient
+    // screen. Do not repaint a cursor until this presentation is visible.
+    cursorVisible: visible
     echoMode: passwordVisible ? TextInput.Normal : TextInput.Password
     font.family: MeoTheme.typefacePlain
     font.pixelSize: MeoTheme.bodyLarge.size * MeoTheme.globalScale
@@ -67,6 +74,7 @@ TextField {
     }
 
     MeoIconButton {
+        id: submitButton
         anchors.right: parent.right
         anchors.rightMargin: MeoTheme.space8
         anchors.verticalCenter: parent.verticalCenter
