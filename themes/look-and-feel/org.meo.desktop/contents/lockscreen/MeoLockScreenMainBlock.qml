@@ -27,6 +27,10 @@ SessionManagementScreen {
     property string nonInteractiveError: ""
     property bool showMediaControls: false
     property bool showAlbumArtwork: false
+    // Supplied by the KScreenLocker theme root from its existing, local user
+    // image property. This is presentation-only and never participates in
+    // authentication or account selection.
+    property url avatarSource: ""
     property alias showPassword: passwordBox.passwordVisible
 
     readonly property bool fingerprintAvailable: authenticator.authenticatorTypes
@@ -41,16 +45,16 @@ SessionManagementScreen {
 
     // The y position that must stay visible while the upstream virtual
     // keyboard is active.
-    property int visibleBoundary: mapFromItem(unlockButton, 0, 0).y
-    onHeightChanged: visibleBoundary = mapFromItem(unlockButton, 0, 0).y
-                    + unlockButton.height + Kirigami.Units.smallSpacing
+    property int visibleBoundary: mapFromItem(passwordBox, 0, 0).y
+    onHeightChanged: visibleBoundary = mapFromItem(passwordBox, 0, 0).y
+                    + passwordBox.height + Kirigami.Units.smallSpacing
 
     signal passwordResult(string password)
 
     function startLogin() {
         // Deliberately pass the string straight to the owning LockScreen UI;
         // this QML item never stores a second credential copy.
-        unlockButton.forceActiveFocus()
+        passwordBox.forceActiveFocus()
         passwordResult(passwordBox.text)
     }
 
@@ -59,8 +63,7 @@ SessionManagementScreen {
     }
 
     onUserSelected: {
-        const nextControl = passwordBox.visible ? passwordBox : unlockButton
-        nextControl.forceActiveFocus(Qt.TabFocusReason)
+        passwordBox.forceActiveFocus(Qt.TabFocusReason)
     }
 
     property QtObject nonInteractiveAuthenticatorConnection: Connections {
@@ -75,39 +78,32 @@ SessionManagementScreen {
         }
     }
 
-    MeoAuthenticationSurface {
+    MeoLockScreenAuthCard {
         id: authenticationSurface
         Layout.fillWidth: true
-        Layout.minimumWidth: 320 * MeoTheme.globalScale
-        Layout.maximumWidth: 440 * MeoTheme.globalScale
+        Layout.minimumWidth: 344 * MeoTheme.globalScale
+        Layout.maximumWidth: 480 * MeoTheme.globalScale
         active: sessionManager.activeAuthenticationSurface
-        title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Unlock")
-        supportingText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info", "Authenticate to return to your session")
-        status: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
-                ? "failed"
-                : sessionManager.fingerprintAvailable ? "fingerprint"
-                                                       : sessionManager.smartcardAvailable ? "smartcard"
-                                                                                           : "password"
+        avatarSource: sessionManager.avatarSource
+        title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
+        supportingText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info", "Unlock your Meo session")
         statusText: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
                     ? "" : sessionManager.secondaryAuthenticatorText
         errorText: sessionManager.authenticationFailed
                    ? sessionManager.notificationMessage
                    : sessionManager.nonInteractiveError
 
-        MeoTextField {
+        MeoLockScreenPasswordField {
             id: passwordBox
             Layout.fillWidth: true
-            label: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
-            placeholder: label
-            isPassword: true
+            placeholderText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
+            accessibleLabel: placeholderText
             inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData
                               | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
             text: PasswordSync.password
             focus: true
             enabled: !authenticator.graceLocked
-            Accessible.name: label
-
-            onAccepted: {
+            onUnlockRequested: {
                 if (sessionManager.lockScreenUiVisible)
                     sessionManager.startLogin()
             }
@@ -144,17 +140,6 @@ SessionManagementScreen {
             value: passwordBox.text
         }
 
-        MeoButton {
-            id: unlockButton
-            Layout.fillWidth: true
-            text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button accessible only", "Unlock")
-            icon.name: "lock_open"
-            size: "m"
-            Accessible.name: text
-            onClicked: sessionManager.startLogin()
-            Keys.onEnterPressed: clicked()
-            Keys.onReturnPressed: clicked()
-        }
     }
 
 }

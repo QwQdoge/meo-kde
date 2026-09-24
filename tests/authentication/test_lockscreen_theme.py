@@ -14,6 +14,8 @@ class LockScreenThemeTests(unittest.TestCase):
         self.root = (LOCKSCREEN / "LockScreen.qml").read_text(encoding="utf-8")
         self.ui = (LOCKSCREEN / "MeoLockScreenUi.qml").read_text(encoding="utf-8")
         self.main = (LOCKSCREEN / "MeoLockScreenMainBlock.qml").read_text(encoding="utf-8")
+        self.auth_card = (LOCKSCREEN / "MeoLockScreenAuthCard.qml").read_text(encoding="utf-8")
+        self.password_field = (LOCKSCREEN / "MeoLockScreenPasswordField.qml").read_text(encoding="utf-8")
         self.no_password = (LOCKSCREEN / "MeoNoPasswordUnlock.qml").read_text(encoding="utf-8")
         self.media = (LOCKSCREEN / "MediaControls.qml").read_text(encoding="utf-8")
         self.notifications = (LOCKSCREEN / "MeoLockScreenNotificationSummary.qml").read_text(encoding="utf-8")
@@ -63,13 +65,51 @@ class LockScreenThemeTests(unittest.TestCase):
 
     def test_meoui_session_entry_primitives_remain_presentation_only(self):
         self.assertIn("import MeoUI 1.0", self.ui)
-        self.assertIn("MeoAmbientClock", self.ui)
-        self.assertIn("MeoAuthenticationSurface", self.main)
+        self.assertIn("MeoLockScreenClock", self.ui)
+        self.assertIn("MeoLockScreenAuthCard", self.main)
+        self.assertIn("MeoSpringValue", self.auth_card)
         self.assertIn("clock: ambientClockFrame", self.ui)
         self.assertIn("property Item shadow: ambientClockShadow", self.ui)
         for forbidden in ("tryUnlock(", "property string password", "PamAuthenticator", "QDBus"):
             with self.subTest(forbidden=forbidden):
-                self.assertNotIn(forbidden, self.ui + self.main)
+                self.assertNotIn(forbidden, self.ui + self.main + self.auth_card)
+
+        for forbidden in ("PasswordSync", "authenticator", "respond(", "PamAuthenticator", "QDBus"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.password_field)
+
+    def test_standalone_visual_port_keeps_dynamic_roles_and_safe_motion(self):
+        for required in (
+            "MeoTheme.surfaceContainer",
+            "MeoTheme.surfaceContainerHighest",
+            "MeoTheme.motionEasingEmphasizedDecelerate",
+            "MeoSpringValue",
+            "MeoTheme.reduceMotion",
+            "Accessible.role: Accessible.Pane",
+            "MeoLockScreenClock",
+            "avatarSource",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.auth_card)
+        for forbidden in ("PasswordSync", "authenticator", "respond(", "QDBus", "PamAuthenticator"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.auth_card)
+        self.assertIn("avatarSource: kscreenlocker_userImage", self.ui)
+
+    def test_password_pill_ports_standalone_visual_without_owning_credentials(self):
+        for required in (
+            "radius: height / 2",
+            "MeoTheme.surfaceContainer",
+            "MeoIconButton",
+            "arrow_forward",
+            "signal unlockRequested()",
+            "Accessible.name",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.password_field)
+        for forbidden in ("PasswordSync", "authenticator", "PamAuthenticator", "QDBus"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.password_field)
 
     def test_p3_data_adapters_are_explicitly_bounded_and_optional(self):
         for required in (
@@ -138,9 +178,22 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.notifications)
 
+    def test_media_uses_the_dynamic_lockscreen_presentation(self):
+        for required in (
+            'presentation: "lockScreen"',
+            "coverSource: root.showArtwork ? Media.artUrl : \"\"",
+            "showArtwork: root.showArtwork",
+            "MeoMediaController",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.media)
+        for forbidden in ("asyncCall", "QProcess", "http://", "https://"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.media)
+
     def test_no_password_path_uses_same_meoui_surface(self):
         self.assertIn("SessionManagementScreen", self.no_password)
-        self.assertIn("MeoAuthenticationSurface", self.no_password)
+        self.assertIn("MeoLockScreenAuthCard", self.no_password)
         self.assertIn("Qt.quit()", self.no_password)
 
     def test_multiscreen_coordinator_selects_only_existing_secure_windows(self):

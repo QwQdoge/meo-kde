@@ -279,11 +279,12 @@ Item {
                 visible: false
             }
 
-            MeoAmbientClock {
+            // Direct visual port of the standalone lock clock: split dynamic
+            // primary/secondary time glyphs, while KScreenLocker continues to
+            // own the secure window and ambient-state lifecycle.
+            MeoLockScreenClock {
                 id: ambientClock
                 anchors.centerIn: parent
-                timeColor: MeoTheme.contentOnSurface
-                dateColor: MeoTheme.contentOnSurfaceVariant
             }
         }
 
@@ -411,6 +412,9 @@ Item {
                 lockScreenUiVisible: lockScreenUi.authenticationUiVisible
                 showMediaControls: lockScreenUi.showMediaControls
                 showAlbumArtwork: lockScreenUi.showAlbumArtwork
+                avatarSource: kscreenlocker_userImage !== ""
+                              ? "file://" + kscreenlocker_userImage.split("/").map(encodeURIComponent).join("/")
+                              : ""
                 showUserList: lockScreenUi.authenticationUiVisible && userList.y + mainStack.y > 0
                 enabled: !graceLockTimer.running
                 userListModel: users
