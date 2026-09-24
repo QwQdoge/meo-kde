@@ -17,6 +17,10 @@ MeoMotionPopup {
     property var shellApplet: null
     property int appModelRevision: 0
     property int browseMode: 0
+    property string defaultPage: "home"
+    property string widthPreset: "standard"
+    property bool showFavoritesSection: true
+    property bool showRecentSection: true
     // -1 keeps the canonical KICKER_ALL_MODEL selected. Positive rows point
     // directly at RootModel category models; no duplicate app index is kept.
     property int appsModelRow: -1
@@ -34,12 +38,8 @@ MeoMotionPopup {
     //   Spotlight-like search pill that expands only after the user types.
     property bool quickSearchMode: false
 
-    // Default to a centered desktop surface. "top" remains a supported
-    // presentation value so Settings can expose the preference later without
-    // creating a launcher-specific settings application.
-    //
-    // TODO(MeoSettings): bind this to Appearance or Desktop Integration once a
-    // shell launcher/search placement setting exists there.
+    // Meo Settings writes the Shelf applet's launcherPlacement KConfig value;
+    // main.qml validates it and passes the normalized value here.
     property string placementMode: "center" // "center" | "top"
 
     // The shell and search field should paint immediately. Browse content is
@@ -73,6 +73,11 @@ MeoMotionPopup {
                                        ? runnerModel.modelForRow(0) : null
     readonly property bool appContentReady: allAppsModel !== null
                                             && allAppsModel.count > 0
+    readonly property real configuredWidth: widthPreset === "compact"
+                                            ? 600 * MeoTheme.globalScale
+                                            : (widthPreset === "wide"
+                                               ? 840 * MeoTheme.globalScale
+                                               : 736 * MeoTheme.globalScale)
     readonly property real availableLauncherHeight: Math.max(
         360 * MeoTheme.globalScale,
         Screen.height - ShellMetrics.shelfPanelHeight - 24 * MeoTheme.globalScale)
@@ -104,7 +109,7 @@ MeoMotionPopup {
 
     y: placementMode === "top" ? topPlacementY : centeredPlacementY
     x: (parent.width - width) / 2
-    width: Math.min(736 * MeoTheme.globalScale,
+    width: Math.min(configuredWidth,
                     Screen.width - 24 * MeoTheme.globalScale)
     height: Math.min(desiredLauncherHeight, availableLauncherHeight)
     modal: false
@@ -130,6 +135,7 @@ MeoMotionPopup {
 
     function toggleFullLauncher() {
         quickSearchMode = false
+        browseMode = defaultPage === "apps" ? 1 : 0
         if (opened || visible) {
             close()
         } else {
@@ -138,9 +144,9 @@ MeoMotionPopup {
     }
 
     function openQuickSearch() {
-        // TODO(MeoKDE shortcut integration): route Alt+Space here once the
-        // shell-wide shortcut owner is wired. Do not introduce a second runner
-        // process; this mode intentionally reuses KRunner/Kicker and this popup.
+        // Plasma's applet activation signal routes the configured global
+        // shortcut here. Reuse this KRunner/Kicker instance; never spawn a
+        // second runner process for quick search.
         quickSearchMode = true
         searchField.text = ""
         if (opened || visible) {
@@ -768,10 +774,12 @@ MeoMotionPopup {
         FocusScope {
             id: homePaneRoot
 
-            readonly property bool hasFavorites: launcherPopup.favoritesModel
+            readonly property bool hasFavorites: launcherPopup.showFavoritesSection
+                                                 && launcherPopup.favoritesModel
                                                  && launcherPopup.favoritesModel.count > 0
             readonly property bool hasFrequent: frequentUsageModel.count > 0
-            readonly property bool hasRecents: recentUsageModel.count > 0
+            readonly property bool hasRecents: launcherPopup.showRecentSection
+                                               && recentUsageModel.count > 0
 
             function focusFirst() {
                 if (hasFavorites) {
