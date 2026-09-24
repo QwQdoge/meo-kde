@@ -981,12 +981,18 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
         }
 
         const QList<QByteArray> fields = line.mid(colon + 1).simplified().split(' ');
-        if (fields.size() < 9) {
+        if (fields.size() < 12) {
             continue;
         }
 
         const quint64 ifaceRx = fields.at(0).toULongLong();
+        const quint64 rxPackets = fields.at(1).toULongLong();
+        const quint64 rxErrors = fields.at(2).toULongLong();
+        const quint64 rxDropped = fields.at(3).toULongLong();
         const quint64 ifaceTx = fields.at(8).toULongLong();
+        const quint64 txPackets = fields.at(9).toULongLong();
+        const quint64 txErrors = fields.at(10).toULongLong();
+        const quint64 txDropped = fields.at(11).toULongLong();
         nextRx.insert(iface, ifaceRx);
         nextTx.insert(iface, ifaceTx);
         rx += ifaceRx;
@@ -1062,6 +1068,12 @@ void PerformanceController::sampleNetwork(double elapsedSeconds)
                 {QStringLiteral("txBytesPerSecond"), txRate},
                 {QStringLiteral("rxBytesTotal"), static_cast<qint64>(ifaceRx)},
                 {QStringLiteral("txBytesTotal"), static_cast<qint64>(ifaceTx)},
+                {QStringLiteral("rxPackets"), static_cast<qint64>(rxPackets)},
+                {QStringLiteral("txPackets"), static_cast<qint64>(txPackets)},
+                {QStringLiteral("rxErrors"), static_cast<qint64>(rxErrors)},
+                {QStringLiteral("txErrors"), static_cast<qint64>(txErrors)},
+                {QStringLiteral("rxDropped"), static_cast<qint64>(rxDropped)},
+                {QStringLiteral("txDropped"), static_cast<qint64>(txDropped)},
                 {QStringLiteral("rxHistory"), rxHistory},
                 {QStringLiteral("txHistory"), txHistory},
             });
