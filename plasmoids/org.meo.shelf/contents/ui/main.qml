@@ -11,12 +11,34 @@ PlasmoidItem {
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
 
+    readonly property bool showLauncherButton: Plasmoid.configuration.showLauncherButton
+    readonly property bool filterTasksByVirtualDesktop: Plasmoid.configuration.filterTasksByVirtualDesktop
+    readonly property bool showRunningIndicators: Plasmoid.configuration.showRunningIndicators
+    readonly property bool showTooltips: Plasmoid.configuration.showTooltips
+    readonly property string launcherDefaultPage: Plasmoid.configuration.launcherDefaultPage || "home"
+    readonly property string launcherWidth: Plasmoid.configuration.launcherWidth || "standard"
+    readonly property string launcherPlacement: {
+        const configured = String(Plasmoid.configuration.launcherPlacement || "center")
+        return configured === "top" ? "top" : "center"
+    }
+    readonly property bool launcherShowFavorites: Plasmoid.configuration.launcherShowFavorites
+    readonly property bool launcherShowRecents: Plasmoid.configuration.launcherShowRecents
+    readonly property real launcherContribution: showLauncherButton
+                                                 ? ShellMetrics.shelfItemSize + MeoTheme.space8
+                                                 : 0
+
     implicitHeight: ShellMetrics.shelfPanelHeight
     implicitWidth: Math.max(72 * MeoTheme.globalScale,
                             Math.min(shelfContent.implicitWidth + 20 * MeoTheme.globalScale,
                                      Screen.width * 0.70))
 
-    Component.onCompleted: MeoShellTheme.sync()
+    Component.onCompleted: {
+        MeoShellTheme.sync()
+        // Keep user customisation authoritative. Only claim the intended Meo
+        // quick-search shortcut when this plasmoid has no shortcut yet.
+        if (String(Plasmoid.globalShortcut || "").length === 0)
+            Plasmoid.globalShortcut = "Alt+Space"
+    }
 
     // Shelf Visibility States
     readonly property int stateVisible: 0
@@ -75,8 +97,7 @@ PlasmoidItem {
 
         width: Math.min(root.width - 2 * MeoTheme.space8,
                         Math.max(72 * MeoTheme.globalScale,
-                                 (tasksRepeater.count + 1) * ShellMetrics.shelfItemSize
-                                 + MeoTheme.space24 + MeoTheme.space8))
+                                 shelfContent.implicitWidth + MeoTheme.space24))
         height: ShellMetrics.shelfSurfaceHeight
         radius: height / 2
 
@@ -113,6 +134,7 @@ PlasmoidItem {
             // 1. Launcher Button
             ShelfItem {
                 id: launcherButton
+                visible: root.showLauncherButton
                 isLauncher: true
                 title: MeoI18n.translator.i18n("Application Launcher")
                 isActive: launcherPopup.visible
@@ -123,7 +145,8 @@ PlasmoidItem {
             // Preserve a breathable launcher-to-task gap without turning it
             // into a permanent visual divider.
             Item {
-                Layout.preferredWidth: MeoTheme.space8
+                visible: root.showLauncherButton
+                Layout.preferredWidth: visible ? MeoTheme.space8 : 0
                 Layout.preferredHeight: MeoTheme.space24
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -133,7 +156,7 @@ PlasmoidItem {
                 id: tasksRepeater
                 model: TaskManager.TasksModel {
                     id: tasksModel
-                    filterByVirtualDesktop: false
+                    filterByVirtualDesktop: root.filterTasksByVirtualDesktop
                     filterByActivity: false
                     filterByScreen: false
                     groupMode: TaskManager.TasksModel.GroupApplications
@@ -166,6 +189,8 @@ PlasmoidItem {
                         revision
                         return tasksModel.data(taskIndex, TaskManager.AbstractTasksModel.IsLauncher) || false
                     }
+                    showRunningIndicator: root.showRunningIndicators
+                    showTooltip: root.showTooltips
 
                     onClicked: (mouse) => {
                         var modelIndex = tasksModel.index(index, 0)
@@ -251,9 +276,24 @@ PlasmoidItem {
         }
     }
 
+    // Plasma emits Applet::activated for the configured global shortcut.
+    // Route that activation to the exact same KRunner-backed popup rather than
+    // spawning a second runner/search implementation.
+    Connections {
+        target: plasmoid
+        function onActivated() {
+            launcherPopup.openQuickSearch()
+        }
+    }
+
     // Launcher Popup Surface
     LauncherPopup {
         id: launcherPopup
         shellApplet: root
+        defaultPage: root.launcherDefaultPage
+        widthPreset: root.launcherWidth
+        placementMode: root.launcherPlacement
+        showFavoritesSection: root.launcherShowFavorites
+        showRecentSection: root.launcherShowRecents
     }
 }
