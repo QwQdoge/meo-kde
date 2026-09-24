@@ -352,6 +352,7 @@ Item {
 
                         MeoLoadingFeedback {
                             Layout.alignment: Qt.AlignHCenter
+                            visible: active
                             Layout.preferredWidth: 56 * root.scaleFactor
                             Layout.preferredHeight: 56 * root.scaleFactor
                             active: MeoSystem.Tasks.serviceDetailsQuerying
@@ -490,6 +491,7 @@ Item {
     }
 
     component ServiceStat: MeoCard {
+        id: serviceStat
         property string label: ""
         property string value: ""
 
@@ -504,14 +506,14 @@ Item {
             spacing: 0
 
             MeoText {
-                text: parent.parent.value
+                text: serviceStat.value
                 typeRole: "title"
                 typeSize: "small"
                 emphasized: true
             }
 
             MeoText {
-                text: parent.parent.label
+                text: serviceStat.label
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
