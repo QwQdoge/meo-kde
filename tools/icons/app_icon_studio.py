@@ -768,13 +768,38 @@ def qicon_image(icon_name: str) -> Image.Image | None:
 
 
 def qicon_file_image(path: Path, size: int = MASTER_SIZE) -> Image.Image | None:
+    """Rasterise an explicit icon file without depending on a theme plugin.
+
+    Qt's QIcon SVG engine is plugin-backed and can legitimately be unavailable
+    in a minimal/headless environment even when QtSvg itself is installed.
+    Reviewed first-party identity assets are explicit files, so render SVGs
+    directly with QSvgRenderer and keep QIcon as the fallback for other formats.
+    """
     try:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-        from PySide6.QtGui import QGuiApplication, QIcon
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QGuiApplication, QIcon, QImage, QPainter
+        from PySide6.QtSvg import QSvgRenderer
     except ImportError:
         return None
+
     app = QGuiApplication.instance() or QGuiApplication(["meo-app-icon-studio"])
     _ = app
+
+    if path.suffix.lower() == ".svg":
+        renderer = QSvgRenderer(str(path))
+        if renderer.isValid():
+            image = QImage(size, size, QImage.Format_ARGB32_Premultiplied)
+            image.fill(Qt.transparent)
+            painter = QPainter(image)
+            try:
+                renderer.render(painter)
+            finally:
+                painter.end()
+            rendered = qimage_to_pillow(image)
+            if rendered is not None:
+                return rendered
+
     return qimage_to_pillow(QIcon(str(path)).pixmap(size, size).toImage())
 
 
