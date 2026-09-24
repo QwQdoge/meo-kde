@@ -45,16 +45,19 @@ SessionManagementScreen {
 
     // The y position that must stay visible while the upstream virtual
     // keyboard is active.
-    property int visibleBoundary: mapFromItem(passwordBox, 0, 0).y
-    onHeightChanged: visibleBoundary = mapFromItem(passwordBox, 0, 0).y
-                    + passwordBox.height + Kirigami.Units.smallSpacing
+    property int visibleBoundary: mapFromItem(passwordBox.unlockButton, 0, 0).y
+    onHeightChanged: visibleBoundary = mapFromItem(passwordBox.unlockButton, 0, 0).y
+                    + passwordBox.unlockButton.height + Kirigami.Units.smallSpacing
 
     signal passwordResult(string password)
 
     function startLogin() {
         // Deliberately pass the string straight to the owning LockScreen UI;
         // this QML item never stores a second credential copy.
-        passwordBox.forceActiveFocus()
+        // Match the upstream TextField-focus workaround (QTBUG-55460): move
+        // focus to the real submit button before the authenticator can close
+        // the locker window.
+        passwordBox.unlockButton.forceActiveFocus()
         passwordResult(passwordBox.text)
     }
 
