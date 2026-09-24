@@ -75,52 +75,19 @@ SessionManagementScreen {
         }
     }
 
-    MeoAuthenticationSurface {
+    MeoLockScreenAuthCard {
         id: authenticationSurface
         Layout.fillWidth: true
-        // Keep the standalone lock shell's calm, generously spaced card
-        // language, while this remains only a presentation adapter over the
-        // KDE-owned authenticator below.
         Layout.minimumWidth: 344 * MeoTheme.globalScale
         Layout.maximumWidth: 480 * MeoTheme.globalScale
         active: sessionManager.activeAuthenticationSurface
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
         supportingText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info", "Unlock your Meo session")
-        status: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
-                ? "failed"
-                : sessionManager.fingerprintAvailable ? "fingerprint"
-                                                       : sessionManager.smartcardAvailable ? "smartcard"
-                                                                                           : "password"
         statusText: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
                     ? "" : sessionManager.secondaryAuthenticatorText
         errorText: sessionManager.authenticationFailed
                    ? sessionManager.notificationMessage
                    : sessionManager.nonInteractiveError
-
-        // Product identity is visual-only.  It intentionally precedes the
-        // upstream-bound field without becoming a credential or session
-        // control, keeping the independent shell's visual hierarchy while
-        // KScreenLocker retains every security-sensitive responsibility.
-        MeoText {
-            Layout.fillWidth: true
-            text: "Meo"
-            typeRole: "display"
-            typeSize: "small"
-            emphasized: true
-            color: MeoTheme.primary
-            Accessible.role: Accessible.StaticText
-        }
-
-        // Match the standalone surface's central lock affordance without
-        // creating a second lock state. The icon is decorative; activation
-        // and authentication stay entirely with KScreenLocker.
-        MeoIcon {
-            Layout.alignment: Qt.AlignHCenter
-            icon: "lock"
-            size: 32 * MeoTheme.globalScale
-            color: MeoTheme.primary
-            Accessible.ignored: true
-        }
 
         MeoTextField {
             id: passwordBox
