@@ -155,6 +155,19 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.notifications)
 
+    def test_media_uses_the_dynamic_lockscreen_presentation(self):
+        for required in (
+            'presentation: "lockScreen"',
+            "coverSource: root.showArtwork ? Media.artUrl : \"\"",
+            "showArtwork: root.showArtwork",
+            "MeoMediaController",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.media)
+        for forbidden in ("asyncCall", "QProcess", "http://", "https://"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.media)
+
     def test_no_password_path_uses_same_meoui_surface(self):
         self.assertIn("SessionManagementScreen", self.no_password)
         self.assertIn("MeoAuthenticationSurface", self.no_password)
