@@ -7,6 +7,8 @@ import Meo.System 1.0 as MeoSystem
 Item {
     id: root
 
+    signal processesRequested(string user)
+
     readonly property real scaleFactor: MeoTheme.globalScale
 
     function formatBytes(value) {
@@ -105,6 +107,8 @@ Item {
                         required property var modelData
 
                         Layout.fillWidth: true
+                        interactive: true
+                        onClicked: root.processesRequested(String(modelData.user || ""))
                         implicitHeight: 210 * root.scaleFactor
                         type: "filled"
                         radius: MeoTheme.shapeLargeIncreased
