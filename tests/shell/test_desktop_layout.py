@@ -172,6 +172,7 @@ class DesktopLayoutTests(unittest.TestCase):
             "showTooltips",
             "launcherDefaultPage",
             "launcherWidth",
+            "launcherPlacement",
             "launcherShowFavorites",
             "launcherShowRecents",
         ):
@@ -192,6 +193,12 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("root.showRunningIndicator", item)
         self.assertIn("root.showTooltip", item)
 
+        self.assertIn("Plasmoid.configuration.launcherPlacement", shelf)
+        self.assertIn('Plasmoid.globalShortcut = "Alt+Space"', shelf)
+        self.assertIn("function onActivated()", shelf)
+        self.assertIn("launcherPopup.openQuickSearch()", shelf)
+        self.assertIn("placementMode: root.launcherPlacement", shelf)
+
     def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
         launcher = (
             REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml"
@@ -206,10 +213,12 @@ class DesktopLayoutTests(unittest.TestCase):
 
         for component in (
             "MeoSearchBar",
-            "MeoTabs",
+            "MeoSegmentedButtons",
+            "MeoChip",
             "MeoListItem",
             "MeoAppGridItem",
             "MeoContextMenu",
+            "MeoLoadingFeedback",
         ):
             self.assertIn(component, launcher)
 
