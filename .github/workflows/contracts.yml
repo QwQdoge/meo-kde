@@ -90,7 +90,7 @@ jobs:
           python -m unittest discover -s tests/system -p 'test_*.py'
           python -m unittest discover -s tests/shell -p 'test_*.py'
           python -m unittest discover -s tests/widgets -p 'test_*.py'
-          python -m unittest discover -s tests/authentication -p 'test_*.py'
+          QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software python -m unittest discover -s tests/authentication -p 'test_*.py'
           python -m unittest tests.test_licensing
 
       - name: Validate JSON metadata

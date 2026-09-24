@@ -75,6 +75,7 @@ TextField {
 
     MeoIconButton {
         id: submitButton
+        objectName: "meoLockScreenSubmitButton"
         anchors.right: parent.right
         anchors.rightMargin: MeoTheme.space8
         anchors.verticalCenter: parent.verticalCenter
