@@ -328,7 +328,7 @@ void MediaController::applyPlayerProperties(const QString &service,
     const QString effectiveName = playerName.isEmpty()
             ? service.mid(QLatin1String(kMprisPrefix).size()) : playerName;
 
-    const bool positionChanged = m_positionMs != positionMs;
+    const bool positionDidChange = m_positionMs != positionMs;
     const bool stateChanged = m_service != service || m_playerName != effectiveName || m_title != title
             || m_artist != artist || m_album != album || m_iconName != iconName || m_artUrl != artUrl
             || m_remoteArtUrl != remoteArtUrl || m_playing != playing || m_durationMs != durationMs
@@ -368,7 +368,7 @@ void MediaController::applyPlayerProperties(const QString &service,
     if (stateChanged) {
         Q_EMIT mediaChanged();
     }
-    if (positionChanged) {
+    if (positionDidChange) {
         Q_EMIT positionChanged();
     }
 }
@@ -564,7 +564,7 @@ void MediaController::previous() { callPlayerMethod(QStringLiteral("Previous"));
 void MediaController::clearMedia()
 {
     m_positionTimer.stop();
-    const bool positionChanged = m_positionMs != 0;
+    const bool positionDidChange = m_positionMs != 0;
     const bool hadMedia = !m_service.isEmpty() || !m_playerName.isEmpty() || !m_title.isEmpty()
             || !m_artist.isEmpty() || !m_album.isEmpty() || !m_iconName.isEmpty() || !m_artUrl.isEmpty()
             || !m_remoteArtUrl.isEmpty() || m_playing || m_durationMs != 0 || m_controllable
@@ -594,7 +594,7 @@ void MediaController::clearMedia()
     if (hadMedia) {
         Q_EMIT mediaChanged();
     }
-    if (positionChanged) {
+    if (positionDidChange) {
         Q_EMIT positionChanged();
     }
 }
