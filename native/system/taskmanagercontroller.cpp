@@ -1306,6 +1306,55 @@ bool TaskManagerController::terminateProcess(qint64 pid, bool force)
     return true;
 }
 
+bool TaskManagerController::terminateProcesses(const QVariantList &pids, bool force)
+{
+    QSet<qint64> targets;
+    for (const QVariant &entry : pids) {
+        bool ok = false;
+        const qint64 pid = entry.toLongLong(&ok);
+        if (!ok || pid <= 1
+            || pid == static_cast<qint64>(QCoreApplication::applicationPid())
+            || !processOwnedByCurrentUser(pid)) {
+            continue;
+        }
+        targets.insert(pid);
+    }
+
+    if (targets.isEmpty()) {
+        setActionError(QStringLiteral("No controllable processes were found in this application."));
+        return false;
+    }
+
+    const int signal = force ? SIGKILL : SIGTERM;
+    int signalled = 0;
+    int failed = 0;
+    qint64 firstPid = -1;
+    for (qint64 pid : targets) {
+        if (firstPid < 0) {
+            firstPid = pid;
+        }
+        errno = 0;
+        if (::kill(static_cast<pid_t>(pid), signal) == 0) {
+            ++signalled;
+        } else if (errno != ESRCH) {
+            ++failed;
+        }
+    }
+
+    if (signalled == 0 || failed > 0) {
+        setActionError(failed > 0
+            ? QStringLiteral("Some application processes could not be ended.")
+            : QStringLiteral("The application processes have already exited."));
+        return false;
+    }
+
+    setActionError({});
+    Q_EMIT processActionCompleted(firstPid,
+        force ? QStringLiteral("force-stop-group") : QStringLiteral("terminate-group"));
+    QTimer::singleShot(150, this, &TaskManagerController::refreshNow);
+    return true;
+}
+
 bool TaskManagerController::terminateProcessTree(qint64 pid, bool force)
 {
     if (pid <= 1 || pid == static_cast<qint64>(QCoreApplication::applicationPid())
