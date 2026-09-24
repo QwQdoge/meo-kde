@@ -91,7 +91,8 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             "asyncCall",
             "kDbusTimeoutMs",
-            "safeArtworkUrl",
+            "safeLocalArtworkUrl",
+            "safeSessionArtworkUrl",
             "kMaximumArtworkBytes",
             "isLocalFile",
             "QNetwork",
@@ -101,6 +102,11 @@ class LockScreenThemeTests(unittest.TestCase):
                     self.assertNotIn(required, self.media_source)
                 else:
                     self.assertIn(required, self.media_source)
+
+        # Lock-screen QML consumes only the local-file projection. The
+        # session-only HTTPS projection never crosses the lock-screen boundary.
+        self.assertIn("coverSource: root.showArtwork ? Media.artUrl : \"\"", self.media)
+        self.assertNotIn("remoteArtUrl", self.media)
 
         for required in (
             "kMaximumCacheBytes",
