@@ -70,6 +70,7 @@ public:
     Q_INVOKABLE void selectProcess(qint64 pid);
 
     Q_INVOKABLE bool terminateProcess(qint64 pid, bool force = false);
+    Q_INVOKABLE bool terminateProcesses(const QVariantList &pids, bool force = false);
     Q_INVOKABLE bool terminateProcessTree(qint64 pid, bool force = false);
     Q_INVOKABLE bool setProcessSuspended(qint64 pid, bool suspended);
     Q_INVOKABLE bool setProcessPriority(qint64 pid, int niceValue);
