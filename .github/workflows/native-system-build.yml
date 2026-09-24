@@ -37,13 +37,30 @@ jobs:
           pacman -Syu --noconfirm
           pacman -S --needed --noconfirm \
             base-devel cmake ninja git extra-cmake-modules \
-            qt6-base qt6-declarative qt6-tools \
+            qt6-base qt6-declarative qt6-tools qt6-shadertools \
             kconfig kcoreaddons kguiaddons ki18n kirigami \
             networkmanager-qt bluez-qt solid pulseaudio-qt \
             libplasma plasma-workspace
+          sed -i 's/^#zh_CN.UTF-8 UTF-8/zh_CN.UTF-8 UTF-8/' /etc/locale.gen
+          locale-gen
 
       - name: Check out MeoKDE
         uses: actions/checkout@v6
+
+      - name: Check out MeoUI
+        uses: actions/checkout@v6
+        with:
+          repository: QwQdoge/MeoUI
+          ref: main
+          path: deps/MeoUI
+
+      - name: Build MeoUI runtime
+        run: |
+          cmake --fresh -S deps/MeoUI -B deps/build-meoui -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DBUILD_TESTING=OFF \
+            -DMEOUI_BUILD_SHOWCASE=OFF
+          cmake --build deps/build-meoui --parallel 2
 
       - name: Configure
         run: >-
@@ -57,4 +74,5 @@ jobs:
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
+          QML2_IMPORT_PATH: ${{ github.workspace }}/deps/build-meoui
         run: ctest --test-dir build/native-system --output-on-failure --timeout 60
