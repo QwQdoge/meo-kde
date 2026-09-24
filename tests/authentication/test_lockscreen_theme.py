@@ -16,6 +16,7 @@ class LockScreenThemeTests(unittest.TestCase):
         self.main = (LOCKSCREEN / "MeoLockScreenMainBlock.qml").read_text(encoding="utf-8")
         self.auth_card = (LOCKSCREEN / "MeoLockScreenAuthCard.qml").read_text(encoding="utf-8")
         self.password_field = (LOCKSCREEN / "MeoLockScreenPasswordField.qml").read_text(encoding="utf-8")
+        self.session_geometry = (LOCKSCREEN / "MeoLockScreenSessionManagement.qml").read_text(encoding="utf-8")
         self.no_password = (LOCKSCREEN / "MeoNoPasswordUnlock.qml").read_text(encoding="utf-8")
         self.media = (LOCKSCREEN / "MediaControls.qml").read_text(encoding="utf-8")
         self.notifications = (LOCKSCREEN / "MeoLockScreenNotificationSummary.qml").read_text(encoding="utf-8")
@@ -95,6 +96,13 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.auth_card)
         self.assertIn("avatarSource: kscreenlocker_userImage", self.ui)
+
+    def test_standalone_visual_geometry_keeps_breeze_models_but_expands_the_center(self):
+        self.assertIn("MeoLockScreenSessionManagement", self.main)
+        self.assertIn("Breeze.UserList", self.session_geometry)
+        self.assertIn("property alias actionItems", self.session_geometry)
+        self.assertIn("standaloneCenterWidth", self.session_geometry)
+        self.assertIn("600 * MeoTheme.globalScale", self.session_geometry)
 
     def test_password_pill_ports_standalone_visual_without_owning_credentials(self):
         for required in (
