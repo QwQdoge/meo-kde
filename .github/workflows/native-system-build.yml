@@ -50,21 +50,6 @@ jobs:
       - name: Check out MeoKDE
         uses: actions/checkout@v6
 
-      - name: Check out MeoUI
-        uses: actions/checkout@v6
-        with:
-          repository: QwQdoge/MeoUI
-          ref: main
-          path: deps/MeoUI
-
-      - name: Build MeoUI runtime
-        run: |
-          cmake --fresh -S deps/MeoUI -B deps/build-meoui -G Ninja \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DBUILD_TESTING=OFF \
-            -DMEOUI_BUILD_SHOWCASE=OFF
-          cmake --build deps/build-meoui --target meoui_module --parallel 2
-
       - name: Configure
         run: >-
           cmake --fresh -S native/system -B build/native-system -G Ninja
@@ -88,7 +73,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          export QML_IMPORT_PATH="/tmp/meo-native-install/lib/qt6/qml:$PWD/deps/build-meoui"
+          export QML_IMPORT_PATH="/tmp/meo-native-install/lib/qt6/qml"
           export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
           export XDG_DATA_DIRS="/tmp/meo-native-install/share:/usr/local/share:/usr/share"
           ctest --test-dir build/native-system --output-on-failure --timeout 60
