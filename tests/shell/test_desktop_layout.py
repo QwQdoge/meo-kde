@@ -155,8 +155,49 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("border.width: 0", shelf)
         self.assertNotIn("border.color: MeoTheme.outlineVariant", shelf)
-        self.assertIn("Layout.preferredWidth: MeoTheme.space8", shelf)
+        self.assertIn("Layout.preferredWidth: visible ? MeoTheme.space8 : 0", shelf)
         self.assertIn("permanent visual divider", shelf)
+
+    def test_experimental_shelf_configuration_is_consumed_by_runtime(self):
+        shelf_root = REPO_ROOT / "plasmoids/org.meo.shelf"
+        schema = (shelf_root / "contents/config/main.xml").read_text(encoding="utf-8")
+        shelf = (shelf_root / "contents/ui/main.qml").read_text(encoding="utf-8")
+        launcher = (shelf_root / "contents/ui/LauncherPopup.qml").read_text(encoding="utf-8")
+        item = (shelf_root / "contents/ui/ShelfItem.qml").read_text(encoding="utf-8")
+
+        for key in (
+            "showLauncherButton",
+            "filterTasksByVirtualDesktop",
+            "showRunningIndicators",
+            "showTooltips",
+            "launcherDefaultPage",
+            "launcherWidth",
+            "launcherPlacement",
+            "launcherShowFavorites",
+            "launcherShowRecents",
+        ):
+            self.assertIn(f'name="{key}"', schema)
+            self.assertIn(f"Plasmoid.configuration.{key}", shelf)
+
+        self.assertIn("filterByVirtualDesktop: root.filterTasksByVirtualDesktop", shelf)
+        self.assertIn("showRunningIndicator: root.showRunningIndicators", shelf)
+        self.assertIn("showTooltip: root.showTooltips", shelf)
+        self.assertIn("defaultPage: root.launcherDefaultPage", shelf)
+        self.assertIn("widthPreset: root.launcherWidth", shelf)
+        self.assertIn("showFavoritesSection: root.launcherShowFavorites", shelf)
+        self.assertIn("showRecentSection: root.launcherShowRecents", shelf)
+        self.assertIn('browseMode = defaultPage === "apps" ? 1 : 0', launcher)
+        self.assertIn("configuredWidth", launcher)
+        self.assertIn("launcherPopup.showFavoritesSection", launcher)
+        self.assertIn("launcherPopup.showRecentSection", launcher)
+        self.assertIn("root.showRunningIndicator", item)
+        self.assertIn("root.showTooltip", item)
+
+        self.assertIn("Plasmoid.configuration.launcherPlacement", shelf)
+        self.assertIn('Plasmoid.globalShortcut = "Alt+Space"', shelf)
+        self.assertIn("function onActivated()", shelf)
+        self.assertIn("launcherPopup.openQuickSearch()", shelf)
+        self.assertIn("placementMode: root.launcherPlacement", shelf)
 
     def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
         launcher = (
@@ -172,10 +213,12 @@ class DesktopLayoutTests(unittest.TestCase):
 
         for component in (
             "MeoSearchBar",
-            "MeoTabs",
+            "MeoSegmentedButtons",
+            "MeoChip",
             "MeoListItem",
             "MeoAppGridItem",
             "MeoContextMenu",
+            "MeoLoadingFeedback",
         ):
             self.assertIn(component, launcher)
 

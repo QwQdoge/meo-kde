@@ -55,5 +55,7 @@ PlasmoidItem {
         notificationView: Plasmoid.configuration.notificationView
         notificationPreview: Plasmoid.configuration.notificationPreview
         density: Plasmoid.configuration.density
+        surfaceStyle: Plasmoid.configuration.surfaceStyle
+        surfaceOpacityPercent: Plasmoid.configuration.surfaceOpacityPercent
     }
 }
