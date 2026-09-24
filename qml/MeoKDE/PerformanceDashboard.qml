@@ -469,6 +469,114 @@ Item {
                 }
             }
 
+            MeoCard {
+                Layout.fillWidth: true
+                visible: !!MeoSystem.Performance.pressure.available
+                type: "filled"
+                radius: MeoTheme.shapeLargeIncreased
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: MeoTheme.space12
+                    spacing: MeoTheme.space8
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Rectangle {
+                            width: 40 * root.scaleFactor
+                            height: width
+                            radius: 14 * root.scaleFactor
+                            color: MeoTheme.tertiaryContainer
+
+                            MeoIcon {
+                                anchors.centerIn: parent
+                                icon: "waves"
+                                size: 22
+                                fill: true
+                                color: MeoTheme.contentOnTertiaryContainer
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+
+                            MeoText {
+                                text: MeoI18n.translator.i18n("System pressure")
+                                typeRole: "title"
+                                typeSize: "small"
+                                emphasized: true
+                            }
+
+                            MeoText {
+                                Layout.fillWidth: true
+                                text: MeoI18n.translator.i18n("Linux PSI · average stall time over the last 10 seconds")
+                                typeRole: "body"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: MeoTheme.space8
+
+                        MeoChip {
+                            label: MeoI18n.translator.i18n("CPU waiting %1%")
+                                   .arg(Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0).toFixed(1))
+                            leadingIcon: "memory"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                            elevated: Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0) >= 5
+                        }
+
+                        MeoChip {
+                            label: MeoI18n.translator.i18n("Memory waiting %1%")
+                                   .arg(Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0).toFixed(1))
+                            leadingIcon: "memory_alt"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                            elevated: Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0) >= 5
+                        }
+
+                        MeoChip {
+                            label: MeoI18n.translator.i18n("Memory fully stalled %1%")
+                                   .arg(Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0).toFixed(1))
+                            leadingIcon: "warning"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                            elevated: Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0) >= 1
+                        }
+
+                        MeoChip {
+                            label: MeoI18n.translator.i18n("I/O waiting %1%")
+                                   .arg(Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0).toFixed(1))
+                            leadingIcon: "hard_drive"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                            elevated: Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0) >= 5
+                        }
+
+                        MeoChip {
+                            label: MeoI18n.translator.i18n("I/O fully stalled %1%")
+                                   .arg(Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0).toFixed(1))
+                            leadingIcon: "hourglass_top"
+                            type: "assist"
+                            shape: "pill"
+                            visualStyle: "outlined"
+                            elevated: Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0) >= 1
+                        }
+                    }
+                }
+            }
+
             PopupSectionLabel {
                 sectionText: MeoI18n.translator.i18n("Storage devices")
             }
