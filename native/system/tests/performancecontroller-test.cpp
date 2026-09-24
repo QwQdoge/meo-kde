@@ -68,6 +68,12 @@ private slots:
             QVERIFY(network.contains(QStringLiteral("kind")));
             QVERIFY(network.contains(QStringLiteral("addressSummary")));
             QVERIFY(network.contains(QStringLiteral("hardwareAddress")));
+            QVERIFY(network.contains(QStringLiteral("rxPackets")));
+            QVERIFY(network.contains(QStringLiteral("txPackets")));
+            QVERIFY(network.contains(QStringLiteral("rxErrors")));
+            QVERIFY(network.contains(QStringLiteral("txErrors")));
+            QVERIFY(network.contains(QStringLiteral("rxDropped")));
+            QVERIFY(network.contains(QStringLiteral("txDropped")));
         }
         if (!controller.disks().isEmpty()) {
             const QVariantMap disk = controller.disks().constFirst().toMap();
