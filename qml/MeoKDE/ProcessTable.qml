@@ -92,6 +92,21 @@ Item {
         return depth > 0 ? prefix + "↳ " + label : label
     }
 
+    function drilldownProcessIds() {
+        const ids = []
+        const source = MeoSystem.Tasks.processes || []
+        if (drilldownDesktopId !== "") {
+            for (let i = 0; i < source.length; ++i) {
+                if ((source[i].desktopId || "") === drilldownDesktopId)
+                    ids.push(Number(source[i].pid || 0))
+            }
+            return ids
+        }
+        for (let i = 0; i < drilldownPids.length; ++i)
+            ids.push(Number(drilldownPids[i] || 0))
+        return ids
+    }
+
     function buildRows() {
         const source = treeMode ? (MeoSystem.Tasks.processTree || [])
                      : groupMode ? (MeoSystem.Tasks.processGroups || [])
@@ -337,6 +352,15 @@ Item {
                     typeSize: "large"
                     emphasized: true
                     elide: Text.ElideRight
+                }
+
+                MeoButton {
+                    text: MeoI18n.translator.i18n("End app")
+                    type: "tonal"
+                    size: "xs"
+                    icon.name: "stop_circle"
+                    enabled: root.drilldownProcessIds().length > 0
+                    onClicked: endGroupDialog.open()
                 }
             }
         }
@@ -649,6 +673,17 @@ Item {
                 }
             }
         }
+    }
+
+    MeoDialog {
+        id: endGroupDialog
+        parent: root
+        title: MeoI18n.translator.i18n("End %1?").arg(root.drilldownLabel || MeoI18n.translator.i18n("application"))
+        message: MeoI18n.translator.i18n("All currently running processes in this application group will be asked to exit. Unsaved work can be lost.")
+        icon: "warning"
+        confirmText: MeoI18n.translator.i18n("End app")
+        cancelText: MeoI18n.translator.i18n("Cancel")
+        onConfirmed: MeoSystem.Tasks.terminateProcesses(root.drilldownProcessIds(), false)
     }
 
     MeoDialog {
