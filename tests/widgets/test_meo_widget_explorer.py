@@ -171,6 +171,8 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("memoryAvailableBytes", performance_page)
         self.assertIn("powerWatts", performance_page)
         self.assertIn("coreClockMHz", performance_page)
+        self.assertIn("Performance.pressure", performance_page)
+        self.assertIn("Linux PSI", performance_page)
         self.assertIn("cpuArchitecture", performance_page)
         self.assertIn("physicalCores", performance_page)
         self.assertIn("cpuSockets", performance_page)
