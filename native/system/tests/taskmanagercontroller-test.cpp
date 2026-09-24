@@ -68,6 +68,17 @@ private slots:
         QVERIFY(!controller.actionError().isEmpty());
     }
 
+    void rejectsInvalidServiceSelection()
+    {
+        TaskManagerController controller;
+        controller.selectService(QStringLiteral("../bad.service"), QStringLiteral("user"));
+        QVERIFY(!controller.actionError().isEmpty());
+
+        controller.clearActionError();
+        controller.selectService(QStringLiteral("example.service"), QStringLiteral("admin"));
+        QVERIFY(!controller.actionError().isEmpty());
+    }
+
     void pausesSamplingWithoutDroppingSubscriptions()
     {
         TaskManagerController controller;
