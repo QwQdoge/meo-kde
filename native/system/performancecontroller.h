@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QVariantList>
+#include <QVariantMap>
 
 class PerformanceController final : public QObject
 {
@@ -50,6 +51,7 @@ class PerformanceController final : public QObject
     Q_PROPERTY(double zramCompressionRatio READ zramCompressionRatio NOTIFY metricsChanged)
     Q_PROPERTY(bool zswapEnabled READ zswapEnabled NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList memoryHistory READ memoryHistory NOTIFY metricsChanged)
+    Q_PROPERTY(QVariantMap pressure READ pressure NOTIFY metricsChanged)
 
     Q_PROPERTY(double networkRxBytesPerSecond READ networkRxBytesPerSecond NOTIFY metricsChanged)
     Q_PROPERTY(double networkTxBytesPerSecond READ networkTxBytesPerSecond NOTIFY metricsChanged)
@@ -126,6 +128,7 @@ public:
     double zramCompressionRatio() const;
     bool zswapEnabled() const;
     QVariantList memoryHistory() const;
+    QVariantMap pressure() const;
 
     double networkRxBytesPerSecond() const;
     double networkTxBytesPerSecond() const;
@@ -187,6 +190,7 @@ private:
     void refreshStaticSystemInfo();
     void sampleCpu();
     void sampleMemory();
+    void samplePressure();
     void sampleNetwork(double elapsedSeconds);
     void sampleDisk(double elapsedSeconds);
     void sampleGpu();
@@ -238,6 +242,7 @@ private:
     double m_zramCompressionRatio = 0;
     bool m_zswapEnabled = false;
     QVariantList m_memoryHistory;
+    QVariantMap m_pressure;
 
     quint64 m_lastNetworkRxBytes = 0;
     quint64 m_lastNetworkTxBytes = 0;
