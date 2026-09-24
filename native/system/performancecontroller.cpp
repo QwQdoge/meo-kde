@@ -419,6 +419,7 @@ qint64 PerformanceController::zramMemoryUsedBytes() const { return m_zramMemoryU
 double PerformanceController::zramCompressionRatio() const { return m_zramCompressionRatio; }
 bool PerformanceController::zswapEnabled() const { return m_zswapEnabled; }
 QVariantList PerformanceController::memoryHistory() const { return m_memoryHistory; }
+QVariantMap PerformanceController::pressure() const { return m_pressure; }
 double PerformanceController::networkRxBytesPerSecond() const { return m_networkRxRate; }
 double PerformanceController::networkTxBytesPerSecond() const { return m_networkTxRate; }
 QVariantList PerformanceController::networkRxHistory() const { return m_networkRxHistory; }
@@ -616,6 +617,12 @@ void PerformanceController::refreshNow()
     }
     if (wantsModule(QStringLiteral("memory"))) {
         sampleMemory();
+    }
+    if (wantsModule(QStringLiteral("cpu"))
+        || wantsModule(QStringLiteral("memory"))
+        || wantsModule(QStringLiteral("disk"))
+        || wantsModule(QStringLiteral("system"))) {
+        samplePressure();
     }
     if (wantsModule(QStringLiteral("network"))) {
         sampleNetwork(elapsedSeconds);
@@ -875,6 +882,78 @@ void PerformanceController::sampleMemory()
                                        / static_cast<double>(totalKiB)
                                  : 0;
     appendHistory(m_memoryHistory, m_memoryUsage);
+}
+
+void PerformanceController::samplePressure()
+{
+    QVariantMap result{
+        {QStringLiteral("available"), false},
+        {QStringLiteral("cpuSomeAvg10"), 0.0},
+        {QStringLiteral("cpuSomeAvg60"), 0.0},
+        {QStringLiteral("memorySomeAvg10"), 0.0},
+        {QStringLiteral("memorySomeAvg60"), 0.0},
+        {QStringLiteral("memoryFullAvg10"), 0.0},
+        {QStringLiteral("memoryFullAvg60"), 0.0},
+        {QStringLiteral("ioSomeAvg10"), 0.0},
+        {QStringLiteral("ioSomeAvg60"), 0.0},
+        {QStringLiteral("ioFullAvg10"), 0.0},
+        {QStringLiteral("ioFullAvg60"), 0.0},
+    };
+
+    auto parseFile = [&](const QString &path, const QString &prefix) {
+        const QByteArray content = readBytes(path);
+        if (content.isEmpty()) {
+            return;
+        }
+
+        const QList<QByteArray> lines = content.split('\n');
+        for (const QByteArray &rawLine : lines) {
+            const QList<QByteArray> fields = rawLine.simplified().split(' ');
+            if (fields.size() < 2) {
+                continue;
+            }
+            const QString scope = QString::fromLatin1(fields.constFirst());
+            if (scope != QStringLiteral("some") && scope != QStringLiteral("full")) {
+                continue;
+            }
+
+            double avg10 = 0;
+            double avg60 = 0;
+            bool avg10Ok = false;
+            bool avg60Ok = false;
+            for (int index = 1; index < fields.size(); ++index) {
+                const int equals = fields.at(index).indexOf('=');
+                if (equals <= 0) {
+                    continue;
+                }
+                const QByteArray key = fields.at(index).left(equals);
+                const QByteArray value = fields.at(index).mid(equals + 1);
+                if (key == "avg10") {
+                    avg10 = value.toDouble(&avg10Ok);
+                } else if (key == "avg60") {
+                    avg60 = value.toDouble(&avg60Ok);
+                }
+            }
+
+            const QString scopeTitle =
+                scope == QStringLiteral("some") ? QStringLiteral("Some")
+                                                : QStringLiteral("Full");
+            if (avg10Ok) {
+                result.insert(prefix + scopeTitle + QStringLiteral("Avg10"), avg10);
+            }
+            if (avg60Ok) {
+                result.insert(prefix + scopeTitle + QStringLiteral("Avg60"), avg60);
+            }
+            if (avg10Ok || avg60Ok) {
+                result.insert(QStringLiteral("available"), true);
+            }
+        }
+    };
+
+    parseFile(QStringLiteral("/proc/pressure/cpu"), QStringLiteral("cpu"));
+    parseFile(QStringLiteral("/proc/pressure/memory"), QStringLiteral("memory"));
+    parseFile(QStringLiteral("/proc/pressure/io"), QStringLiteral("io"));
+    m_pressure = result;
 }
 
 void PerformanceController::sampleNetwork(double elapsedSeconds)
