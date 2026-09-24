@@ -34,6 +34,8 @@ class TaskManagerController final : public QObject
     Q_PROPERTY(QVariantList services READ services NOTIFY servicesChanged)
     Q_PROPERTY(bool servicesAvailable READ servicesAvailable NOTIFY servicesChanged)
     Q_PROPERTY(bool serviceQuerying READ serviceQuerying NOTIFY servicesChanged)
+    Q_PROPERTY(QVariantMap selectedServiceDetails READ selectedServiceDetails NOTIFY serviceDetailsChanged)
+    Q_PROPERTY(bool serviceDetailsQuerying READ serviceDetailsQuerying NOTIFY serviceDetailsChanged)
 
     Q_PROPERTY(QString actionError READ actionError NOTIFY actionErrorChanged)
 
@@ -61,6 +63,8 @@ public:
     QVariantList services() const;
     bool servicesAvailable() const;
     bool serviceQuerying() const;
+    QVariantMap selectedServiceDetails() const;
+    bool serviceDetailsQuerying() const;
 
     QString actionError() const;
 
@@ -87,6 +91,7 @@ public:
     Q_INVOKABLE bool setStartupEnabled(const QString &desktopId, bool enabled);
 
     Q_INVOKABLE void refreshServices();
+    Q_INVOKABLE void selectService(const QString &unit, const QString &scope);
     Q_INVOKABLE void serviceAction(const QString &unit, const QString &action);
 
     Q_INVOKABLE void clearActionError();
@@ -99,6 +104,7 @@ Q_SIGNALS:
     void selectedProcessDetailsChanged();
     void startupAppsChanged();
     void servicesChanged();
+    void serviceDetailsChanged();
     void actionErrorChanged();
     void processActionCompleted(qint64 pid, const QString &action);
     void startupActionCompleted(const QString &desktopId, bool enabled);
@@ -172,6 +178,10 @@ private:
     QVariantList m_services;
     bool m_servicesAvailable = false;
     bool m_serviceQuerying = false;
+    QVariantMap m_selectedServiceDetails;
+    bool m_serviceDetailsQuerying = false;
+    QString m_selectedServiceUnit;
+    QString m_selectedServiceScope;
 
     QString m_actionError;
 };
