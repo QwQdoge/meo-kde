@@ -9,6 +9,7 @@ Item {
     signal detailsRequested()
 
     property string categoryFilter: "all"
+    property string userFilter: ""
     property bool treeMode: false
     property bool groupMode: true
     property var drilldownPids: []
@@ -123,6 +124,8 @@ Item {
         for (let i = 0; i < source.length; ++i) {
             const process = source[i]
             if (categoryFilter !== "all" && process.category !== categoryFilter)
+                continue
+            if (userFilter !== "" && String(process.user || "") !== userFilter)
                 continue
             if (!groupMode && !treeMode) {
                 if (drilldownDesktopId !== "") {
@@ -264,6 +267,42 @@ Item {
     ColumnLayout {
         anchors.fill: parent
         spacing: MeoTheme.space8
+
+        MeoCard {
+            Layout.fillWidth: true
+            visible: root.userFilter !== ""
+            type: "filled"
+            radius: MeoTheme.shapeLarge
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: MeoTheme.space8
+                spacing: MeoTheme.space8
+
+                MeoIcon {
+                    icon: "person"
+                    size: 20
+                    color: MeoTheme.primary
+                }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    text: MeoI18n.translator.i18n("Processes for %1").arg(root.userFilter)
+                    typeRole: "label"
+                    typeSize: "large"
+                    emphasized: true
+                    elide: Text.ElideRight
+                }
+
+                MeoButton {
+                    text: MeoI18n.translator.i18n("Show all users")
+                    type: "text"
+                    size: "xs"
+                    icon.name: "close"
+                    onClicked: root.userFilter = ""
+                }
+            }
+        }
 
         Flow {
             Layout.fillWidth: true
