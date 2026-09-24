@@ -73,6 +73,21 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.ui + self.main + self.auth_card)
 
+    def test_standalone_visual_port_keeps_dynamic_roles_and_safe_motion(self):
+        for required in (
+            "MeoTheme.primaryContainer",
+            "MeoTheme.surfaceContainer",
+            "MeoTheme.motionEasingEmphasizedDecelerate",
+            "MeoSpringValue",
+            "MeoTheme.reduceMotion",
+            "Accessible.role: Accessible.Pane",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.auth_card)
+        for forbidden in ("PasswordSync", "authenticator", "respond(", "QDBus", "PamAuthenticator"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.auth_card)
+
     def test_p3_data_adapters_are_explicitly_bounded_and_optional(self):
         for required in (
             "import Meo.System 1.0",
