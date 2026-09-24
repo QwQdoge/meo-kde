@@ -202,8 +202,8 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("!searchFeedback.feedbackVisible", launcher)
 
         # The startup budget begins before the enter transition. Meo defaults
-        # to a centered, Spotlight-like presentation; top placement remains a
-        # future Settings preference without creating a standalone config app.
+        # to a centered, Spotlight-like presentation and reads the optional
+        # top placement from the Shelf applet configuration contract.
         self.assertIn("onAboutToShow:", launcher)
         self.assertIn("openStartedMs = Date.now()", launcher)
         self.assertLess(
@@ -212,16 +212,17 @@ class DesktopLayoutTests(unittest.TestCase):
         )
         self.assertIn('property string placementMode: "center"', launcher)
         self.assertIn('placementMode === "top" ? topPlacementY : centeredPlacementY', launcher)
-        self.assertIn("TODO(MeoSettings)", launcher)
+        self.assertNotIn("TODO(MeoSettings)", launcher)
         self.assertIn("motionProfile: \"pixel\"", launcher)
         self.assertIn('entranceOffset: placementMode === "top"', launcher)
         self.assertIn("entranceScale: 0.975", launcher)
 
-        # Alt+Space can later call the same popup in search-only mode: one
-        # centered MeoSearchBar first, with KRunner results expanding in place.
+        # The applet's global shortcut activates the same popup in search-only
+        # mode: one centered MeoSearchBar first, with KRunner results expanding
+        # in place instead of spawning a second runner implementation.
         self.assertIn("property bool quickSearchMode: false", launcher)
         self.assertIn("function openQuickSearch()", launcher)
-        self.assertIn("TODO(MeoKDE shortcut integration)", launcher)
+        self.assertNotIn("TODO(MeoKDE shortcut integration)", launcher)
         self.assertIn("quickSearchMode && !searching", launcher)
         self.assertIn("Layout.maximumWidth: 640 * MeoTheme.globalScale", launcher)
         self.assertIn("!launcherPopup.quickSearchMode || launcherPopup.searching", launcher)
@@ -248,6 +249,34 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn("Process {", launcher)
         self.assertNotIn("DesktopEntry", launcher)
         self.assertNotIn("get_apps.py", launcher)
+
+    def test_shelf_launcher_configuration_and_shortcut_are_wired(self):
+        shelf = (
+            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+        schema = (
+            REPO_ROOT / "plasmoids/org.meo.shelf/contents/config/main.xml"
+        ).read_text(encoding="utf-8")
+
+        for key in (
+            "showLauncherButton",
+            "filterTasksByVirtualDesktop",
+            "showRunningIndicators",
+            "showTooltips",
+            "launcherDefaultPage",
+            "launcherWidth",
+            "launcherPlacement",
+            "launcherShowFavorites",
+            "launcherShowRecents",
+        ):
+            self.assertIn(f'name="{key}"', schema)
+
+        self.assertIn("Plasmoid.configuration.launcherPlacement", shelf)
+        self.assertIn('Plasmoid.globalShortcut = "Alt+Space"', shelf)
+        self.assertIn("target: plasmoid", shelf)
+        self.assertIn("function onActivated()", shelf)
+        self.assertIn("launcherPopup.openQuickSearch()", shelf)
+        self.assertIn("placementMode: root.launcherPlacement", shelf)
 
     def test_topbar_is_backed_by_real_kde_models(self):
         status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
