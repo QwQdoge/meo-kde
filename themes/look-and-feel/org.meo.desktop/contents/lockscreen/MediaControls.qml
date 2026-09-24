@@ -40,12 +40,18 @@ Item {
             presentation: "lockScreen"
             title: Media.title !== "" ? Media.title : Media.playerName
             artist: Media.artist !== "" ? Media.artist : Media.playerName
+            album: Media.album
             sourceName: Media.playerName
             coverSource: root.showArtwork ? Media.artUrl : ""
             showArtwork: root.showArtwork
             isPlaying: Media.playing
+            duration: Number(Media.durationMs)
+            position: Number(Media.positionMs)
+            canSeek: Media.canSeek
             canSkipPrevious: Media.canGoPrevious
             canSkipNext: Media.canGoNext
+            sourceCount: Media.playerCount
+            showSourceSwitcher: false
             showVolume: root.showVolume && SystemState.audioAvailable
             volume: Math.min(100, SystemState.volumePercent) / 100
             canAdjustVolume: SystemState.audioAvailable

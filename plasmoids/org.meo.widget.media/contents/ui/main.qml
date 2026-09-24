@@ -42,8 +42,8 @@ PlasmoidItem {
                 anchors.margins: MeoTheme.space4
                 visible: MeoSystem.Media.available
                 presentation: "adaptive"
-                title: MeoSystem.Media.title
-                artist: MeoSystem.Media.artist
+                title: MeoSystem.Media.title !== "" ? MeoSystem.Media.title : MeoSystem.Media.playerName
+                artist: MeoSystem.Media.artist !== "" ? MeoSystem.Media.artist : MeoSystem.Media.playerName
                 album: MeoSystem.Media.album
                 sourceName: MeoSystem.Media.playerName
                 coverSource: MeoSystem.Media.remoteArtUrl !== ""
@@ -59,9 +59,11 @@ PlasmoidItem {
                 shuffleEnabled: MeoSystem.Media.shuffle
                 repeatMode: MeoSystem.Media.repeatMode
                 sourceCount: MeoSystem.Media.playerCount
+                showSourceSwitcher: true
                 canAdjustVolume: false
                 showVolume: false
                 showSecondaryActions: false
+                enabled: MeoSystem.Media.controllable
                 onPlayRequested: MeoSystem.Media.playPause()
                 onPauseRequested: MeoSystem.Media.playPause()
                 onPreviousRequested: MeoSystem.Media.previous()
