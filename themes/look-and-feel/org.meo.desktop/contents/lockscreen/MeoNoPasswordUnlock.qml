@@ -13,7 +13,7 @@ SessionManagementScreen {
 
     focus: true
 
-    MeoAuthenticationSurface {
+    MeoLockScreenAuthCard {
         Layout.fillWidth: true
         active: true
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Unlock")

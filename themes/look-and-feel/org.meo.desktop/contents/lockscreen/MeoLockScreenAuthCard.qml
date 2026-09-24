@@ -20,6 +20,8 @@ Item {
     property string statusText: ""
     property string errorText: ""
     property bool failed: false
+    property bool showClock: true
+    property url avatarSource: ""
     default property alias content: contentLayout.data
 
     readonly property string effectiveStatus: errorText !== "" ? errorText : statusText
@@ -72,53 +74,49 @@ Item {
         targetValue: 0
     }
 
-    Rectangle {
-        id: container
-        anchors.fill: parent
-        radius: MeoTheme.shapeExtraLarge
-        color: MeoTheme.surfaceContainer
-        border.width: MeoTheme.strokeWidthThin
-        border.color: MeoTheme.outlineVariant
-        opacity: 0.92
-    }
-
     ColumnLayout {
         id: content
         anchors.fill: parent
-        anchors.margins: MeoTheme.space32
-        spacing: MeoTheme.space16
+        spacing: MeoTheme.space24
+
+        // The standalone centre keeps the split-colour clock above the
+        // identity and password pill. It is repeated here only while the
+        // KScreenLocker authentication surface is active.
+        MeoLockScreenClock {
+            Layout.alignment: Qt.AlignHCenter
+            visible: card.showClock
+        }
 
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 72 * MeoTheme.globalScale
+            implicitWidth: 112 * MeoTheme.globalScale
             implicitHeight: implicitWidth
-            radius: implicitWidth / 4
-            color: MeoTheme.primaryContainer
+            radius: implicitWidth / 2
+            color: MeoTheme.surfaceContainerHighest
+            clip: true
+
+            Image {
+                anchors.fill: parent
+                source: card.avatarSource
+                visible: status === Image.Ready
+                fillMode: Image.PreserveAspectCrop
+            }
 
             MeoIcon {
                 anchors.centerIn: parent
-                icon: "lock"
-                size: 36 * MeoTheme.globalScale
-                color: MeoTheme.onPrimaryContainer
+                icon: "person"
+                size: 52 * MeoTheme.globalScale
+                color: MeoTheme.contentOnSurfaceVariant
                 Accessible.ignored: true
             }
         }
 
         MeoText {
             Layout.fillWidth: true
-            text: "Meo"
-            typeRole: "display"
-            typeSize: "small"
-            emphasized: true
-            horizontalAlignment: Text.AlignHCenter
-            color: MeoTheme.primary
-        }
-
-        MeoText {
-            Layout.fillWidth: true
+            visible: text !== ""
             text: card.title
             typeRole: "title"
-            typeSize: "large"
+            typeSize: "medium"
             emphasized: true
             horizontalAlignment: Text.AlignHCenter
             color: MeoTheme.contentOnSurface

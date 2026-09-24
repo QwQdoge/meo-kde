@@ -412,6 +412,9 @@ Item {
                 lockScreenUiVisible: lockScreenUi.authenticationUiVisible
                 showMediaControls: lockScreenUi.showMediaControls
                 showAlbumArtwork: lockScreenUi.showAlbumArtwork
+                avatarSource: kscreenlocker_userImage !== ""
+                              ? "file://" + kscreenlocker_userImage.split("/").map(encodeURIComponent).join("/")
+                              : ""
                 showUserList: lockScreenUi.authenticationUiVisible && userList.y + mainStack.y > 0
                 enabled: !graceLockTimer.running
                 userListModel: users
