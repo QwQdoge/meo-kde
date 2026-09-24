@@ -11,3 +11,17 @@
 *.user
 /packaging/arch/**/pkg/
 /packaging/arch/**/src/
+
+# Local secrets and machine-specific state
+.env
+.env.*
+!.env.example
+!.env.sample
+credentials*.json
+secrets*.json
+*.key
+*.p12
+*.pfx
+.netrc
+.npmrc
+.pypirc
