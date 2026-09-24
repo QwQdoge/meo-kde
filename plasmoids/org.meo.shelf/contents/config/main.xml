@@ -29,6 +29,10 @@
       <label>Launcher width preset: compact, standard, or wide.</label>
       <default>standard</default>
     </entry>
+    <entry name="launcherPlacement" type="String">
+      <label>Launcher placement: center or top.</label>
+      <default>center</default>
+    </entry>
     <entry name="launcherShowFavorites" type="Bool">
       <label>Show pinned applications on the launcher home page.</label>
       <default>true</default>
