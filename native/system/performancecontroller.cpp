@@ -1375,7 +1375,7 @@ void PerformanceController::sampleGpu()
         gpu.insert(QStringLiteral("driver"), driver);
 
         const qint64 busy = readInteger(devicePath + QStringLiteral("/gpu_busy_percent"));
-        const double usage = busy >= 0 ? qBound<qint64>(0, busy, 100) : -1;
+        const double usage = busy >= 0 ? qBound<qint64>(qint64{0}, busy, qint64{100}) : -1;
         gpu.insert(QStringLiteral("usage"), usage);
         QVariantList history = m_gpuHistories.value(card);
         if (usage >= 0) {
