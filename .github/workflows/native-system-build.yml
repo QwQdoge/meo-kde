@@ -80,7 +80,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          export QML_IMPORT_PATH="/tmp/meo-native-install/lib/qt6/qml:$PWD/deps/MeoUI"
+          export QML_IMPORT_PATH="/tmp/meo-native-install/lib/qt6/qml:$PWD/deps"
           export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
           export XDG_DATA_DIRS="/tmp/meo-native-install/share:/usr/local/share:/usr/share"
           ctest --test-dir build/native-system --output-on-failure --timeout 60
