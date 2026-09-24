@@ -63,7 +63,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DBUILD_TESTING=OFF \
             -DMEOUI_BUILD_SHOWCASE=OFF
-          cmake --build deps/build-meoui --parallel 2
+          cmake --build deps/build-meoui --target meoui_module --parallel 2
 
       - name: Configure
         run: >-
