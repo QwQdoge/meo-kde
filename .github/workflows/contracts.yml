@@ -41,6 +41,35 @@ jobs:
       - name: Install Python test dependencies
         run: python -m pip install --disable-pip-version-check Pillow PySide6
 
+      - name: Install Qt runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1
+
+      - name: Verify headless Qt SVG rendering
+        working-directory: meo-kde
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PySide6.QtCore import Qt
+          from PySide6.QtGui import QGuiApplication, QImage, QPainter
+          from PySide6.QtSvg import QSvgRenderer
+
+          app = QGuiApplication.instance() or QGuiApplication(["meo-svg-ci"])
+          source = Path("assets/icons/application-identities/org.meo.settings.svg").resolve()
+          renderer = QSvgRenderer(str(source))
+          assert renderer.isValid(), f"QtSvg rejected {source}"
+          image = QImage(256, 256, QImage.Format_ARGB32_Premultiplied)
+          image.fill(Qt.transparent)
+          painter = QPainter(image)
+          renderer.render(painter)
+          painter.end()
+          assert any(image.pixelColor(x, y).alpha() for x, y in ((128, 128), (96, 74), (160, 128))), "SVG rendered fully transparent"
+          print("QtSvg headless rendering OK:", source)
+          PY
+
       - name: Check shell syntax
         working-directory: meo-kde
         run: |
