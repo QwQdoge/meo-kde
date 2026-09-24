@@ -2240,6 +2240,13 @@ void TaskManagerController::serviceAction(const QString &unit, const QString &ac
             setActionError({});
             Q_EMIT serviceActionCompleted(unit, action);
             refreshServices();
+            if (unit == m_selectedServiceUnit && !m_selectedServiceScope.isEmpty()) {
+                QTimer::singleShot(150, this, [this, unit]() {
+                    if (unit == m_selectedServiceUnit && !m_selectedServiceScope.isEmpty()) {
+                        selectService(unit, m_selectedServiceScope);
+                    }
+                });
+            }
         }
         process->deleteLater();
     });
