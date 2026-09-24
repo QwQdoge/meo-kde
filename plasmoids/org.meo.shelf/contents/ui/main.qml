@@ -17,6 +17,10 @@ PlasmoidItem {
     readonly property bool showTooltips: Plasmoid.configuration.showTooltips
     readonly property string launcherDefaultPage: Plasmoid.configuration.launcherDefaultPage || "home"
     readonly property string launcherWidth: Plasmoid.configuration.launcherWidth || "standard"
+    readonly property string launcherPlacement: {
+        const configured = String(Plasmoid.configuration.launcherPlacement || "center")
+        return configured === "top" ? "top" : "center"
+    }
     readonly property bool launcherShowFavorites: Plasmoid.configuration.launcherShowFavorites
     readonly property bool launcherShowRecents: Plasmoid.configuration.launcherShowRecents
     readonly property real launcherContribution: showLauncherButton
@@ -28,7 +32,13 @@ PlasmoidItem {
                             Math.min(shelfContent.implicitWidth + 20 * MeoTheme.globalScale,
                                      Screen.width * 0.70))
 
-    Component.onCompleted: MeoShellTheme.sync()
+    Component.onCompleted: {
+        MeoShellTheme.sync()
+        // Keep user customisation authoritative. Only claim the intended Meo
+        // quick-search shortcut when this plasmoid has no shortcut yet.
+        if (String(Plasmoid.globalShortcut || "").length === 0)
+            Plasmoid.globalShortcut = "Alt+Space"
+    }
 
     // Shelf Visibility States
     readonly property int stateVisible: 0
@@ -129,9 +139,7 @@ PlasmoidItem {
                 title: MeoI18n.translator.i18n("Application Launcher")
                 isActive: launcherPopup.visible
 
-                onClicked: {
-                    launcherPopup.visible = !launcherPopup.visible
-                }
+                onClicked: launcherPopup.toggleFullLauncher()
             }
 
             // Preserve a breathable launcher-to-task gap without turning it
@@ -268,12 +276,23 @@ PlasmoidItem {
         }
     }
 
+    // Plasma emits Applet::activated for the configured global shortcut.
+    // Route that activation to the exact same KRunner-backed popup rather than
+    // spawning a second runner/search implementation.
+    Connections {
+        target: plasmoid
+        function onActivated() {
+            launcherPopup.openQuickSearch()
+        }
+    }
+
     // Launcher Popup Surface
     LauncherPopup {
         id: launcherPopup
         shellApplet: root
         defaultPage: root.launcherDefaultPage
         widthPreset: root.launcherWidth
+        placementMode: root.launcherPlacement
         showFavoritesSection: root.launcherShowFavorites
         showRecentSection: root.launcherShowRecents
     }
