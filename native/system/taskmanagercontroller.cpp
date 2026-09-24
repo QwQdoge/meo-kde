@@ -476,6 +476,8 @@ QVariantList TaskManagerController::startupApps() const { return m_startupApps; 
 QVariantList TaskManagerController::services() const { return m_services; }
 bool TaskManagerController::servicesAvailable() const { return m_servicesAvailable; }
 bool TaskManagerController::serviceQuerying() const { return m_serviceQuerying; }
+QVariantMap TaskManagerController::selectedServiceDetails() const { return m_selectedServiceDetails; }
+bool TaskManagerController::serviceDetailsQuerying() const { return m_serviceDetailsQuerying; }
 QString TaskManagerController::actionError() const { return m_actionError; }
 
 void TaskManagerController::subscribe(const QString &clientId, const QStringList &modules)
@@ -2086,6 +2088,119 @@ void TaskManagerController::refreshServices()
     QTimer::singleShot(5000, unitsProcess, [unitsProcess]() {
         if (unitsProcess->state() != QProcess::NotRunning) {
             unitsProcess->kill();
+        }
+    });
+}
+
+void TaskManagerController::selectService(const QString &unit, const QString &scope)
+{
+    const QString normalizedScope = scope.trimmed().toLower();
+    if (!safeUnitName(unit)
+        || (normalizedScope != QStringLiteral("user")
+            && normalizedScope != QStringLiteral("system"))) {
+        setActionError(QStringLiteral("Invalid service selection."));
+        return;
+    }
+
+    const QString systemctl = QStandardPaths::findExecutable(QStringLiteral("systemctl"));
+    if (systemctl.isEmpty()) {
+        setActionError(QStringLiteral("systemctl is unavailable."));
+        return;
+    }
+
+    m_selectedServiceUnit = unit;
+    m_selectedServiceScope = normalizedScope;
+    m_selectedServiceDetails = QVariantMap{
+        {QStringLiteral("unit"), unit},
+        {QStringLiteral("scope"), normalizedScope},
+        {QStringLiteral("available"), false},
+    };
+    m_serviceDetailsQuerying = true;
+    Q_EMIT serviceDetailsChanged();
+
+    auto *process = new QProcess(this);
+    process->setProgram(systemctl);
+    QStringList arguments;
+    if (normalizedScope == QStringLiteral("user")) {
+        arguments.push_back(QStringLiteral("--user"));
+    }
+    arguments << QStringLiteral("show")
+              << unit
+              << QStringLiteral("--no-pager")
+              << QStringLiteral("--property=Id,Description,LoadState,ActiveState,SubState,UnitFileState,MainPID,TasksCurrent,MemoryCurrent,CPUUsageNSec,ControlGroup,FragmentPath,NRestarts,ExecMainStartTimestamp,ActiveEnterTimestamp");
+    process->setArguments(arguments);
+    process->setStandardErrorFile(QProcess::nullDevice());
+
+    connect(process, &QProcess::finished, this,
+            [this, process, unit, normalizedScope](int exitCode, QProcess::ExitStatus status) {
+        if (unit != m_selectedServiceUnit || normalizedScope != m_selectedServiceScope) {
+            process->deleteLater();
+            return;
+        }
+
+        QVariantMap details{
+            {QStringLiteral("unit"), unit},
+            {QStringLiteral("scope"), normalizedScope},
+            {QStringLiteral("available"), false},
+        };
+
+        if (status == QProcess::NormalExit && exitCode == 0) {
+            const QList<QByteArray> lines = process->readAllStandardOutput().split('\n');
+            for (const QByteArray &line : lines) {
+                const int equals = line.indexOf('=');
+                if (equals <= 0) {
+                    continue;
+                }
+                const QByteArray key = line.left(equals);
+                const QString value = QString::fromUtf8(line.mid(equals + 1)).trimmed();
+
+                auto insertInteger = [&](const QString &name) {
+                    bool ok = false;
+                    const qint64 number = value.toLongLong(&ok);
+                    details.insert(name, ok ? number : static_cast<qint64>(-1));
+                };
+
+                if (key == "Id") details.insert(QStringLiteral("id"), value);
+                else if (key == "Description") details.insert(QStringLiteral("description"), value);
+                else if (key == "LoadState") details.insert(QStringLiteral("loadState"), value);
+                else if (key == "ActiveState") details.insert(QStringLiteral("activeState"), value);
+                else if (key == "SubState") details.insert(QStringLiteral("subState"), value);
+                else if (key == "UnitFileState") details.insert(QStringLiteral("enabledState"), value);
+                else if (key == "MainPID") insertInteger(QStringLiteral("mainPid"));
+                else if (key == "TasksCurrent") insertInteger(QStringLiteral("tasksCurrent"));
+                else if (key == "MemoryCurrent") insertInteger(QStringLiteral("memoryCurrentBytes"));
+                else if (key == "NRestarts") insertInteger(QStringLiteral("restartCount"));
+                else if (key == "CPUUsageNSec") {
+                    bool ok = false;
+                    const double nanoseconds = value.toDouble(&ok);
+                    details.insert(QStringLiteral("cpuUsageSeconds"),
+                                   ok ? nanoseconds / 1000000000.0 : -1.0);
+                } else if (key == "ControlGroup") {
+                    details.insert(QStringLiteral("controlGroup"), value);
+                } else if (key == "FragmentPath") {
+                    details.insert(QStringLiteral("fragmentPath"), value);
+                } else if (key == "ExecMainStartTimestamp") {
+                    details.insert(QStringLiteral("execMainStartTimestamp"), value);
+                } else if (key == "ActiveEnterTimestamp") {
+                    details.insert(QStringLiteral("activeEnterTimestamp"), value);
+                }
+            }
+            details.insert(QStringLiteral("available"), true);
+        } else {
+            details.insert(QStringLiteral("error"),
+                           QStringLiteral("Service details could not be queried."));
+        }
+
+        m_selectedServiceDetails = details;
+        m_serviceDetailsQuerying = false;
+        Q_EMIT serviceDetailsChanged();
+        process->deleteLater();
+    });
+
+    process->start();
+    QTimer::singleShot(5000, process, [process]() {
+        if (process->state() != QProcess::NotRunning) {
+            process->kill();
         }
     });
 }
