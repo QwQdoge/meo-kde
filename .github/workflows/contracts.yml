@@ -1,0 +1,70 @@
+name: Source contracts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Python and source contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out MeoKDE
+        uses: actions/checkout@v6
+        with:
+          path: meo-kde
+          submodules: recursive
+
+      - name: Check out MeoUI contract source
+        uses: actions/checkout@v6
+        with:
+          repository: QwQdoge/MeoUI
+          ref: main
+          path: meo-ui
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Check shell syntax
+        working-directory: meo-kde
+        run: |
+          bash -n setup/apply-meo-desktop.sh
+          bash -n setup/reset-meo-desktop.sh
+          bash -n scripts/sync-to-workspace.sh
+          bash -n tools/input-method/meo-input-method.sh
+          bash -n tools/theme/apply-meo-mode.sh
+          bash -n tools/theme/apply-meo-desktop.sh
+          bash -n tools/shell/apply-meo-panel-layout.sh
+
+      - name: Run source contract suites
+        working-directory: meo-kde
+        run: |
+          python -m unittest discover -s tests/icons -p 'test_*.py'
+          python -m unittest discover -s tests/theme -p 'test_*.py'
+          python -m unittest discover -s tests/input_method -p 'test_*.py'
+          python -m unittest discover -s tests/system -p 'test_*.py'
+          python -m unittest discover -s tests/shell -p 'test_*.py'
+          python -m unittest discover -s tests/widgets -p 'test_*.py'
+          python -m unittest discover -s tests/authentication -p 'test_*.py'
+          python -m unittest tests.test_licensing
+
+      - name: Validate JSON metadata
+        working-directory: meo-kde
+        shell: bash
+        run: |
+          while IFS= read -r file; do
+            python -m json.tool "$file" >/dev/null
+          done < <(find plasmoids themes -name metadata.json -type f | sort)
