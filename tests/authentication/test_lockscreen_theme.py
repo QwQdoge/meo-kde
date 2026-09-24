@@ -64,7 +64,7 @@ class LockScreenThemeTests(unittest.TestCase):
 
     def test_meoui_session_entry_primitives_remain_presentation_only(self):
         self.assertIn("import MeoUI 1.0", self.ui)
-        self.assertIn("MeoAmbientClock", self.ui)
+        self.assertIn("MeoLockScreenClock", self.ui)
         self.assertIn("MeoLockScreenAuthCard", self.main)
         self.assertIn("MeoSpringValue", self.auth_card)
         self.assertIn("clock: ambientClockFrame", self.ui)
