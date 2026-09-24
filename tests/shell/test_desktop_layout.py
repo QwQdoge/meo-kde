@@ -155,7 +155,8 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("border.width: 0", shelf)
         self.assertNotIn("border.color: MeoTheme.outlineVariant", shelf)
-        self.assertIn("Layout.preferredWidth: MeoTheme.space8", shelf)
+        self.assertIn("visible: root.showLauncherButton", shelf)
+        self.assertIn("Layout.preferredWidth: visible ? MeoTheme.space8 : 0", shelf)
         self.assertIn("permanent visual divider", shelf)
 
     def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
