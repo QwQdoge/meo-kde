@@ -51,6 +51,19 @@ Item {
         }
     }
 
+    function processStateCount(states) {
+        const source = MeoSystem.Tasks.processes || []
+        let count = 0
+        for (let i = 0; i < source.length; ++i) {
+            if (states.indexOf(String(source[i].state || "")) >= 0)
+                ++count
+        }
+        return count
+    }
+
+    readonly property int zombieCount: processStateCount(["Z"])
+    readonly property int stoppedCount: processStateCount(["T", "t"])
+
     function categoryLabel(category) {
         if (category === "app")
             return MeoI18n.translator.i18n("App")
@@ -268,6 +281,24 @@ Item {
                 type: "assist"
                 shape: "pill"
                 visualStyle: "outlined"
+            }
+
+            MeoChip {
+                visible: root.stoppedCount > 0
+                label: MeoI18n.translator.i18n("%1 stopped").arg(root.stoppedCount)
+                leadingIcon: "pause_circle"
+                type: "assist"
+                shape: "pill"
+                visualStyle: "outlined"
+            }
+
+            MeoChip {
+                visible: root.zombieCount > 0
+                label: MeoI18n.translator.i18n("%1 zombie").arg(root.zombieCount)
+                leadingIcon: "warning"
+                type: "assist"
+                shape: "pill"
+                elevated: true
             }
         }
 
