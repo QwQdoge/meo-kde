@@ -70,7 +70,7 @@ jobs:
           cmake --fresh -S native/system -B build/native-system -G Ninja
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DBUILD_TESTING=ON
-          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/native-install"
+          -DCMAKE_INSTALL_PREFIX=/tmp/meo-native-install
 
       - name: Build
         run: cmake --build build/native-system --parallel 2
@@ -80,14 +80,15 @@ jobs:
 
       - name: Verify staged runtime
         run: |
-          test -f build/native-install/lib/qt6/qml/Meo/System/qmldir
-          test -f build/native-install/lib/qt6/qml/Meo/System/libmeosystemplugin.so
-          test -f build/native-install/share/locale/zh_CN/LC_MESSAGES/meo-desktop.mo
+          test -f /tmp/meo-native-install/lib/qt6/qml/Meo/System/qmldir
+          test -f /tmp/meo-native-install/lib/qt6/qml/Meo/System/libmeosystemplugin.so
+          test -f /tmp/meo-native-install/share/locale/zh_CN/LC_MESSAGES/meo-desktop.mo
 
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
-          QML_IMPORT_PATH: ${{ github.workspace }}/build/native-install/lib/qt6/qml:${{ github.workspace }}/deps/build-meoui
-          QML2_IMPORT_PATH: ${{ github.workspace }}/build/native-install/lib/qt6/qml:${{ github.workspace }}/deps/build-meoui
-          XDG_DATA_DIRS: ${{ github.workspace }}/build/native-install/share:/usr/local/share:/usr/share
-        run: ctest --test-dir build/native-system --output-on-failure --timeout 60
+        run: |
+          export QML_IMPORT_PATH="/tmp/meo-native-install/lib/qt6/qml:$PWD/deps/build-meoui"
+          export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
+          export XDG_DATA_DIRS="/tmp/meo-native-install/share:/usr/local/share:/usr/share"
+          ctest --test-dir build/native-system --output-on-failure --timeout 60
