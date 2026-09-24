@@ -49,6 +49,16 @@ private slots:
         QVERIFY(controller.memoryAvailableBytes() <= controller.memoryTotalBytes());
         QVERIFY(controller.memoryUsage() >= 0.0);
         QVERIFY(controller.memoryUsage() <= 100.0);
+        const QVariantMap pressure = controller.pressure();
+        QVERIFY(pressure.contains(QStringLiteral("available")));
+        QVERIFY(pressure.contains(QStringLiteral("cpuSomeAvg10")));
+        QVERIFY(pressure.contains(QStringLiteral("memorySomeAvg10")));
+        QVERIFY(pressure.contains(QStringLiteral("memoryFullAvg10")));
+        QVERIFY(pressure.contains(QStringLiteral("ioSomeAvg10")));
+        QVERIFY(pressure.contains(QStringLiteral("ioFullAvg10")));
+        QVERIFY(pressure.value(QStringLiteral("cpuSomeAvg10")).toDouble() >= 0.0);
+        QVERIFY(pressure.value(QStringLiteral("memorySomeAvg10")).toDouble() >= 0.0);
+        QVERIFY(pressure.value(QStringLiteral("ioSomeAvg10")).toDouble() >= 0.0);
         QVERIFY(controller.storageTotalBytes() >= 0);
         if (!controller.networkInterfaces().isEmpty()) {
             const QVariantMap network = controller.networkInterfaces().constFirst().toMap();
