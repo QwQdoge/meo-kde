@@ -41,6 +41,11 @@ jobs:
       - name: Install Python test dependencies
         run: python -m pip install --disable-pip-version-check Pillow PySide6
 
+      - name: Install Qt runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1
+
       - name: Verify headless Qt SVG rendering
         working-directory: meo-kde
         env:
