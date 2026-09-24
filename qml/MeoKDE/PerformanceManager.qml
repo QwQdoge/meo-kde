@@ -16,7 +16,7 @@ Item {
     readonly property bool useNavigationRail: width >= 760 * scaleFactor
     readonly property bool expandedRail: width >= 1080 * scaleFactor
     readonly property bool updatesPaused: MeoSystem.Tasks.paused
-                                          && MeoSystem.Performance.paused
+                                          || MeoSystem.Performance.paused
 
     readonly property var navigationModel: [
         { id: "processes", label: MeoI18n.translator.i18n("Processes"), icon: "apps" },
@@ -70,10 +70,21 @@ Item {
     }
 
     function refreshCurrentPage() {
-        if (currentPage === 1)
-            MeoSystem.Performance.refreshNow()
-        else
+        if (currentPage === 0) {
             MeoSystem.Tasks.refreshNow()
+            MeoSystem.Performance.refreshNow()
+        } else if (currentPage === 1) {
+            MeoSystem.Performance.refreshNow()
+        } else {
+            MeoSystem.Tasks.refreshNow()
+        }
+    }
+
+    Shortcut {
+        sequence: "F5"
+        context: Qt.WindowShortcut
+        enabled: root.visible
+        onActivated: root.refreshCurrentPage()
     }
 
     Component.onCompleted: syncSubscription()
