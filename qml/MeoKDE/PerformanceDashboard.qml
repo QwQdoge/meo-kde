@@ -978,7 +978,7 @@ Item {
         id: networkTile
         property var network: ({})
 
-        implicitHeight: 216 * root.scaleFactor
+        implicitHeight: 244 * root.scaleFactor
         type: "filled"
         radius: MeoTheme.shapeLargeIncreased
 
@@ -1090,6 +1090,39 @@ Item {
                     typeRole: "label"
                     typeSize: "small"
                     color: MeoTheme.contentOnSurfaceVariant
+                }
+            }
+
+            Flow {
+                Layout.fillWidth: true
+                visible: Number(networkTile.network.rxErrors || 0)
+                         + Number(networkTile.network.txErrors || 0)
+                         + Number(networkTile.network.rxDropped || 0)
+                         + Number(networkTile.network.txDropped || 0) > 0
+                spacing: MeoTheme.space8
+
+                MeoChip {
+                    visible: Number(networkTile.network.rxErrors || 0)
+                             + Number(networkTile.network.txErrors || 0) > 0
+                    label: MeoI18n.translator.i18n("Errors ↓%1 · ↑%2")
+                           .arg(networkTile.network.rxErrors || 0)
+                           .arg(networkTile.network.txErrors || 0)
+                    leadingIcon: "error"
+                    type: "assist"
+                    shape: "pill"
+                    elevated: true
+                }
+
+                MeoChip {
+                    visible: Number(networkTile.network.rxDropped || 0)
+                             + Number(networkTile.network.txDropped || 0) > 0
+                    label: MeoI18n.translator.i18n("Dropped ↓%1 · ↑%2")
+                           .arg(networkTile.network.rxDropped || 0)
+                           .arg(networkTile.network.txDropped || 0)
+                    leadingIcon: "warning"
+                    type: "assist"
+                    shape: "pill"
+                    elevated: true
                 }
             }
         }
