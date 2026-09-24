@@ -37,12 +37,49 @@ jobs:
           pacman -Syu --noconfirm
           pacman -S --needed --noconfirm \
             base-devel cmake ninja git extra-cmake-modules \
-            qt6-base qt6-declarative qt6-tools qt6-shadertools \
+            qt6-base qt6-declarative qt6-tools qt6-shadertools glibc-locales \
             kconfig kcoreaddons kguiaddons ki18n kirigami \
             networkmanager-qt bluez-qt solid pulseaudio-qt \
             libplasma plasma-workspace
-          sed -i 's/^#zh_CN.UTF-8 UTF-8/zh_CN.UTF-8 UTF-8/' /etc/locale.gen
-          locale-gen
+          locale -a | grep -qi '^zh_CN\.utf8
+      - name: Check out MeoKDE
+        uses: actions/checkout@v6
+
+      - name: Check out MeoUI
+        uses: actions/checkout@v6
+        with:
+          repository: QwQdoge/MeoUI
+          ref: main
+          path: deps/MeoUI
+
+      - name: Build MeoUI runtime
+        run: |
+          cmake --fresh -S deps/MeoUI -B deps/build-meoui -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DBUILD_TESTING=OFF \
+            -DMEOUI_BUILD_SHOWCASE=OFF
+          cmake --build deps/build-meoui --parallel 2
+
+      - name: Configure
+        run: >-
+          cmake --fresh -S native/system -B build/native-system -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DBUILD_TESTING=ON
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/native-install"
+
+      - name: Build
+        run: cmake --build build/native-system --parallel 2
+
+      - name: Install staged runtime
+        run: cmake --install build/native-system
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QML2_IMPORT_PATH: ${{ github.workspace }}/build/native-install/lib/qt6/qml:${{ github.workspace }}/deps/build-meoui
+          XDG_DATA_DIRS: ${{ github.workspace }}/build/native-install/share:/usr/local/share:/usr/share
+        run: ctest --test-dir build/native-system --output-on-failure --timeout 60
+
 
       - name: Check out MeoKDE
         uses: actions/checkout@v6
