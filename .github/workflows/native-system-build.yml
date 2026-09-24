@@ -1,0 +1,60 @@
+name: Native system build
+
+on:
+  pull_request:
+    paths:
+      - 'native/system/**'
+      - 'native/dynamic-color/**'
+      - 'native/third_party/**'
+      - '.github/workflows/native-system-build.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'native/system/**'
+      - 'native/dynamic-color/**'
+      - 'native/third_party/**'
+      - '.github/workflows/native-system-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-system-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Arch native/system build
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm \
+            base-devel cmake ninja git extra-cmake-modules \
+            qt6-base qt6-declarative qt6-tools \
+            kconfig kcoreaddons kguiaddons ki18n kirigami \
+            networkmanager-qt bluez-qt solid pulseaudio-qt \
+            libplasma plasma-workspace
+
+      - name: Check out MeoKDE
+        uses: actions/checkout@v6
+
+      - name: Configure
+        run: >-
+          cmake --fresh -S native/system -B build/native-system -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build/native-system --parallel 2
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build/native-system --output-on-failure --timeout 60
