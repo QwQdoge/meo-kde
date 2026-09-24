@@ -637,6 +637,16 @@ Item {
                         spacing: MeoTheme.space8
 
                         MeoButton {
+                            visible: root.process && Number(root.process.parentPid || 0) > 0
+                            text: MeoI18n.translator.i18n("Parent %1").arg(root.process.parentPid || 0)
+                            type: "text"
+                            size: "s"
+                            icon.name: "subdirectory_arrow_left"
+                            onClicked: if (root.process)
+                                MeoSystem.Tasks.selectProcess(root.process.parentPid)
+                        }
+
+                        MeoButton {
                             text: root.process && root.process.suspended
                                   ? MeoI18n.translator.i18n("Resume")
                                   : MeoI18n.translator.i18n("Suspend")
