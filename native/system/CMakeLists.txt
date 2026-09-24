@@ -36,6 +36,10 @@ add_library(meosystemplugin MODULE
     dynamiccolorprovider.h
     platformcontroller.cpp
     platformcontroller.h
+    performancecontroller.cpp
+    performancecontroller.h
+    taskmanagercontroller.cpp
+    taskmanagercontroller.h
     sessionactionclient.cpp
     sessionactionclient.h
     mediacontroller.cpp
@@ -70,6 +74,10 @@ add_executable(meo-system-state-smoke
     systemstatehub.h
     platformcontroller.cpp
     platformcontroller.h
+    performancecontroller.cpp
+    performancecontroller.h
+    taskmanagercontroller.cpp
+    taskmanagercontroller.h
     mediacontroller.cpp
     mediacontroller.h
     weathercache.cpp
@@ -80,6 +88,7 @@ add_executable(meo-system-state-smoke
 target_link_libraries(meo-system-state-smoke PRIVATE
     Qt6::Core
     Qt6::DBus
+    Qt6::Gui
     Qt6::Network
     KF6::NetworkManagerQt
     KF6::BluezQt
@@ -106,6 +115,24 @@ if(BUILD_TESTING)
         ENVIRONMENT "LANG=zh_CN.UTF-8;LC_ALL=zh_CN.UTF-8;LANGUAGE=zh_CN"
     )
 
+    add_executable(meo-performance-controller-test
+        tests/performancecontroller-test.cpp
+        performancecontroller.cpp
+        performancecontroller.h
+    )
+    target_include_directories(meo-performance-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-performance-controller-test PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+    add_test(NAME meo-performance-controller COMMAND meo-performance-controller-test)
+
+    add_executable(meo-task-manager-controller-test
+        tests/taskmanagercontroller-test.cpp
+        taskmanagercontroller.cpp
+        taskmanagercontroller.h
+    )
+    target_include_directories(meo-task-manager-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-task-manager-controller-test PRIVATE Qt6::Core Qt6::Gui Qt6::Test)
+    add_test(NAME meo-task-manager-controller COMMAND meo-task-manager-controller-test)
+
     add_executable(meo-desktop-widget-bridge-test
         tests/desktopwidgetbridge-test.cpp
         desktopwidgetbridge.cpp
@@ -119,6 +146,9 @@ endif()
 
 add_executable(meo-task-role-smoke task-role-smoke.cpp)
 target_link_libraries(meo-task-role-smoke PRIVATE Qt6::Core Qt6::Gui PW::LibTaskManager)
+
+add_executable(meo-system-monitor systemmonitor-main.cpp)
+target_link_libraries(meo-system-monitor PRIVATE Qt6::Core Qt6::Gui Qt6::Qml)
 
 add_executable(meo-session-actiond
     sessionaction-main.cpp
@@ -173,7 +203,10 @@ include(GNUInstallDirs)
 install(TARGETS meosystemplugin
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/qml/Meo/System"
 )
-install(TARGETS meo-session-actiond meo-weather-refresh RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS meo-session-actiond meo-weather-refresh meo-system-monitor RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../data/applications/org.meo.systemmonitor.desktop"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+)
 install(FILES org.meo.SessionAction1.service
     DESTINATION "${CMAKE_INSTALL_DATADIR}/dbus-1/services"
 )

@@ -36,6 +36,16 @@ DankMaterialShell notification implementation and reimplemented for Plasma.
 - License: MIT (`assets/licenses/DankMaterialShell-MIT.txt`)
 - Copyright 2025 Avenge Media LLC
 
+## Caelestia Shell
+
+The NVIDIA telemetry fallback in `native/system/performancecontroller.cpp` uses
+the same public `nvidia-smi` query strategy as Caelestia Shell's GPU service,
+reimplemented around Meo's demand-driven sampler.
+
+- Source: https://github.com/caelestia-dots/shell
+- Reference: `plugin/src/Caelestia/Services/gpu.cpp`
+- License: GPL-3.0
+
 ## Fonts and symbols
 
 - Roboto Regular, Medium, and Bold: SIL Open Font License 1.1; see

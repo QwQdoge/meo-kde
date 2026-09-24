@@ -8,6 +8,7 @@ import Meo.System 1.0
 QQC2.ScrollView {
     id: root
     signal backRequested()
+    signal performanceRequested()
     implicitWidth: ShellMetrics.quickSettingsWidth
     implicitHeight: ShellMetrics.quickSettingsHeight
     contentWidth: availableWidth
@@ -111,6 +112,34 @@ QQC2.ScrollView {
             visible: !Platform.powerProfilesAvailable
             text: MeoI18n.translator.i18n("Power profiles are not provided by this system. Session controls remain available below.")
             tone: "info"
+        }
+
+        PopupSectionLabel { sectionText: MeoI18n.translator.i18n("System") }
+
+        MeoMotionSurface {
+            Layout.fillWidth: true
+            implicitHeight: performanceColumn.implicitHeight
+            radius: ShellMetrics.radiusLarge
+            color: MeoTheme.surfaceContainerHigh
+            elevation: 0
+
+            ColumnLayout {
+                id: performanceColumn
+                width: parent.width
+                spacing: 0
+
+                MeoListItem {
+                    Layout.fillWidth: true
+                    isDense: true
+                    headline: MeoI18n.translator.i18n("System monitor")
+                    supportingText: MeoI18n.translator.i18n("Processes, performance, startup apps, services and users")
+                    leadingIcon: "monitoring"
+                    trailingComponent: Component {
+                        MeoIcon { icon: "chevron_right"; size: 18; color: MeoTheme.onSurfaceVariant }
+                    }
+                    onClicked: root.performanceRequested()
+                }
+            }
         }
 
         PopupSectionLabel { sectionText: MeoI18n.translator.i18n("Session") }

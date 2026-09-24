@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "org.meo.widget.performance",
+        "Name": "Meo Performance",
+        "Name[zh_CN]": "Meo 性能",
+        "Description": "Live CPU, memory, GPU, storage and network performance",
+        "Description[zh_CN]": "实时 CPU、内存、GPU、存储与网络性能",
+        "Icon": "utilities-system-monitor",
+        "Category": "System Information",
+        "License": "GPL-3.0-or-later",
+        "Version": "0.1.0",
+        "Authors": [
+            { "Name": "Meo Desktop Team" }
+        ],
+        "FormFactors": [ "desktop" ]
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

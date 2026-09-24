@@ -3,6 +3,8 @@
 #include "mediacontroller.h"
 #include "weathercache.h"
 #include "platformcontroller.h"
+#include "performancecontroller.h"
+#include "taskmanagercontroller.h"
 #include "sessionactionclient.h"
 #include "desktopwidgetbridge.h"
 
@@ -25,6 +27,20 @@ QObject *systemStateProvider(QQmlEngine *, QJSEngine *)
 QObject *platformProvider(QQmlEngine *, QJSEngine *)
 {
     auto *controller = new PlatformController;
+    QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
+    return controller;
+}
+
+QObject *performanceProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *controller = new PerformanceController;
+    QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
+    return controller;
+}
+
+QObject *tasksProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *controller = new TaskManagerController;
     QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
     return controller;
 }
@@ -75,6 +91,8 @@ public:
         Q_ASSERT(QByteArray(uri) == QByteArray("Meo.System"));
         qmlRegisterSingletonType<SystemStateHub>(uri, 1, 0, "SystemState", systemStateProvider);
         qmlRegisterSingletonType<PlatformController>(uri, 1, 0, "Platform", platformProvider);
+        qmlRegisterSingletonType<PerformanceController>(uri, 1, 0, "Performance", performanceProvider);
+        qmlRegisterSingletonType<TaskManagerController>(uri, 1, 0, "Tasks", tasksProvider);
         qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
         qmlRegisterSingletonType<WeatherCache>(uri, 1, 0, "Weather", weatherProvider);
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);

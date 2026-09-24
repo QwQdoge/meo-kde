@@ -179,6 +179,7 @@ for required in \
   "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time-notifications/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widget.performance/metadata.json" \
   "${repo_root}/assets/wallpapers/installer_background.png"; do
   if [ ! -f "${required}" ]; then
     echo "Required Meo Desktop asset is missing: ${required}" >&2
@@ -199,7 +200,7 @@ else
 fi
 run cmake --build "${native_build_root}" --parallel
 
-run mkdir -p "${backup_root}" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${config_root}/autostart" "${user_plugin_root}/styles" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
+run mkdir -p "${backup_root}" "${data_root}/applications" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${config_root}/autostart" "${user_plugin_root}/styles" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
 
 # Preserve every named runtime path that this installer replaces or retires.
 # reset-meo-desktop can then restore an older Meo build instead of leaving a
@@ -218,6 +219,7 @@ runtime_backups=(
   "${data_root}/plasma/plasmoids/org.meo.toptasks|data/plasma/plasmoids/org.meo.toptasks"
   "${data_root}/plasma/plasmoids/org.meo.launcher|data/plasma/plasmoids/org.meo.launcher"
   "${data_root}/plasma/plasmoids/org.meo.quicksettings|data/plasma/plasmoids/org.meo.quicksettings"
+  "${data_root}/plasma/plasmoids/org.meo.widget.performance|data/plasma/plasmoids/org.meo.widget.performance"
   "${data_root}/icons/Meo|data/icons/Meo"
   "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
   "${data_root}/icons/MeoSymbolsDark|data/icons/MeoSymbolsDark"
@@ -245,6 +247,8 @@ runtime_backups=(
   "${local_bin_root}/meo-desktop-layout|bin/meo-desktop-layout"
   "${local_bin_root}/meo-desktop-apply|bin/meo-desktop-apply"
   "${local_bin_root}/meo-app-icon-studio|bin/meo-app-icon-studio"
+  "${local_bin_root}/meo-system-monitor|bin/meo-system-monitor"
+  "${data_root}/applications/org.meo.systemmonitor.desktop|data/applications/org.meo.systemmonitor.desktop"
   "${local_bin_root}/meo-dock|bin/meo-dock"
   "${config_root}/autostart/org.meo.dock.desktop|config/autostart/org.meo.dock.desktop"
   "${config_root}/fontconfig/conf.d/50-meo-fonts.conf|config/fontconfig/conf.d/50-meo-fonts.conf"
@@ -381,6 +385,13 @@ for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.n
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"
 done
 
+# Source installs also expose the performance widget. The widget itself is
+# optional on the desktop, but Widget Explorer and the shared performance page
+# must never point at a package that only exists in the Arch package build.
+run rm -rf "${data_root}/plasma/plasmoids/org.meo.widget.performance"
+run cp -a "${repo_root}/plasmoids/org.meo.widget.performance" \
+  "${data_root}/plasma/plasmoids/org.meo.widget.performance"
+
 run cp -a "${meoui_source}/." "${qml_root}/MeoUI/"
 # The QML plugin links against libmeoui.  Keep its runtime next to the module
 # as well, so a source-built desktop does not depend on an absolute build-tree
@@ -391,6 +402,9 @@ for meoui_runtime_library in "${meoui_build_root}"/libmeoui.so*; do
   fi
 done
 run cp -a "${repo_root}/qml/MeoKDE/." "${qml_root}/MeoKDE/"
+run install -Dm0755 "${native_build_root}/system/meo-system-monitor" "${local_bin_root}/meo-system-monitor"
+run install -Dm0644 "${repo_root}/data/applications/org.meo.systemmonitor.desktop" "${data_root}/applications/org.meo.systemmonitor.desktop"
+run sed -i "s|^Exec=meo-system-monitor$|Exec=${local_bin_root}/meo-system-monitor|" "${data_root}/applications/org.meo.systemmonitor.desktop"
 run install -Dm755 "${repo_root}/tools/input-method/meo-input-method.sh" "${local_bin_root}/meo-input-method"
 run install -Dm755 "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "${local_bin_root}/meo-desktop-layout"
 run install -Dm755 "${repo_root}/tools/theme/apply-meo-desktop.sh" "${local_bin_root}/meo-desktop-apply"

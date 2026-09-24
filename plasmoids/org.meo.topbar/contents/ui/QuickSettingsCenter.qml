@@ -131,7 +131,17 @@ Item {
     Component { id: wifiPageComponent; WifiPage { onBackRequested: stack.pop() } }
     Component { id: bluetoothPageComponent; BluetoothPage { onBackRequested: stack.pop() } }
     Component { id: audioPageComponent; AudioPage { onBackRequested: stack.pop() } }
-    Component { id: powerPageComponent; PowerPage { onBackRequested: stack.pop() } }
+    Component {
+        id: powerPageComponent
+        PowerPage {
+            onBackRequested: stack.pop()
+            onPerformanceRequested: stack.push(performancePageComponent)
+        }
+    }
+    Component {
+        id: performancePageComponent
+        PerformanceManager { initialPage: 1; onCloseRequested: stack.pop() }
+    }
     Component {
         id: editorPageComponent
 
