@@ -29,7 +29,7 @@ v3.0 或更高版本（`GPL-3.0-or-later`），见 [LICENSE](LICENSE)。KDE/Plas
 
 只有需要随已交付代码维护的公共契约可留在 `docs/`。计划、审计、决策记录、Agent 工作日志和历史报告放在：
 
-`/home/shekong/Documents/Obsidian Vault/MeoArch/Projects/meo-kde/`
+`$MEO_DOCS_ROOT/Projects/meo-kde/`
 
 该记录目录必须有便于阅读的 `README.md` 索引；不要在仓库中保存同一份过程记录。
 
@@ -37,7 +37,7 @@ v3.0 或更高版本（`GPL-3.0-or-later`），见 [LICENSE](LICENSE)。KDE/Plas
 
 持久生成物统一放在：
 
-`/home/shekong/Projects/outputs/meo-kde/{build,install,validation,packages,tmp}/`
+`$MEO_OUTPUT_ROOT/meo-kde/{build,install,validation,packages,tmp}/`
 
 `build/` 放配置和编译结果，`install/` 放暂存安装树，`packages/` 放待发布包及校验资料，`validation/` 放可复查验证证据，`tmp/` 仅作可丢弃工作区。每一次验证都使用 `validation/<UTC-run-id>/`，格式为 `YYYY-MM-DDTHHMMSSZ-short-label`，例如 `2026-08-26T104500Z-shell/`，并保存一个 `README.md`、日志、版本/环境信息及可复查的证据。`tmp/` 不可作为验收记录。
 

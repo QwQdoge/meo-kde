@@ -9,3 +9,5 @@
 *.pkg.tar.*
 .DS_Store
 *.user
+/packaging/arch/**/pkg/
+/packaging/arch/**/src/
