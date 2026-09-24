@@ -13,6 +13,39 @@ Item {
     property string sortProperty: "unit"
     property bool sortAscending: true
     readonly property real scaleFactor: MeoTheme.globalScale
+    readonly property var serviceDetails: {
+        const details = MeoSystem.Tasks.selectedServiceDetails || ({})
+        if ((details.unit || "") !== selectedUnit
+                || (details.scope || "") !== selectedScope)
+            return ({})
+        return details
+    }
+
+    function formatBytes(value) {
+        const bytes = Number(value)
+        if (!isFinite(bytes) || bytes < 0)
+            return "—"
+        const units = ["B", "KiB", "MiB", "GiB", "TiB"]
+        let size = bytes
+        let unit = 0
+        while (size >= 1024 && unit < units.length - 1) {
+            size /= 1024
+            ++unit
+        }
+        return (unit >= 3 ? size.toFixed(1) : size.toFixed(unit === 0 ? 0 : 1))
+               + " " + units[unit]
+    }
+
+    function formatDuration(value) {
+        const seconds = Number(value)
+        if (!isFinite(seconds) || seconds < 0)
+            return "—"
+        if (seconds >= 3600)
+            return (seconds / 3600).toFixed(1) + " h"
+        if (seconds >= 60)
+            return (seconds / 60).toFixed(1) + " min"
+        return seconds.toFixed(seconds >= 10 ? 0 : 1) + " s"
+    }
 
     function buildRows() {
         const source = MeoSystem.Tasks.services || []
@@ -215,6 +248,7 @@ Item {
                         if (row) {
                             root.selectedUnit = row.unit
                             root.selectedScope = row.scope
+                            MeoSystem.Tasks.selectService(row.unit, row.scope)
                         }
                     }
                 }
@@ -316,6 +350,88 @@ Item {
                             text: MeoI18n.translator.i18n("System services are shown read-only. Meo does not request administrator access from the task manager.")
                         }
 
+                        MeoLoadingFeedback {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: 56 * root.scaleFactor
+                            Layout.preferredHeight: 56 * root.scaleFactor
+                            active: MeoSystem.Tasks.serviceDetailsQuerying
+                                    && root.selectedUnit !== ""
+                            accessibleName: MeoI18n.translator.i18n("Loading service details")
+                        }
+
+                        GridLayout {
+                            Layout.fillWidth: true
+                            visible: !!root.serviceDetails.available
+                            columns: root.width >= 760 * root.scaleFactor ? 5 : 2
+                            rowSpacing: MeoTheme.space8
+                            columnSpacing: MeoTheme.space8
+
+                            ServiceStat {
+                                label: "Main PID"
+                                value: Number(root.serviceDetails.mainPid || 0) > 0
+                                       ? String(root.serviceDetails.mainPid) : "—"
+                            }
+
+                            ServiceStat {
+                                label: MeoI18n.translator.i18n("Tasks")
+                                value: Number(root.serviceDetails.tasksCurrent) >= 0
+                                       ? String(root.serviceDetails.tasksCurrent) : "—"
+                            }
+
+                            ServiceStat {
+                                label: MeoI18n.translator.i18n("Memory")
+                                value: root.formatBytes(root.serviceDetails.memoryCurrentBytes)
+                            }
+
+                            ServiceStat {
+                                label: MeoI18n.translator.i18n("CPU time")
+                                value: root.formatDuration(root.serviceDetails.cpuUsageSeconds)
+                            }
+
+                            ServiceStat {
+                                label: MeoI18n.translator.i18n("Restarts")
+                                value: Number(root.serviceDetails.restartCount) >= 0
+                                       ? String(root.serviceDetails.restartCount) : "—"
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            visible: !!root.serviceDetails.available
+                                     && ((root.serviceDetails.controlGroup || "") !== ""
+                                         || (root.serviceDetails.fragmentPath || "") !== "")
+                            spacing: MeoTheme.space4
+
+                            MeoText {
+                                Layout.fillWidth: true
+                                visible: (root.serviceDetails.controlGroup || "") !== ""
+                                text: MeoI18n.translator.i18n("CGroup: %1")
+                                      .arg(root.serviceDetails.controlGroup || "")
+                                typeRole: "label"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                                elide: Text.ElideMiddle
+                            }
+
+                            MeoText {
+                                Layout.fillWidth: true
+                                visible: (root.serviceDetails.fragmentPath || "") !== ""
+                                text: MeoI18n.translator.i18n("Unit file: %1")
+                                      .arg(root.serviceDetails.fragmentPath || "")
+                                typeRole: "label"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                                elide: Text.ElideMiddle
+                            }
+                        }
+
+                        PopupInlineMessage {
+                            Layout.fillWidth: true
+                            visible: (root.serviceDetails.error || "") !== ""
+                            tone: "info"
+                            text: root.serviceDetails.error || ""
+                        }
+
                         Flow {
                             Layout.fillWidth: true
                             visible: root.currentService && root.currentService.actionable !== false
@@ -369,6 +485,36 @@ Item {
                 height: width
                 active: MeoSystem.Tasks.serviceQuerying
                 accessibleName: MeoI18n.translator.i18n("Loading services")
+            }
+        }
+    }
+
+    component ServiceStat: MeoCard {
+        property string label: ""
+        property string value: ""
+
+        Layout.fillWidth: true
+        implicitHeight: 68 * root.scaleFactor
+        type: "outlined"
+        radius: MeoTheme.shapeMedium
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space8
+            spacing: 0
+
+            MeoText {
+                text: parent.parent.value
+                typeRole: "title"
+                typeSize: "small"
+                emphasized: true
+            }
+
+            MeoText {
+                text: parent.parent.label
+                typeRole: "label"
+                typeSize: "small"
+                color: MeoTheme.contentOnSurfaceVariant
             }
         }
     }
