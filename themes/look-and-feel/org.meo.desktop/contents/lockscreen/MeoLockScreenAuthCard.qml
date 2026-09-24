@@ -89,7 +89,7 @@ Item {
 
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 112 * MeoTheme.globalScale
+            implicitWidth: 196 * MeoTheme.globalScale
             implicitHeight: implicitWidth
             radius: implicitWidth / 2
             color: MeoTheme.surfaceContainerHighest

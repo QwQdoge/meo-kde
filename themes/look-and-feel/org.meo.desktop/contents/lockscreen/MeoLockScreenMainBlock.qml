@@ -11,11 +11,10 @@ import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
 import org.kde.kscreenlocker as ScreenLocker
-import org.kde.breeze.components
 
 import MeoUI 1.0
 
-SessionManagementScreen {
+MeoLockScreenSessionManagement {
     id: sessionManager
 
     readonly property alias mainPasswordBox: passwordBox
