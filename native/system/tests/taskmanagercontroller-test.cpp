@@ -60,6 +60,10 @@ private slots:
         QVERIFY(!controller.actionError().isEmpty());
 
         controller.clearActionError();
+        QVERIFY(!controller.terminateProcesses(QVariantList{1}));
+        QVERIFY(!controller.actionError().isEmpty());
+
+        controller.clearActionError();
         QVERIFY(!controller.setProcessCpuAffinityAll(1));
         QVERIFY(!controller.actionError().isEmpty());
     }
