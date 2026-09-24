@@ -19,6 +19,13 @@ Item {
     readonly property real scaleFactor: MeoTheme.globalScale
     readonly property var selectedProcess: MeoSystem.Tasks.selectedProcessDetails
 
+    Shortcut {
+        sequence: "Ctrl+F"
+        context: Qt.WindowShortcut
+        enabled: root.visible
+        onActivated: processSearch.forceActiveFocus()
+    }
+
     function formatBytes(value) {
         const bytes = Math.max(0, Number(value) || 0)
         const units = ["B", "KiB", "MiB", "GiB", "TiB"]
