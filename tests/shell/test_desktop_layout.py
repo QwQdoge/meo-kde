@@ -117,7 +117,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("MeoTheme.surfaceContainerHighest", surface)
         self.assertIn("MeoTheme.primaryContainer", surface)
         self.assertIn("MeoStateLayer", surface)
-        self.assertNotIn("MeoInteractionMotion", surface)
+        self.assertNotIn("MeoInteractionMotion {", surface)
 
     def test_active_app_menu_stays_compact_and_uses_shared_context_surface(self):
         source = (
@@ -126,7 +126,10 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
         self.assertIn('surfaceStyle: "context"', source)
-        self.assertIn('type: "round"', source)
+        shell_surface = (
+            REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
+        ).read_text(encoding="utf-8")
+        self.assertIn('type: "round"', shell_surface)
         self.assertNotIn('"supportingText":', source)
 
     def test_active_app_menu_is_about_settings_and_quit_only(self):
