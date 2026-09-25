@@ -1053,3 +1053,30 @@ msgstr "小组件只能添加到桌面。"
 
 msgid "Your apps may still ask to save work."
 msgstr "您的应用仍可能要求保存工作。"
+
+msgid "Desktop"
+msgstr "桌面"
+
+msgid "Open this application's configuration menu"
+msgstr "打开此应用的配置菜单"
+
+msgid "No application window is active"
+msgstr "当前没有活动的应用窗口"
+
+msgid "Open application settings menu"
+msgstr "打开应用设置菜单"
+
+msgid "About"
+msgstr "关于"
+
+msgid "Application, version, source, and storage information"
+msgstr "应用、版本、来源与存储信息"
+
+msgid "Settings…"
+msgstr "设置…"
+
+msgid "Open verified .config and app configuration"
+msgstr "打开已验证的 .config 与应用配置"
+
+msgid "Quit"
+msgstr "退出"
