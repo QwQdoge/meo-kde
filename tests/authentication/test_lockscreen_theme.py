@@ -23,6 +23,7 @@ class LockScreenThemeTests(unittest.TestCase):
         self.notifications = (LOCKSCREEN / "MeoLockScreenNotificationSummary.qml").read_text(encoding="utf-8")
         self.weather_card = (LOCKSCREEN / "MeoLockScreenWeatherCard.qml").read_text(encoding="utf-8")
         self.performance_card = (LOCKSCREEN / "MeoLockScreenPerformanceSummary.qml").read_text(encoding="utf-8")
+        self.wavy_fill = (LOCKSCREEN / "MeoLockScreenWavyFill.qml").read_text(encoding="utf-8")
         self.system_summary = (LOCKSCREEN / "MeoLockScreenSystemSummary.qml").read_text(encoding="utf-8")
         self.config = (LOCKSCREEN / "config.xml").read_text(encoding="utf-8")
         self.media_source = (REPO_ROOT / "native/system/mediacontroller.cpp").read_text(encoding="utf-8")
@@ -330,6 +331,56 @@ class LockScreenThemeTests(unittest.TestCase):
         ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.ui)
+
+    def test_resource_liquid_fill_is_shape_masked_and_idle_safe(self):
+        self.assertIn("MeoLockScreenWavyFill", self.performance_card)
+        for required in (
+            "maskEnabled: true",
+            "MeoShape",
+            "type: root.shapeName",
+            "property bool animate: true",
+            "NumberAnimation on waveOffset",
+            "loops: Animation.Infinite",
+            "easing.type: Easing.Linear",
+            "renderStrategy: Canvas.Cooperative",
+            "Behavior on animatedValue",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.wavy_fill)
+
+        # The wave strip is cached and translated. It must not requestPaint
+        # from the animation phase itself.
+        self.assertNotIn("onWaveOffsetChanged", self.wavy_fill)
+        self.assertNotIn("wave.requestPaint()\n        on", self.wavy_fill)
+        self.assertIn("animate: root.visible && !root.sessionControlsShown", self.performance_card)
+
+    def test_fetch_matches_caelestia_structure_without_identity_disclosure(self):
+        for required in (
+            'text: "meofetch"',
+            'label: "OS"',
+            "Performance.systemSummary",
+            'label: "WM"',
+            'value: "KDE Plasma"',
+            'label: "UP"',
+            'label: "BATT"',
+            "paletteSwatches",
+            "MeoTheme.primaryContainer",
+            "MeoTheme.secondaryContainer",
+            "MeoTheme.tertiaryContainer",
+            "StatusChip",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.system_summary)
+
+        for forbidden in (
+            "USER",
+            "SystemState.networkName",
+            "SystemState.wifiNetworks",
+            "SystemState.bluetoothDevices",
+            "qEnvironmentVariable",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.system_summary)
 
     def test_lock_performance_projection_is_aggregate_and_privacy_bounded(self):
         for required in (
