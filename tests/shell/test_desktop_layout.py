@@ -16,6 +16,7 @@ class DesktopLayoutTests(unittest.TestCase):
         source = LAYOUT.read_text(encoding="utf-8")
 
         self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
+        self.assertIn('launcher.writeConfig("icon", "meoarch-logo")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
         self.assertIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
@@ -175,6 +176,44 @@ class DesktopLayoutTests(unittest.TestCase):
             "org.meo.shelf org.meo.toptasks; do",
             installer,
         )
+
+    def test_native_global_menu_uses_meo_theme_frames_without_forking_kde(self):
+        generator = (REPO_ROOT / "tools/theme/build_menubar_assets.py").read_text(
+            encoding="utf-8"
+        )
+        assets = (
+            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/menubaritem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/menubaritem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/menubaritem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/menubaritem.svg",
+        )
+
+        self.assertIn("org.kde.plasma.appmenu owns application menu discovery", generator)
+        self.assertIn("ColorScheme-Highlight", generator)
+        for asset in assets:
+            source = asset.read_text(encoding="utf-8")
+            for prefix in ("normal", "hover", "pressed"):
+                for part in (
+                    "center", "top", "bottom", "left", "right",
+                    "topleft", "topright", "bottomleft", "bottomright",
+                ):
+                    self.assertIn(f'id="{prefix}-{part}"', source)
+            self.assertIn('id="normal-center"', source)
+            self.assertIn('fill="transparent"', source)
+            self.assertIn('id="hover-center"', source)
+            self.assertIn('id="pressed-center"', source)
+            self.assertIn("ColorScheme-Highlight", source)
+
+    def test_launcher_identity_is_installed_for_package_and_source_paths(self):
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        setup = (REPO_ROOT / "setup/apply-meo-desktop.sh").read_text(encoding="utf-8")
+        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
+
+        self.assertIn('assets/icons/meoarch-logo.svg', package)
+        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', package)
+        self.assertIn('assets/icons/meoarch-logo.svg', setup)
+        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', setup)
+        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', reset)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
