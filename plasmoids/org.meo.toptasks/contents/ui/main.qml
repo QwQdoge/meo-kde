@@ -112,7 +112,7 @@ PlasmoidItem {
             id: activeAppButton
             anchors.centerIn: parent
             width: root.appExtent
-            height: 30 * MeoTheme.globalScale
+            height: 28 * MeoTheme.globalScale
             hoverEnabled: true
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
@@ -137,8 +137,8 @@ PlasmoidItem {
             transform: Translate { y: activeAppMotion.offsetY }
 
             background: MeoShape {
-                type: "rounded"
-                radius: MeoTheme.shapeMedium
+                type: "round"
+                radius: MeoTheme.shapeSmall
                 color: appMenu.opened
                        ? MeoTheme.primaryContainer
                        : (activeAppButton.hovered || activeAppButton.down
