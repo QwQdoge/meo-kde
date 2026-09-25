@@ -116,9 +116,10 @@ class DesktopLayoutTests(unittest.TestCase):
         surface = (
             REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
         ).read_text(encoding="utf-8")
-        self.assertIn("MeoTheme.surfaceContainerHighest", surface)
+        self.assertIn('property color interactionColor: "transparent"', surface)
         self.assertIn("MeoTheme.primaryContainer", surface)
         self.assertIn("MeoStateLayer", surface)
+        self.assertIn("color: active ? selectedColor : restingColor", surface)
         self.assertNotIn("MeoInteractionMotion {", surface)
 
     def test_active_app_menu_stays_compact_and_uses_shared_context_surface(self):
