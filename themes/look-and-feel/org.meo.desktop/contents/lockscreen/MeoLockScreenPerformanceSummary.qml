@@ -13,6 +13,8 @@ import QtQuick.Layouts
 import MeoUI 1.0
 import Meo.System 1.0
 
+// Mirrors Caelestia's three expressive resource shapes, using MeoUI's own
+// Material 3 shape engine rather than importing Quickshell/M3Shapes.
 Rectangle {
     id: root
 
@@ -21,13 +23,10 @@ Rectangle {
 
     visible: hasData
     implicitWidth: 360 * MeoTheme.globalScale
-    implicitHeight: visible ? content.implicitHeight + MeoTheme.space24 * 2 : 0
+    implicitHeight: visible ? 186 * MeoTheme.globalScale : 0
     radius: MeoTheme.shapeExtraLarge
     color: Qt.rgba(MeoTheme.surfaceContainer.r, MeoTheme.surfaceContainer.g,
-                   MeoTheme.surfaceContainer.b, 0.90)
-    border.width: Math.max(1, MeoTheme.globalScale)
-    border.color: Qt.rgba(MeoTheme.outlineVariant.r, MeoTheme.outlineVariant.g,
-                          MeoTheme.outlineVariant.b, 0.46)
+                   MeoTheme.surfaceContainer.b, 0.92)
 
     Accessible.role: Accessible.Pane
     Accessible.name: qsTr("Performance")
@@ -44,109 +43,149 @@ Rectangle {
     onVisibleChanged: syncSubscription()
 
     ColumnLayout {
-        id: content
         anchors.fill: parent
-        anchors.margins: MeoTheme.space24
-        spacing: MeoTheme.space16
+        anchors.margins: MeoTheme.space16
+        spacing: MeoTheme.space10
 
         RowLayout {
             Layout.fillWidth: true
             spacing: MeoTheme.space8
 
-            MeoIcon {
-                icon: "monitoring"
-                size: 24 * MeoTheme.globalScale
-                color: MeoTheme.primary
-            }
             MeoText {
                 Layout.fillWidth: true
-                text: qsTr("Performance")
-                typeRole: "title"
+                text: qsTr("Resources")
+                typeRole: "label"
                 typeSize: "medium"
                 emphasized: true
-                color: MeoTheme.contentOnSurface
+                color: MeoTheme.outline
             }
-            MeoText {
+
+            MeoShape {
                 visible: Performance.cpuTemperature > 0
-                text: Math.round(Performance.cpuTemperature) + "°C"
-                typeRole: "label"
-                typeSize: "small"
+                implicitWidth: 48 * MeoTheme.globalScale
+                implicitHeight: implicitWidth
+                type: Performance.cpuTemperature >= 90 ? "SoftBurst" : "Circle"
                 color: Performance.cpuTemperature >= 90
-                       ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant
+                       ? MeoTheme.errorContainer : MeoTheme.secondaryContainer
+
+                MeoText {
+                    anchors.centerIn: parent
+                    text: Math.round(Performance.cpuTemperature) + "°"
+                    typeRole: "label"
+                    typeSize: "small"
+                    emphasized: true
+                    color: Performance.cpuTemperature >= 90
+                           ? MeoTheme.contentOnErrorContainer
+                           : MeoTheme.contentOnSecondaryContainer
+                }
             }
         }
 
         RowLayout {
             Layout.fillWidth: true
+            Layout.fillHeight: true
             spacing: MeoTheme.space12
 
-            Metric {
+            ResourceShape {
                 Layout.fillWidth: true
                 label: "CPU"
                 iconName: "memory"
                 value: Math.max(0, Math.min(100, Performance.cpuUsage))
-                accent: MeoTheme.primary
+                shapeName: "Pentagon"
+                containerColor: MeoTheme.primaryContainer
+                contentColor: MeoTheme.primary
             }
 
-            Metric {
+            ResourceShape {
                 Layout.fillWidth: true
                 label: qsTr("RAM")
                 iconName: "memory_alt"
                 value: Math.max(0, Math.min(100, Performance.memoryUsage))
-                accent: MeoTheme.tertiary
+                shapeName: "Slanted"
+                containerColor: MeoTheme.tertiaryContainer
+                contentColor: MeoTheme.tertiary
             }
 
-            Metric {
+            ResourceShape {
                 Layout.fillWidth: true
-                label: qsTr("Storage")
+                label: qsTr("Disk")
                 iconName: "hard_disk"
                 value: Math.max(0, Math.min(100, Performance.storageUsage))
-                accent: MeoTheme.secondary
+                shapeName: "Gem"
+                containerColor: MeoTheme.secondaryContainer
+                contentColor: MeoTheme.secondary
             }
         }
     }
 
-    component Metric: ColumnLayout {
+    component ResourceShape: Item {
         id: metric
 
         required property string label
         required property string iconName
         required property real value
-        required property color accent
+        required property string shapeName
+        required property color containerColor
+        required property color contentColor
 
-        spacing: MeoTheme.space6
+        Layout.preferredHeight: width
+        Layout.minimumWidth: 72 * MeoTheme.globalScale
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: MeoTheme.space4
-            MeoIcon {
-                icon: metric.iconName
-                size: 18 * MeoTheme.globalScale
-                color: metric.accent
+        MeoShape {
+            anchors.fill: parent
+            type: metric.shapeName
+            color: metric.containerColor
+        }
+
+        // Usage drives tonal emphasis without introducing a second chart
+        // language. The silhouette remains the recognizable Caelestia-style
+        // resource shape while Meo keeps its own dynamic color roles.
+        MeoShape {
+            anchors.centerIn: parent
+            width: parent.width * (0.70 + metric.value / 100 * 0.20)
+            height: width
+            type: metric.shapeName
+            color: metric.contentColor
+            opacity: 0.10 + metric.value / 100 * 0.18
+
+            Behavior on width {
+                enabled: !MeoTheme.reduceMotion
+                NumberAnimation {
+                    duration: MeoTheme.motionDurationMedium1
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                }
             }
+        }
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: -MeoTheme.space2
+
+            MeoIcon {
+                Layout.alignment: Qt.AlignHCenter
+                icon: metric.iconName
+                size: 20 * MeoTheme.globalScale
+                color: metric.contentColor
+                fill: true
+            }
+
             MeoText {
-                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignHCenter
+                text: Math.round(metric.value) + "%"
+                typeRole: "headline"
+                typeSize: "small"
+                emphasized: true
+                color: metric.contentColor
+            }
+
+            MeoText {
+                Layout.alignment: Qt.AlignHCenter
                 text: metric.label
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
-                elide: Text.ElideRight
             }
-        }
-
-        MeoText {
-            text: Math.round(metric.value) + "%"
-            typeRole: "title"
-            typeSize: "medium"
-            emphasized: true
-            color: metric.accent
-        }
-
-        MeoProgressBar {
-            Layout.fillWidth: true
-            value: metric.value / 100
-            activeColor: metric.accent
-            isThick: true
         }
     }
 }
