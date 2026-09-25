@@ -107,33 +107,12 @@ QQC2.AbstractButton {
         }
     ]
 
-    background: MeoShape {
+    background: ShellTriggerSurface {
         id: statusBackground
-        type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active
-               ? MeoTheme.primaryContainer
-               : (root.hovered || root.down
-                  ? MeoTheme.surfaceContainerHighest
-                  : "transparent")
-        strokeColor: "transparent"
-        strokeWidth: 0
-
-        Behavior on color {
-            ColorAnimation {
-                duration: MeoTheme.motionDurationEffectDefault
-                easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard
-            }
-        }
-
-        MeoStateLayer {
-            anchors.fill: parent
-            radius: statusBackground.radius
-            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
-            hovered: root.hovered
-            pressed: root.down
-            focused: root.activeFocus
-        }
+        hovered: root.hovered
+        pressed: root.down
+        focused: root.visualFocus
+        active: root.active
     }
 
     contentItem: MeoStatusStrip {
