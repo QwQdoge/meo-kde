@@ -204,8 +204,11 @@ void WeatherCache::reload()
         const double forecastTemperature =
             entry.value(QStringLiteral("temperature")).toDouble(std::numeric_limits<double>::quiet_NaN());
         int forecastCode = 0;
+        const int precipitationChance =
+            entry.value(QStringLiteral("precipitationChance")).toInt(-1);
         if (time.size() < 16 || !std::isfinite(forecastTemperature)
             || forecastTemperature < -100 || forecastTemperature > 100
+            || precipitationChance < 0 || precipitationChance > 100
             || !stableWeatherCode(entry.value(QStringLiteral("weatherCode")), &forecastCode)) {
             continue;
         }
@@ -219,6 +222,7 @@ void WeatherCache::reload()
                  + QChar(0x00B0) + unit},
             {QStringLiteral("condition"), localizedConditionForCode(forecastCode)},
             {QStringLiteral("iconName"), iconForCode(forecastCode)},
+            {QStringLiteral("precipitationChance"), precipitationChance},
         });
     }
 
