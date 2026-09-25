@@ -20,6 +20,9 @@ class LockScreenThemeTests(unittest.TestCase):
         self.no_password = (LOCKSCREEN / "MeoNoPasswordUnlock.qml").read_text(encoding="utf-8")
         self.media = (LOCKSCREEN / "MediaControls.qml").read_text(encoding="utf-8")
         self.notifications = (LOCKSCREEN / "MeoLockScreenNotificationSummary.qml").read_text(encoding="utf-8")
+        self.weather_card = (LOCKSCREEN / "MeoLockScreenWeatherCard.qml").read_text(encoding="utf-8")
+        self.performance_card = (LOCKSCREEN / "MeoLockScreenPerformanceSummary.qml").read_text(encoding="utf-8")
+        self.system_summary = (LOCKSCREEN / "MeoLockScreenSystemSummary.qml").read_text(encoding="utf-8")
         self.config = (LOCKSCREEN / "config.xml").read_text(encoding="utf-8")
         self.media_source = (REPO_ROOT / "native/system/mediacontroller.cpp").read_text(encoding="utf-8")
         self.weather_source = (REPO_ROOT / "native/system/weathercache.cpp").read_text(encoding="utf-8")
@@ -202,6 +205,56 @@ class LockScreenThemeTests(unittest.TestCase):
                 else:
                     self.assertIn(required, self.weather_source)
 
+    def test_wide_ambient_dashboard_matches_reference_spatial_hierarchy(self):
+        for required in (
+            "wideAmbientDashboard",
+            "MeoLockScreenWeatherCard",
+            "MeoLockScreenSystemSummary",
+            "MediaControls",
+            "MeoLockScreenPerformanceSummary",
+            "MeoLockScreenNotificationSummary.qml",
+            "Layout.preferredWidth: 360 * MeoTheme.globalScale",
+            "Layout.preferredWidth: Math.min(600 * MeoTheme.globalScale",
+            "compactAmbientDashboard",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.ui)
+
+    def test_lock_performance_projection_is_aggregate_and_privacy_bounded(self):
+        for required in (
+            'Performance.subscribe(clientId, ["cpu", "memory", "disk", "system"])',
+            "Performance.cpuUsage",
+            "Performance.memoryUsage",
+            "Performance.storageUsage",
+            "Performance.cpuTemperature",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.performance_card)
+
+        for forbidden in (
+            "topCpuProcesses",
+            "topMemoryProcesses",
+            "processes",
+            "networkInterfaces",
+            "networkName",
+            "terminateProcess",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.performance_card)
+
+    def test_lock_system_summary_does_not_disclose_identity_or_network_name(self):
+        for required in (
+            "Performance.uptimeSeconds",
+            "SystemState.networkConnected",
+            "SystemState.batteryPercent",
+            "SystemState.volumePercent",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.system_summary)
+        for forbidden in ("networkName", "USER:", "process", "ssid", "address"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.system_summary)
+
     def test_rich_defaults_enable_explicit_current_session_modules(self):
         self.assertIn('<entry name="showMediaControls" type="Bool">', self.config)
         self.assertIn('<entry name="showAlbumArtwork" type="Bool">', self.config)
@@ -209,7 +262,9 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertIn('<entry name="showWeatherLocation" type="Bool">', self.config)
         self.assertIn('<entry name="lockScreenNotificationVisibility" type="String">', self.config)
         self.assertIn('<entry name="showAudioControls" type="Bool">', self.config)
-        for entry in ("showMediaControls", "showAlbumArtwork", "showAudioControls", "showWeather", "showWeatherLocation"):
+        self.assertIn('<entry name="showPerformance" type="Bool">', self.config)
+        self.assertIn('<entry name="showSystemSummary" type="Bool">', self.config)
+        for entry in ("showMediaControls", "showAlbumArtwork", "showAudioControls", "showWeather", "showWeatherLocation", "showPerformance", "showSystemSummary"):
             with self.subTest(entry=entry):
                 section = self.config.split(f'<entry name="{entry}"', 1)[1].split("</entry>", 1)[0]
                 self.assertIn("<default>true</default>", section)
