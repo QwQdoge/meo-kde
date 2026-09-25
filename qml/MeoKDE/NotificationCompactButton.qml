@@ -16,6 +16,23 @@ QQC2.AbstractButton {
     Accessible.description: root.unreadCount > 0 ? MeoI18n.translator.i18n("%1 unread notifications").arg(root.unreadCount) : MeoI18n.translator.i18n("No unread notifications")
     onClicked: statusCenterRequested()
 
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+    }
+
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scale
+            yScale: interactionMotion.scale
+        },
+        Translate { y: interactionMotion.offsetY }
+    ]
+
     PointHandler {
         acceptedButtons: Qt.LeftButton
         onActiveChanged: {
@@ -40,8 +57,12 @@ QQC2.AbstractButton {
 
     background: MeoShape {
         type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
+        radius: height / 2
+        color: root.active
+               ? MeoTheme.primaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHighest
+                  : "transparent")
         MeoStateLayer {
             id: compactStateLayer
             anchors.fill: parent
