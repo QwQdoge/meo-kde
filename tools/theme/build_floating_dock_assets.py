@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate floating Material Dock backgrounds for the Plasma desktop themes."""
+"""Generate Meo shell FrameSvg assets for the Plasma desktop themes."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ class ThemeTarget:
     surface_opacity: str
 
 
-TARGETS = (
+PANEL_TARGETS = (
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
         background="#fffbfe",
@@ -41,6 +41,13 @@ TARGETS = (
         background="#141218",
         surface_opacity="0.58",
     ),
+)
+
+MENUBAR_TARGETS = (
+    ROOT / "themes/desktoptheme/MeoLight/widgets/menubaritem.svg",
+    ROOT / "themes/desktoptheme/MeoDark/widgets/menubaritem.svg",
+    ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/menubaritem.svg",
+    ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/menubaritem.svg",
 )
 
 
@@ -72,6 +79,71 @@ def frame_margin_hints(prefix: str) -> tuple[str, ...]:
         f'  <rect id="{name}hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>',
         f'  <rect id="{name}hint-left-margin" x="18" y="31" width="4" height="4" fill="#ff00ff"/>',
         f'  <rect id="{name}hint-right-margin" x="44" y="31" width="4" height="4" fill="#ff00ff"/>',
+    )
+
+
+def menubar_frame(prefix: str, origin_x: int, radius: int = 8) -> tuple[str, ...]:
+    """Return a compact rounded nine-slice used by Plasma AppMenu delegates."""
+
+    left = origin_x + 2
+    center_left = left + radius
+    center_right = origin_x + 40 - radius
+    right = origin_x + 40
+    top = 2
+    center_top = top + radius
+    center_bottom = 32 - radius
+    bottom = 32
+    center_width = center_right - center_left
+    center_height = center_bottom - center_top
+    return (
+        f'  <rect id="{prefix}-center" x="{center_left}" y="{center_top}" width="{center_width}" height="{center_height}"/>',
+        f'  <rect id="{prefix}-top" x="{center_left}" y="{top}" width="{center_width}" height="{radius}"/>',
+        f'  <rect id="{prefix}-bottom" x="{center_left}" y="{center_bottom}" width="{center_width}" height="{radius}"/>',
+        f'  <rect id="{prefix}-left" x="{left}" y="{center_top}" width="{radius}" height="{center_height}"/>',
+        f'  <rect id="{prefix}-right" x="{center_right}" y="{center_top}" width="{radius}" height="{center_height}"/>',
+        f'  <path id="{prefix}-topleft" d="M{center_left} {top}A{radius} {radius} 0 0 0 {left} {center_top}H{center_left}Z"/>',
+        f'  <path id="{prefix}-topright" d="M{center_right} {top}A{radius} {radius} 0 0 1 {right} {center_top}H{center_right}Z"/>',
+        f'  <path id="{prefix}-bottomleft" d="M{left} {center_bottom}A{radius} {radius} 0 0 0 {center_left} {bottom}V{center_bottom}Z"/>',
+        f'  <path id="{prefix}-bottomright" d="M{center_right} {center_bottom}H{right}A{radius} {radius} 0 0 1 {center_right} {bottom}Z"/>',
+    )
+
+
+def menubar_hints(prefix: str, origin_x: int) -> tuple[str, ...]:
+    """Use an 8 dp content inset, matching the compact top-bar rhythm."""
+
+    return (
+        f'  <rect id="{prefix}-hint-top-margin" x="{origin_x + 20}" y="2" width="2" height="8" fill="#ff00ff"/>',
+        f'  <rect id="{prefix}-hint-bottom-margin" x="{origin_x + 20}" y="24" width="2" height="8" fill="#ff00ff"/>',
+        f'  <rect id="{prefix}-hint-left-margin" x="{origin_x + 2}" y="16" width="8" height="2" fill="#ff00ff"/>',
+        f'  <rect id="{prefix}-hint-right-margin" x="{origin_x + 32}" y="16" width="8" height="2" fill="#ff00ff"/>',
+    )
+
+
+def render_menubar() -> str:
+    """Render KDE's standard widgets/menubaritem contract without forking AppMenu."""
+
+    normal = menubar_frame("normal", 0)
+    hover = menubar_frame("hover", 42)
+    pressed = menubar_frame("pressed", 84)
+    return "\n".join(
+        (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="126" height="34" viewBox="0 0 126 34">',
+            '  <style id="current-color-scheme" type="text/css">',
+            '    .ColorScheme-ButtonFocus { color: #6750a4; }',
+            '  </style>',
+            '  <g fill="transparent">',
+            *normal,
+            '  </g>',
+            '  <g class="ColorScheme-ButtonFocus" fill="currentColor">',
+            *hover,
+            *pressed,
+            '  </g>',
+            *menubar_hints("normal", 0),
+            *menubar_hints("hover", 42),
+            *menubar_hints("pressed", 84),
+            '</svg>',
+            '',
+        )
     )
 
 
@@ -116,23 +188,25 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    expected_by_target = {target: render(target) for target in TARGETS}
+    expected_by_target = {target.path: render(target) for target in PANEL_TARGETS}
+    menubar = render_menubar()
+    expected_by_target.update({path: menubar for path in MENUBAR_TARGETS})
 
     if args.check:
         stale = [
-            str(target.path.relative_to(ROOT))
-            for target, expected in expected_by_target.items()
-            if not target.path.exists() or target.path.read_text(encoding="utf-8") != expected
+            str(path.relative_to(ROOT))
+            for path, expected in expected_by_target.items()
+            if not path.exists() or path.read_text(encoding="utf-8") != expected
         ]
         if stale:
             print("Stale generated floating Dock assets: " + ", ".join(stale))
             return 1
         return 0
 
-    for target, expected in expected_by_target.items():
-        target.path.parent.mkdir(parents=True, exist_ok=True)
-        target.path.write_text(expected, encoding="utf-8")
-        print(target.path.relative_to(ROOT))
+    for path, expected in expected_by_target.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(expected, encoding="utf-8")
+        print(path.relative_to(ROOT))
     return 0
 
 
