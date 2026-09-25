@@ -55,6 +55,27 @@ QQC2.AbstractButton {
     }
     onClicked: statusCenterRequested()
 
+    MeoInteractionMotion {
+        id: interactionMotion
+        pressed: root.down
+        hovered: root.hovered
+        active: root.active
+        motionProfile: "pixel"
+    }
+
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scaleValue
+            yScale: interactionMotion.scaleValue
+        },
+        Translate {
+            x: interactionMotion.offsetX
+            y: interactionMotion.offsetY
+        }
+    ]
+
     PointHandler {
         acceptedButtons: Qt.LeftButton
         onActiveChanged: {
