@@ -235,7 +235,7 @@ markManaged(top, "top");
 
 var kickoff = oneWidget(top, "org.kde.plasma.kickoff");
 kickoff.currentConfigGroup = ["General"];
-kickoff.writeConfig("icon", "meo-ai");
+kickoff.writeConfig("icon", "meoarch-logo");
 kickoff.currentConfigGroup = ["Shortcuts"];
 kickoff.writeConfig("global", "Meta");
 kickoff.reloadConfig();
