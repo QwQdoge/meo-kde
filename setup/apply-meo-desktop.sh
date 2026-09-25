@@ -224,6 +224,7 @@ runtime_backups=(
   "${data_root}/icons/Meo|data/icons/Meo"
   "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
   "${data_root}/icons/MeoSymbolsDark|data/icons/MeoSymbolsDark"
+  "${data_root}/icons/hicolor/scalable/apps/meoarch-logo.svg|data/icons/hicolor/scalable/apps/meoarch-logo.svg"
   "${data_root}/color-schemes/MeoLight.colors|data/color-schemes/MeoLight.colors"
   "${data_root}/color-schemes/MeoDark.colors|data/color-schemes/MeoDark.colors"
   "${data_root}/color-schemes/MeoDynamicLight.colors|data/color-schemes/MeoDynamicLight.colors"
@@ -367,6 +368,8 @@ for icon_theme in MeoSymbols MeoSymbolsDark; do
   run rm -rf "${data_root}/icons/${icon_theme}"
   run cp -a "${desktop_root}/themes/icons/${icon_theme}" "${data_root}/icons/${icon_theme}"
 done
+run install -Dm644 "${repo_root}/assets/icons/meoarch-logo.svg" \
+  "${data_root}/icons/hicolor/scalable/apps/meoarch-logo.svg"
 
 # Meo owns the quick-settings and time surfaces; KDE owns the native System
 # Tray/StatusNotifier application icons and the bottom task manager.
