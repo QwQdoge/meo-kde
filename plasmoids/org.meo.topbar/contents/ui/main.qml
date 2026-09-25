@@ -69,17 +69,45 @@ PlasmoidItem {
         }
     }
 
-    fullRepresentation: QuickSettingsCenter {
-        tileOrder: Plasmoid.configuration.quickTileOrder
-        tileSizes: Plasmoid.configuration.quickTileSizes
-        tileVisibility: Plasmoid.configuration.quickTileVisibility
-        tileDensity: Plasmoid.configuration.density
-        onTileLayoutChanged: function(order, sizes, visibility, density) {
-            Plasmoid.configuration.quickTileOrder = order
-            Plasmoid.configuration.quickTileSizes = sizes
-            Plasmoid.configuration.quickTileVisibility = visibility
-            Plasmoid.configuration.quickTileDensity = density
-            Plasmoid.configuration.density = density
+    fullRepresentation: Item {
+        id: quickSettingsHost
+        implicitWidth: quickSettingsCenter.implicitWidth
+        implicitHeight: quickSettingsCenter.implicitHeight
+
+        function prepareToClose() {
+            quickSettingsCenter.prepareToClose()
+        }
+
+        MeoRevealMotion {
+            id: quickSettingsReveal
+            revealed: root.expanded
+            animateInitialReveal: true
+            motionProfile: "pixel"
+            hiddenScale: 0.96
+            hiddenOffsetY: -10 * MeoTheme.globalScale
+        }
+
+        QuickSettingsCenter {
+            id: quickSettingsCenter
+            anchors.fill: parent
+            opacity: quickSettingsReveal.opacityValue
+            scale: quickSettingsReveal.scaleValue
+            transformOrigin: Item.TopRight
+            transform: Translate {
+                x: quickSettingsReveal.offsetX
+                y: quickSettingsReveal.offsetY
+            }
+            tileOrder: Plasmoid.configuration.quickTileOrder
+            tileSizes: Plasmoid.configuration.quickTileSizes
+            tileVisibility: Plasmoid.configuration.quickTileVisibility
+            tileDensity: Plasmoid.configuration.density
+            onTileLayoutChanged: function(order, sizes, visibility, density) {
+                Plasmoid.configuration.quickTileOrder = order
+                Plasmoid.configuration.quickTileSizes = sizes
+                Plasmoid.configuration.quickTileVisibility = visibility
+                Plasmoid.configuration.quickTileDensity = density
+                Plasmoid.configuration.density = density
+            }
         }
     }
 }
