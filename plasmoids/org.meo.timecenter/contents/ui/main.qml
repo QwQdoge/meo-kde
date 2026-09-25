@@ -84,23 +84,46 @@ PlasmoidItem {
         onStatusCenterRequested: root.expanded = !root.expanded
     }
 
-    fullRepresentation: TimeNotificationCenter {
-        notifications: notificationModel
-        currentDateTime: clock.dateTime
-        use24HourClock: Plasmoid.configuration.clockFormat === "system"
-                       ? Plasmoid.configuration.use24HourClock
-                       : Plasmoid.configuration.clockFormat === "24h"
-        showJobs: Plasmoid.configuration.showJobs
-        showHistory: Plasmoid.configuration.showNotificationHistory
-        notificationView: Plasmoid.configuration.notificationView
-        notificationPreview: Plasmoid.configuration.notificationPreview
-        density: Plasmoid.configuration.density
-        surfaceStyle: Plasmoid.configuration.surfaceStyle
-        surfaceOpacityPercent: Plasmoid.configuration.surfaceOpacityPercent
-        showDate: Plasmoid.configuration.showDate
-        showSeconds: Plasmoid.configuration.showSeconds
-        showWeekNumbers: Plasmoid.configuration.showWeekNumbers
-        showSecondaryCalendar: Plasmoid.configuration.showSecondaryCalendar
-        defaultPage: Plasmoid.configuration.defaultPage
+    fullRepresentation: Item {
+        implicitWidth: statusCenter.implicitWidth
+        implicitHeight: statusCenter.implicitHeight
+
+        MeoRevealMotion {
+            id: statusCenterReveal
+            revealed: root.expanded
+            animateInitialReveal: true
+            motionProfile: "pixel"
+            hiddenScale: 0.96
+            hiddenOffsetY: -10 * MeoTheme.globalScale
+        }
+
+        TimeNotificationCenter {
+            id: statusCenter
+            anchors.fill: parent
+            opacity: statusCenterReveal.opacityValue
+            scale: statusCenterReveal.scaleValue
+            transformOrigin: Item.TopRight
+            transform: Translate {
+                x: statusCenterReveal.offsetX
+                y: statusCenterReveal.offsetY
+            }
+            notifications: notificationModel
+            currentDateTime: clock.dateTime
+            use24HourClock: Plasmoid.configuration.clockFormat === "system"
+                           ? Plasmoid.configuration.use24HourClock
+                           : Plasmoid.configuration.clockFormat === "24h"
+            showJobs: Plasmoid.configuration.showJobs
+            showHistory: Plasmoid.configuration.showNotificationHistory
+            notificationView: Plasmoid.configuration.notificationView
+            notificationPreview: Plasmoid.configuration.notificationPreview
+            density: Plasmoid.configuration.density
+            surfaceStyle: Plasmoid.configuration.surfaceStyle
+            surfaceOpacityPercent: Plasmoid.configuration.surfaceOpacityPercent
+            showDate: Plasmoid.configuration.showDate
+            showSeconds: Plasmoid.configuration.showSeconds
+            showWeekNumbers: Plasmoid.configuration.showWeekNumbers
+            showSecondaryCalendar: Plasmoid.configuration.showSecondaryCalendar
+            defaultPage: Plasmoid.configuration.defaultPage
+        }
     }
 }
