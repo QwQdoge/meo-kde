@@ -68,4 +68,11 @@ if [ ! -x "${checkout}/install.sh" ]; then
   exit 1
 fi
 
+# curl | bash owns stdin, but the actual installer is intentionally
+# interactive. Reattach it to the controlling terminal when available so the
+# Yes/No wizard still works from a one-line remote bootstrap.
+if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+  exec "${checkout}/install.sh" "$@" </dev/tty >/dev/tty
+fi
+
 exec "${checkout}/install.sh" "$@"
