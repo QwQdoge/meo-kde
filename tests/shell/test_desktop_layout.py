@@ -16,6 +16,7 @@ class DesktopLayoutTests(unittest.TestCase):
         source = LAYOUT.read_text(encoding="utf-8")
 
         self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
+        self.assertIn('launcher.writeConfig("icon", "meo-ai")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
         self.assertIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
@@ -565,6 +566,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('"org.kde.plasma.vault"', source)
         self.assertIn('"org.kde.plasma.printmanager"', source)
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
+        self.assertIn('kickoff.writeConfig("icon", "meo-ai")', source)
         self.assertIn('oneWidget(top, "org.meo.toptasks")', source)
         self.assertNotIn('removeWidgets(top, "org.meo.toptasks")', source)
         self.assertLess(source.index('oneWidget(top, "org.kde.plasma.kickoff")'),
