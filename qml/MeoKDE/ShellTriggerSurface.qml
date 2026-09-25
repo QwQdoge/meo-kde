@@ -17,7 +17,9 @@ MeoShape {
     property bool rippleEnabled: true
 
     property color restingColor: "transparent"
-    property color interactionColor: MeoTheme.surfaceContainerHighest
+    // Hover/press feedback belongs to the single shared state layer. Keep the
+    // base surface quiet until the trigger owns an open/selected surface.
+    property color interactionColor: "transparent"
     property color selectedColor: MeoTheme.primaryContainer
     property color restingContentColor: MeoTheme.onSurface
     property color selectedContentColor: MeoTheme.onPrimaryContainer
@@ -28,8 +30,7 @@ MeoShape {
 
     type: "round"
     radius: MeoTheme.shapeSmall
-    color: active ? selectedColor
-                  : (hovered || pressed ? interactionColor : restingColor)
+    color: active ? selectedColor : restingColor
     strokeColor: "transparent"
     strokeWidth: 0
 
