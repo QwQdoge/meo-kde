@@ -59,6 +59,52 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('i18n("Edit")', source)
         self.assertNotIn('i18n("View")', source)
 
+    def test_topbar_interactions_share_meoui_motion_policy(self):
+        active_app = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+        status = (
+            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/components/SystemStatusCluster.qml"
+        ).read_text(encoding="utf-8")
+        time_button = (
+            REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml"
+        ).read_text(encoding="utf-8")
+        quick_center = (
+            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/QuickSettingsCenter.qml"
+        ).read_text(encoding="utf-8")
+        status_center = (
+            REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml"
+        ).read_text(encoding="utf-8")
+
+        for source in (active_app, status, time_button):
+            self.assertIn('MeoMotion.interactionScale("pixel"', source)
+            self.assertIn('MeoMotion.interactionLift("pixel"', source)
+            self.assertIn("MeoSpringValue", source)
+
+        for source in (quick_center, status_center):
+            self.assertIn("MeoMotion.popupOffset", source)
+            self.assertIn("revealScaleSpring", source)
+            self.assertIn("revealLiftSpring", source)
+
+        self.assertNotIn("targetValue: root.down ? 0.94 : 1", status)
+
+    def test_active_app_menu_is_about_settings_and_quit_only(self):
+        source = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('i18n("About")', source)
+        self.assertIn('i18n("Settings…")', source)
+        self.assertIn('i18n("Quit")', source)
+        self.assertIn('"shortcut": "Alt+F4"', source)
+        self.assertIn('openApplicationSection("info")', source)
+        self.assertIn('openApplicationSection("config")', source)
+        self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
+        self.assertNotIn('i18n("File")', source)
+        self.assertNotIn('i18n("Edit")', source)
+        self.assertNotIn('i18n("View")', source)
+
+
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
 
