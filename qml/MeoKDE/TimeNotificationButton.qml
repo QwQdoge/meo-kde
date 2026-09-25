@@ -174,7 +174,7 @@ QQC2.AbstractButton {
                                         ? "progress_activity" : "notifications")
                 size: 20
                 color: root.active
-                       ? MeoTheme.onPrimaryContainer
+                       ? MeoTheme.contentOnSecondaryContainer
                        : (root.inhibited || root.unreadCount > 0
                           ? MeoTheme.primary : MeoTheme.onSurface)
             }
