@@ -164,7 +164,12 @@ Item {
         // of maintaining a lock-screen-only crop implementation.
         MeoAvatar {
             Layout.alignment: Qt.AlignHCenter
-            size: Math.max(196, Math.min(280, 420 * card.centerScale))
+            Layout.topMargin: MeoTheme.space16 * card.centerScale
+            Layout.bottomMargin: MeoTheme.space8 * card.centerScale
+            // Caelestia sizes the profile shape at 70% of its 600dp centre
+            // column: 420dp at 1440p, then scales with screen height.
+            size: Math.max(196 * MeoTheme.globalScale,
+                           420 * card.centerScale * MeoTheme.globalScale)
             variant: "ClamShell"
             source: card.avatarSource
             color: MeoTheme.surfaceContainerHighest
