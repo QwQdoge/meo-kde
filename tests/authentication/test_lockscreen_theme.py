@@ -335,6 +335,11 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             "property real centerScale: 1.0",
             'Qt.formatDate(dateTime, "dddd • d MMM").toUpperCase()',
+            "displayLocale.timeFormat(Locale.ShortFormat)",
+            "readonly property bool twelveHourClock",
+            'Qt.formatTime(dateTime, twelveHourClock ? "h" : "HH")',
+            "122 : 224",
+            "id: amPmPill",
             "224 * clock.centerScale * MeoTheme.globalScale",
         ):
             with self.subTest(required=required):
