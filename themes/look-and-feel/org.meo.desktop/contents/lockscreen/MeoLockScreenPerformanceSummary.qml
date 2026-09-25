@@ -230,25 +230,17 @@ Rectangle {
             color: metric.containerColor
         }
 
-        // Usage drives tonal emphasis without introducing a second chart
-        // language. The silhouette remains the recognizable Caelestia-style
-        // resource shape while Meo keeps its own dynamic color roles.
-        MeoShape {
-            anchors.centerIn: parent
-            width: parent.width * (0.70 + metric.value / 100 * 0.20)
-            height: width
-            type: metric.shapeName
-            color: metric.contentColor
-            opacity: 0.10 + metric.value / 100 * 0.18
-
-            Behavior on width {
-                enabled: !MeoTheme.reduceMotion
-                NumberAnimation {
-                    duration: MeoTheme.motionDurationMedium1
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
-                }
-            }
+        // Match Caelestia's resource language more closely: the metric is a
+        // liquid level clipped by the same expressive silhouette. The wave
+        // strip is painted once and translated, so idle layout and paths stay
+        // stable instead of redrawing a Canvas every frame.
+        MeoLockScreenWavyFill {
+            anchors.fill: parent
+            value: metric.value / 100
+            shapeName: metric.shapeName
+            fillColor: Qt.rgba(metric.contentColor.r, metric.contentColor.g,
+                               metric.contentColor.b, 0.30)
+            animate: root.visible && !root.sessionControlsShown
         }
 
         ColumnLayout {
