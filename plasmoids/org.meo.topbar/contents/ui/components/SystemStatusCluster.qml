@@ -85,38 +85,25 @@ QQC2.AbstractButton {
     rightPadding: MeoTheme.space8
     Accessible.name: MeoI18n.translator.i18n("System status")
     Accessible.description: statusContent.statusDescription()
+    hoverEnabled: true
+    activeFocusOnTab: true
     onClicked: quickSettingsRequested()
-
-    MeoSpringValue {
-        id: interactionScaleSpring
-        value: 1
-        targetValue: MeoMotion.interactionScale("pixel",
-                                                root.hovered,
-                                                root.down,
-                                                root.active)
-        motionProfile: "pixel"
-        speed: "fast"
-    }
-
-    MeoSpringValue {
-        id: interactionLiftSpring
-        value: 0
-        targetValue: MeoMotion.interactionLift("pixel",
-                                               root.hovered,
-                                               root.down,
-                                               root.active)
-                     * MeoTheme.globalScale
-        motionProfile: "pixel"
-        speed: "fast"
-    }
+            MeoInteractionMotion {
+                id: interactionMotion
+                hovered: root.hovered
+                pressed: root.down
+                active: root.active
+                motionProfile: "pixel"
+                speed: "fast"
+            }
 
     transform: [
-        Translate { y: interactionLiftSpring.value },
+        Translate { y: interactionMotion.resolvedOffsetY },
         Scale {
             origin.x: root.width / 2
             origin.y: root.height / 2
-            xScale: interactionScaleSpring.value
-            yScale: interactionScaleSpring.value
+            xScale: interactionMotion.resolvedScale
+            yScale: interactionMotion.resolvedScale
         }
     ]
 
