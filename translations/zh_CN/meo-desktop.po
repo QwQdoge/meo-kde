@@ -1057,14 +1057,14 @@ msgstr "您的应用仍可能要求保存工作。"
 msgid "Desktop"
 msgstr "桌面"
 
-msgid "Open this application's configuration menu"
-msgstr "打开此应用的配置菜单"
+msgid "About, settings, and quit"
+msgstr "关于、设置和退出"
 
 msgid "No application window is active"
 msgstr "当前没有活动的应用窗口"
 
-msgid "Open application settings menu"
-msgstr "打开应用设置菜单"
+msgid "Open application menu"
+msgstr "打开应用菜单"
 
 msgid "About"
 msgstr "关于"
