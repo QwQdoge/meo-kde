@@ -39,6 +39,21 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
         self.assertIn('timeCenter.writeConfig("showDate", true)', source)
 
+    def test_active_application_surface_uses_kde_identity_and_settings_deeplink(self):
+        source = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("TaskManager.AbstractTasksModel.AppId", source)
+        self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
+        self.assertIn("tasksModel.activeTask", source)
+        self.assertIn('"meosettings://applications?"', source)
+        self.assertIn('i18n("App settings")', source)
+        self.assertIn('i18n("App info")', source)
+        self.assertIn("Qt.openUrlExternally(url)", source)
+        self.assertNotIn("QProcess", source)
+        self.assertNotIn("requestActivate", source)
+
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
 
