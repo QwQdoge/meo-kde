@@ -268,13 +268,32 @@ Item {
             }
         }
 
+        // WallpaperFader is still the proven KDE wallpaper blur/contrast
+        // implementation, but its upstream state machine also writes directly
+        // to clock/mainStack opacity with InOutQuad. Feed those writes into
+        // inert proxies so the visible Meo surfaces can use one coherent M3
+        // Expressive progress value instead of two competing animations.
+        Item {
+            id: wallpaperMainStackProxy
+            visible: false
+        }
+        Item {
+            id: wallpaperClockProxy
+            visible: false
+            property Item shadow: wallpaperClockProxyShadow
+        }
+        Item {
+            id: wallpaperClockProxyShadow
+            visible: false
+        }
+
         WallpaperFader {
             anchors.fill: parent
             state: lockScreenRoot.uiVisible ? "on" : "off"
             source: wallpaper
-            mainStack: mainStack
+            mainStack: wallpaperMainStackProxy
             footer: footer
-            clock: ambientClockFrame
+            clock: wallpaperClockProxy
             alwaysShowClock: true
         }
 
