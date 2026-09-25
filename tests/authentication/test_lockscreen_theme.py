@@ -161,7 +161,7 @@ class LockScreenThemeTests(unittest.TestCase):
             "MediaControls",
             "MeoWeatherStatus",
             "MeoLockScreenNotificationSummary.qml",
-            "activeAuthenticationSurface && !lockScreenRoot.uiVisible",
+            "active: lockScreenUi.activeAuthenticationSurface",
             "showAlbumArtwork",
             "showWeatherLocation",
             "lockScreenNotificationVisibility",
@@ -213,12 +213,43 @@ class LockScreenThemeTests(unittest.TestCase):
             "MediaControls",
             "MeoLockScreenPerformanceSummary",
             "MeoLockScreenNotificationSummary.qml",
-            "Layout.preferredWidth: 360 * MeoTheme.globalScale",
-            "Layout.preferredWidth: Math.min(600 * MeoTheme.globalScale",
+            "dashboardHeight",
+            "height * 0.70",
+            "dashboardWidth",
+            "dashboardHeight * 16 / 9",
+            "anchors.fill: wideDashboardSurface",
+            "Layout.preferredWidth: lockScreenUi.dashboardCenterWidth",
             "compactAmbientDashboard",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.ui)
+
+    def test_reference_visual_language_uses_real_meoui_shapes_and_surfaces(self):
+        for required in (
+            'type: "Pentagon"',
+            'type: "Slanted"',
+            'type: "Gem"',
+            'Performance.cpuTemperature >= 90 ? "SoftBurst" : "Circle"',
+            'text: "meofetch"',
+            "font.family: MeoTheme.fontFamilyMonospace",
+            "radius: MeoTheme.shapeExtraLarge * 1.35",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.performance_card + self.system_summary + self.weather_card)
+
+        for required in (
+            "id: wideDashboardSurface",
+            "height * 0.70",
+            "dashboardHeight * 16 / 9",
+            "shadowEnabled: true",
+            "embeddedDashboard: lockScreenUi.wideAmbientDashboard",
+            "footer: wallpaperFooterProxy",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.ui)
+
+        self.assertIn("property bool embedded: false", self.auth_card)
+        self.assertIn("opacity: card.embedded ? 0 : 1", self.auth_card)
 
     def test_lock_performance_projection_is_aggregate_and_privacy_bounded(self):
         for required in (
