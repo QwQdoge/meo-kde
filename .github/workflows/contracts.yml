@@ -81,6 +81,14 @@ jobs:
           bash -n tools/theme/apply-meo-desktop.sh
           bash -n tools/shell/apply-meo-panel-layout.sh
 
+
+      - name: Check session-lock shell syntax
+        working-directory: meo-kde
+        run: |
+          bash -n lockscreen/meo-lock
+          bash -n lockscreen/meo-lockscreen-launch
+          bash -n tools/lockscreen/build-package.sh
+
       - name: Run source contract suites
         working-directory: meo-kde
         run: |

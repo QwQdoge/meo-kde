@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+set -euo pipefail
+
+runtime_root="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/meo-lockscreen"
+config_home="${runtime_root}/config"
+config_dir="${config_home}/meo-lockscreen"
+state_home="${XDG_STATE_HOME:-${HOME}/.local/state}"
+state_dir="${state_home}/meo-lockscreen"
+
+mkdir -p "${config_dir}" "${state_dir}"
+
+# The session-lock configuration is managed by MeoArch. Keep it separate from
+# any user shell configuration so the security surface always uses the Meo
+# typography and Material role contract.
+install -m 0644 /usr/share/meo-lockscreen/shell.json "${config_dir}/shell.json"
+
+mode="${MEO_LOCKSCREEN_COLOR_SCHEME:-auto}"
+if [[ "${mode}" == "auto" ]]; then
+    mode="dark"
+    if command -v kreadconfig6 >/dev/null 2>&1; then
+        kde_scheme="$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || true)"
+        if [[ -n "${kde_scheme}" && "${kde_scheme,,}" != *dark* ]]; then
+            mode="light"
+        fi
+    fi
+fi
+
+case "${mode}" in
+    light|dark) ;;
+    *)
+        echo "meo-lockscreen: invalid MEO_LOCKSCREEN_COLOR_SCHEME=${mode}; expected auto, light, or dark" >&2
+        exit 2
+        ;;
+esac
+
+install -m 0644 "/usr/share/meo-lockscreen/scheme-${mode}.json" "${state_dir}/scheme.json"
+
+# The imported upstream QML plugin still exposes its original internal module
+# ABI. Keep that implementation detail private to this launcher; installed
+# commands, services, package names, state paths, and UI remain Meo-owned.
+export XDG_CONFIG_HOME="${config_home}"
+export CAELESTIA_LIB_DIR=/usr/lib/meo-lockscreen
+export QML_IMPORT_PATH=/usr/lib/meo-lockscreen/qml${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}
+export QML2_IMPORT_PATH=/usr/lib/meo-lockscreen/qml${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}
+
+exec /usr/bin/qs -n -c meo-lockscreen

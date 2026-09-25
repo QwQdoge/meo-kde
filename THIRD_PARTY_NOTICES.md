@@ -17,6 +17,26 @@ license text is in
 `packaging/arch/meo-plasma-desktop/LGPL-2.0-or-later.txt` and is installed by
 that package.
 
+## Session-lock implementation source
+
+`meo-lockscreen` imports a pinned GPL-3.0 implementation from Caelestia Shell
+for the underlying Wayland session-lock surface, PAM integration, supporting
+services and the compact/expanded lock-motion structure. MeoArch supplies the
+product entrypoint, runtime namespace, managed Meo color-role tables,
+Comfortaa/Roboto typography configuration, packaging and recovery path.
+
+- Upstream: https://github.com/caelestia-dots/shell
+- Pinned commit: `20e625d6bf1a9d0bb7625a4bb814797d187b075d`
+- License: GPL-3.0
+- Package recipe: `packaging/arch/meo-lockscreen/PKGBUILD`
+- Integration contract: `docs/LOCKSCREEN.md`
+
+The upstream license is installed as
+`/usr/share/licenses/meo-lockscreen/UPSTREAM-GPL-3.0.txt`. Upstream authorship
+and copyright notices must remain intact in redistributed source and packages.
+The upstream project name is retained here for attribution and reproducibility;
+it is not the Meo product/runtime identity.
+
 ## Material Color Utilities
 
 `native/third_party/material-color-utilities` is a scoped C++ subset used by
