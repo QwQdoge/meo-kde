@@ -195,8 +195,9 @@ int main(int argc, char **argv)
     const QJsonArray hourlyTimes = hourly.value(QStringLiteral("time")).toArray();
     const QJsonArray hourlyTemperatures = hourly.value(QStringLiteral("temperature_2m")).toArray();
     const QJsonArray hourlyCodes = hourly.value(QStringLiteral("weather_code")).toArray();
-    const qsizetype forecastCount =
-        std::min<qsizetype>({6, hourlyTimes.size(), hourlyTemperatures.size(), hourlyCodes.size()});
+    qsizetype forecastCount = std::min(hourlyTimes.size(), hourlyTemperatures.size());
+    forecastCount = std::min(forecastCount, hourlyCodes.size());
+    forecastCount = std::min<qsizetype>(forecastCount, 6);
     for (qsizetype index = 0; index < forecastCount; ++index) {
         const QString time = hourlyTimes.at(index).toString().left(32);
         const double temperature =
