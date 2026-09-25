@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC2
-import QtQuick.Effects
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import org.kde.taskmanager as TaskManager
@@ -12,27 +10,42 @@ import MeoKDE 1.0
 PlasmoidItem {
     id: root
 
-    readonly property real taskExtent: 30 * MeoTheme.globalScale
     readonly property real stripPadding: MeoTheme.space4
-    readonly property int taskLimit: {
-        const configured = Number(Plasmoid.configuration.taskLimit)
-        return Number.isFinite(configured)
-               ? Math.max(1, Math.min(12, Math.round(configured)))
-               : 8
-    }
-    // Plasma evaluates a compact applet's width before TaskManager has
-    // populated. Reserve the configured number of slots so the panel does
-    // not freeze this applet at zero width for the whole session.
-    readonly property real compactWidth: taskLimit * taskExtent + 2 * stripPadding
-    // TasksModel is a C++ QAbstractItemModel. Make role lookups explicitly
-    // depend on its row/data signals so icons and active state refresh after
-    // the compact applet has been constructed.
+    // Keep the active-application title close to a macOS-style menu-bar item:
+    // compact for short names, bounded for long names, and never a task icon.
+    readonly property real appExtent: Math.max(72 * MeoTheme.globalScale,
+                                               Math.min(196 * MeoTheme.globalScale,
+                                                        (32 + visibleApplicationName.length * 8)
+                                                        * MeoTheme.globalScale))
+    readonly property real compactWidth: appExtent + 2 * stripPadding
     property int taskRevision: 0
 
+    readonly property var activeTaskIndex: {
+        taskRevision
+        return tasksModel.activeTask
+    }
+    readonly property string activeApplicationId: {
+        taskRevision
+        return tasksModel.data(activeTaskIndex,
+                               TaskManager.AbstractTasksModel.AppId) || ""
+    }
+    readonly property string activeApplicationName: {
+        taskRevision
+        const name = tasksModel.data(activeTaskIndex,
+                                     TaskManager.AbstractTasksModel.AppName)
+        return name || tasksModel.data(activeTaskIndex, 0) || ""
+    }
+    readonly property bool activeApplicationAvailable: activeApplicationName !== ""
+    readonly property string visibleApplicationName: activeApplicationAvailable
+                                                     ? activeApplicationName
+                                                     : MeoI18n.translator.i18n("Desktop")
+
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: MeoI18n.translator.i18n("Open applications")
-    toolTipMainText: MeoI18n.translator.i18n("Open applications")
-    toolTipSubText: MeoI18n.translator.i18n("KDE window controls in a compact Meo strip")
+    Plasmoid.title: MeoI18n.translator.i18n("Active application")
+    toolTipMainText: visibleApplicationName
+    toolTipSubText: activeApplicationAvailable
+                    ? MeoI18n.translator.i18n("Open this application's configuration menu")
+                    : MeoI18n.translator.i18n("No application window is active")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
     switchHeight: 0
@@ -45,19 +58,35 @@ PlasmoidItem {
 
     Component.onCompleted: MeoShellTheme.sync()
 
-    // KDE remains the source of truth for the open-window list, grouping and
-    // activation.  The Meo layer below only renders a compact, monochrome UI.
+    // KDE is the source of truth for application identity. The separate
+    // org.kde.plasma.appmenu applet placed immediately after this widget owns
+    // File/Edit/View/etc and renders only menus exported by the application.
+    // This surface deliberately does not invent or mirror application menus.
     TaskManager.TasksModel {
         id: tasksModel
         filterByVirtualDesktop: false
         filterByActivity: false
         filterByScreen: false
-        // Match Plasma's own panel model: omit windows that explicitly ask to
-        // stay out of task bars, while retaining ordinary minimized windows.
-        // `true` means "filter hidden tasks", not "show only hidden tasks".
         filterHidden: true
         groupMode: TaskManager.TasksModel.GroupApplications
         sortMode: TaskManager.TasksModel.SortLastActivated
+    }
+
+    function applicationConfigDeepLink() {
+        if (!activeApplicationAvailable)
+            return ""
+        const query = []
+        if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
+            query.push("appId=" + encodeURIComponent(activeApplicationId))
+        query.push("appName=" + encodeURIComponent(activeApplicationName))
+        query.push("section=config")
+        return "meosettings://applications?" + query.join("&")
+    }
+
+    function openApplicationConfiguration() {
+        const url = applicationConfigDeepLink()
+        if (url !== "")
+            Qt.openUrlExternally(url)
     }
 
     compactRepresentation: Item {
@@ -65,95 +94,82 @@ PlasmoidItem {
         implicitWidth: root.compactWidth
         implicitHeight: ShellMetrics.topBarHeight
 
-        Row {
+        QQC2.AbstractButton {
+            id: activeAppButton
             anchors.centerIn: parent
-            spacing: 0
+            width: root.appExtent
+            height: 30 * MeoTheme.globalScale
+            hoverEnabled: true
+            enabled: root.activeApplicationAvailable
+            Accessible.name: root.visibleApplicationName
+            Accessible.description: root.activeApplicationAvailable
+                                    ? MeoI18n.translator.i18n("Open application settings menu")
+                                    : MeoI18n.translator.i18n("No application window is active")
+            onClicked: appMenu.openAt(activeAppButton, 0,
+                                      activeAppButton.height + MeoTheme.space4)
 
-            Repeater {
-                // Bind the repeater directly to KDE's QAbstractItemModel.
-                // Using an integer snapshot of TasksModel.count leaves an
-                // otherwise non-zero applet blank if the model populates
-                // after Plasma has created this compact representation.
-                model: tasksModel
+            background: MeoShape {
+                type: "rounded"
+                radius: MeoTheme.shapeMedium
+                color: appMenu.opened
+                       ? MeoTheme.surfaceContainerHighest
+                       : (activeAppButton.hovered || activeAppButton.down
+                          ? MeoTheme.surfaceContainerHigh
+                          : "transparent")
+            }
 
-                delegate: QQC2.AbstractButton {
-                    id: taskButton
+            contentItem: RowLayout {
+                spacing: 0
 
-                    required property int index
-                    readonly property var taskIndex: tasksModel.index(index, 0)
-                    readonly property bool active: {
-                        root.taskRevision
-                        return tasksModel.data(taskIndex,
-                            TaskManager.AbstractTasksModel.IsActive) || false
-                    }
-                    readonly property string taskTitle: {
-                        root.taskRevision
-                        return tasksModel.data(taskIndex, 0) || ""
-                    }
-                    readonly property var taskIcon: {
-                        root.taskRevision
-                        return tasksModel.data(taskIndex, 1)
-                    }
-
-                    visible: index < root.taskLimit
-                    width: visible ? root.taskExtent : 0
-                    height: root.taskExtent
-                    Accessible.name: taskTitle
-                    Accessible.description: active
-                                            ? MeoI18n.translator.i18n("Active application")
-                                            : MeoI18n.translator.i18n("Activate application")
-                    onClicked: {
-                        if (active)
-                            tasksModel.requestToggleMinimized(taskIndex)
-                        else
-                            tasksModel.requestActivate(taskIndex)
-                    }
-
-                    background: MeoShape {
-                        id: taskSurface
-                        type: "pill"
-                        radius: Math.min(width, height) / 2
-                        color: taskButton.active
-                               ? MeoTheme.primaryContainer
-                               : (taskButton.hovered || taskButton.down
-                                  ? MeoTheme.surfaceContainerHighest
-                                  : MeoTheme.surfaceContainer)
-
-                    }
-
-                    contentItem: Item {
-                        Kirigami.Icon {
-                            id: taskIconItem
-                            anchors.centerIn: parent
-                            width: 18 * MeoTheme.globalScale
-                            height: width
-                            source: taskButton.taskIcon
-
-                            // Qt's colorization effect gives application
-                            // identities one Meo color without replacing KDE's
-                            // real icon and task data with a fake symbol.
-                            layer.enabled: visible
-                            layer.effect: MultiEffect {
-                                colorization: 1.0
-                                colorizationColor: taskButton.active
-                                                   ? MeoTheme.onPrimaryContainer
-                                                   : MeoTheme.onSurface
-                            }
-                        }
-                    }
-
-                    MeoTooltip {
-                        visible: taskButton.hovered && taskButton.taskTitle !== ""
-                        text: taskButton.taskTitle
-                        delay: MeoTheme.motionDurationLong1
-                    }
+                MeoText {
+                    Layout.fillWidth: true
+                    text: root.visibleApplicationName
+                    typeRole: "label"
+                    typeSize: "large"
+                    emphasized: root.activeApplicationAvailable
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                    color: root.activeApplicationAvailable
+                           ? MeoTheme.contentOnSurface
+                           : MeoTheme.contentOnSurfaceVariant
                 }
             }
+
+            MeoTooltip {
+                visible: activeAppButton.hovered
+                         && root.activeApplicationAvailable
+                text: root.activeApplicationName
+                delay: MeoTheme.motionDurationLong1
+            }
+        }
+
+        // This is the shell-owned application-name menu, analogous to the
+        // application-name menu on macOS. Only generic Meo integration lives
+        // here. The application's actual menus remain the KDE Global Menu
+        // applet beside this widget.
+        MeoMenu {
+            id: appMenu
+            parent: compactRoot
+            preferredMenuWidth: 260 * MeoTheme.globalScale
+            model: [
+                {
+                    "label": MeoI18n.translator.i18n("Settings…"),
+                    "icon": "settings",
+                    "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
+                    "action": function() { root.openApplicationConfiguration() }
+                }
+            ]
         }
     }
 
     Connections {
         target: tasksModel
+        function onActiveTaskChanged() {
+            root.taskRevision++
+            if (appMenu.opened)
+                appMenu.close()
+        }
         function onDataChanged() { root.taskRevision++ }
         function onModelReset() { root.taskRevision++ }
         function onRowsInserted() { root.taskRevision++ }
