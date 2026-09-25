@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="118" height="34" viewBox="0 0 118 34">
+  <style id="current-color-scheme" type="text/css">
+    .ColorScheme-ButtonBackground { color:#e7e0ec; }
+    .ColorScheme-ButtonHover { color:#6750a4; }
+    .ColorScheme-ButtonFocus { color:#6750a4; }
+  </style>
+  <g fill="transparent">
+    <rect id="normal-center" x="6" y="6" width="22" height="22"/>
+    <rect id="normal-top" x="6" y="0" width="22" height="6"/>
+    <rect id="normal-bottom" x="6" y="28" width="22" height="6"/>
+    <rect id="normal-left" x="0" y="6" width="6" height="22"/>
+    <rect id="normal-right" x="28" y="6" width="6" height="22"/>
+    <path id="normal-topleft" d="M6 0A6 6 0 0 0 0 6h6z"/>
+    <path id="normal-topright" d="M28 0a6 6 0 0 1 6 6h-6z"/>
+    <path id="normal-bottomleft" d="M0 28a6 6 0 0 0 6 6v-6z"/>
+    <path id="normal-bottomright" d="M28 28h6a6 6 0 0 1-6 6z"/>
+  </g>
+  <g fill="#ff00ff" opacity="0">
+    <rect id="normal-hint-top-margin" x="16" y="0" width="2" height="6"/>
+    <rect id="normal-hint-bottom-margin" x="16" y="28" width="2" height="6"/>
+    <rect id="normal-hint-left-margin" x="0" y="16" width="6" height="2"/>
+    <rect id="normal-hint-right-margin" x="28" y="16" width="6" height="2"/>
+  </g>
+  <g class="ColorScheme-ButtonHover" fill="currentColor" opacity="0.14">
+    <rect id="hover-center" x="48" y="6" width="22" height="22"/>
+    <rect id="hover-top" x="48" y="0" width="22" height="6"/>
+    <rect id="hover-bottom" x="48" y="28" width="22" height="6"/>
+    <rect id="hover-left" x="42" y="6" width="6" height="22"/>
+    <rect id="hover-right" x="70" y="6" width="6" height="22"/>
+    <path id="hover-topleft" d="M48 0A6 6 0 0 0 42 6h6z"/>
+    <path id="hover-topright" d="M70 0a6 6 0 0 1 6 6h-6z"/>
+    <path id="hover-bottomleft" d="M42 28a6 6 0 0 0 6 6v-6z"/>
+    <path id="hover-bottomright" d="M70 28h6a6 6 0 0 1-6 6z"/>
+  </g>
+  <g fill="#ff00ff" opacity="0">
+    <rect id="hover-hint-top-margin" x="58" y="0" width="2" height="6"/>
+    <rect id="hover-hint-bottom-margin" x="58" y="28" width="2" height="6"/>
+    <rect id="hover-hint-left-margin" x="42" y="16" width="6" height="2"/>
+    <rect id="hover-hint-right-margin" x="70" y="16" width="6" height="2"/>
+  </g>
+  <g class="ColorScheme-ButtonFocus" fill="currentColor" opacity="0.22">
+    <rect id="pressed-center" x="90" y="6" width="22" height="22"/>
+    <rect id="pressed-top" x="90" y="0" width="22" height="6"/>
+    <rect id="pressed-bottom" x="90" y="28" width="22" height="6"/>
+    <rect id="pressed-left" x="84" y="6" width="6" height="22"/>
+    <rect id="pressed-right" x="112" y="6" width="6" height="22"/>
+    <path id="pressed-topleft" d="M90 0A6 6 0 0 0 84 6h6z"/>
+    <path id="pressed-topright" d="M112 0a6 6 0 0 1 6 6h-6z"/>
+    <path id="pressed-bottomleft" d="M84 28a6 6 0 0 0 6 6v-6z"/>
+    <path id="pressed-bottomright" d="M112 28h6a6 6 0 0 1-6 6z"/>
+  </g>
+  <g fill="#ff00ff" opacity="0">
+    <rect id="pressed-hint-top-margin" x="100" y="0" width="2" height="6"/>
+    <rect id="pressed-hint-bottom-margin" x="100" y="28" width="2" height="6"/>
+    <rect id="pressed-hint-left-margin" x="84" y="16" width="6" height="2"/>
+    <rect id="pressed-hint-right-margin" x="112" y="16" width="6" height="2"/>
+  </g>
+</svg>
