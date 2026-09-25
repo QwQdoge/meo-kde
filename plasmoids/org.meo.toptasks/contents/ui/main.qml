@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC2
-import QtQuick.Effects
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import org.kde.taskmanager as TaskManager
@@ -12,8 +10,13 @@ import MeoKDE 1.0
 PlasmoidItem {
     id: root
 
-    readonly property real appExtent: 148 * MeoTheme.globalScale
     readonly property real stripPadding: MeoTheme.space4
+    // Keep the active-application title close to a macOS-style menu-bar item:
+    // compact for short names, bounded for long names, and never a task icon.
+    readonly property real appExtent: Math.max(72 * MeoTheme.globalScale,
+                                               Math.min(196 * MeoTheme.globalScale,
+                                                        (32 + visibleApplicationName.length * 8)
+                                                        * MeoTheme.globalScale))
     readonly property real compactWidth: appExtent + 2 * stripPadding
     property int taskRevision: 0
 
@@ -32,10 +35,6 @@ PlasmoidItem {
                                      TaskManager.AbstractTasksModel.AppName)
         return name || tasksModel.data(activeTaskIndex, 0) || ""
     }
-    readonly property var activeApplicationIcon: {
-        taskRevision
-        return tasksModel.data(activeTaskIndex, 1)
-    }
     readonly property bool activeApplicationAvailable: activeApplicationName !== ""
     readonly property string visibleApplicationName: activeApplicationAvailable
                                                      ? activeApplicationName
@@ -45,7 +44,7 @@ PlasmoidItem {
     Plasmoid.title: MeoI18n.translator.i18n("Active application")
     toolTipMainText: visibleApplicationName
     toolTipSubText: activeApplicationAvailable
-                    ? MeoI18n.translator.i18n("Application settings and information")
+                    ? MeoI18n.translator.i18n("Open this application's configuration menu")
                     : MeoI18n.translator.i18n("No application window is active")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
@@ -59,9 +58,10 @@ PlasmoidItem {
 
     Component.onCompleted: MeoShellTheme.sync()
 
-    // KDE is the source of truth. AppId is the KService desktop storage id
-    // and AppName is the application name; Meo does not scan processes or
-    // infer identity from executable names or window-title strings.
+    // KDE is the source of truth for application identity. The separate
+    // org.kde.plasma.appmenu applet placed immediately after this widget owns
+    // File/Edit/View/etc and renders only menus exported by the application.
+    // This surface deliberately does not invent or mirror application menus.
     TaskManager.TasksModel {
         id: tasksModel
         filterByVirtualDesktop: false
@@ -72,19 +72,19 @@ PlasmoidItem {
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
 
-    function applicationDeepLink(section) {
+    function applicationConfigDeepLink() {
         if (!activeApplicationAvailable)
             return ""
         const query = []
         if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
             query.push("appId=" + encodeURIComponent(activeApplicationId))
         query.push("appName=" + encodeURIComponent(activeApplicationName))
-        query.push("section=" + encodeURIComponent(section))
+        query.push("section=config")
         return "meosettings://applications?" + query.join("&")
     }
 
-    function openApplicationManagement(section) {
-        const url = applicationDeepLink(section)
+    function openApplicationConfiguration() {
+        const url = applicationConfigDeepLink()
         if (url !== "")
             Qt.openUrlExternally(url)
     }
@@ -103,38 +103,23 @@ PlasmoidItem {
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
             Accessible.description: root.activeApplicationAvailable
-                                    ? MeoI18n.translator.i18n("Open application menu")
+                                    ? MeoI18n.translator.i18n("Open application settings menu")
                                     : MeoI18n.translator.i18n("No application window is active")
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
 
             background: MeoShape {
-                type: "pill"
-                radius: height / 2
+                type: "rounded"
+                radius: MeoTheme.shapeMedium
                 color: appMenu.opened
-                       ? MeoTheme.primaryContainer
+                       ? MeoTheme.surfaceContainerHighest
                        : (activeAppButton.hovered || activeAppButton.down
-                          ? MeoTheme.surfaceContainerHighest
+                          ? MeoTheme.surfaceContainerHigh
                           : "transparent")
             }
 
             contentItem: RowLayout {
-                spacing: MeoTheme.space8
-
-                Kirigami.Icon {
-                    Layout.preferredWidth: 18 * MeoTheme.globalScale
-                    Layout.preferredHeight: Layout.preferredWidth
-                    source: root.activeApplicationAvailable
-                            ? root.activeApplicationIcon
-                            : "desktop"
-                    layer.enabled: root.activeApplicationAvailable
-                    layer.effect: MultiEffect {
-                        colorization: 1.0
-                        colorizationColor: appMenu.opened
-                                           ? MeoTheme.onPrimaryContainer
-                                           : MeoTheme.onSurface
-                    }
-                }
+                spacing: 0
 
                 MeoText {
                     Layout.fillWidth: true
@@ -142,21 +127,11 @@ PlasmoidItem {
                     typeRole: "label"
                     typeSize: "large"
                     emphasized: root.activeApplicationAvailable
+                    horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                    color: appMenu.opened
-                           ? MeoTheme.onPrimaryContainer
-                           : root.activeApplicationAvailable
-                             ? MeoTheme.contentOnSurface
-                             : MeoTheme.contentOnSurfaceVariant
-                }
-
-                MeoIcon {
-                    visible: root.activeApplicationAvailable
-                    icon: "expand_more"
-                    size: 16
-                    color: appMenu.opened
-                           ? MeoTheme.onPrimaryContainer
+                    color: root.activeApplicationAvailable
+                           ? MeoTheme.contentOnSurface
                            : MeoTheme.contentOnSurfaceVariant
                 }
             }
@@ -169,22 +144,20 @@ PlasmoidItem {
             }
         }
 
+        // This is the shell-owned application-name menu, analogous to the
+        // application-name menu on macOS. Only generic Meo integration lives
+        // here. The application's actual menus remain the KDE Global Menu
+        // applet beside this widget.
         MeoMenu {
             id: appMenu
             parent: compactRoot
-            preferredMenuWidth: 244 * MeoTheme.globalScale
+            preferredMenuWidth: 260 * MeoTheme.globalScale
             model: [
                 {
-                    "label": MeoI18n.translator.i18n("App settings"),
+                    "label": MeoI18n.translator.i18n("Settings…"),
                     "icon": "settings",
-                    "supportingText": MeoI18n.translator.i18n("Open configuration for this application"),
-                    "action": function() { root.openApplicationManagement("settings") }
-                },
-                {
-                    "label": MeoI18n.translator.i18n("App info"),
-                    "icon": "info",
-                    "supportingText": MeoI18n.translator.i18n("Storage, cache, data and uninstall"),
-                    "action": function() { root.openApplicationManagement("info") }
+                    "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
+                    "action": function() { root.openApplicationConfiguration() }
                 }
             ]
         }
