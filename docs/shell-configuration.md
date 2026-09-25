@@ -55,9 +55,15 @@ DockHeight=80
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
   audio, power, media and notification applets are filtered to avoid duplicates.
 - The top-left composition is always **Launcher → active application name**.
-  Clicking the application name opens only Meo's generic **Settings…** handoff
-  to that app's verified Configuration (.config) view. Meo does not synthesize
-  application menus.
+  Clicking the application name opens a compact shell-owned menu with only
+  **About**, **Settings…**, and **Quit**. About opens the app's Meo application
+  info, Settings opens its verified Configuration (.config) view, and Quit asks
+  KDE's task model to close only the active window (the row displays
+  **Alt+F4**). Meo does not synthesize application File/Edit/View menus.
+- Meo-owned top-bar interaction targets use the shared MeoUI interaction
+  spring plus the normal MeoStateLayer. Hover, press, and open-state spatial
+  feedback therefore reuse the same motion primitive as other Meo surfaces
+  instead of carrying a top-bar-only animation implementation.
 - `ShowGlobalMenu` is `true` or `false`. It places the active application's
   native KDE Global Menu immediately after the app name (for example **File**,
   **Edit**, **View**, and **Help**). Those menus remain application/KDE-owned.
