@@ -72,21 +72,33 @@ PlasmoidItem {
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
 
-    function applicationConfigDeepLink() {
+    function applicationDeepLink(section) {
         if (!activeApplicationAvailable)
             return ""
         const query = []
         if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
             query.push("appId=" + encodeURIComponent(activeApplicationId))
         query.push("appName=" + encodeURIComponent(activeApplicationName))
-        query.push("section=config")
+        query.push("section=" + encodeURIComponent(section))
         return "meosettings://applications?" + query.join("&")
     }
 
-    function openApplicationConfiguration() {
-        const url = applicationConfigDeepLink()
+    function openApplicationInfo() {
+        const url = applicationDeepLink("info")
         if (url !== "")
             Qt.openUrlExternally(url)
+    }
+
+    function openApplicationConfiguration() {
+        const url = applicationDeepLink("config")
+        if (url !== "")
+            Qt.openUrlExternally(url)
+    }
+
+    function closeActiveWindow() {
+        if (!activeApplicationAvailable)
+            return
+        tasksModel.requestClose(activeTaskIndex)
     }
 
     compactRepresentation: Item {
@@ -108,7 +120,29 @@ PlasmoidItem {
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
 
+            MeoInteractionMotion {
+                id: interactionMotion
+                pressed: activeAppButton.down
+                hovered: activeAppButton.hovered
+                active: appMenu.opened
+                motionProfile: "pixel"
+            }
+
+            transform: [
+                Scale {
+                    origin.x: activeAppButton.width / 2
+                    origin.y: activeAppButton.height / 2
+                    xScale: interactionMotion.scaleValue
+                    yScale: interactionMotion.scaleValue
+                },
+                Translate {
+                    x: interactionMotion.offsetX
+                    y: interactionMotion.offsetY
+                }
+            ]
+
             background: MeoShape {
+                id: activeAppSurface
                 type: "rounded"
                 radius: MeoTheme.shapeMedium
                 color: appMenu.opened
@@ -116,6 +150,25 @@ PlasmoidItem {
                        : (activeAppButton.hovered || activeAppButton.down
                           ? MeoTheme.surfaceContainerHigh
                           : "transparent")
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: MeoTheme.motionDurationEffectDefault
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingStandard
+                    }
+                }
+
+                MeoStateLayer {
+                    anchors.fill: parent
+                    internalPointerTrackingEnabled: false
+                    radius: activeAppSurface.radius
+                    hovered: activeAppButton.hovered
+                    pressed: activeAppButton.down
+                    focused: activeAppButton.visualFocus
+                    color: appMenu.opened ? MeoTheme.contentOnSurface
+                                          : MeoTheme.contentOnSurfaceVariant
+                }
             }
 
             contentItem: RowLayout {
@@ -151,13 +204,28 @@ PlasmoidItem {
         MeoMenu {
             id: appMenu
             parent: compactRoot
-            preferredMenuWidth: 260 * MeoTheme.globalScale
+            preferredMenuWidth: 284 * MeoTheme.globalScale
+            surfaceStyle: "context"
+            itemSpacing: 2 * MeoTheme.globalScale
             model: [
+                {
+                    "label": MeoI18n.translator.i18n("About %1").arg(root.activeApplicationName),
+                    "icon": "info",
+                    "action": function() { root.openApplicationInfo() }
+                },
                 {
                     "label": MeoI18n.translator.i18n("Settings…"),
                     "icon": "settings",
-                    "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
                     "action": function() { root.openApplicationConfiguration() }
+                },
+                {
+                    "type": "separator"
+                },
+                {
+                    "label": MeoI18n.translator.i18n("Quit %1").arg(root.activeApplicationName),
+                    "icon": "close",
+                    "shortcut": "Alt+F4",
+                    "action": function() { root.closeActiveWindow() }
                 }
             ]
         }
