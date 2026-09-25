@@ -16,7 +16,7 @@ class DesktopLayoutTests(unittest.TestCase):
         source = LAYOUT.read_text(encoding="utf-8")
 
         self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
-        self.assertIn('launcher.writeConfig("icon", "meo-ai")', source)
+        self.assertIn('launcher.writeConfig("icon", "meoarch-logo")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
         self.assertIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
@@ -93,6 +93,21 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn('id="pressed-center"', source)
             self.assertIn('fill-opacity="0.96"', source)
             self.assertIn("ColorScheme-Highlight", source)
+
+    def test_active_app_applet_and_launcher_icon_ship_in_every_install_path(self):
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        setup = (REPO_ROOT / "setup/apply-meo-desktop.sh").read_text(encoding="utf-8")
+
+        self.assertIn('plasmoids/org.meo.toptasks', package)
+        self.assertIn('plasmoids/org.meo.toptasks', setup)
+        self.assertNotIn(
+            'for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.toptasks',
+            setup,
+        )
+        self.assertIn('assets/icons/meoarch-logo.svg', package)
+        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', package)
+        self.assertIn('assets/icons/meoarch-logo.svg', setup)
+        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', setup)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
@@ -595,7 +610,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('"org.kde.plasma.vault"', source)
         self.assertIn('"org.kde.plasma.printmanager"', source)
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
-        self.assertIn('kickoff.writeConfig("icon", "meo-ai")', source)
+        self.assertIn('kickoff.writeConfig("icon", "meoarch-logo")', source)
         self.assertIn('oneWidget(top, "org.meo.toptasks")', source)
         self.assertNotIn('removeWidgets(top, "org.meo.toptasks")', source)
         self.assertLess(source.index('oneWidget(top, "org.kde.plasma.kickoff")'),
