@@ -162,8 +162,9 @@ Item {
             Layout.bottomMargin: MeoTheme.space8 * card.centerScale
             // Caelestia sizes the profile shape at 70% of its 600dp centre
             // column: 420dp at 1440p, then scales with screen height.
-            size: Math.max(196 * MeoTheme.globalScale,
-                           420 * card.centerScale * MeoTheme.globalScale)
+            // MeoAvatar.size is expressed in dp and applies globalScale
+            // internally, so do not multiply the token twice here.
+            size: Math.max(196, 420 * card.centerScale)
             variant: "ClamShell"
             source: card.avatarSource
             color: MeoTheme.surfaceContainerHighest
