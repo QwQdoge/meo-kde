@@ -11,6 +11,7 @@ Item {
     property string tileSizes: "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
     property string tileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
     property string tileDensity: "comfortable"
+    property bool revealActive: true
     signal tileLayoutChanged(string order, string sizes, string visibility, string density)
 
     function prepareToClose() {
@@ -31,7 +32,7 @@ Item {
     MeoSpringValue {
         id: revealScaleSpring
         value: MeoTheme.reduceMotion ? 1 : 0.975
-        targetValue: 1
+        targetValue: root.revealActive || MeoTheme.reduceMotion ? 1 : 0.975
         motionProfile: "pixel"
         speed: "default"
     }
@@ -39,7 +40,8 @@ Item {
     MeoSpringValue {
         id: revealLiftSpring
         value: MeoTheme.reduceMotion ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
-        targetValue: 0
+        targetValue: root.revealActive || MeoTheme.reduceMotion
+                     ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
         motionProfile: "pixel"
         speed: "default"
     }
