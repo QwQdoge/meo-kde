@@ -214,6 +214,13 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("KWin's upstream Scale effect", documentation)
         self.assertIn("no DMS or third-party KWin code is vendored", documentation)
 
+    def test_frosted_shell_popups_use_tonal_elevation_without_permanent_outline(self):
+        source = (REPO_ROOT / "qml/MeoKDE/FrostedSurface.qml").read_text(encoding="utf-8")
+        self.assertIn("MeoMotionSurface", source)
+        self.assertIn("elevation: 3", source)
+        self.assertIn("showOutline: false", source)
+        self.assertNotIn("border.width", source)
+
     def test_topbar_is_quiet_at_rest_and_tonal_during_interaction(self):
         quick_main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
         quick_status = (TOPBAR / "components/SystemStatusCluster.qml").read_text(
