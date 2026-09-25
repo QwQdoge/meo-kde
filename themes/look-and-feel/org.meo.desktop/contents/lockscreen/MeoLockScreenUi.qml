@@ -428,6 +428,7 @@ Item {
             MeoLockScreenClock {
                 id: ambientClock
                 anchors.centerIn: parent
+                centerScale: lockScreenUi.dashboardCenterScale
             }
         }
 
@@ -658,8 +659,7 @@ Item {
             initialItem: MeoLockScreenMainBlock {
                 id: mainBlock
                 lockScreenUiVisible: lockScreenUi.authenticationUiVisible
-                centerWidthScale: lockScreenUi.wideAmbientDashboard
-                                  ? lockScreenUi.dashboardCenterScale : 1.0
+                centerWidthScale: lockScreenUi.dashboardCenterScale
                 embeddedDashboard: lockScreenUi.wideAmbientDashboard
                 showMediaControls: lockScreenUi.showMediaControls
                 showAlbumArtwork: lockScreenUi.showAlbumArtwork
