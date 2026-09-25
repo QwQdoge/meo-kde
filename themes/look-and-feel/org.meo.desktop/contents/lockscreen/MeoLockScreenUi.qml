@@ -522,13 +522,14 @@ Item {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showWeather && Weather.available
                         showLocation: lockScreenUi.showWeatherLocation
-                        showForecast: lockScreenUi.dashboardHeight >= 700 * MeoTheme.globalScale
+                        showForecast: lockScreenUi.dashboardHeight >= 975 * MeoTheme.globalScale
                                       && Weather.forecast.length > 0
                     }
 
                     MeoLockScreenSystemSummary {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showSystemSummary
+                        rootHeight: lockScreenUi.dashboardHeight
                     }
 
                     // Caelestia places media at the bottom of the left rail.
