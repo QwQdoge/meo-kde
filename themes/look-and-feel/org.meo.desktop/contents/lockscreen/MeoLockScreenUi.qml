@@ -46,7 +46,11 @@ Item {
     readonly property bool showAudioControls: configBoolean("showAudioControls", false)
     readonly property bool showWeather: configBoolean("showWeather", false)
     readonly property bool showWeatherLocation: configBoolean("showWeatherLocation", false)
+    readonly property bool showPerformance: configBoolean("showPerformance", true)
+    readonly property bool showSystemSummary: configBoolean("showSystemSummary", true)
     readonly property string notificationPrivacyLevel: configNotificationPrivacy()
+    readonly property bool wideAmbientDashboard: width >= 1280 * MeoTheme.globalScale
+                                                 && height >= 720 * MeoTheme.globalScale
 
     // One animated scalar drives the whole ambient -> authentication
     // transition. This keeps the motion coherent like Caelestia while using
@@ -367,59 +371,151 @@ Item {
             }
         }
 
-        // These passive summaries are visible only on the selected secure
-        // surface. Other monitors stay clean until they are selected for
-        // authentication, so a multi-screen lock never mirrors private data.
-        ColumnLayout {
-            id: ambientAccessories
+        // Ambient information follows Caelestia's spatial hierarchy on wide
+        // screens: weather/system/media on the left, identity in the centre,
+        // aggregate resources/notifications on the right. On compact screens
+        // it collapses to the lighter DMS-style vertical status stack.
+        Loader {
+            id: wideAmbientDashboard
+            anchors.fill: parent
+            anchors.margins: MeoTheme.space32
+            active: lockScreenUi.activeAuthenticationSurface
+                    && !lockScreenRoot.uiVisible
+                    && lockScreenUi.wideAmbientDashboard
+            visible: active && status === Loader.Ready
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+            enabled: active
+            transform: Translate {
+                y: -lockScreenUi.authenticationReveal * 18 * MeoTheme.globalScale
+            }
+
+            sourceComponent: RowLayout {
+                anchors.fill: parent
+                spacing: 48 * MeoTheme.globalScale
+
+                ColumnLayout {
+                    Layout.preferredWidth: 360 * MeoTheme.globalScale
+                    Layout.maximumWidth: 400 * MeoTheme.globalScale
+                    Layout.fillHeight: true
+                    spacing: MeoTheme.space12
+
+                    Item { Layout.fillHeight: true }
+
+                    MeoLockScreenWeatherCard {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showWeather && Weather.available
+                        showLocation: lockScreenUi.showWeatherLocation
+                    }
+
+                    MeoLockScreenSystemSummary {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showSystemSummary
+                    }
+
+                    // Current-user MPRIS/audio controls stay on the left just
+                    // like Caelestia's media card, away from credential input.
+                    MediaControls {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
+                        showMedia: lockScreenUi.showMediaControls
+                        showArtwork: lockScreenUi.showAlbumArtwork
+                        showVolume: lockScreenUi.showAudioControls
+                    }
+
+                    Item { Layout.fillHeight: true }
+                }
+
+                // Reserve the middle column for the ambient clock and the
+                // authentication surface. Side cards never slide underneath it.
+                Item {
+                    Layout.preferredWidth: Math.min(600 * MeoTheme.globalScale,
+                                                    wideAmbientDashboard.width * 0.36)
+                    Layout.fillHeight: true
+                }
+
+                ColumnLayout {
+                    Layout.preferredWidth: 360 * MeoTheme.globalScale
+                    Layout.maximumWidth: 400 * MeoTheme.globalScale
+                    Layout.fillHeight: true
+                    spacing: MeoTheme.space12
+
+                    Item { Layout.fillHeight: true }
+
+                    MeoLockScreenPerformanceSummary {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showPerformance
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        active: lockScreenUi.notificationPrivacyLevel !== "hidden"
+                        visible: status === Loader.Ready
+                        source: "MeoLockScreenNotificationSummary.qml"
+                        onLoaded: {
+                            item.privacyLevel = lockScreenUi.notificationPrivacyLevel
+                            item.width = width
+                        }
+                        onWidthChanged: if (item) item.width = width
+                    }
+
+                    Item { Layout.fillHeight: true }
+                }
+            }
+        }
+
+        Loader {
+            id: compactAmbientDashboard
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: ambientClockFrame.bottom
                 topMargin: MeoTheme.space16
             }
-            width: Math.min(parent.width - 2 * MeoTheme.space24, 360 * MeoTheme.globalScale)
-            spacing: MeoTheme.space12
+            width: Math.min(parent.width - 2 * MeoTheme.space24,
+                            400 * MeoTheme.globalScale)
+            active: lockScreenUi.activeAuthenticationSurface
+                    && !lockScreenRoot.uiVisible
+                    && !lockScreenUi.wideAmbientDashboard
+            visible: active && status === Loader.Ready
             opacity: 1.0 - lockScreenUi.authenticationReveal
-            visible: lockScreenUi.activeAuthenticationSurface && opacity > 0.001
-            enabled: !lockScreenRoot.uiVisible
+            enabled: active
             transform: Translate {
                 y: -lockScreenUi.authenticationReveal * 18 * MeoTheme.globalScale
             }
 
-            MeoWeatherStatus {
-                Layout.alignment: Qt.AlignHCenter
-                available: lockScreenUi.showWeather && Weather.available
-                stale: Weather.stale
-                showLocation: lockScreenUi.showWeatherLocation
-                location: Weather.location
-                temperatureText: Weather.temperatureText
-                condition: Weather.condition
-                iconName: Weather.iconName
-            }
+            sourceComponent: ColumnLayout {
+                width: compactAmbientDashboard.width
+                spacing: MeoTheme.space12
 
-            // This is deliberately outside the credential StackView.  It is a
-            // current-session MPRIS and audio projection that disappears as
-            // soon as authentication starts; it never receives password input.
-            MediaControls {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.fillWidth: true
-                visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
-                showMedia: lockScreenUi.showMediaControls
-                showArtwork: lockScreenUi.showAlbumArtwork
-                showVolume: lockScreenUi.showAudioControls
-            }
-
-            Loader {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.fillWidth: true
-                active: lockScreenUi.notificationPrivacyLevel !== "hidden"
-                visible: status === Loader.Ready
-                source: "MeoLockScreenNotificationSummary.qml"
-                onLoaded: {
-                    item.privacyLevel = lockScreenUi.notificationPrivacyLevel
-                    item.width = width
+                MeoWeatherStatus {
+                    Layout.alignment: Qt.AlignHCenter
+                    available: lockScreenUi.showWeather && Weather.available
+                    stale: Weather.stale
+                    showLocation: lockScreenUi.showWeatherLocation
+                    location: Weather.location
+                    temperatureText: Weather.temperatureText
+                    condition: Weather.condition
+                    iconName: Weather.iconName
                 }
-                onWidthChanged: if (item) item.width = width
+
+                MediaControls {
+                    Layout.fillWidth: true
+                    visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
+                    showMedia: lockScreenUi.showMediaControls
+                    showArtwork: lockScreenUi.showAlbumArtwork
+                    showVolume: lockScreenUi.showAudioControls
+                }
+
+                Loader {
+                    Layout.fillWidth: true
+                    active: lockScreenUi.notificationPrivacyLevel !== "hidden"
+                    visible: status === Loader.Ready
+                    source: "MeoLockScreenNotificationSummary.qml"
+                    onLoaded: {
+                        item.privacyLevel = lockScreenUi.notificationPrivacyLevel
+                        item.width = width
+                    }
+                    onWidthChanged: if (item) item.width = width
+                }
             }
         }
 
