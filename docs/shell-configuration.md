@@ -66,6 +66,14 @@ DockHeight=80
   adds a second KDE Icons-Only Task Manager beside the Global Menu. The bottom
   Dock remains the primary task manager for pinned launchers, window actions
   and autohide behavior.
+- The application-name menu stays intentionally small: **About** opens the
+  app's Meo Settings information view, **Settings…** opens the verified
+  Configuration (.config) view, and **Quit** asks KDE TaskManager to close the
+  active window (the same close-window action presented as **Alt+F4**).
+- Meo-owned panel triggers use the shared MeoUI interaction/reveal motion
+  primitives. They do not define panel-specific spring constants. KDE-owned
+  Kickoff and Global Menu remain native; Meo styles their panel identity and
+  Plasma-theme frames instead of copying their launcher/menu backends.
 - `TopPanelHeight` accepts `32`–`96` pixels.
 - `DockHeight` accepts `40`–`112` pixels. The 80 dp default leaves a calm
   Material margin around Plasma's native task targets. The panel theme owns
@@ -74,6 +82,13 @@ DockHeight=80
   opt an existing desktop into the 80 dp default, set `DockHeight=80` in that
   file and explicitly run the panel-layout helper above; normal theme updates
   never rebuild a user's live panels.
+
+The panel's transient surfaces use a small anchored scale/translation reveal
+with interruptible MeoUI springs. This follows the same interaction principle
+as Caelestia-style popouts—fast response, slight spatial travel, and retargeting
+when the state changes—while keeping the implementation in reusable MeoUI
+primitives rather than copying Quickshell-specific code. Reduced-motion policy
+continues to come from MeoUI.
 
 The top panel uses the generated dynamic `surfaceContainerLow` role while the
 Meo window title bar uses `surfaceContainer`. This produces a subtle tonal
