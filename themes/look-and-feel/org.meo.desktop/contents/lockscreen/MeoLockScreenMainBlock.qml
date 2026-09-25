@@ -89,6 +89,7 @@ MeoLockScreenSessionManagement {
         Layout.maximumWidth: sessionManager.standaloneCenterWidth
         active: sessionManager.activeAuthenticationSurface
         embedded: sessionManager.embeddedDashboard
+        centerScale: sessionManager.centerWidthScale
         failed: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
         avatarSource: sessionManager.avatarSource
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
@@ -101,7 +102,10 @@ MeoLockScreenSessionManagement {
 
         MeoLockScreenPasswordField {
             id: passwordBox
-            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: false
+            Layout.preferredWidth: implicitWidth
+            Layout.maximumWidth: authenticationSurface.width * 0.8
             placeholderText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
             accessibleLabel: placeholderText
             inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData
