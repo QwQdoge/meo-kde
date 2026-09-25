@@ -63,6 +63,7 @@ PlasmoidItem {
         onStatusCenterRequested: root.expanded = !root.expanded
     }
     fullRepresentation: StatusCenterView {
+        revealActive: root.expanded
         notifications: notifications
         currentDateTime: clock.dateTime
         centerMode: "timeNotifications"
