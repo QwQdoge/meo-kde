@@ -22,6 +22,7 @@ MeoLockScreenSessionManagement {
     // The outer KScreenLocker adapter toggles this only for the coordinator's
     // active secure surface. It changes presentation, never credential state.
     property bool activeAuthenticationSurface: lockScreenUiVisible
+    property bool embeddedDashboard: false
     property bool authenticationFailed: false
     property string nonInteractiveError: ""
     property bool showMediaControls: false
@@ -84,8 +85,12 @@ MeoLockScreenSessionManagement {
         id: authenticationSurface
         Layout.fillWidth: true
         Layout.minimumWidth: 344 * MeoTheme.globalScale
-        Layout.maximumWidth: 480 * MeoTheme.globalScale
+        Layout.preferredWidth: sessionManager.standaloneCenterWidth
+        Layout.maximumWidth: sessionManager.standaloneCenterWidth
         active: sessionManager.activeAuthenticationSurface
+        embedded: sessionManager.embeddedDashboard
+        centerScale: sessionManager.centerWidthScale
+        failed: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
         avatarSource: sessionManager.avatarSource
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
         supportingText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info", "Unlock your Meo session")
@@ -97,9 +102,14 @@ MeoLockScreenSessionManagement {
 
         MeoLockScreenPasswordField {
             id: passwordBox
-            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: false
+            Layout.preferredWidth: implicitWidth
+            Layout.maximumWidth: authenticationSurface.width * 0.8
             placeholderText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
             accessibleLabel: placeholderText
+            fingerprintAvailable: sessionManager.fingerprintAvailable
+            smartcardAvailable: sessionManager.smartcardAvailable
             inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData
                               | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
             text: PasswordSync.password

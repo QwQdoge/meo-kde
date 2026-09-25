@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTest>
@@ -52,6 +53,9 @@ private slots:
             {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
             {QStringLiteral("location"), QStringLiteral("Singapore")},
             {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("apparentTemperature"), 30.0},
+            {QStringLiteral("dailyHigh"), 32.0},
+            {QStringLiteral("dailyLow"), 26.0},
             {QStringLiteral("unit"), QStringLiteral("C")},
             {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
             {QStringLiteral("iconName"), QStringLiteral("weather-partly-cloudy")},
@@ -63,6 +67,48 @@ private slots:
         QCOMPARE(cache.temperatureText(), QStringLiteral("28°C"));
         QCOMPARE(cache.condition(), QStringLiteral("Partly cloudy"));
         QCOMPARE(cache.location(), QStringLiteral("Singapore"));
+    }
+
+    void readsBoundedHourlyForecast()
+    {
+        KLocalizedString::setLanguages({QStringLiteral("en")});
+        writeCache({
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("apparentTemperature"), 30.0},
+            {QStringLiteral("dailyHigh"), 32.0},
+            {QStringLiteral("dailyLow"), 26.0},
+            {QStringLiteral("unit"), QStringLiteral("C")},
+            {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
+            {QStringLiteral("weatherCode"), 3},
+            {QStringLiteral("forecast"), QJsonArray{
+                QJsonObject{{QStringLiteral("time"), QStringLiteral("2026-09-25T10:00")},
+                            {QStringLiteral("temperature"), 29.0},
+                            {QStringLiteral("weatherCode"), 2},
+                            {QStringLiteral("precipitationChance"), 20}},
+                QJsonObject{{QStringLiteral("time"), QStringLiteral("2026-09-25T11:00")},
+                            {QStringLiteral("temperature"), 30.5},
+                            {QStringLiteral("weatherCode"), 61},
+                            {QStringLiteral("precipitationChance"), 70}},
+            }},
+        });
+
+        WeatherCache cache;
+        QVERIFY(cache.available());
+        QCOMPARE(cache.apparentTemperatureText(), QStringLiteral("30°C"));
+        QCOMPARE(cache.highTemperatureText(), QStringLiteral("32°C"));
+        QCOMPARE(cache.lowTemperatureText(), QStringLiteral("26°C"));
+        QCOMPARE(cache.forecast().size(), 2);
+        const QVariantMap first = cache.forecast().at(0).toMap();
+        QCOMPARE(first.value(QStringLiteral("time")).toString(), QStringLiteral("10:00"));
+        QCOMPARE(first.value(QStringLiteral("temperatureText")).toString(), QStringLiteral("29°C"));
+        QCOMPARE(first.value(QStringLiteral("iconName")).toString(), QStringLiteral("weather-partly-cloudy"));
+        QCOMPARE(first.value(QStringLiteral("precipitationChance")).toInt(), 20);
+        const QVariantMap second = cache.forecast().at(1).toMap();
+        QCOMPARE(second.value(QStringLiteral("temperatureText")).toString(), QStringLiteral("30.5°C"));
+        QCOMPARE(second.value(QStringLiteral("iconName")).toString(), QStringLiteral("weather-showers"));
+        QCOMPARE(second.value(QStringLiteral("precipitationChance")).toInt(), 70);
     }
 
     void keepsLegacyConditionWhenTheCacheHasNoStableCode()

@@ -87,6 +87,9 @@ private slots:
             QVERIFY(disk.contains(QStringLiteral("inFlight")));
         }
         QVERIFY(controller.uptimeSeconds() >= 0);
+        QVERIFY(!controller.operatingSystemName().isEmpty()
+                || !controller.kernelVersion().isEmpty());
+        QVERIFY(controller.desktopEnvironment().size() < 256);
         QVERIFY(controller.processCount() > 0);
         QVERIFY(!controller.processes().isEmpty());
 
