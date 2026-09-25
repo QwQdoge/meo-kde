@@ -15,6 +15,7 @@ class LockScreenThemeTests(unittest.TestCase):
         self.ui = (LOCKSCREEN / "MeoLockScreenUi.qml").read_text(encoding="utf-8")
         self.main = (LOCKSCREEN / "MeoLockScreenMainBlock.qml").read_text(encoding="utf-8")
         self.auth_card = (LOCKSCREEN / "MeoLockScreenAuthCard.qml").read_text(encoding="utf-8")
+        self.clock = (LOCKSCREEN / "MeoLockScreenClock.qml").read_text(encoding="utf-8")
         self.password_field = (LOCKSCREEN / "MeoLockScreenPasswordField.qml").read_text(encoding="utf-8")
         self.session_geometry = (LOCKSCREEN / "MeoLockScreenSessionManagement.qml").read_text(encoding="utf-8")
         self.no_password = (LOCKSCREEN / "MeoNoPasswordUnlock.qml").read_text(encoding="utf-8")
@@ -250,6 +251,60 @@ class LockScreenThemeTests(unittest.TestCase):
 
         self.assertIn("property bool embedded: false", self.auth_card)
         self.assertIn("opacity: card.embedded ? 0 : 1", self.auth_card)
+
+    def test_caelestia_center_style_reuses_meoui_primitives(self):
+        for required in (
+            'variant: "ClamShell"',
+            "centerScale: card.centerScale",
+            "visible: !card.embedded && text !== \"\"",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.auth_card)
+
+        for required in (
+            "property real centerScale: 1.0",
+            'Qt.formatDate(dateTime, "dddd • d MMM").toUpperCase()',
+            "224 * clock.centerScale * MeoTheme.globalScale",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.clock)
+
+        for required in (
+            "emptyFieldWidth",
+            "filledFieldWidth",
+            "MeoShapeMorph",
+            'fromShape: "Circle"',
+            'toShape: "Arrow"',
+            "fingerprintAvailable",
+            "smartcardAvailable",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.password_field)
+
+    def test_resource_hover_reuses_kde_session_management(self):
+        for required in (
+            "HoverHandler",
+            "sessionControlsShown",
+            "signal suspendRequested()",
+            "signal hibernateRequested()",
+            "signal rebootRequested()",
+            "signal shutdownRequested()",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.performance_card)
+
+        for required in (
+            "canSuspend: sessionManagement.canSuspend",
+            "canHibernate: sessionManagement.canHibernate",
+            "canReboot: sessionManagement.canReboot",
+            "canShutdown: sessionManagement.canShutdown",
+            "sessionManagement.suspend()",
+            "sessionManagement.hibernate()",
+            "sessionManagement.requestReboot()",
+            "sessionManagement.requestShutdown()",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.ui)
 
     def test_lock_performance_projection_is_aggregate_and_privacy_bounded(self):
         for required in (
