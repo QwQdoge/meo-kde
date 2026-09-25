@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import MeoUI 1.0
+import MeoUI 1.0 as UI
 import MeoKDE 1.0
 
 Item {
@@ -25,6 +26,21 @@ Item {
 
     implicitWidth: 440 * MeoTheme.globalScale
     implicitHeight: ShellMetrics.quickSettingsHeight
+    transformOrigin: Item.TopRight
+
+    MeoRevealMotion {
+        id: revealMotion
+        shown: root.visible
+        motionProfile: "pixel"
+        hiddenOffsetX: UI.MeoMotion.popupOffset("pixel") * MeoTheme.globalScale / 2
+    }
+
+    opacity: revealMotion.opacity
+    scale: revealMotion.scale
+    transform: Translate {
+        x: revealMotion.offsetX
+        y: revealMotion.offsetY
+    }
     Layout.minimumWidth: 280 * MeoTheme.globalScale
     Layout.minimumHeight: 360 * MeoTheme.globalScale
 
@@ -60,7 +76,7 @@ Item {
             pushEnter: Transition {
                 NumberAnimation {
                     property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
+                    from: MeoTheme.reduceMotion ? 0 : UI.MeoMotion.pageOffset("pixel")
                     to: 0
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
@@ -78,7 +94,7 @@ Item {
                 NumberAnimation {
                     property: "x"
                     from: 0
-                    to: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
+                    to: MeoTheme.reduceMotion ? 0 : -UI.MeoMotion.pageOffset("pixel") / 2
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
@@ -94,7 +110,7 @@ Item {
             popEnter: Transition {
                 NumberAnimation {
                     property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
+                    from: MeoTheme.reduceMotion ? 0 : -UI.MeoMotion.pageOffset("pixel") / 2
                     to: 0
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
@@ -112,7 +128,7 @@ Item {
                 NumberAnimation {
                     property: "x"
                     from: 0
-                    to: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
+                    to: MeoTheme.reduceMotion ? 0 : UI.MeoMotion.pageOffset("pixel")
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
