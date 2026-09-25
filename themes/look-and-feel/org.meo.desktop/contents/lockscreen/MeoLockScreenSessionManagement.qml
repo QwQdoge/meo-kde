@@ -30,9 +30,11 @@ FocusScope {
     property alias userList: userListView
     property bool showUserList: true
     property real fontSize: Kirigami.Theme.defaultFont.pointSize + 2
-    // Caelestia's standalone centre uses a 600dp content column at its
-    // reference scale. Keep a small-screen floor so secure input stays usable.
-    readonly property real standaloneCenterWidth: Math.min(600 * MeoTheme.globalScale,
+    property real centerWidthScale: 1.0
+    // Caelestia's centre is 600dp at 1440px high and scales down with screen
+    // height. Keep a secure-input floor so smaller displays remain usable.
+    readonly property real standaloneCenterWidth: Math.min(600 * MeoTheme.globalScale
+                                                           * Math.max(0.58, centerWidthScale),
                                                            Math.max(344 * MeoTheme.globalScale,
                                                                     width - Kirigami.Units.gridUnit * 2))
     default property alias _children: innerLayout.children
@@ -88,7 +90,9 @@ FocusScope {
         ColumnLayout {
             Layout.minimumHeight: implicitHeight
             Layout.maximumHeight: Math.max(implicitHeight, root.height - Kirigami.Units.gridUnit * 4)
+            Layout.preferredWidth: root.standaloneCenterWidth
             Layout.maximumWidth: root.standaloneCenterWidth
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
 
             ColumnLayout {

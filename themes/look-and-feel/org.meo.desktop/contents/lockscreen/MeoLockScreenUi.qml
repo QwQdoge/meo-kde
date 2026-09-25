@@ -12,6 +12,7 @@ import QtQml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 
 import org.kde.plasma.workspace.components as PW
 import org.kde.plasma.private.keyboardindicator as KeyboardIndicator
@@ -46,7 +47,54 @@ Item {
     readonly property bool showAudioControls: configBoolean("showAudioControls", false)
     readonly property bool showWeather: configBoolean("showWeather", false)
     readonly property bool showWeatherLocation: configBoolean("showWeatherLocation", false)
+    readonly property bool showPerformance: configBoolean("showPerformance", true)
+    readonly property bool showSystemSummary: configBoolean("showSystemSummary", true)
+    readonly property bool showSessionControls: configBoolean("showSessionControls", true)
     readonly property string notificationPrivacyLevel: configNotificationPrivacy()
+    readonly property real dashboardHeight: Math.min(height - MeoTheme.space32 * 2,
+                                                      height * 0.70)
+    readonly property real dashboardWidth: Math.min(width - MeoTheme.space32 * 2,
+                                                    dashboardHeight * 16 / 9)
+    readonly property real dashboardCenterScale: Math.min(1.0,
+                                                          Math.max(0.58, height / 1440))
+    readonly property real dashboardCenterWidth: Math.max(344 * MeoTheme.globalScale,
+                                                          600 * MeoTheme.globalScale
+                                                          * dashboardCenterScale)
+    readonly property bool wideAmbientDashboard: dashboardWidth >= 900 * MeoTheme.globalScale
+                                                 && dashboardHeight >= 500 * MeoTheme.globalScale
+
+    // One animated scalar drives the whole ambient -> authentication
+    // transition. This keeps the motion coherent like Caelestia while using
+    // MeoUI's M3 Expressive curve rather than introducing a second motion
+    // system.
+    property real authenticationReveal: authenticationUiVisible ? 1.0 : 0.0
+    property real dashboardEntrance: MeoTheme.reduceMotion ? 1.0 : 0.0
+    readonly property real dashboardSpinProgress: Math.min(1.0, dashboardEntrance / 0.34)
+    readonly property real dashboardExpandProgress: Math.max(0.0,
+                                                             Math.min(1.0,
+                                                                      (dashboardEntrance - 0.18) / 0.82))
+    readonly property real dashboardContentEntrance: Math.max(0.0,
+                                                              Math.min(1.0,
+                                                                       (dashboardEntrance - 0.34) / 0.66))
+
+    NumberAnimation on dashboardEntrance {
+        running: !MeoTheme.reduceMotion
+        from: 0.0
+        to: 1.0
+        duration: MeoTheme.motionDurationExtraLong1
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+    }
+
+    Behavior on authenticationReveal {
+        NumberAnimation {
+            duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: authenticationUiVisible
+                                ? MeoTheme.motionEasingEmphasizedDecelerate
+                                : MeoTheme.motionEasingEmphasizedAccelerate
+        }
+    }
 
     Component.onCompleted: ScreenCoordinator.registerSurface(org_kde_plasma_screenlocker_greeter_view)
     Component.onDestruction: ScreenCoordinator.unregisterSurface(org_kde_plasma_screenlocker_greeter_view)
@@ -252,14 +300,155 @@ Item {
             }
         }
 
+        // WallpaperFader is still the proven KDE wallpaper blur/contrast
+        // implementation, but its upstream state machine also writes directly
+        // to clock/mainStack opacity with InOutQuad. Feed those writes into
+        // inert proxies so the visible Meo surfaces can use one coherent M3
+        // Expressive progress value instead of two competing animations.
+        Item {
+            id: wallpaperMainStackProxy
+            visible: false
+        }
+        Item {
+            id: wallpaperClockProxy
+            visible: false
+            property Item shadow: wallpaperClockProxyShadow
+        }
+        Item {
+            id: wallpaperClockProxyShadow
+            visible: false
+        }
+        Item {
+            id: wallpaperFooterProxy
+            visible: false
+        }
+
         WallpaperFader {
             anchors.fill: parent
-            state: lockScreenRoot.uiVisible ? "on" : "off"
+            // Caelestia keeps the wallpaper softly blurred behind its large
+            // lock surface. Keep KDE's proven blur implementation, but proxy
+            // every opacity target so it cannot override Meo's motion.
+            state: lockScreenUi.activeAuthenticationSurface ? "on" : "off"
             source: wallpaper
-            mainStack: mainStack
-            footer: footer
-            clock: ambientClockFrame
+            mainStack: wallpaperMainStackProxy
+            footer: wallpaperFooterProxy
+            clock: wallpaperClockProxy
             alwaysShowClock: true
+        }
+
+        // DMS-style layered scrim: nearly invisible in the ambient state, then
+        // a lower-screen surface/primary gradient grows with authentication.
+        // It is deliberately just a visual layer inside KScreenLocker's secure
+        // window; it never captures credentials or session actions.
+        Rectangle {
+            id: expressiveScrim
+            anchors.fill: parent
+            opacity: 0.18 + lockScreenUi.authenticationReveal * 0.82
+
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+
+                GradientStop {
+                    position: 0.0
+                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                                   MeoTheme.surface.b,
+                                   0.02 + lockScreenUi.authenticationReveal * 0.08)
+                }
+                GradientStop {
+                    position: 0.48
+                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                                   MeoTheme.surface.b,
+                                   0.08 + lockScreenUi.authenticationReveal * 0.20)
+                }
+                GradientStop {
+                    position: 0.78
+                    color: Qt.rgba(MeoTheme.primaryContainer.r,
+                                   MeoTheme.primaryContainer.g,
+                                   MeoTheme.primaryContainer.b,
+                                   0.08 + lockScreenUi.authenticationReveal * 0.26)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                                   MeoTheme.surface.b,
+                                   0.26 + lockScreenUi.authenticationReveal * 0.52)
+                }
+            }
+        }
+
+        // Caelestia's defining lock-screen silhouette is one large 16:9,
+        // 70%-screen-height surface over the blurred wallpaper. Meo keeps that
+        // composition but uses its own HCT palette, spacing and motion tokens.
+        Rectangle {
+            id: wideDashboardSurface
+            anchors.centerIn: parent
+            width: lockScreenUi.dashboardWidth
+            height: lockScreenUi.dashboardHeight
+            visible: lockScreenUi.activeAuthenticationSurface
+                     && lockScreenUi.wideAmbientDashboard
+            radius: MeoTheme.shapeExtraLarge * 1.5
+            color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                           MeoTheme.surface.b, 0.94)
+            border.width: Math.max(1, MeoTheme.globalScale)
+            border.color: Qt.rgba(MeoTheme.outlineVariant.r,
+                                  MeoTheme.outlineVariant.g,
+                                  MeoTheme.outlineVariant.b, 0.34)
+            opacity: lockScreenUi.dashboardEntrance
+            rotation: MeoTheme.reduceMotion
+                      ? 0
+                      : -180 * (1.0 - lockScreenUi.dashboardSpinProgress)
+            scale: {
+                const authenticationScale = MeoTheme.reduceMotion
+                                            ? 1.0
+                                            : 0.985 + lockScreenUi.authenticationReveal * 0.015
+                const entranceScale = MeoTheme.reduceMotion
+                                      ? 1.0
+                                      : 0.12 + lockScreenUi.dashboardExpandProgress * 0.88
+                return authenticationScale * entranceScale
+            }
+
+            layer.enabled: visible
+            layer.effect: MultiEffect {
+                shadowEnabled: true
+                shadowBlur: 0.78
+                shadowOpacity: 0.34
+                shadowVerticalOffset: 10 * MeoTheme.globalScale
+                shadowColor: MeoTheme.shadow
+            }
+
+        }
+
+        Item {
+            id: dashboardEntranceGlyph
+            anchors.centerIn: parent
+            width: 104 * MeoTheme.globalScale
+            height: width
+            visible: lockScreenUi.wideAmbientDashboard
+                     && lockScreenUi.activeAuthenticationSurface
+                     && opacity > 0.001
+            opacity: MeoTheme.reduceMotion
+                     ? 0
+                     : 1.0 - lockScreenUi.dashboardContentEntrance
+            scale: 0.92 + lockScreenUi.dashboardSpinProgress * 0.08
+            rotation: -180 * (1.0 - lockScreenUi.dashboardSpinProgress)
+
+            MeoShape {
+                anchors.fill: parent
+                type: "squircle"
+                radius: MeoTheme.shapeLarge
+                color: MeoTheme.surface
+                strokeWidth: MeoTheme.strokeWidthThin
+                strokeColor: MeoTheme.outlineVariant
+            }
+
+            MeoIcon {
+                anchors.centerIn: parent
+                icon: "lock"
+                size: 48 * MeoTheme.globalScale
+                weight: 700
+                fill: true
+                color: MeoTheme.contentOnSurface
+            }
         }
 
         // WallpaperFader owns the upstream `clock.shadow` visual contract.
@@ -268,11 +457,19 @@ Item {
         Item {
             id: ambientClockFrame
             property Item shadow: ambientClockShadow
-            visible: !lockScreenRoot.uiVisible
+            visible: opacity > 0.001
+            opacity: lockScreenUi.dashboardContentEntrance
+                     * (1.0 - lockScreenUi.authenticationReveal)
+            scale: MeoTheme.reduceMotion ? 1.0 : 1.0 - lockScreenUi.authenticationReveal * 0.055
             anchors.horizontalCenter: parent.horizontalCenter
             width: ambientClock.implicitWidth
             height: ambientClock.implicitHeight
-            y: Math.max(MeoTheme.space32, parent.height * 0.22 - height / 2)
+            y: lockScreenUi.wideAmbientDashboard
+               ? wideDashboardSurface.y + MeoTheme.space32
+                 - lockScreenUi.authenticationReveal * 20 * MeoTheme.globalScale
+               : Math.max(MeoTheme.space32,
+                          parent.height * 0.22 - height / 2
+                          - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
 
             Item {
                 id: ambientClockShadow
@@ -285,57 +482,176 @@ Item {
             MeoLockScreenClock {
                 id: ambientClock
                 anchors.centerIn: parent
+                centerScale: lockScreenUi.dashboardCenterScale
             }
         }
 
-        // These passive summaries are visible only on the selected secure
-        // surface. Other monitors stay clean until they are selected for
-        // authentication, so a multi-screen lock never mirrors private data.
-        ColumnLayout {
-            id: ambientAccessories
+        // Ambient information follows Caelestia's spatial hierarchy on wide
+        // screens: weather/system/media on the left, identity in the centre,
+        // aggregate resources/notifications on the right. On compact screens
+        // it collapses to the lighter DMS-style vertical status stack.
+        Loader {
+            id: wideAmbientDashboard
+            anchors.fill: wideDashboardSurface
+            anchors.margins: MeoTheme.space24
+            active: lockScreenUi.activeAuthenticationSurface
+                    && lockScreenUi.wideAmbientDashboard
+            visible: active && status === Loader.Ready
+            opacity: lockScreenUi.dashboardContentEntrance
+                     * (1.0 - lockScreenUi.authenticationReveal * 0.08)
+            scale: MeoTheme.reduceMotion
+                   ? 1.0
+                   : 0.92 + lockScreenUi.dashboardContentEntrance * 0.08
+            transformOrigin: Item.Center
+            enabled: active
+            transform: Translate {
+                y: -lockScreenUi.authenticationReveal * 6 * MeoTheme.globalScale
+            }
+
+            sourceComponent: RowLayout {
+                anchors.fill: parent
+                spacing: MeoTheme.space32
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 238 * MeoTheme.globalScale
+                    Layout.fillHeight: true
+                    spacing: MeoTheme.space12
+
+                    MeoLockScreenWeatherCard {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showWeather && Weather.available
+                        showLocation: lockScreenUi.showWeatherLocation
+                        rootHeight: lockScreenUi.dashboardHeight
+                        showForecast: lockScreenUi.dashboardHeight >= 975 * MeoTheme.globalScale
+                                      && Weather.forecast.length > 0
+                    }
+
+                    MeoLockScreenSystemSummary {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showSystemSummary
+                        rootHeight: lockScreenUi.dashboardHeight
+                    }
+
+                    // Caelestia places media at the bottom of the left rail.
+                    Item { Layout.fillHeight: true }
+
+                    MediaControls {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
+                        showMedia: lockScreenUi.showMediaControls
+                        showArtwork: lockScreenUi.showAlbumArtwork
+                        showVolume: lockScreenUi.showAudioControls
+                    }
+                }
+
+                // Keep the same 600dp-at-1440p centre scale Caelestia uses.
+                Item {
+                    Layout.preferredWidth: lockScreenUi.dashboardCenterWidth
+                    Layout.fillHeight: true
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 238 * MeoTheme.globalScale
+                    Layout.fillHeight: true
+                    spacing: MeoTheme.space12
+
+                    MeoLockScreenPerformanceSummary {
+                        Layout.fillWidth: true
+                        visible: lockScreenUi.showPerformance
+                        sessionControlsEnabled: lockScreenUi.showSessionControls
+                        canSuspend: sessionManagement.canSuspend
+                        canHibernate: sessionManagement.canHibernate
+                        canReboot: sessionManagement.canReboot
+                        canShutdown: sessionManagement.canShutdown
+                        onSuspendRequested: {
+                            root.clearPassword()
+                            sessionManagement.suspend()
+                        }
+                        onHibernateRequested: {
+                            root.clearPassword()
+                            sessionManagement.hibernate()
+                        }
+                        onRebootRequested: {
+                            root.clearPassword()
+                            sessionManagement.requestReboot()
+                        }
+                        onShutdownRequested: {
+                            root.clearPassword()
+                            sessionManagement.requestShutdown()
+                        }
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        active: lockScreenUi.notificationPrivacyLevel !== "hidden"
+                        visible: status === Loader.Ready
+                        source: "MeoLockScreenNotificationSummary.qml"
+                        onLoaded: {
+                            item.privacyLevel = lockScreenUi.notificationPrivacyLevel
+                            item.width = width
+                        }
+                        onWidthChanged: if (item) item.width = width
+                    }
+                }
+            }
+        }
+
+        Loader {
+            id: compactAmbientDashboard
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: ambientClockFrame.bottom
                 topMargin: MeoTheme.space16
             }
-            width: Math.min(parent.width - 2 * MeoTheme.space24, 360 * MeoTheme.globalScale)
-            spacing: MeoTheme.space12
-            visible: lockScreenUi.activeAuthenticationSurface && !lockScreenRoot.uiVisible
-
-            MeoWeatherStatus {
-                Layout.alignment: Qt.AlignHCenter
-                available: lockScreenUi.showWeather && Weather.available
-                stale: Weather.stale
-                showLocation: lockScreenUi.showWeatherLocation
-                location: Weather.location
-                temperatureText: Weather.temperatureText
-                condition: Weather.condition
-                iconName: Weather.iconName
+            width: Math.min(parent.width - 2 * MeoTheme.space24,
+                            400 * MeoTheme.globalScale)
+            active: lockScreenUi.activeAuthenticationSurface
+                    && !lockScreenRoot.uiVisible
+                    && !lockScreenUi.wideAmbientDashboard
+            visible: active && status === Loader.Ready
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+            enabled: active
+            transform: Translate {
+                y: -lockScreenUi.authenticationReveal * 18 * MeoTheme.globalScale
             }
 
-            // This is deliberately outside the credential StackView.  It is a
-            // current-session MPRIS and audio projection that disappears as
-            // soon as authentication starts; it never receives password input.
-            MediaControls {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.fillWidth: true
-                visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
-                showMedia: lockScreenUi.showMediaControls
-                showArtwork: lockScreenUi.showAlbumArtwork
-                showVolume: lockScreenUi.showAudioControls
-            }
+            sourceComponent: ColumnLayout {
+                width: compactAmbientDashboard.width
+                spacing: MeoTheme.space12
 
-            Loader {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.fillWidth: true
-                active: lockScreenUi.notificationPrivacyLevel !== "hidden"
-                visible: status === Loader.Ready
-                source: "MeoLockScreenNotificationSummary.qml"
-                onLoaded: {
-                    item.privacyLevel = lockScreenUi.notificationPrivacyLevel
-                    item.width = width
+                MeoWeatherStatus {
+                    Layout.alignment: Qt.AlignHCenter
+                    available: lockScreenUi.showWeather && Weather.available
+                    stale: Weather.stale
+                    showLocation: lockScreenUi.showWeatherLocation
+                    location: Weather.location
+                    temperatureText: Weather.temperatureText
+                    condition: Weather.condition
+                    iconName: Weather.iconName
                 }
-                onWidthChanged: if (item) item.width = width
+
+                MediaControls {
+                    Layout.fillWidth: true
+                    visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
+                    showMedia: lockScreenUi.showMediaControls
+                    showArtwork: lockScreenUi.showAlbumArtwork
+                    showVolume: lockScreenUi.showAudioControls
+                }
+
+                Loader {
+                    Layout.fillWidth: true
+                    active: lockScreenUi.notificationPrivacyLevel !== "hidden"
+                    visible: status === Loader.Ready
+                    source: "MeoLockScreenNotificationSummary.qml"
+                    onLoaded: {
+                        item.privacyLevel = lockScreenUi.notificationPrivacyLevel
+                        item.width = width
+                    }
+                    onWidthChanged: if (item) item.width = width
+                }
             }
         }
 
@@ -393,23 +709,22 @@ Item {
             height: lockScreenRoot.height + Kirigami.Units.gridUnit * 3
             focus: lockScreenUi.authenticationUiVisible
             enabled: lockScreenUi.authenticationUiVisible
-            opacity: lockScreenUi.authenticationUiVisible ? 1 : 0
+            opacity: lockScreenUi.authenticationReveal
             visible: opacity > 0.001
+            y: (1.0 - lockScreenUi.authenticationReveal) * 44 * MeoTheme.globalScale
+            scale: MeoTheme.reduceMotion
+                   ? 1.0
+                   : 0.94 + lockScreenUi.authenticationReveal * 0.06
+            transformOrigin: Item.Center
 
-            // Moving the panel never moves it through desktop space. The old
-            // surface fades out while the newly selected secure surface fades
-            // in over the P2 250 ms migration window.
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: lockScreenUi.screenMigrationDuration
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: lockScreenUi.authenticationUiVisible ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
-                }
-            }
-
+            // The secure surface stays owned by KScreenLocker. Only its
+            // presentation follows a Caelestia-style scale/translate reveal,
+            // synchronized by the single M3 Expressive progress value above.
             initialItem: MeoLockScreenMainBlock {
                 id: mainBlock
                 lockScreenUiVisible: lockScreenUi.authenticationUiVisible
+                centerWidthScale: lockScreenUi.dashboardCenterScale
+                embeddedDashboard: lockScreenUi.wideAmbientDashboard
                 showMediaControls: lockScreenUi.showMediaControls
                 showAlbumArtwork: lockScreenUi.showAlbumArtwork
                 avatarSource: kscreenlocker_userImage !== ""
@@ -530,6 +845,16 @@ Item {
 
         RowLayout {
             id: footer
+            opacity: lockScreenRoot.uiVisible ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                }
+            }
+
             anchors {
                 bottom: parent.bottom
                 left: parent.left

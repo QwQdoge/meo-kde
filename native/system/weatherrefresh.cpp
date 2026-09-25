@@ -26,6 +26,7 @@
 #include <QTimer>
 #include <QUrlQuery>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -91,7 +92,9 @@ QString iconForCode(int code)
     if (code == 0) return QStringLiteral("weather-clear");
     if (code <= 3) return QStringLiteral("weather-partly-cloudy");
     if (code == 45 || code == 48) return QStringLiteral("weather-fog");
-    if (code <= 67 || code <= 82) return QStringLiteral("weather-showers");
+    if (code <= 67) return QStringLiteral("weather-showers");
+    if (code <= 77) return QStringLiteral("weather-snow");
+    if (code <= 82) return QStringLiteral("weather-showers");
     if (code <= 86) return QStringLiteral("weather-snow");
     return QStringLiteral("weather-storm");
 }
@@ -171,7 +174,13 @@ int main(int argc, char **argv)
     QUrlQuery forecastQuery;
     forecastQuery.addQueryItem(QStringLiteral("latitude"), QString::number(latitude, 'f', 4));
     forecastQuery.addQueryItem(QStringLiteral("longitude"), QString::number(longitude, 'f', 4));
-    forecastQuery.addQueryItem(QStringLiteral("current"), QStringLiteral("temperature_2m,weather_code"));
+    forecastQuery.addQueryItem(QStringLiteral("current"),
+                               QStringLiteral("temperature_2m,apparent_temperature,weather_code"));
+    forecastQuery.addQueryItem(QStringLiteral("hourly"),
+                               QStringLiteral("temperature_2m,weather_code,precipitation_probability"));
+    forecastQuery.addQueryItem(QStringLiteral("daily"),
+                               QStringLiteral("temperature_2m_max,temperature_2m_min"));
+    forecastQuery.addQueryItem(QStringLiteral("forecast_hours"), QStringLiteral("6"));
     forecastQuery.addQueryItem(QStringLiteral("temperature_unit"), QStringLiteral("celsius"));
     forecastQuery.addQueryItem(QStringLiteral("timezone"), QStringLiteral("auto"));
     forecastUrl.setQuery(forecastQuery);
@@ -184,14 +193,62 @@ int main(int argc, char **argv)
 
     const int code = current.value(QStringLiteral("weather_code")).toInt(-1);
     const QString location = place.value(QStringLiteral("name")).toString().left(64);
+    const double apparentTemperature =
+        current.value(QStringLiteral("apparent_temperature"))
+            .toDouble(std::numeric_limits<double>::quiet_NaN());
+    const QJsonObject daily = forecast.value(QStringLiteral("daily")).toObject();
+    const QJsonArray dailyHighs = daily.value(QStringLiteral("temperature_2m_max")).toArray();
+    const QJsonArray dailyLows = daily.value(QStringLiteral("temperature_2m_min")).toArray();
+    const double dailyHigh = dailyHighs.isEmpty()
+        ? std::numeric_limits<double>::quiet_NaN()
+        : dailyHighs.at(0).toDouble(std::numeric_limits<double>::quiet_NaN());
+    const double dailyLow = dailyLows.isEmpty()
+        ? std::numeric_limits<double>::quiet_NaN()
+        : dailyLows.at(0).toDouble(std::numeric_limits<double>::quiet_NaN());
+
+    QJsonArray cachedForecast;
+    const QJsonObject hourly = forecast.value(QStringLiteral("hourly")).toObject();
+    const QJsonArray hourlyTimes = hourly.value(QStringLiteral("time")).toArray();
+    const QJsonArray hourlyTemperatures = hourly.value(QStringLiteral("temperature_2m")).toArray();
+    const QJsonArray hourlyCodes = hourly.value(QStringLiteral("weather_code")).toArray();
+    const QJsonArray hourlyPrecipitation =
+        hourly.value(QStringLiteral("precipitation_probability")).toArray();
+    qsizetype forecastCount = std::min(hourlyTimes.size(), hourlyTemperatures.size());
+    forecastCount = std::min(forecastCount, hourlyCodes.size());
+    forecastCount = std::min(forecastCount, hourlyPrecipitation.size());
+    forecastCount = std::min<qsizetype>(forecastCount, 6);
+    for (qsizetype index = 0; index < forecastCount; ++index) {
+        const QString time = hourlyTimes.at(index).toString().left(32);
+        const double temperature =
+            hourlyTemperatures.at(index).toDouble(std::numeric_limits<double>::quiet_NaN());
+        const int weatherCode = hourlyCodes.at(index).toInt(-1);
+        const int precipitationChance = hourlyPrecipitation.at(index).toInt(-1);
+        if (time.size() < 16 || !std::isfinite(temperature)
+            || temperature < -100 || temperature > 100
+            || weatherCode < 0 || weatherCode > 99
+            || precipitationChance < 0 || precipitationChance > 100) {
+            continue;
+        }
+        cachedForecast.push_back(QJsonObject{
+            {QStringLiteral("time"), time},
+            {QStringLiteral("temperature"), temperature},
+            {QStringLiteral("weatherCode"), weatherCode},
+            {QStringLiteral("precipitationChance"), precipitationChance},
+        });
+    }
+
     const QJsonObject cache{{QStringLiteral("schemaVersion"), 1},
                             {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
                             {QStringLiteral("location"), location},
                             {QStringLiteral("temperature"), current.value(QStringLiteral("temperature_2m")).toDouble()},
+                            {QStringLiteral("apparentTemperature"), apparentTemperature},
+                            {QStringLiteral("dailyHigh"), dailyHigh},
+                            {QStringLiteral("dailyLow"), dailyLow},
                             {QStringLiteral("unit"), QStringLiteral("C")},
                             {QStringLiteral("condition"), conditionForCode(code)},
                             {QStringLiteral("weatherCode"), code},
-                            {QStringLiteral("iconName"), iconForCode(code)}};
+                            {QStringLiteral("iconName"), iconForCode(code)},
+                            {QStringLiteral("forecast"), cachedForecast}};
     if (!writeCache(cache, &error)) {
         qCritical().noquote() << error;
         return 1;

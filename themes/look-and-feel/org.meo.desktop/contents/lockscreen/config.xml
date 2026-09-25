@@ -31,11 +31,23 @@
     </entry>
     <entry name="showWeatherLocation" type="Bool">
       <label>Show the weather cache location on the lock screen.</label>
+      <default>false</default>
+    </entry>
+    <entry name="showPerformance" type="Bool">
+      <label>Show aggregate CPU, memory and storage usage on wide lock screens.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showSystemSummary" type="Bool">
+      <label>Show privacy-bounded uptime, connection, battery and audio status on wide lock screens.</label>
+      <default>true</default>
+    </entry>
+    <entry name="showSessionControls" type="Bool">
+      <label>Reveal KDE session actions when hovering the resource card.</label>
       <default>true</default>
     </entry>
     <entry name="lockScreenNotificationVisibility" type="String">
       <label>Lock-screen notification visibility.</label>
-      <default>full-content</default>
+      <default>count</default>
     </entry>
   </group>
 </kcfg>

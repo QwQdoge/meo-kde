@@ -20,6 +20,8 @@ Item {
     property string statusText: ""
     property string errorText: ""
     property bool failed: false
+    property bool embedded: false
+    property real centerScale: 1.0
     property bool showClock: true
     property url avatarSource: ""
     default property alias content: contentLayout.data
@@ -27,12 +29,19 @@ Item {
     readonly property string effectiveStatus: errorText !== "" ? errorText : statusText
     readonly property color statusColor: errorText !== "" ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant
     readonly property real failureOffset: failureSpring.value
+    readonly property real contentInset: embedded ? 0 : MeoTheme.space32
 
+    // Match the wider standalone/DMS-style center while staying bounded on
+    // narrow displays. The inset is included in implicit geometry so the
+    // layout never clips the clock/avatar/password stack.
     implicitWidth: Math.max(344 * MeoTheme.globalScale,
-                            Math.min(480 * MeoTheme.globalScale, content.implicitWidth))
-    implicitHeight: content.implicitHeight
+                            Math.min(600 * MeoTheme.globalScale,
+                                     content.implicitWidth + contentInset * 2))
+    implicitHeight: content.implicitHeight + contentInset * 2
     opacity: active ? 1 : 0
-    scale: MeoTheme.reduceMotion ? 1 : (active ? 1 : 0.96)
+    // The outer secure stack owns the macro authentication scale/translate.
+    // Keeping this card at unit scale avoids multiplying two reveal motions.
+    scale: 1
     transform: Translate { x: card.failureOffset }
     visible: active || opacity > 0.001
 
@@ -56,14 +65,6 @@ Item {
             easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
         }
     }
-    Behavior on scale {
-        NumberAnimation {
-            duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
-        }
-    }
-
     MeoSpringValue {
         id: failureSpring
         motionProfile: "calm"
@@ -74,22 +75,85 @@ Item {
         targetValue: 0
     }
 
-    // Equivalent to the standalone LockSurface lockBg: the dynamic surface
-    // remains legible over either a light or dark wallpaper while its opacity
-    // still lets the locked-session background participate in the design.
+    // Preserve the high-contrast dynamic surface from #15 underneath the
+    // expressive translucent gradient. Both roles follow MeoTheme, so light
+    // and dark wallpapers retain a stable authentication contrast floor.
     Rectangle {
         anchors.fill: parent
-        radius: MeoTheme.shapeExtraLarge
+        visible: !card.embedded
+        radius: card.failed ? MeoTheme.shapeLarge : MeoTheme.shapeExtraLarge
         color: MeoTheme.surface
         opacity: 0.92
-        border.width: MeoTheme.strokeWidthThin
-        border.color: MeoTheme.outlineVariant
+    }
+
+    // DMS/Caelestia-inspired expressive surface: a quiet Material gradient
+    // instead of a flat panel. It remains presentation-only; authentication
+    // and secure input are still owned by KScreenLocker.
+    Rectangle {
+        id: expressiveSurface
+        anchors.fill: parent
+        radius: card.failed ? MeoTheme.shapeLarge : MeoTheme.shapeExtraLarge
+        border.width: card.embedded ? 0 : Math.max(1, MeoTheme.globalScale)
+        border.color: card.failed
+                      ? Qt.rgba(MeoTheme.error.r, MeoTheme.error.g, MeoTheme.error.b, 0.64)
+                      : Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.24)
+        opacity: card.embedded ? 0 : 1
+
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+
+            GradientStop {
+                position: 0.0
+                color: Qt.rgba(MeoTheme.surfaceContainerHighest.r,
+                               MeoTheme.surfaceContainerHighest.g,
+                               MeoTheme.surfaceContainerHighest.b, 0.94)
+            }
+            GradientStop {
+                position: 0.56
+                color: Qt.rgba(MeoTheme.surfaceContainer.r,
+                               MeoTheme.surfaceContainer.g,
+                               MeoTheme.surfaceContainer.b, 0.92)
+            }
+            GradientStop {
+                position: 1.0
+                color: Qt.rgba(MeoTheme.primaryContainer.r,
+                               MeoTheme.primaryContainer.g,
+                               MeoTheme.primaryContainer.b, 0.82)
+            }
+        }
+
+        Behavior on radius {
+            enabled: !MeoTheme.reduceMotion
+            NumberAnimation {
+                duration: MeoTheme.motionDurationMedium1
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: MeoTheme.motionEasingEmphasized
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: MeoTheme.motionEasingEmphasized
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: Math.max(1, MeoTheme.globalScale)
+        visible: !card.embedded
+        radius: Math.max(0, expressiveSurface.radius - Math.max(1, MeoTheme.globalScale))
+        color: "transparent"
+        border.width: Math.max(1, MeoTheme.globalScale)
+        border.color: Qt.rgba(MeoTheme.primary.r, MeoTheme.primary.g, MeoTheme.primary.b,
+                              card.active ? 0.10 : 0.0)
     }
 
     ColumnLayout {
         id: content
         anchors.fill: parent
-        anchors.margins: MeoTheme.space32
+        anchors.margins: card.contentInset
         spacing: MeoTheme.space24
 
         // The standalone centre keeps the split-colour clock above the
@@ -98,35 +162,29 @@ Item {
         MeoLockScreenClock {
             Layout.alignment: Qt.AlignHCenter
             visible: card.showClock
+            centerScale: card.centerScale
         }
 
-        Rectangle {
+        // Reuse MeoUI's existing arbitrary-shape avatar/masking path instead
+        // of maintaining a lock-screen-only crop implementation.
+        MeoAvatar {
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 196 * MeoTheme.globalScale
-            implicitHeight: implicitWidth
-            radius: implicitWidth / 2
+            Layout.topMargin: MeoTheme.space16 * card.centerScale
+            Layout.bottomMargin: MeoTheme.space8 * card.centerScale
+            // Caelestia sizes the profile shape at 70% of its 600dp centre
+            // column: 420dp at 1440p, then scales with screen height.
+            // MeoAvatar.size is expressed in dp and applies globalScale
+            // internally, so do not multiply the token twice here.
+            size: Math.max(196, 420 * card.centerScale)
+            variant: "ClamShell"
+            source: card.avatarSource
             color: MeoTheme.surfaceContainerHighest
-            clip: true
-
-            Image {
-                anchors.fill: parent
-                source: card.avatarSource
-                visible: status === Image.Ready
-                fillMode: Image.PreserveAspectCrop
-            }
-
-            MeoIcon {
-                anchors.centerIn: parent
-                icon: "person"
-                size: 52 * MeoTheme.globalScale
-                color: MeoTheme.contentOnSurfaceVariant
-                Accessible.ignored: true
-            }
+            textColor: MeoTheme.contentOnSurfaceVariant
         }
 
         MeoText {
             Layout.fillWidth: true
-            visible: text !== ""
+            visible: !card.embedded && text !== ""
             text: card.title
             typeRole: "title"
             typeSize: "medium"
@@ -138,7 +196,7 @@ Item {
 
         MeoText {
             Layout.fillWidth: true
-            visible: text !== ""
+            visible: !card.embedded && text !== ""
             text: card.supportingText
             typeRole: "body"
             typeSize: "medium"

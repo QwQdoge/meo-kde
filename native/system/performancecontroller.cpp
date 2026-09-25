@@ -448,6 +448,9 @@ double PerformanceController::loadAverage1() const { return m_load1; }
 double PerformanceController::loadAverage5() const { return m_load5; }
 double PerformanceController::loadAverage15() const { return m_load15; }
 int PerformanceController::processCount() const { return m_processCount; }
+QString PerformanceController::operatingSystemName() const { return m_operatingSystemName; }
+QString PerformanceController::kernelVersion() const { return m_kernelVersion; }
+QString PerformanceController::desktopEnvironment() const { return m_desktopEnvironment; }
 QString PerformanceController::systemSummary() const { return m_systemSummary; }
 QVariantList PerformanceController::topCpuProcesses() const { return m_topCpuProcesses; }
 QVariantList PerformanceController::topMemoryProcesses() const { return m_topMemoryProcesses; }
@@ -595,10 +598,14 @@ void PerformanceController::refreshStaticSystemInfo()
     m_cpuSockets = socketIds.isEmpty()
         ? 1 : std::max(1, static_cast<int>(socketIds.size()));
 
-    const QString product = QSysInfo::prettyProductName().trimmed();
-    const QString kernel = QSysInfo::kernelVersion().trimmed();
-    m_systemSummary = product.isEmpty() ? kernel
-                                        : (kernel.isEmpty() ? product : product + QStringLiteral(" · ") + kernel);
+    m_operatingSystemName = QSysInfo::prettyProductName().trimmed();
+    m_kernelVersion = QSysInfo::kernelVersion().trimmed();
+    m_desktopEnvironment = qEnvironmentVariable("XDG_CURRENT_DESKTOP").trimmed();
+    m_systemSummary = m_operatingSystemName.isEmpty()
+        ? m_kernelVersion
+        : (m_kernelVersion.isEmpty()
+               ? m_operatingSystemName
+               : m_operatingSystemName + QStringLiteral(" · ") + m_kernelVersion);
 }
 
 void PerformanceController::refreshNow()
