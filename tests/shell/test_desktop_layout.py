@@ -84,9 +84,11 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn("MeoSpringValue", source)
 
         for source in (quick_center, status_center):
-            self.assertIn("MeoMotion.popupOffset", source)
-            self.assertIn("revealScaleSpring", source)
-            self.assertIn("revealLiftSpring", source)
+            self.assertIn("MeoRevealMotion", source)
+            self.assertIn("revealMotion.resolvedScale", source)
+            self.assertIn("revealMotion.resolvedOffset", source)
+            self.assertNotIn("revealScaleSpring", source)
+            self.assertNotIn("revealLiftSpring", source)
 
         self.assertNotIn("targetValue: root.down ? 0.94 : 1", status)
 
