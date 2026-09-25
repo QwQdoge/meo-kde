@@ -36,6 +36,12 @@ PlasmoidItem {
         return name || tasksModel.data(activeTaskIndex, 0) || ""
     }
     readonly property bool activeApplicationAvailable: activeApplicationName !== ""
+    readonly property bool activeApplicationClosable: {
+        taskRevision
+        return activeApplicationAvailable
+               && !!tasksModel.data(activeTaskIndex,
+                                    TaskManager.AbstractTasksModel.IsClosable)
+    }
     readonly property string visibleApplicationName: activeApplicationAvailable
                                                      ? activeApplicationName
                                                      : MeoI18n.translator.i18n("Desktop")
@@ -68,25 +74,33 @@ PlasmoidItem {
         filterByActivity: false
         filterByScreen: false
         filterHidden: true
-        groupMode: TaskManager.TasksModel.GroupApplications
+        // The active row must stay window-scoped: "Close Window" mirrors
+        // Alt+F4 and must never turn into "close every window in this app".
+        groupMode: TaskManager.TasksModel.GroupDisabled
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
 
-    function applicationConfigDeepLink() {
+    function applicationDeepLink(section) {
         if (!activeApplicationAvailable)
             return ""
         const query = []
         if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
             query.push("appId=" + encodeURIComponent(activeApplicationId))
         query.push("appName=" + encodeURIComponent(activeApplicationName))
-        query.push("section=config")
+        query.push("section=" + encodeURIComponent(section))
         return "meosettings://applications?" + query.join("&")
     }
 
-    function openApplicationConfiguration() {
-        const url = applicationConfigDeepLink()
+    function openApplicationSection(section) {
+        const url = applicationDeepLink(section)
         if (url !== "")
             Qt.openUrlExternally(url)
+    }
+
+    function closeActiveWindow() {
+        if (!activeApplicationClosable)
+            return
+        tasksModel.requestClose(activeTaskIndex)
     }
 
     compactRepresentation: Item {
@@ -103,19 +117,46 @@ PlasmoidItem {
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
             Accessible.description: root.activeApplicationAvailable
-                                    ? MeoI18n.translator.i18n("Open application settings menu")
+                                    ? MeoI18n.translator.i18n("Open application menu")
                                     : MeoI18n.translator.i18n("No application window is active")
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
+
+            MeoInteractionMotion {
+                id: activeAppMotion
+                hovered: activeAppButton.hovered
+                pressed: activeAppButton.down
+                active: appMenu.opened
+                enabled: activeAppButton.enabled
+                hoverScale: 1.012
+                activeScale: 1.018
+                pressedScale: 0.965
+            }
+
+            scale: activeAppMotion.scale
+            transform: Translate { y: activeAppMotion.offsetY }
 
             background: MeoShape {
                 type: "rounded"
                 radius: MeoTheme.shapeMedium
                 color: appMenu.opened
-                       ? MeoTheme.surfaceContainerHighest
+                       ? MeoTheme.primaryContainer
                        : (activeAppButton.hovered || activeAppButton.down
-                          ? MeoTheme.surfaceContainerHigh
+                          ? MeoTheme.surfaceContainerHighest
                           : "transparent")
+                strokeColor: "transparent"
+                strokeWidth: 0
+
+                MeoStateLayer {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    hovered: activeAppButton.hovered
+                    pressed: activeAppButton.down
+                    focused: activeAppButton.visualFocus
+                    color: appMenu.opened
+                           ? MeoTheme.contentOnPrimaryContainer
+                           : MeoTheme.contentOnSurface
+                }
             }
 
             contentItem: RowLayout {
@@ -130,9 +171,11 @@ PlasmoidItem {
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                    color: root.activeApplicationAvailable
-                           ? MeoTheme.contentOnSurface
-                           : MeoTheme.contentOnSurfaceVariant
+                    color: appMenu.opened
+                           ? MeoTheme.contentOnPrimaryContainer
+                           : (root.activeApplicationAvailable
+                              ? MeoTheme.contentOnSurface
+                              : MeoTheme.contentOnSurfaceVariant)
                 }
             }
 
@@ -151,13 +194,27 @@ PlasmoidItem {
         MeoMenu {
             id: appMenu
             parent: compactRoot
-            preferredMenuWidth: 260 * MeoTheme.globalScale
+            preferredMenuWidth: 248 * MeoTheme.globalScale
+            placement: "below"
+            placementGap: MeoTheme.space4
             model: [
+                {
+                    "label": MeoI18n.translator.i18n("About %1").arg(root.activeApplicationName),
+                    "icon": "info",
+                    "action": function() { root.openApplicationSection("info") }
+                },
                 {
                     "label": MeoI18n.translator.i18n("Settings…"),
                     "icon": "settings",
-                    "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
-                    "action": function() { root.openApplicationConfiguration() }
+                    "action": function() { root.openApplicationSection("config") }
+                },
+                { "type": "separator" },
+                {
+                    "label": MeoI18n.translator.i18n("Close Window"),
+                    "icon": "close",
+                    "shortcut": "Alt+F4",
+                    "enabled": root.activeApplicationClosable,
+                    "action": function() { root.closeActiveWindow() }
                 }
             ]
         }
