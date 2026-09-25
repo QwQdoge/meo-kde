@@ -147,6 +147,15 @@ PlasmoidItem {
                 strokeColor: "transparent"
                 strokeWidth: 0
 
+                Behavior on color {
+                    enabled: !MeoTheme.reduceMotion
+                    ColorAnimation {
+                        duration: MeoTheme.motionDurationSelection
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingStandard
+                    }
+                }
+
                 MeoStateLayer {
                     anchors.fill: parent
                     radius: parent.radius
