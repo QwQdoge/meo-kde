@@ -87,24 +87,27 @@ QQC2.AbstractButton {
     Accessible.description: statusContent.statusDescription()
     onClicked: quickSettingsRequested()
 
-    MeoSpringValue {
-        id: pressSpring
-        value: 1
-        targetValue: root.down ? 0.94 : 1
-        spring: MeoMotion.fastSpatial
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
     }
 
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: pressSpring.value
-        yScale: pressSpring.value
-    }
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scale
+            yScale: interactionMotion.scale
+        },
+        Translate { y: interactionMotion.offsetY }
+    ]
 
     background: MeoShape {
         id: statusBackground
         type: "round"
-        radius: MeoTheme.shapeSmall
+        radius: height / 2
         color: root.active
                ? MeoTheme.primaryContainer
                : (root.hovered || root.down
