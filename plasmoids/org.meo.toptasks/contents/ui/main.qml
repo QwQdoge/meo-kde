@@ -12,20 +12,11 @@ import MeoKDE 1.0
 PlasmoidItem {
     id: root
 
-    readonly property real taskExtent: 30 * MeoTheme.globalScale
+    readonly property real appExtent: 148 * MeoTheme.globalScale
     readonly property real stripPadding: MeoTheme.space4
-    readonly property real activeLabelExtent: activeApplicationAvailable
-                                                ? 148 * MeoTheme.globalScale : 0
-    readonly property int taskLimit: {
-        const configured = Number(Plasmoid.configuration.taskLimit)
-        return Number.isFinite(configured)
-               ? Math.max(1, Math.min(12, Math.round(configured)))
-               : 8
-    }
-    // TasksModel is a C++ QAbstractItemModel. Make every active-app lookup
-    // explicitly depend on its row/data signals so identity updates after
-    // Plasma has constructed the panel applet.
+    readonly property real compactWidth: appExtent + 2 * stripPadding
     property int taskRevision: 0
+
     readonly property var activeTaskIndex: {
         taskRevision
         return tasksModel.activeTask
@@ -46,21 +37,16 @@ PlasmoidItem {
         return tasksModel.data(activeTaskIndex, 1)
     }
     readonly property bool activeApplicationAvailable: activeApplicationName !== ""
-    // Keep the task strip's original reserved width so Plasma never freezes
-    // this compact applet too narrow while TasksModel is still populating.
-    // The named active-app pill is an additional leading surface.
-    readonly property real compactWidth: activeLabelExtent
-                                         + taskLimit * taskExtent
-                                         + 2 * stripPadding
+    readonly property string visibleApplicationName: activeApplicationAvailable
+                                                     ? activeApplicationName
+                                                     : MeoI18n.translator.i18n("Desktop")
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    Plasmoid.title: MeoI18n.translator.i18n("Open applications")
-    toolTipMainText: activeApplicationAvailable
-                     ? activeApplicationName
-                     : MeoI18n.translator.i18n("Open applications")
+    Plasmoid.title: MeoI18n.translator.i18n("Active application")
+    toolTipMainText: visibleApplicationName
     toolTipSubText: activeApplicationAvailable
-                    ? MeoI18n.translator.i18n("Current application and open applications")
-                    : MeoI18n.translator.i18n("KDE window controls in a compact Meo strip")
+                    ? MeoI18n.translator.i18n("Application settings and information")
+                    : MeoI18n.translator.i18n("No application window is active")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
     switchHeight: 0
@@ -73,9 +59,9 @@ PlasmoidItem {
 
     Component.onCompleted: MeoShellTheme.sync()
 
-    // KDE remains the source of truth for application identity, open windows,
-    // grouping and activation. AppId is the KService desktop storage id and
-    // AppName is KDE's application name; Meo never scans processes to guess it.
+    // KDE is the source of truth. AppId is the KService desktop storage id
+    // and AppName is the application name; Meo does not scan processes or
+    // infer identity from executable names or window-title strings.
     TaskManager.TasksModel {
         id: tasksModel
         filterByVirtualDesktop: false
@@ -108,136 +94,78 @@ PlasmoidItem {
         implicitWidth: root.compactWidth
         implicitHeight: ShellMetrics.topBarHeight
 
-        Row {
+        QQC2.AbstractButton {
+            id: activeAppButton
             anchors.centerIn: parent
-            spacing: 0
+            width: root.appExtent
+            height: 30 * MeoTheme.globalScale
+            hoverEnabled: true
+            enabled: root.activeApplicationAvailable
+            Accessible.name: root.visibleApplicationName
+            Accessible.description: root.activeApplicationAvailable
+                                    ? MeoI18n.translator.i18n("Open application menu")
+                                    : MeoI18n.translator.i18n("No application window is active")
+            onClicked: appMenu.openAt(activeAppButton, 0,
+                                      activeAppButton.height + MeoTheme.space4)
 
-            QQC2.AbstractButton {
-                id: activeAppButton
-                visible: root.activeApplicationAvailable
-                width: visible ? root.activeLabelExtent : 0
-                height: root.taskExtent
-                hoverEnabled: true
-                Accessible.name: root.activeApplicationName
-                Accessible.description: MeoI18n.translator.i18n("Open application menu")
-                onClicked: appMenu.openAt(activeAppButton, 0,
-                                          activeAppButton.height + MeoTheme.space4)
+            background: MeoShape {
+                type: "pill"
+                radius: height / 2
+                color: appMenu.opened
+                       ? MeoTheme.primaryContainer
+                       : (activeAppButton.hovered || activeAppButton.down
+                          ? MeoTheme.surfaceContainerHighest
+                          : "transparent")
+            }
 
-                background: MeoShape {
-                    type: "pill"
-                    radius: height / 2
+            contentItem: RowLayout {
+                spacing: MeoTheme.space8
+
+                Kirigami.Icon {
+                    Layout.preferredWidth: 18 * MeoTheme.globalScale
+                    Layout.preferredHeight: Layout.preferredWidth
+                    source: root.activeApplicationAvailable
+                            ? root.activeApplicationIcon
+                            : "desktop"
+                    layer.enabled: root.activeApplicationAvailable
+                    layer.effect: MultiEffect {
+                        colorization: 1.0
+                        colorizationColor: appMenu.opened
+                                           ? MeoTheme.onPrimaryContainer
+                                           : MeoTheme.onSurface
+                    }
+                }
+
+                MeoText {
+                    Layout.fillWidth: true
+                    text: root.visibleApplicationName
+                    typeRole: "label"
+                    typeSize: "large"
+                    emphasized: root.activeApplicationAvailable
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
                     color: appMenu.opened
-                           ? MeoTheme.primaryContainer
-                           : (activeAppButton.hovered || activeAppButton.down
-                              ? MeoTheme.surfaceContainerHighest
-                              : MeoTheme.surfaceContainer)
+                           ? MeoTheme.onPrimaryContainer
+                           : root.activeApplicationAvailable
+                             ? MeoTheme.contentOnSurface
+                             : MeoTheme.contentOnSurfaceVariant
                 }
 
-                contentItem: RowLayout {
-                    spacing: MeoTheme.space8
-
-                    Kirigami.Icon {
-                        Layout.preferredWidth: 18 * MeoTheme.globalScale
-                        Layout.preferredHeight: Layout.preferredWidth
-                        source: root.activeApplicationIcon
-                        layer.enabled: visible
-                        layer.effect: MultiEffect {
-                            colorization: 1.0
-                            colorizationColor: appMenu.opened
-                                               ? MeoTheme.onPrimaryContainer
-                                               : MeoTheme.onSurface
-                        }
-                    }
-
-                    MeoText {
-                        Layout.fillWidth: true
-                        text: root.activeApplicationName
-                        typeRole: "label"
-                        typeSize: "large"
-                        emphasized: true
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
-                        color: appMenu.opened
-                               ? MeoTheme.onPrimaryContainer
-                               : MeoTheme.contentOnSurface
-                    }
-
-                    MeoIcon {
-                        icon: "expand_more"
-                        size: 16
-                        color: appMenu.opened
-                               ? MeoTheme.onPrimaryContainer
-                               : MeoTheme.contentOnSurfaceVariant
-                    }
-                }
-
-                MeoTooltip {
-                    visible: activeAppButton.hovered
-                             && root.activeApplicationName !== ""
-                    text: root.activeApplicationName
-                    delay: MeoTheme.motionDurationLong1
+                MeoIcon {
+                    visible: root.activeApplicationAvailable
+                    icon: "expand_more"
+                    size: 16
+                    color: appMenu.opened
+                           ? MeoTheme.onPrimaryContainer
+                           : MeoTheme.contentOnSurfaceVariant
                 }
             }
 
-            Repeater {
-                model: tasksModel
-
-                delegate: QQC2.AbstractButton {
-                    id: taskButton
-
-                    required property int index
-                    readonly property var taskIndex: tasksModel.index(index, 0)
-                    readonly property bool active: {
-                        root.taskRevision
-                        return tasksModel.data(taskIndex,
-                            TaskManager.AbstractTasksModel.IsActive) || false
-                    }
-                    readonly property string taskTitle: {
-                        root.taskRevision
-                        return tasksModel.data(taskIndex, 0) || ""
-                    }
-                    readonly property var taskIcon: {
-                        root.taskRevision
-                        return tasksModel.data(taskIndex, 1)
-                    }
-                    // The active task is represented by the named application
-                    // pill at the left. Keep the remaining task strip compact.
-                    readonly property bool withinLimit: index < root.taskLimit
-                    visible: withinLimit && !(root.activeApplicationAvailable && active)
-                    width: visible ? root.taskExtent : 0
-                    height: root.taskExtent
-                    Accessible.name: taskTitle
-                    Accessible.description: MeoI18n.translator.i18n("Activate application")
-                    onClicked: tasksModel.requestActivate(taskIndex)
-
-                    background: MeoShape {
-                        type: "pill"
-                        radius: Math.min(width, height) / 2
-                        color: taskButton.hovered || taskButton.down
-                               ? MeoTheme.surfaceContainerHighest
-                               : MeoTheme.surfaceContainer
-                    }
-
-                    contentItem: Item {
-                        Kirigami.Icon {
-                            anchors.centerIn: parent
-                            width: 18 * MeoTheme.globalScale
-                            height: width
-                            source: taskButton.taskIcon
-                            layer.enabled: visible
-                            layer.effect: MultiEffect {
-                                colorization: 1.0
-                                colorizationColor: MeoTheme.onSurface
-                            }
-                        }
-                    }
-
-                    MeoTooltip {
-                        visible: taskButton.hovered && taskButton.taskTitle !== ""
-                        text: taskButton.taskTitle
-                        delay: MeoTheme.motionDurationLong1
-                    }
-                }
+            MeoTooltip {
+                visible: activeAppButton.hovered
+                         && root.activeApplicationAvailable
+                text: root.activeApplicationName
+                delay: MeoTheme.motionDurationLong1
             }
         }
 
@@ -264,7 +192,11 @@ PlasmoidItem {
 
     Connections {
         target: tasksModel
-        function onActiveTaskChanged() { root.taskRevision++ }
+        function onActiveTaskChanged() {
+            root.taskRevision++
+            if (appMenu.opened)
+                appMenu.close()
+        }
         function onDataChanged() { root.taskRevision++ }
         function onModelReset() { root.taskRevision++ }
         function onRowsInserted() { root.taskRevision++ }
