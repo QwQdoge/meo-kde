@@ -240,10 +240,9 @@ if meoui_root="$(discover_meoui)"; then
   ok "MeoUI source: ${MEO_UI_ROOT}"
 else
   warning "No MeoUI source checkout was found."
-  if [ "${full_mode}" -eq 1 ]; then
-    if [ "${dry_run}" -eq 1 ]; then
-      die "--dry-run cannot validate a missing MeoUI checkout. Clone MeoUI first or set MEO_UI_ROOT."
-    fi
+  if [ "${dry_run}" -eq 1 ]; then
+    die "--dry-run cannot validate a missing MeoUI checkout. Clone MeoUI first or set MEO_UI_ROOT."
+  elif [ "${full_mode}" -eq 1 ]; then
     clone_meoui
   elif prompt_yes_no "Clone the official MeoUI repository beside MeoKDE?" yes; then
     clone_meoui
