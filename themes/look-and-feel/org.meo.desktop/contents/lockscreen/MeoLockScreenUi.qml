@@ -12,6 +12,7 @@ import QtQml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 
 import org.kde.plasma.workspace.components as PW
 import org.kde.plasma.private.keyboardindicator as KeyboardIndicator
@@ -49,8 +50,17 @@ Item {
     readonly property bool showPerformance: configBoolean("showPerformance", true)
     readonly property bool showSystemSummary: configBoolean("showSystemSummary", true)
     readonly property string notificationPrivacyLevel: configNotificationPrivacy()
-    readonly property bool wideAmbientDashboard: width >= 1280 * MeoTheme.globalScale
-                                                 && height >= 720 * MeoTheme.globalScale
+    readonly property real dashboardHeight: Math.min(height - MeoTheme.space32 * 2,
+                                                      height * 0.70)
+    readonly property real dashboardWidth: Math.min(width - MeoTheme.space32 * 2,
+                                                    dashboardHeight * 16 / 9)
+    readonly property real dashboardCenterScale: Math.min(1.0,
+                                                          Math.max(0.58, height / 1440))
+    readonly property real dashboardCenterWidth: Math.max(344 * MeoTheme.globalScale,
+                                                          600 * MeoTheme.globalScale
+                                                          * dashboardCenterScale)
+    readonly property bool wideAmbientDashboard: dashboardWidth >= 900 * MeoTheme.globalScale
+                                                 && dashboardHeight >= 500 * MeoTheme.globalScale
 
     // One animated scalar drives the whole ambient -> authentication
     // transition. This keeps the motion coherent like Caelestia while using
@@ -290,13 +300,20 @@ Item {
             id: wallpaperClockProxyShadow
             visible: false
         }
+        Item {
+            id: wallpaperFooterProxy
+            visible: false
+        }
 
         WallpaperFader {
             anchors.fill: parent
-            state: lockScreenRoot.uiVisible ? "on" : "off"
+            // Caelestia keeps the wallpaper softly blurred behind its large
+            // lock surface. Keep KDE's proven blur implementation, but proxy
+            // every opacity target so it cannot override Meo's motion.
+            state: lockScreenUi.activeAuthenticationSurface ? "on" : "off"
             source: wallpaper
             mainStack: wallpaperMainStackProxy
-            footer: footer
+            footer: wallpaperFooterProxy
             clock: wallpaperClockProxy
             alwaysShowClock: true
         }
@@ -341,6 +358,46 @@ Item {
             }
         }
 
+        // Caelestia's defining lock-screen silhouette is one large 16:9,
+        // 70%-screen-height surface over the blurred wallpaper. Meo keeps that
+        // composition but uses its own HCT palette, spacing and motion tokens.
+        Rectangle {
+            id: wideDashboardSurface
+            anchors.centerIn: parent
+            width: lockScreenUi.dashboardWidth
+            height: lockScreenUi.dashboardHeight
+            visible: lockScreenUi.activeAuthenticationSurface
+                     && lockScreenUi.wideAmbientDashboard
+            radius: MeoTheme.shapeExtraLarge * 1.5
+            color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                           MeoTheme.surface.b, 0.94)
+            border.width: Math.max(1, MeoTheme.globalScale)
+            border.color: Qt.rgba(MeoTheme.outlineVariant.r,
+                                  MeoTheme.outlineVariant.g,
+                                  MeoTheme.outlineVariant.b, 0.34)
+            scale: MeoTheme.reduceMotion
+                   ? 1.0
+                   : 0.985 + lockScreenUi.authenticationReveal * 0.015
+
+            layer.enabled: visible
+            layer.effect: MultiEffect {
+                shadowEnabled: true
+                shadowBlur: 0.78
+                shadowOpacity: 0.34
+                shadowVerticalOffset: 10 * MeoTheme.globalScale
+                shadowColor: MeoTheme.shadow
+            }
+
+            Behavior on scale {
+                enabled: !MeoTheme.reduceMotion
+                NumberAnimation {
+                    duration: MeoTheme.motionDurationMedium1
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                }
+            }
+        }
+
         // WallpaperFader owns the upstream `clock.shadow` visual contract.
         // Keep that adapter local to the KScreenLocker theme so MeoUI's clock
         // stays backend-agnostic for other session-entry consumers.
@@ -353,9 +410,12 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             width: ambientClock.implicitWidth
             height: ambientClock.implicitHeight
-            y: Math.max(MeoTheme.space32,
-                        parent.height * 0.22 - height / 2
-                        - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
+            y: lockScreenUi.wideAmbientDashboard
+               ? wideDashboardSurface.y + MeoTheme.space32
+                 - lockScreenUi.authenticationReveal * 20 * MeoTheme.globalScale
+               : Math.max(MeoTheme.space32,
+                          parent.height * 0.22 - height / 2
+                          - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
 
             Item {
                 id: ambientClockShadow
@@ -377,29 +437,26 @@ Item {
         // it collapses to the lighter DMS-style vertical status stack.
         Loader {
             id: wideAmbientDashboard
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space32
+            anchors.fill: wideDashboardSurface
+            anchors.margins: MeoTheme.space24
             active: lockScreenUi.activeAuthenticationSurface
-                    && !lockScreenRoot.uiVisible
                     && lockScreenUi.wideAmbientDashboard
             visible: active && status === Loader.Ready
-            opacity: 1.0 - lockScreenUi.authenticationReveal
+            opacity: 1.0 - lockScreenUi.authenticationReveal * 0.08
             enabled: active
             transform: Translate {
-                y: -lockScreenUi.authenticationReveal * 18 * MeoTheme.globalScale
+                y: -lockScreenUi.authenticationReveal * 6 * MeoTheme.globalScale
             }
 
             sourceComponent: RowLayout {
                 anchors.fill: parent
-                spacing: 48 * MeoTheme.globalScale
+                spacing: MeoTheme.space32
 
                 ColumnLayout {
-                    Layout.preferredWidth: 360 * MeoTheme.globalScale
-                    Layout.maximumWidth: 400 * MeoTheme.globalScale
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 238 * MeoTheme.globalScale
                     Layout.fillHeight: true
                     spacing: MeoTheme.space12
-
-                    Item { Layout.fillHeight: true }
 
                     MeoLockScreenWeatherCard {
                         Layout.fillWidth: true
@@ -412,8 +469,9 @@ Item {
                         visible: lockScreenUi.showSystemSummary
                     }
 
-                    // Current-user MPRIS/audio controls stay on the left just
-                    // like Caelestia's media card, away from credential input.
+                    // Caelestia places media at the bottom of the left rail.
+                    Item { Layout.fillHeight: true }
+
                     MediaControls {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showMediaControls || lockScreenUi.showAudioControls
@@ -421,25 +479,19 @@ Item {
                         showArtwork: lockScreenUi.showAlbumArtwork
                         showVolume: lockScreenUi.showAudioControls
                     }
-
-                    Item { Layout.fillHeight: true }
                 }
 
-                // Reserve the middle column for the ambient clock and the
-                // authentication surface. Side cards never slide underneath it.
+                // Keep the same 600dp-at-1440p centre scale Caelestia uses.
                 Item {
-                    Layout.preferredWidth: Math.min(600 * MeoTheme.globalScale,
-                                                    wideAmbientDashboard.width * 0.36)
+                    Layout.preferredWidth: lockScreenUi.dashboardCenterWidth
                     Layout.fillHeight: true
                 }
 
                 ColumnLayout {
-                    Layout.preferredWidth: 360 * MeoTheme.globalScale
-                    Layout.maximumWidth: 400 * MeoTheme.globalScale
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 238 * MeoTheme.globalScale
                     Layout.fillHeight: true
                     spacing: MeoTheme.space12
-
-                    Item { Layout.fillHeight: true }
 
                     MeoLockScreenPerformanceSummary {
                         Layout.fillWidth: true
@@ -448,6 +500,7 @@ Item {
 
                     Loader {
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
                         active: lockScreenUi.notificationPrivacyLevel !== "hidden"
                         visible: status === Loader.Ready
                         source: "MeoLockScreenNotificationSummary.qml"
@@ -457,8 +510,6 @@ Item {
                         }
                         onWidthChanged: if (item) item.width = width
                     }
-
-                    Item { Layout.fillHeight: true }
                 }
             }
         }
@@ -587,6 +638,9 @@ Item {
             initialItem: MeoLockScreenMainBlock {
                 id: mainBlock
                 lockScreenUiVisible: lockScreenUi.authenticationUiVisible
+                centerWidthScale: lockScreenUi.wideAmbientDashboard
+                                  ? lockScreenUi.dashboardCenterScale : 1.0
+                embeddedDashboard: lockScreenUi.wideAmbientDashboard
                 showMediaControls: lockScreenUi.showMediaControls
                 showAlbumArtwork: lockScreenUi.showAlbumArtwork
                 avatarSource: kscreenlocker_userImage !== ""
@@ -707,6 +761,16 @@ Item {
 
         RowLayout {
             id: footer
+            opacity: lockScreenRoot.uiVisible ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                }
+            }
+
             anchors {
                 bottom: parent.bottom
                 left: parent.left
