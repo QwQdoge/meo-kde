@@ -70,6 +70,7 @@ PlasmoidItem {
     }
 
     fullRepresentation: QuickSettingsCenter {
+        revealActive: root.expanded
         tileOrder: Plasmoid.configuration.quickTileOrder
         tileSizes: Plasmoid.configuration.quickTileSizes
         tileVisibility: Plasmoid.configuration.quickTileVisibility
