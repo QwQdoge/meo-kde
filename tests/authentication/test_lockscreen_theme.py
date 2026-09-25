@@ -83,6 +83,7 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             "MeoTheme.surfaceContainer",
             "MeoTheme.surfaceContainerHighest",
+            "color: MeoTheme.surface",
             "MeoTheme.motionEasingEmphasizedDecelerate",
             "MeoSpringValue",
             "MeoTheme.reduceMotion",

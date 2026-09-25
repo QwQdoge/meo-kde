@@ -74,9 +74,22 @@ Item {
         targetValue: 0
     }
 
+    // Equivalent to the standalone LockSurface lockBg: the dynamic surface
+    // remains legible over either a light or dark wallpaper while its opacity
+    // still lets the locked-session background participate in the design.
+    Rectangle {
+        anchors.fill: parent
+        radius: MeoTheme.shapeExtraLarge
+        color: MeoTheme.surface
+        opacity: 0.92
+        border.width: MeoTheme.strokeWidthThin
+        border.color: MeoTheme.outlineVariant
+    }
+
     ColumnLayout {
         id: content
         anchors.fill: parent
+        anchors.margins: MeoTheme.space32
         spacing: MeoTheme.space24
 
         // The standalone centre keeps the split-colour clock above the
