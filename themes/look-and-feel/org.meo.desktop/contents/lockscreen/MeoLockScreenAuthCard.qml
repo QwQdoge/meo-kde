@@ -27,10 +27,15 @@ Item {
     readonly property string effectiveStatus: errorText !== "" ? errorText : statusText
     readonly property color statusColor: errorText !== "" ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant
     readonly property real failureOffset: failureSpring.value
+    readonly property real contentInset: MeoTheme.space32
 
+    // Match the wider standalone/DMS-style center while staying bounded on
+    // narrow displays. The inset is included in implicit geometry so the
+    // layout never clips the clock/avatar/password stack.
     implicitWidth: Math.max(344 * MeoTheme.globalScale,
-                            Math.min(480 * MeoTheme.globalScale, content.implicitWidth))
-    implicitHeight: content.implicitHeight
+                            Math.min(600 * MeoTheme.globalScale,
+                                     content.implicitWidth + contentInset * 2))
+    implicitHeight: content.implicitHeight + contentInset * 2
     opacity: active ? 1 : 0
     scale: MeoTheme.reduceMotion ? 1 : (active ? 1 : 0.96)
     transform: Translate { x: card.failureOffset }
@@ -74,9 +79,72 @@ Item {
         targetValue: 0
     }
 
+    // DMS/Caelestia-inspired expressive surface: a quiet Material gradient
+    // instead of a flat panel. It remains presentation-only; authentication
+    // and secure input are still owned by KScreenLocker.
+    Rectangle {
+        id: expressiveSurface
+        anchors.fill: parent
+        radius: card.failed ? MeoTheme.shapeLarge : MeoTheme.shapeExtraLarge
+        border.width: Math.max(1, MeoTheme.globalScale)
+        border.color: card.failed
+                      ? Qt.rgba(MeoTheme.error.r, MeoTheme.error.g, MeoTheme.error.b, 0.64)
+                      : Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.24)
+
+        gradient: Gradient {
+            orientation: Gradient.Vertical
+
+            GradientStop {
+                position: 0.0
+                color: Qt.rgba(MeoTheme.surfaceContainerHighest.r,
+                               MeoTheme.surfaceContainerHighest.g,
+                               MeoTheme.surfaceContainerHighest.b, 0.94)
+            }
+            GradientStop {
+                position: 0.56
+                color: Qt.rgba(MeoTheme.surfaceContainer.r,
+                               MeoTheme.surfaceContainer.g,
+                               MeoTheme.surfaceContainer.b, 0.92)
+            }
+            GradientStop {
+                position: 1.0
+                color: Qt.rgba(MeoTheme.primaryContainer.r,
+                               MeoTheme.primaryContainer.g,
+                               MeoTheme.primaryContainer.b, 0.82)
+            }
+        }
+
+        Behavior on radius {
+            enabled: !MeoTheme.reduceMotion
+            NumberAnimation {
+                duration: MeoTheme.motionDurationMedium1
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: MeoTheme.motionEasingEmphasized
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: MeoTheme.motionEasingEmphasized
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: Math.max(1, MeoTheme.globalScale)
+        radius: Math.max(0, expressiveSurface.radius - Math.max(1, MeoTheme.globalScale))
+        color: "transparent"
+        border.width: Math.max(1, MeoTheme.globalScale)
+        border.color: Qt.rgba(MeoTheme.primary.r, MeoTheme.primary.g, MeoTheme.primary.b,
+                              card.active ? 0.10 : 0.0)
+    }
+
     ColumnLayout {
         id: content
         anchors.fill: parent
+        anchors.margins: card.contentInset
         spacing: MeoTheme.space24
 
         // The standalone centre keeps the split-colour clock above the
