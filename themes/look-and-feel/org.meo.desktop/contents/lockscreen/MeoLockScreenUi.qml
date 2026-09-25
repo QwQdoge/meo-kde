@@ -496,6 +496,26 @@ Item {
                     MeoLockScreenPerformanceSummary {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showPerformance
+                        canSuspend: sessionManagement.canSuspend
+                        canHibernate: sessionManagement.canHibernate
+                        canReboot: sessionManagement.canReboot
+                        canShutdown: sessionManagement.canShutdown
+                        onSuspendRequested: {
+                            root.clearPassword()
+                            sessionManagement.suspend()
+                        }
+                        onHibernateRequested: {
+                            root.clearPassword()
+                            sessionManagement.hibernate()
+                        }
+                        onRebootRequested: {
+                            root.clearPassword()
+                            sessionManagement.requestReboot()
+                        }
+                        onShutdownRequested: {
+                            root.clearPassword()
+                            sessionManagement.requestShutdown()
+                        }
                     }
 
                     Loader {
