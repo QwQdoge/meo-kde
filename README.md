@@ -4,36 +4,54 @@ MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主�
 
 ## 快速安装 / Quick install
 
-在已有的 Plasma 6 系统上，推荐直接使用仓库根目录的安装入口：
+仓库根目录的 `install.sh` 是推荐入口：
 
 ```bash
 ./install.sh
 ```
 
-它会用交互式 Yes/No 向导确认是否立即应用主题、是否重建推荐的顶栏与 Dock
-布局，以及是否更新处于 `main` 的 MeoUI checkout。安装前会创建可恢复备份；
-开发分支上的 MeoUI 不会被自动切回 `main`。
+交互模式会先检测 Arch/Plasma/Qt/构建依赖，再逐项询问是否：
 
-如果需要一条命令直接套用推荐的完整桌面配置：
+- 用一次 `sudo pacman -Syu --needed ...` 安装缺失的必需依赖；
+- 安装 Dolphin、Konsole 等推荐 KDE 应用；
+- 安装可用的 rounded-corners KWin 视觉增强；
+- 安装 zram-generator、power-profiles-daemon、GameMode、System76 Scheduler；
+- 应用系统级 zram/GameMode/scheduler 策略并启用支持的服务；
+- 立即应用 Meo 主题和原生集成；
+- 重建推荐的 Meo 顶栏与 KDE 原生 Dock；
+- 更新处于 `main` 的 MeoUI checkout。
+
+包安装和系统服务不会偷偷执行：交互模式会先显示选择。Arch 包事务使用
+`-Syu`，避免 partial upgrade。显示管理器和默认登录 session 不会被修改或启用。
+
+完整推荐配置：
 
 ```bash
 ./install.sh --full
 ```
 
-`--full` 会应用 Meo Desktop 并重建推荐布局，但不会擅自覆盖已有的 MeoUI
-开发分支。MeoUI 可通过 `MEO_UI_ROOT` 指定；未指定时会自动寻找相邻的
-`meo-ui`、`MeoUI` 或 `meoui` checkout。若完整模式下完全找不到 MeoUI，
-安装器会获取官方 MeoUI checkout。
+如果机器同时有 GNOME、Hyprland 等桌面，只希望安装 Meo KDE 而不改变整机的
+zram / power profile / scheduler / GameMode 策略：
 
-原有的 `setup/apply-meo-desktop.sh` 保留为无交互、可自动化的底层部署入口。
-窗口装饰、KWin 原生插件和部分环境变量需要下一次正常登录才能全部生效；
-安装器不会强制重启 Plasma/KWin 或擅自注销当前会话。
+```bash
+./install.sh --full --kde-only
+```
 
-恢复安装前的桌面：
+MeoUI 可通过 `MEO_UI_ROOT` 指定；未指定时会自动寻找相邻的
+`meo-ui`、`MeoUI` 或 `meoui` checkout。完整模式找不到 MeoUI 时会获取官方
+checkout。开发分支不会被安装器擅自切回 `main`。
+
+系统级 responsiveness 配置使用独立的 root-owned 备份，桌面配置也保留原有的
+用户级备份。分别恢复：
 
 ```bash
 ./setup/reset-meo-desktop.sh
+./setup/reset-meo-system.sh
 ```
+
+原有的 `setup/apply-meo-desktop.sh` 继续作为无交互、可自动化的 KDE/用户级
+部署后端。安装器不会强制重启 Plasma/KWin、注销或重启机器；窗口装饰和部分
+环境设置在下一次正常 Plasma 登录后完整生效。
 
 ## License
 
