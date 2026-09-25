@@ -342,16 +342,19 @@ class LockScreenThemeTests(unittest.TestCase):
             "NumberAnimation on waveOffset",
             "loops: Animation.Infinite",
             "easing.type: Easing.Linear",
-            "renderStrategy: Canvas.Cooperative",
+            "import QtQuick.Shapes",
+            "Shape {",
+            "PathSvg",
             "Behavior on animatedValue",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.wavy_fill)
 
-        # The wave strip is cached and translated. It must not requestPaint
-        # from the animation phase itself.
+        # The wave strip is scene-graph geometry and is translated as one
+        # cached item. No Canvas/QQuickPaintedItem upload path is allowed.
+        self.assertNotIn("Canvas {", self.wavy_fill)
+        self.assertNotIn("requestPaint", self.wavy_fill)
         self.assertNotIn("onWaveOffsetChanged", self.wavy_fill)
-        self.assertNotIn("wave.requestPaint()\n        on", self.wavy_fill)
         self.assertIn("animate: root.visible && !root.sessionControlsShown", self.performance_card)
 
     def test_fetch_matches_caelestia_structure_without_identity_disclosure(self):
