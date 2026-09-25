@@ -83,23 +83,32 @@ QQC2.AbstractButton {
     implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
+    hoverEnabled: true
+    activeFocusOnTab: true
     Accessible.name: MeoI18n.translator.i18n("System status")
     Accessible.description: statusContent.statusDescription()
     onClicked: quickSettingsRequested()
 
-    MeoSpringValue {
-        id: pressSpring
-        value: 1
-        targetValue: root.down ? 0.94 : 1
-        spring: MeoMotion.fastSpatial
+    MeoInteractionMotion {
+        id: interactionMotion
+        pressed: root.down
+        hovered: root.hovered
+        active: root.active
+        motionProfile: "pixel"
     }
 
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: pressSpring.value
-        yScale: pressSpring.value
-    }
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scaleValue
+            yScale: interactionMotion.scaleValue
+        },
+        Translate {
+            x: interactionMotion.offsetX
+            y: interactionMotion.offsetY
+        }
+    ]
 
     background: MeoShape {
         id: statusBackground
