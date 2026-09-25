@@ -22,6 +22,7 @@ MeoLockScreenSessionManagement {
     // The outer KScreenLocker adapter toggles this only for the coordinator's
     // active secure surface. It changes presentation, never credential state.
     property bool activeAuthenticationSurface: lockScreenUiVisible
+    property bool embeddedDashboard: false
     property bool authenticationFailed: false
     property string nonInteractiveError: ""
     property bool showMediaControls: false
@@ -87,6 +88,7 @@ MeoLockScreenSessionManagement {
         Layout.preferredWidth: sessionManager.standaloneCenterWidth
         Layout.maximumWidth: sessionManager.standaloneCenterWidth
         active: sessionManager.activeAuthenticationSurface
+        embedded: sessionManager.embeddedDashboard
         failed: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
         avatarSource: sessionManager.avatarSource
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
