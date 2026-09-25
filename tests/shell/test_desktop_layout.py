@@ -48,11 +48,16 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
         self.assertIn("tasksModel.activeTask", source)
         self.assertIn('"meosettings://applications?"', source)
-        self.assertIn('i18n("App settings")', source)
-        self.assertIn('i18n("App info")', source)
+        self.assertIn('i18n("Settings…")', source)
+        self.assertIn('"section=config"', source)
+        self.assertIn("verified .config", source)
+        self.assertNotIn('i18n("App info")', source)
         self.assertIn("Qt.openUrlExternally(url)", source)
         self.assertNotIn("QProcess", source)
         self.assertNotIn("requestActivate", source)
+        self.assertNotIn('i18n("File")', source)
+        self.assertNotIn('i18n("Edit")', source)
+        self.assertNotIn('i18n("View")', source)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
