@@ -47,30 +47,20 @@ MeoStatusCenter {
                                        ? (showSeconds ? "hh:mm:ss" : "hh:mm")
                                        : (showSeconds ? "h:mm:ss AP" : "h:mm AP")
 
-    MeoSpringValue {
-        id: revealScaleSpring
-        value: MeoTheme.reduceMotion ? 1 : 0.975
-        targetValue: root.revealActive || MeoTheme.reduceMotion ? 1 : 0.975
-        motionProfile: "pixel"
-        speed: "default"
-    }
-
-    MeoSpringValue {
-        id: revealLiftSpring
-        value: MeoTheme.reduceMotion ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
-        targetValue: root.revealActive || MeoTheme.reduceMotion
-                     ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
+    MeoRevealMotion {
+        id: revealMotion
+        active: root.revealActive
         motionProfile: "pixel"
         speed: "default"
     }
 
     transform: [
-        Translate { y: revealLiftSpring.value },
+        Translate { y: revealMotion.resolvedOffset },
         Scale {
             origin.x: root.width
             origin.y: 0
-            xScale: revealScaleSpring.value
-            yScale: revealScaleSpring.value
+            xScale: revealMotion.resolvedScale
+            yScale: revealMotion.resolvedScale
         }
     ]
 
