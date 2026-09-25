@@ -145,6 +145,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('i18n("Settings…")', source)
         self.assertIn('i18n("Quit")', source)
         self.assertIn('"shortcut": "Alt+F4"', source)
+        self.assertNotIn("MeoTooltip", source)
         self.assertIn('openApplicationSection("info")', source)
         self.assertIn('openApplicationSection("config")', source)
         self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
