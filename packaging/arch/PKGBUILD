@@ -53,6 +53,7 @@ package() {
     "${workspace}/plasmoids/org.meo.notifications" \
     "${workspace}/plasmoids/org.meo.time-notifications" \
     "${workspace}/plasmoids/org.meo.timecenter" \
+    "${workspace}/plasmoids/org.meo.toptasks" \
     "${workspace}/plasmoids/org.meo.widgetexplorer" \
     "${workspace}/plasmoids/org.meo.widget.clock" \
     "${workspace}/plasmoids/org.meo.widget.media" \
