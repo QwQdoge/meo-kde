@@ -32,6 +32,7 @@ Item {
     MeoRevealMotion {
         id: revealMotion
         active: root.revealActive
+        animateOnCompleted: true
         motionProfile: "pixel"
         speed: "default"
         // A top-right anchored popout starts slightly toward its trigger and
