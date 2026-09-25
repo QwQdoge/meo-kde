@@ -68,7 +68,7 @@ PlasmoidItem {
         filterByActivity: false
         filterByScreen: false
         filterHidden: true
-        groupMode: TaskManager.TasksModel.GroupApplications
+        groupMode: TaskManager.TasksModel.GroupDisabled
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
 
