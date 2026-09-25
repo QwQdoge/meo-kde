@@ -55,6 +55,23 @@ QQC2.AbstractButton {
     }
     onClicked: statusCenterRequested()
 
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+    }
+
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scale
+            yScale: interactionMotion.scale
+        },
+        Translate { y: interactionMotion.offsetY }
+    ]
+
     PointHandler {
         acceptedButtons: Qt.LeftButton
         onActiveChanged: {
@@ -80,8 +97,12 @@ QQC2.AbstractButton {
     background: MeoShape {
         id: statusSurface
         type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
+        radius: height / 2
+        color: root.active
+               ? MeoTheme.primaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHighest
+                  : "transparent")
         strokeColor: "transparent"
         strokeWidth: 0
 
