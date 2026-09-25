@@ -234,6 +234,8 @@ top.floating = false;
 markManaged(top, "top");
 
 var kickoff = oneWidget(top, "org.kde.plasma.kickoff");
+kickoff.currentConfigGroup = ["General"];
+kickoff.writeConfig("icon", "meo-ai");
 kickoff.currentConfigGroup = ["Shortcuts"];
 kickoff.writeConfig("global", "Meta");
 kickoff.reloadConfig();
