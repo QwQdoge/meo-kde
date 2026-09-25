@@ -4,7 +4,16 @@ MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主�
 
 ## 快速安装 / Quick install
 
-仓库根目录的 `install.sh` 是推荐入口：
+最快的入口可以直接从 GitHub 启动：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash
+```
+
+远程 bootstrap 只负责获取/刷新 MeoKDE checkout，然后把终端重新交给真正的
+`install.sh` Yes/No 向导；它自己不执行 pacman、systemctl 或桌面修改。
+
+已经 clone 仓库时，也可以直接运行：
 
 ```bash
 ./install.sh
@@ -30,11 +39,23 @@ MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主�
 ./install.sh --full
 ```
 
+或一行远程执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --full
+```
+
 如果机器同时有 GNOME、Hyprland 等桌面，只希望安装 Meo KDE 而不改变整机的
 zram / power profile / scheduler / GameMode 策略：
 
 ```bash
 ./install.sh --full --kde-only
+```
+
+远程一行版本：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --full --kde-only
 ```
 
 MeoUI 可通过 `MEO_UI_ROOT` 指定；未指定时会自动寻找相邻的
