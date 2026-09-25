@@ -142,6 +142,7 @@ QQC2.AbstractButton {
         id: statusContent
         statusModel: root.statusModel
         active: root.active
+        activeContentColor: MeoTheme.contentOnSecondaryContainer
         iconSize: 18
         showText: true
         textScale: root.textScale
