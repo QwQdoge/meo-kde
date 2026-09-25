@@ -55,9 +55,11 @@ DockHeight=80
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
   audio, power, media and notification applets are filtered to avoid duplicates.
 - The top-left composition is always **Launcher → active application name**.
-  Clicking the application name opens only Meo's generic **Settings…** handoff
-  to that app's verified Configuration (.config) view. Meo does not synthesize
-  application menus.
+  Clicking the application name opens a small shell-owned menu with
+  **About <app>**, **Settings…**, and **Close Window (Alt+F4)**. About and
+  Settings hand off to the matching OmniStore/Meo Settings application view;
+  Close Window requests KDE to close the active task. Meo does not synthesize
+  File/Edit/View application menus.
 - `ShowGlobalMenu` is `true` or `false`. It places the active application's
   native KDE Global Menu immediately after the app name (for example **File**,
   **Edit**, **View**, and **Help**). Those menus remain application/KDE-owned.
