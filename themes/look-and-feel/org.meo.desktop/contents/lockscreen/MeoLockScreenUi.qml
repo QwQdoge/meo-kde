@@ -522,6 +522,7 @@ Item {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showWeather && Weather.available
                         showLocation: lockScreenUi.showWeatherLocation
+                        rootHeight: lockScreenUi.dashboardHeight
                         showForecast: lockScreenUi.dashboardHeight >= 975 * MeoTheme.globalScale
                                       && Weather.forecast.length > 0
                     }
