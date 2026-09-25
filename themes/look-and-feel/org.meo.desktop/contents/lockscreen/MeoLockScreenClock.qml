@@ -7,10 +7,11 @@ Item {
     id: clock
 
     property date dateTime: new Date()
+    property real centerScale: 1.0
     readonly property var displayLocale: Qt.locale(Qt.uiLanguage)
     readonly property string hours: Qt.formatTime(dateTime, "HH")
     readonly property string minutes: Qt.formatTime(dateTime, "mm")
-    readonly property string dateLabel: Qt.formatDate(dateTime, displayLocale, Locale.LongFormat)
+    readonly property string dateLabel: Qt.formatDate(dateTime, "dddd • d MMM").toUpperCase()
 
     implicitWidth: timeRow.implicitWidth
     implicitHeight: timeRow.implicitHeight + MeoTheme.space8 + dateLabelItem.implicitHeight
@@ -32,18 +33,18 @@ Item {
         Text {
             text: clock.hours
             color: MeoTheme.primary
-            font.family: MeoTheme.typefaceBrand
-            font.pixelSize: 112 * MeoTheme.globalScale
-            font.weight: Font.Normal
-            font.letterSpacing: -1.4 * MeoTheme.globalScale
+            font.family: MeoTheme.typefacePlain
+            font.pixelSize: 224 * clock.centerScale * MeoTheme.globalScale
+            font.weight: Font.Medium
+            font.letterSpacing: -2.0 * clock.centerScale * MeoTheme.globalScale
         }
         Text {
             text: clock.minutes
             color: MeoTheme.secondary
-            font.family: MeoTheme.typefaceBrand
-            font.pixelSize: 112 * MeoTheme.globalScale
-            font.weight: Font.Normal
-            font.letterSpacing: -1.4 * MeoTheme.globalScale
+            font.family: MeoTheme.typefacePlain
+            font.pixelSize: 224 * clock.centerScale * MeoTheme.globalScale
+            font.weight: Font.Medium
+            font.letterSpacing: -2.0 * clock.centerScale * MeoTheme.globalScale
         }
     }
 
