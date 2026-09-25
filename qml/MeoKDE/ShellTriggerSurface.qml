@@ -19,7 +19,6 @@ MeoShape {
     property color restingColor: "transparent"
     // Hover/press feedback belongs to the single shared state layer. Keep the
     // base surface quiet until the trigger owns an open/selected surface.
-    property color interactionColor: "transparent"
     property color selectedColor: MeoTheme.primaryContainer
     property color restingContentColor: MeoTheme.onSurface
     property color selectedContentColor: MeoTheme.onPrimaryContainer
