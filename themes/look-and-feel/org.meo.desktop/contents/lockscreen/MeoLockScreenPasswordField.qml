@@ -19,6 +19,12 @@ TextField {
     property bool smartcardAvailable: false
     property string accessibleLabel: qsTr("Password")
     readonly property bool hasInput: text.length > 0
+    readonly property var maskShapes: [
+        "Slanted", "Arch", "Fan", "Arrow", "SemiCircle", "Triangle",
+        "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny",
+        "Cookie4Sided", "Ghostish", "SoftBurst"
+    ]
+    readonly property real maskShapeSize: 18 * MeoTheme.globalScale
     readonly property real emptyFieldWidth: 304 * MeoTheme.globalScale
     readonly property real filledFieldWidth: Math.min(480 * MeoTheme.globalScale,
                                                        Math.max(360 * MeoTheme.globalScale,
@@ -60,10 +66,14 @@ TextField {
     // screen. Do not repaint a cursor until this presentation is visible.
     cursorVisible: visible
     echoMode: passwordVisible ? TextInput.Normal : TextInput.Password
+    // When hidden, the real TextField still owns the credential, cursor,
+    // editing and IME contract. Its glyphs are visually replaced by a
+    // count-only expressive mask below; no password character is copied into
+    // another model or property.
+    color: passwordVisible ? MeoTheme.contentOnSurface : "transparent"
     font.family: MeoTheme.typefacePlain
     font.pixelSize: MeoTheme.bodyLarge.size * MeoTheme.globalScale
     font.weight: MeoTheme.bodyLarge.weight
-    color: MeoTheme.contentOnSurface
     placeholderTextColor: MeoTheme.contentOnSurfaceVariant
     selectionColor: Qt.rgba(MeoTheme.primary.r, MeoTheme.primary.g, MeoTheme.primary.b, 0.28)
     selectedTextColor: MeoTheme.contentOnSurface
@@ -89,18 +99,111 @@ TextField {
         }
     }
 
+    MeoIcon {
+        anchors.left: parent.left
+        anchors.leftMargin: 20 * MeoTheme.globalScale
+        anchors.verticalCenter: parent.verticalCenter
+        visible: !field.hasInput
+        icon: field.fingerprintAvailable ? "fingerprint"
+              : field.smartcardAvailable ? "badge"
+              : "lock"
+        size: 22 * MeoTheme.globalScale
+        color: field.fingerprintAvailable || field.smartcardAvailable
+               ? MeoTheme.secondary : MeoTheme.contentOnSurfaceVariant
+        Accessible.ignored: true
+    }
+
     MeoIconButton {
         anchors.left: parent.left
         anchors.leftMargin: MeoTheme.space8
         anchors.verticalCenter: parent.verticalCenter
+        visible: field.hasInput
         type: "standard"
         size: "s"
-        icon.name: field.passwordVisible ? "visibility"
-                                         : field.fingerprintAvailable ? "fingerprint"
-                                         : field.smartcardAvailable ? "badge"
-                                         : "lock"
+        icon.name: field.passwordVisible ? "visibility_off" : "visibility"
         Accessible.name: field.passwordVisible ? qsTr("Hide password") : qsTr("Show password")
         onClicked: field.passwordVisible = !field.passwordVisible
+    }
+
+    Item {
+        id: expressivePasswordMask
+        anchors.left: parent.left
+        anchors.leftMargin: field.leftPadding
+        anchors.right: parent.right
+        anchors.rightMargin: field.rightPadding
+        anchors.verticalCenter: parent.verticalCenter
+        height: Math.max(32 * MeoTheme.globalScale, field.maskShapeSize * 1.6)
+        visible: field.hasInput && !field.passwordVisible
+        clip: true
+        Accessible.ignored: true
+
+        ListView {
+            id: maskList
+            anchors.centerIn: parent
+            width: Math.min(parent.width, contentWidth)
+            height: parent.height
+            orientation: ListView.Horizontal
+            spacing: MeoTheme.space4
+            interactive: false
+            model: field.passwordVisible ? 0 : field.text.length
+            contentX: Math.max(0, contentWidth - width)
+
+            add: Transition {
+                ParallelAnimation {
+                    NumberAnimation {
+                        property: "scale"
+                        from: 0.35
+                        to: 1.0
+                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                    }
+                    NumberAnimation {
+                        property: "opacity"
+                        from: 0.0
+                        to: 1.0
+                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingStandard
+                    }
+                }
+            }
+
+            remove: Transition {
+                ParallelAnimation {
+                    NumberAnimation {
+                        property: "scale"
+                        to: 0.55
+                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort3
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+                    }
+                    NumberAnimation {
+                        property: "opacity"
+                        to: 0.0
+                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort3
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingStandard
+                    }
+                }
+            }
+
+            delegate: Item {
+                required property int index
+
+                width: field.maskShapeSize * 1.35
+                height: maskList.height
+
+                MeoShape {
+                    anchors.centerIn: parent
+                    width: field.maskShapeSize
+                    height: width
+                    type: field.maskShapes[index % field.maskShapes.length]
+                    color: MeoTheme.contentOnSurface
+                    rotationAngle: (index % 2 === 0 ? -1 : 1) * (index % 4) * 7
+                }
+            }
+        }
     }
 
     Button {
