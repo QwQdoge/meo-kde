@@ -211,7 +211,7 @@ class LockScreenThemeTests(unittest.TestCase):
     def test_weather_forecast_is_real_cache_data_and_never_locker_network(self):
         for required in (
             'QStringLiteral("hourly")',
-            'QStringLiteral("temperature_2m,weather_code")',
+            'QStringLiteral("temperature_2m,weather_code,precipitation_probability")',
             'QStringLiteral("forecast_hours")',
             'QStringLiteral("6")',
             'QStringLiteral("forecast")',
@@ -222,10 +222,13 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             "Q_PROPERTY(QVariantList forecast",
             'object.value(QStringLiteral("forecast")).toArray()',
-            "Weather.forecast.slice(0, 4)",
+            "Weather.forecast.slice(0, root.forecastItemCount)",
             "showForecast",
-            "dashboardHeight >= 700 * MeoTheme.globalScale",
+            "dashboardHeight >= 975 * MeoTheme.globalScale",
             "iconMapper.materialSymbolFor",
+            "precipitationChance",
+            'type: "Cookie4Sided"',
+            'text: index === 0 ? qsTr("Now")',
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.weather_source + self.weather_card + self.ui
@@ -405,6 +408,8 @@ class LockScreenThemeTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.system_summary)
+
+        self.assertIn("visible: root.rootHeight >= 570 * MeoTheme.globalScale", self.system_summary)
 
         for forbidden in (
             "USER",
