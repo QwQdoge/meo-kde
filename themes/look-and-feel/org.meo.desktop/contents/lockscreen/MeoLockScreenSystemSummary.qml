@@ -16,6 +16,16 @@ Rectangle {
     id: root
 
     readonly property string clientId: "meo-lock-system-" + root.toString()
+    readonly property var paletteSwatches: [
+        MeoTheme.primary,
+        MeoTheme.secondary,
+        MeoTheme.tertiary,
+        MeoTheme.error,
+        MeoTheme.primaryContainer,
+        MeoTheme.secondaryContainer,
+        MeoTheme.tertiaryContainer,
+        MeoTheme.surfaceContainerHighest
+    ]
 
     implicitWidth: 360 * MeoTheme.globalScale
     implicitHeight: content.implicitHeight + MeoTheme.space24 * 2
@@ -86,33 +96,117 @@ Rectangle {
                 color: MeoTheme.contentOnSurface
                 elide: Text.ElideRight
             }
+
+            MeoShape {
+                implicitWidth: 38 * MeoTheme.globalScale
+                implicitHeight: implicitWidth
+                type: "Cookie6Sided"
+                color: MeoTheme.secondaryContainer
+
+                MeoIcon {
+                    anchors.centerIn: parent
+                    icon: "terminal"
+                    size: 20 * MeoTheme.globalScale
+                    color: MeoTheme.secondary
+                    fill: true
+                }
+            }
         }
 
-        FetchLine {
-            label: "UP"
-            value: root.uptimeText(Performance.uptimeSeconds)
-            iconName: "schedule"
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: MeoTheme.space16
+
+            MeoShape {
+                Layout.alignment: Qt.AlignTop
+                visible: root.width >= 330 * MeoTheme.globalScale
+                implicitWidth: 76 * MeoTheme.globalScale
+                implicitHeight: implicitWidth
+                type: "ClamShell"
+                color: MeoTheme.primaryContainer
+
+                MeoIcon {
+                    anchors.centerIn: parent
+                    icon: "desktop_windows"
+                    size: 38 * MeoTheme.globalScale
+                    color: MeoTheme.primary
+                    fill: true
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space6
+
+                FetchLine {
+                    label: "OS"
+                    value: Performance.systemSummary
+                    iconName: "computer"
+                }
+                FetchLine {
+                    label: "WM"
+                    value: "KDE Plasma"
+                    iconName: "web_asset"
+                }
+                FetchLine {
+                    label: "UP"
+                    value: root.uptimeText(Performance.uptimeSeconds)
+                    iconName: "schedule"
+                }
+                FetchLine {
+                    visible: SystemState.batteryAvailable
+                    label: "BATT"
+                    value: (SystemState.batteryCharging ? "(+) " : "")
+                           + SystemState.batteryPercent + "%"
+                    iconName: SystemState.batteryCharging
+                              ? "battery_charging_full" : "battery_full"
+                }
+            }
         }
-        FetchLine {
-            label: "NET"
-            value: SystemState.networkConnected ? qsTr("Connected") : qsTr("Offline")
-            iconName: SystemState.networkConnected ? "wifi" : "wifi_off"
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: MeoTheme.space8
+
+            StatusChip {
+                Layout.fillWidth: true
+                iconName: SystemState.networkConnected ? "wifi" : "wifi_off"
+                label: SystemState.networkConnected ? qsTr("Connected") : qsTr("Offline")
+                active: SystemState.networkConnected
+            }
+
+            StatusChip {
+                Layout.fillWidth: true
+                visible: SystemState.audioAvailable
+                iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
+                label: SystemState.audioMuted ? qsTr("Muted")
+                                              : SystemState.volumePercent + "%"
+                active: !SystemState.audioMuted
+            }
         }
-        FetchLine {
-            visible: SystemState.batteryAvailable
-            label: "BATT"
-            value: (SystemState.batteryCharging ? "(+) " : "") + SystemState.batteryPercent + "%"
-            iconName: SystemState.batteryCharging ? "battery_charging_full" : "battery_full"
-        }
-        FetchLine {
-            visible: SystemState.audioAvailable
-            label: "VOL"
-            value: SystemState.audioMuted ? qsTr("Muted") : SystemState.volumePercent + "%"
-            iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: MeoTheme.space8
+
+            Repeater {
+                model: root.paletteSwatches
+
+                MeoShape {
+                    required property var modelData
+                    implicitWidth: 20 * MeoTheme.globalScale
+                    implicitHeight: implicitWidth
+                    type: "rect"
+                    radius: MeoTheme.shapeSmall
+                    color: modelData
+                }
+            }
         }
     }
 
     component FetchLine: RowLayout {
+        id: fetchLine
+
         required property string label
         required property string value
         required property string iconName
@@ -121,7 +215,7 @@ Rectangle {
         spacing: MeoTheme.space8
 
         MeoText {
-            text: parent.label.padEnd(4, " ") + ":"
+            text: fetchLine.label.padEnd(4, " ") + ":"
             font.family: MeoTheme.fontFamilyMonospace
             typeRole: "label"
             typeSize: "medium"
@@ -130,19 +224,52 @@ Rectangle {
         }
 
         MeoIcon {
-            icon: parent.iconName
+            icon: fetchLine.iconName
             size: 18 * MeoTheme.globalScale
             color: MeoTheme.secondary
         }
 
         MeoText {
             Layout.fillWidth: true
-            text: parent.value
+            text: fetchLine.value
             font.family: MeoTheme.fontFamilyMonospace
             typeRole: "label"
             typeSize: "medium"
             color: MeoTheme.contentOnSurfaceVariant
             elide: Text.ElideRight
+        }
+    }
+
+    component StatusChip: Rectangle {
+        id: statusChip
+
+        required property string iconName
+        required property string label
+        property bool active: true
+
+        implicitHeight: 34 * MeoTheme.globalScale
+        radius: implicitHeight / 2
+        color: active ? MeoTheme.surfaceContainerHigh
+                      : MeoTheme.surfaceContainerLowest
+
+        RowLayout {
+            anchors.centerIn: parent
+            spacing: MeoTheme.space6
+
+            MeoIcon {
+                icon: statusChip.iconName
+                size: 17 * MeoTheme.globalScale
+                color: statusChip.active ? MeoTheme.primary
+                                         : MeoTheme.contentOnSurfaceVariant
+            }
+
+            MeoText {
+                text: statusChip.label
+                typeRole: "label"
+                typeSize: "small"
+                color: MeoTheme.contentOnSurfaceVariant
+                elide: Text.ElideRight
+            }
         }
     }
 }
