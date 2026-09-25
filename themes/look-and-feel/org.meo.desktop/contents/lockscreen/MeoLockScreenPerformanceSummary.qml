@@ -20,11 +20,13 @@ Rectangle {
 
     readonly property string clientId: "meo-lock-performance-" + root.toString()
     readonly property bool hasData: Performance.available
+    property bool sessionControlsEnabled: true
     property bool canSuspend: false
     property bool canHibernate: false
     property bool canReboot: false
     property bool canShutdown: false
-    readonly property bool hasSessionControls: canSuspend || canHibernate || canReboot || canShutdown
+    readonly property bool hasSessionControls: sessionControlsEnabled
+                                                && (canSuspend || canHibernate || canReboot || canShutdown)
     readonly property bool sessionControlsShown: hasSessionControls && hover.hovered
 
     signal suspendRequested()
