@@ -19,6 +19,8 @@ topPanel.writeConfig("Managed", true)
 topPanel.writeConfig("Role", "top")
 
 var launcher = topPanel.addWidget("org.kde.plasma.kickoff")
+launcher.currentConfigGroup = ["General"]
+launcher.writeConfig("icon", "meo-ai")
 launcher.currentConfigGroup = ["Shortcuts"]
 launcher.writeConfig("global", "Meta")
 launcher.reloadConfig()
