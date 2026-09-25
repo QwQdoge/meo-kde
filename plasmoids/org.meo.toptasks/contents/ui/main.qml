@@ -103,7 +103,7 @@ PlasmoidItem {
             id: activeAppButton
             anchors.centerIn: parent
             width: root.appExtent
-            height: 30 * MeoTheme.globalScale
+            height: 28 * MeoTheme.globalScale
             hoverEnabled: true
             activeFocusOnTab: true
             enabled: root.activeApplicationAvailable
