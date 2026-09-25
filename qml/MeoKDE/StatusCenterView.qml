@@ -52,10 +52,18 @@ MeoStatusCenter {
         active: root.revealActive
         motionProfile: "pixel"
         speed: "default"
+        // A top-right anchored popout starts slightly toward its trigger and
+        // resolves on the shared 2D spring. The primitive, not this shell
+        // surface, owns the actual motion physics.
+        closedOffsetX: MeoMotion.popupOffset(motionProfile) * 0.5 * MeoTheme.globalScale
+        closedOffsetY: -MeoMotion.popupOffset(motionProfile) * MeoTheme.globalScale
     }
 
     transform: [
-        Translate { y: revealMotion.resolvedOffset },
+        Translate {
+            x: revealMotion.resolvedOffsetX
+            y: revealMotion.resolvedOffsetY
+        },
         Scale {
             origin.x: root.width
             origin.y: 0
