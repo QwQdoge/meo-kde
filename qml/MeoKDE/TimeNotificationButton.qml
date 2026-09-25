@@ -102,7 +102,11 @@ QQC2.AbstractButton {
         id: statusSurface
         type: "round"
         radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
+        color: root.active
+               ? MeoTheme.primaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHighest
+                  : "transparent")
         strokeColor: "transparent"
         strokeWidth: 0
 
