@@ -522,6 +522,8 @@ Item {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showWeather && Weather.available
                         showLocation: lockScreenUi.showWeatherLocation
+                        showForecast: lockScreenUi.dashboardHeight >= 700 * MeoTheme.globalScale
+                                      && Weather.forecast.length > 0
                     }
 
                     MeoLockScreenSystemSummary {
