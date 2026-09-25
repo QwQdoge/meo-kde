@@ -48,6 +48,7 @@ PlasmoidItem {
     }
 
     fullRepresentation: StatusCenterView {
+        revealActive: root.expanded
         notifications: notifications
         centerMode: "notificationsOnly"
         showJobs: Plasmoid.configuration.showJobs
