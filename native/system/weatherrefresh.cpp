@@ -172,6 +172,8 @@ int main(int argc, char **argv)
     forecastQuery.addQueryItem(QStringLiteral("latitude"), QString::number(latitude, 'f', 4));
     forecastQuery.addQueryItem(QStringLiteral("longitude"), QString::number(longitude, 'f', 4));
     forecastQuery.addQueryItem(QStringLiteral("current"), QStringLiteral("temperature_2m,weather_code"));
+    forecastQuery.addQueryItem(QStringLiteral("hourly"), QStringLiteral("temperature_2m,weather_code"));
+    forecastQuery.addQueryItem(QStringLiteral("forecast_hours"), QStringLiteral("6"));
     forecastQuery.addQueryItem(QStringLiteral("temperature_unit"), QStringLiteral("celsius"));
     forecastQuery.addQueryItem(QStringLiteral("timezone"), QStringLiteral("auto"));
     forecastUrl.setQuery(forecastQuery);
@@ -184,6 +186,31 @@ int main(int argc, char **argv)
 
     const int code = current.value(QStringLiteral("weather_code")).toInt(-1);
     const QString location = place.value(QStringLiteral("name")).toString().left(64);
+
+    QJsonArray cachedForecast;
+    const QJsonObject hourly = forecast.value(QStringLiteral("hourly")).toObject();
+    const QJsonArray hourlyTimes = hourly.value(QStringLiteral("time")).toArray();
+    const QJsonArray hourlyTemperatures = hourly.value(QStringLiteral("temperature_2m")).toArray();
+    const QJsonArray hourlyCodes = hourly.value(QStringLiteral("weather_code")).toArray();
+    const qsizetype forecastCount =
+        std::min<qsizetype>({6, hourlyTimes.size(), hourlyTemperatures.size(), hourlyCodes.size()});
+    for (qsizetype index = 0; index < forecastCount; ++index) {
+        const QString time = hourlyTimes.at(index).toString().left(32);
+        const double temperature =
+            hourlyTemperatures.at(index).toDouble(std::numeric_limits<double>::quiet_NaN());
+        const int weatherCode = hourlyCodes.at(index).toInt(-1);
+        if (time.size() < 16 || !std::isfinite(temperature)
+            || temperature < -100 || temperature > 100
+            || weatherCode < 0 || weatherCode > 99) {
+            continue;
+        }
+        cachedForecast.push_back(QJsonObject{
+            {QStringLiteral("time"), time},
+            {QStringLiteral("temperature"), temperature},
+            {QStringLiteral("weatherCode"), weatherCode},
+        });
+    }
+
     const QJsonObject cache{{QStringLiteral("schemaVersion"), 1},
                             {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
                             {QStringLiteral("location"), location},
@@ -191,7 +218,8 @@ int main(int argc, char **argv)
                             {QStringLiteral("unit"), QStringLiteral("C")},
                             {QStringLiteral("condition"), conditionForCode(code)},
                             {QStringLiteral("weatherCode"), code},
-                            {QStringLiteral("iconName"), iconForCode(code)}};
+                            {QStringLiteral("iconName"), iconForCode(code)},
+                            {QStringLiteral("forecast"), cachedForecast}};
     if (!writeCache(cache, &error)) {
         qCritical().noquote() << error;
         return 1;
