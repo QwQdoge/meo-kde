@@ -33,6 +33,7 @@ MeoStatusCenter {
     property bool showWeekNumbers: false
     property bool showSecondaryCalendar: true
     property string defaultPage: "notifications"
+    property bool revealActive: true
 
     readonly property bool showTime: centerMode !== "notificationsOnly"
     readonly property bool showCalendar: centerMode === ""
@@ -45,6 +46,32 @@ MeoStatusCenter {
     readonly property string timePattern: use24HourClock
                                        ? (showSeconds ? "hh:mm:ss" : "hh:mm")
                                        : (showSeconds ? "h:mm:ss AP" : "h:mm AP")
+
+    MeoRevealMotion {
+        id: revealMotion
+        active: root.revealActive
+        animateOnCompleted: true
+        motionProfile: "pixel"
+        speed: "default"
+        // A top-right anchored popout starts slightly toward its trigger and
+        // resolves on the shared 2D spring. The primitive, not this shell
+        // surface, owns the actual motion physics.
+        closedOffsetX: MeoMotion.popupOffset(motionProfile) * 0.5 * MeoTheme.globalScale
+        closedOffsetY: -MeoMotion.popupOffset(motionProfile) * MeoTheme.globalScale
+    }
+
+    transform: [
+        Translate {
+            x: revealMotion.resolvedOffsetX
+            y: revealMotion.resolvedOffsetY
+        },
+        Scale {
+            origin.x: root.width
+            origin.y: 0
+            xScale: revealMotion.resolvedScale
+            yScale: revealMotion.resolvedScale
+        }
+    ]
 
     color: Qt.rgba(configuredSurfaceBase.r,
                    configuredSurfaceBase.g,

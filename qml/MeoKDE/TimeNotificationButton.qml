@@ -55,54 +55,38 @@ QQC2.AbstractButton {
     }
     onClicked: statusCenterRequested()
 
-    PointHandler {
-        acceptedButtons: Qt.LeftButton
-        onActiveChanged: {
-            stateLayer._pointerPressActive = active
-            if (active) {
-                const localPoint = stateLayer.mapFromItem(root,
-                                                          point.position.x,
-                                                          point.position.y)
-                stateLayer.trigger(localPoint.x, localPoint.y)
-            } else {
-                stateLayer.releaseRipple()
-            }
-        }
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        motionProfile: "pixel"
+        speed: "fast"
     }
+
+    transform: [
+        Translate { y: interactionMotion.resolvedOffsetY },
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.resolvedScale
+            yScale: interactionMotion.resolvedScale
+        }
+    ]
 
     Keys.onPressed: event => {
         if (!event.isAutoRepeat
                 && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                     || event.key === Qt.Key_Space))
-            stateLayer.triggerFromKeyboard()
+            statusSurface.triggerFromKeyboard()
     }
 
-    background: MeoShape {
+    background: ShellTriggerSurface {
         id: statusSurface
-        type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
-        strokeColor: "transparent"
-        strokeWidth: 0
-
-        Behavior on color {
-            ColorAnimation {
-                duration: MeoTheme.motionDurationSelection
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: MeoTheme.motionEasingStandard
-            }
-        }
-
-        MeoStateLayer {
-            id: stateLayer
-            anchors.fill: parent
-            internalPointerTrackingEnabled: false
-            radius: statusSurface.radius
-            hovered: root.hovered
-            pressed: root.down
-            focused: root.visualFocus
-            focusColor: MeoTheme.primary
-        }
+        hovered: root.hovered
+        pressed: root.down
+        focused: root.visualFocus
+        active: root.active
     }
 
     contentItem: RowLayout {

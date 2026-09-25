@@ -11,6 +11,7 @@ Item {
     property string tileSizes: "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
     property string tileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
     property string tileDensity: "comfortable"
+    property bool revealActive: true
     signal tileLayoutChanged(string order, string sizes, string visibility, string density)
 
     function prepareToClose() {
@@ -27,6 +28,32 @@ Item {
     implicitHeight: ShellMetrics.quickSettingsHeight
     Layout.minimumWidth: 280 * MeoTheme.globalScale
     Layout.minimumHeight: 360 * MeoTheme.globalScale
+
+    MeoRevealMotion {
+        id: revealMotion
+        active: root.revealActive
+        animateOnCompleted: true
+        motionProfile: "pixel"
+        speed: "default"
+        // A top-right anchored popout starts slightly toward its trigger and
+        // resolves on the shared 2D spring. The primitive, not this shell
+        // surface, owns the actual motion physics.
+        closedOffsetX: MeoMotion.popupOffset(motionProfile) * 0.5 * MeoTheme.globalScale
+        closedOffsetY: -MeoMotion.popupOffset(motionProfile) * MeoTheme.globalScale
+    }
+
+    transform: [
+        Translate {
+            x: revealMotion.resolvedOffsetX
+            y: revealMotion.resolvedOffsetY
+        },
+        Scale {
+            origin.x: root.width
+            origin.y: 0
+            xScale: revealMotion.resolvedScale
+            yScale: revealMotion.resolvedScale
+        }
+    ]
 
     FrostedSurface {
         anchors.fill: parent
@@ -60,7 +87,7 @@ Item {
             pushEnter: Transition {
                 NumberAnimation {
                     property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
+                    from: MeoTheme.reduceMotion ? 0 : MeoMotion.pageOffset("pixel") * MeoTheme.globalScale
                     to: 0
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
@@ -78,7 +105,7 @@ Item {
                 NumberAnimation {
                     property: "x"
                     from: 0
-                    to: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
+                    to: MeoTheme.reduceMotion ? 0 : -MeoMotion.pageOffset("pixel") * 0.5 * MeoTheme.globalScale
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
@@ -94,7 +121,7 @@ Item {
             popEnter: Transition {
                 NumberAnimation {
                     property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
+                    from: MeoTheme.reduceMotion ? 0 : -MeoMotion.pageOffset("pixel") * 0.5 * MeoTheme.globalScale
                     to: 0
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
@@ -112,7 +139,7 @@ Item {
                 NumberAnimation {
                     property: "x"
                     from: 0
-                    to: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
+                    to: MeoTheme.reduceMotion ? 0 : MeoMotion.pageOffset("pixel") * MeoTheme.globalScale
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }

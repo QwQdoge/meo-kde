@@ -44,7 +44,7 @@ PlasmoidItem {
     Plasmoid.title: MeoI18n.translator.i18n("Active application")
     toolTipMainText: visibleApplicationName
     toolTipSubText: activeApplicationAvailable
-                    ? MeoI18n.translator.i18n("Open this application's configuration menu")
+                    ? MeoI18n.translator.i18n("About, settings, and quit")
                     : MeoI18n.translator.i18n("No application window is active")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
@@ -68,25 +68,30 @@ PlasmoidItem {
         filterByActivity: false
         filterByScreen: false
         filterHidden: true
-        groupMode: TaskManager.TasksModel.GroupApplications
+        groupMode: TaskManager.TasksModel.GroupDisabled
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
 
-    function applicationConfigDeepLink() {
+    function applicationDeepLink(section) {
         if (!activeApplicationAvailable)
             return ""
         const query = []
         if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
             query.push("appId=" + encodeURIComponent(activeApplicationId))
         query.push("appName=" + encodeURIComponent(activeApplicationName))
-        query.push("section=config")
+        query.push("section=" + encodeURIComponent(section))
         return "meosettings://applications?" + query.join("&")
     }
 
-    function openApplicationConfiguration() {
-        const url = applicationConfigDeepLink()
+    function openApplicationSection(section) {
+        const url = applicationDeepLink(section)
         if (url !== "")
             Qt.openUrlExternally(url)
+    }
+
+    function closeActiveApplication() {
+        if (activeApplicationAvailable && activeTaskIndex)
+            tasksModel.requestClose(activeTaskIndex)
     }
 
     compactRepresentation: Item {
@@ -98,24 +103,41 @@ PlasmoidItem {
             id: activeAppButton
             anchors.centerIn: parent
             width: root.appExtent
-            height: 30 * MeoTheme.globalScale
+            height: 28 * MeoTheme.globalScale
             hoverEnabled: true
+            activeFocusOnTab: true
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
             Accessible.description: root.activeApplicationAvailable
-                                    ? MeoI18n.translator.i18n("Open application settings menu")
+                                    ? MeoI18n.translator.i18n("Open application menu")
                                     : MeoI18n.translator.i18n("No application window is active")
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
+            MeoInteractionMotion {
+                id: interactionMotion
+                hovered: activeAppButton.hovered
+                pressed: activeAppButton.down
+                active: appMenu.opened
+                motionProfile: "pixel"
+                speed: "fast"
+            }
 
-            background: MeoShape {
-                type: "rounded"
-                radius: MeoTheme.shapeMedium
-                color: appMenu.opened
-                       ? MeoTheme.surfaceContainerHighest
-                       : (activeAppButton.hovered || activeAppButton.down
-                          ? MeoTheme.surfaceContainerHigh
-                          : "transparent")
+            transform: [
+                Translate { y: interactionMotion.resolvedOffsetY },
+                Scale {
+                    origin.x: activeAppButton.width / 2
+                    origin.y: activeAppButton.height / 2
+                    xScale: interactionMotion.resolvedScale
+                    yScale: interactionMotion.resolvedScale
+                }
+            ]
+
+            background: ShellTriggerSurface {
+                id: activeAppSurface
+                hovered: activeAppButton.hovered
+                pressed: activeAppButton.down
+                focused: activeAppButton.visualFocus
+                active: appMenu.opened
             }
 
             contentItem: RowLayout {
@@ -130,18 +152,22 @@ PlasmoidItem {
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                    color: root.activeApplicationAvailable
-                           ? MeoTheme.contentOnSurface
-                           : MeoTheme.contentOnSurfaceVariant
+                    color: appMenu.opened
+                           ? activeAppSurface.contentColor
+                           : (root.activeApplicationAvailable
+                              ? MeoTheme.contentOnSurface
+                              : MeoTheme.contentOnSurfaceVariant)
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: MeoTheme.motionDurationEffectDefault
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingStandard
+                        }
+                    }
                 }
             }
 
-            MeoTooltip {
-                visible: activeAppButton.hovered
-                         && root.activeApplicationAvailable
-                text: root.activeApplicationName
-                delay: MeoTheme.motionDurationLong1
-            }
         }
 
         // This is the shell-owned application-name menu, analogous to the
@@ -150,14 +176,33 @@ PlasmoidItem {
         // applet beside this widget.
         MeoMenu {
             id: appMenu
-            parent: compactRoot
-            preferredMenuWidth: 260 * MeoTheme.globalScale
+            // Host the transient surface in the real window overlay so
+            // viewport clamping uses the screen/window area rather than this
+            // 32dp compact representation. Keep a fallback for offscreen
+            // validation hosts that do not expose a Controls overlay.
+            parent: QQC2.Overlay.overlay || compactRoot
+            preferredMenuWidth: 228 * MeoTheme.globalScale
+            surfaceStyle: "context"
+            motionProfile: "pixel"
             model: [
+                {
+                    "label": MeoI18n.translator.i18n("About"),
+                    "icon": "info",
+                    "action": function() { root.openApplicationSection("info") }
+                },
                 {
                     "label": MeoI18n.translator.i18n("Settings…"),
                     "icon": "settings",
-                    "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
-                    "action": function() { root.openApplicationConfiguration() }
+                    "action": function() { root.openApplicationSection("config") }
+                },
+                {
+                    "type": "separator"
+                },
+                {
+                    "label": MeoI18n.translator.i18n("Quit"),
+                    "icon": "close",
+                    "shortcut": "Alt+F4",
+                    "action": function() { root.closeActiveApplication() }
                 }
             ]
         }

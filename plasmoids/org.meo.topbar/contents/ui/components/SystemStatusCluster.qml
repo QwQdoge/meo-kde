@@ -85,49 +85,35 @@ QQC2.AbstractButton {
     rightPadding: MeoTheme.space8
     Accessible.name: MeoI18n.translator.i18n("System status")
     Accessible.description: statusContent.statusDescription()
+    hoverEnabled: true
+    activeFocusOnTab: true
     onClicked: quickSettingsRequested()
 
-    MeoSpringValue {
-        id: pressSpring
-        value: 1
-        targetValue: root.down ? 0.94 : 1
-        spring: MeoMotion.fastSpatial
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        motionProfile: "pixel"
+        speed: "fast"
     }
 
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: pressSpring.value
-        yScale: pressSpring.value
-    }
+    transform: [
+        Translate { y: interactionMotion.resolvedOffsetY },
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.resolvedScale
+            yScale: interactionMotion.resolvedScale
+        }
+    ]
 
-    background: MeoShape {
+    background: ShellTriggerSurface {
         id: statusBackground
-        type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active
-               ? MeoTheme.primaryContainer
-               : (root.hovered || root.down
-                  ? MeoTheme.surfaceContainerHighest
-                  : "transparent")
-        strokeColor: "transparent"
-        strokeWidth: 0
-
-        Behavior on color {
-            ColorAnimation {
-                duration: MeoTheme.motionDurationEffectDefault
-                easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard
-            }
-        }
-
-        MeoStateLayer {
-            anchors.fill: parent
-            radius: statusBackground.radius
-            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
-            hovered: root.hovered
-            pressed: root.down
-            focused: root.activeFocus
-        }
+        hovered: root.hovered
+        pressed: root.down
+        focused: root.visualFocus
+        active: root.active
     }
 
     contentItem: MeoStatusStrip {

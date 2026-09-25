@@ -85,6 +85,7 @@ PlasmoidItem {
     }
 
     fullRepresentation: TimeNotificationCenter {
+        revealActive: root.expanded
         notifications: notificationModel
         currentDateTime: clock.dateTime
         use24HourClock: Plasmoid.configuration.clockFormat === "system"

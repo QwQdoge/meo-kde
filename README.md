@@ -2,6 +2,78 @@
 
 MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主题、默认配置、KDE/Qt 原生桥接和 Arch 打包定义都在这里。通用 MD3 QML 组件和 token 由相邻的 `meo-ui` 提供；MeoKDE 不复制它们。
 
+## 快速安装 / Quick install
+
+最快的入口可以直接从 GitHub 启动：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash
+```
+
+远程 bootstrap 只负责获取/刷新 MeoKDE checkout，然后把终端重新交给真正的
+`install.sh` Yes/No 向导；它自己不执行 pacman、systemctl 或桌面修改。
+
+已经 clone 仓库时，也可以直接运行：
+
+```bash
+./install.sh
+```
+
+交互模式会先检测 Arch/Plasma/Qt/构建依赖，再逐项询问是否：
+
+- 用一次 `sudo pacman -Syu --needed ...` 安装缺失的必需依赖；
+- 安装 Dolphin、Konsole 等推荐 KDE 应用；
+- 安装可用的 rounded-corners KWin 视觉增强；
+- 安装 zram-generator、power-profiles-daemon、GameMode、System76 Scheduler；
+- 应用系统级 zram/GameMode/scheduler 策略并启用支持的服务；
+- 立即应用 Meo 主题和原生集成；
+- 重建推荐的 Meo 顶栏与 KDE 原生 Dock；
+- 更新处于 `main` 的 MeoUI checkout。
+
+包安装和系统服务不会偷偷执行：交互模式会先显示选择。Arch 包事务使用
+`-Syu`，避免 partial upgrade。显示管理器和默认登录 session 不会被修改或启用。
+
+完整推荐配置：
+
+```bash
+./install.sh --full
+```
+
+或一行远程执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --full
+```
+
+如果机器同时有 GNOME、Hyprland 等桌面，只希望安装 Meo KDE 而不改变整机的
+zram / power profile / scheduler / GameMode 策略：
+
+```bash
+./install.sh --full --kde-only
+```
+
+远程一行版本：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --full --kde-only
+```
+
+MeoUI 可通过 `MEO_UI_ROOT` 指定；未指定时会自动寻找相邻的
+`meo-ui`、`MeoUI` 或 `meoui` checkout。完整模式找不到 MeoUI 时会获取官方
+checkout。开发分支不会被安装器擅自切回 `main`。
+
+系统级 responsiveness 配置使用独立的 root-owned 备份，桌面配置也保留原有的
+用户级备份。分别恢复：
+
+```bash
+./setup/reset-meo-desktop.sh
+./setup/reset-meo-system.sh
+```
+
+原有的 `setup/apply-meo-desktop.sh` 继续作为无交互、可自动化的 KDE/用户级
+部署后端。安装器不会强制重启 Plasma/KWin、注销或重启机器；窗口装饰和部分
+环境设置在下一次正常 Plasma 登录后完整生效。
+
 ## License
 
 除另有文件级声明外，MeoKDE 原创代码采用 GNU General Public License

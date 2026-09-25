@@ -5,7 +5,7 @@ pkgdesc="MeoArch KDE Plasma desktop defaults and Meo Qt application style"
 arch=('x86_64')
 url="https://github.com/QwQdoge"
 license=('GPL-3.0-or-later' 'GPL-2.0-or-later' 'MIT' 'Apache-2.0' 'OFL-1.1')
-depends=('meoui-qml>=1.0.4beta1' 'meo-settings' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
+depends=('meoui-qml>=1.0.4beta2' 'meo-settings' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
          'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'plasma-login-manager' 'breeze'
          'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
          'kwin-effect-rounded-corners' 'qt6-base' 'qt6-declarative' 'polkit-qt6' 'kwindowsystem'
@@ -49,6 +49,7 @@ package() {
   done
   install -d "${pkgdir}/usr/share/plasma/plasmoids"
   cp -a "${workspace}/plasmoids/org.meo.topbar" \
+    "${workspace}/plasmoids/org.meo.toptasks" \
     "${workspace}/plasmoids/org.meo.time" \
     "${workspace}/plasmoids/org.meo.notifications" \
     "${workspace}/plasmoids/org.meo.time-notifications" \

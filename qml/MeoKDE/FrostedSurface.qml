@@ -11,4 +11,5 @@ MeoMotionSurface {
     radius: ShellMetrics.radiusPopup
     color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, surfaceOpacity)
     elevation: 3
+    showOutline: false
 }

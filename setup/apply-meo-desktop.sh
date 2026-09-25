@@ -8,9 +8,26 @@ data_root="${XDG_DATA_HOME:-${HOME}/.local/share}"
 qml_root="${MEO_KDE_QML_ROOT:-${HOME}/.local/share/meo-kde/qml}"
 user_plugin_root="${MEO_KDE_PLUGIN_ROOT:-${HOME}/.local/lib/qt6/plugins}"
 local_bin_root="${XDG_BIN_HOME:-${HOME}/.local/bin}"
-# MeoUI stays an independent, dynamically imported Qt QML module.  Build it
-# from the sibling project rather than carrying a source snapshot in MeoKDE.
-meoui_project_root="${MEOUI_PROJECT_ROOT:-${repo_root}/../meo-ui}"
+# MeoUI stays an independent, dynamically imported Qt QML module. Build it
+# from an explicit workspace root when supplied, otherwise discover the common
+# sibling checkout names. MEOUI_PROJECT_ROOT remains a compatibility alias.
+if [ -n "${MEO_UI_ROOT:-}" ]; then
+  meoui_project_root="${MEO_UI_ROOT}"
+elif [ -n "${MEOUI_PROJECT_ROOT:-}" ]; then
+  meoui_project_root="${MEOUI_PROJECT_ROOT}"
+else
+  meoui_project_root=""
+  for meoui_candidate in \
+    "${repo_root}/../meo-ui" \
+    "${repo_root}/../MeoUI" \
+    "${repo_root}/../meoui"; do
+    if [ -f "${meoui_candidate}/CMakeLists.txt" ]; then
+      meoui_project_root="${meoui_candidate}"
+      break
+    fi
+  done
+  meoui_project_root="${meoui_project_root:-${repo_root}/../meo-ui}"
+fi
 meoui_build_root="${MEOUI_BUILD_ROOT:-${meoui_project_root}/out/build/release}"
 meoui_source="${MEOUI_QML_SOURCE:-${meoui_build_root}/MeoUI}"
 native_build_root="${repo_root}/out/build/native"
@@ -37,7 +54,7 @@ while [ "$#" -gt 0 ]; do
     --reset-layout) reset_layout=1; apply_theme=1 ;;
     --update-meoui) refresh_meoui=1 ;;
     --no-update-meoui) refresh_meoui=0 ;;
-    *) echo "Usage: $0 [--dry-run] [--apply] [--reset-layout] [--update-meoui]" >&2; exit 2 ;;
+    *) echo "Usage: $0 [--dry-run] [--apply] [--reset-layout] [--update-meoui|--no-update-meoui]" >&2; exit 2 ;;
   esac
   shift
 done
@@ -118,7 +135,6 @@ preflight_plasma() {
     "${qt_plugin_dir}/plasma/applets/org.kde.plasma.kickoff.so" \
     "${qt_plugin_dir}/plasma/applets/org.kde.plasma.appmenu.so" \
     "${qt_plugin_dir}/plasma/applets/org.kde.plasma.systemtray.so" \
-    "${qt_plugin_dir}/kwin/effects/plugins/kwin4_effect_shapecorners.so" \
     "${qt_qml_dir}/org/kde/plasma/clock/qmldir" \
     "${qt_qml_dir}/org/kde/notificationmanager/qmldir" \
     "${qt_qml_dir}/org/kde/plasma/workspace/calendar/qmldir"; do
@@ -127,6 +143,15 @@ preflight_plasma() {
       exit 1
     fi
   done
+
+  # Rounded client clipping improves the Meo visual treatment but is not
+  # required for a usable Plasma session. Never block installation solely
+  # because a third-party KWin effect is unavailable in the user's repositories.
+  local rounded_effect="${qt_plugin_dir}/kwin/effects/plugins/kwin4_effect_shapecorners.so"
+  if [ ! -e "${rounded_effect}" ]; then
+    echo "Optional KWin rounded-corner effect is missing: ${rounded_effect}" >&2
+    echo "Continuing without client-surface rounded clipping." >&2
+  fi
 
   if ! has_plasma_package org.kde.plasma.icontasks; then
     echo "Required Plasma widget is missing: org.kde.plasma.icontasks" >&2
@@ -175,10 +200,14 @@ for required in \
   "${repo_root}/defaults/plasma/meo-shellrc" \
   "${repo_root}/tools/shell/apply-meo-panel-layout.sh" \
   "${repo_root}/tools/theme/apply-meo-desktop.sh" \
+  "${repo_root}/plasmoids/org.meo.toptasks/metadata.json" \
   "${repo_root}/plasmoids/org.meo.timecenter/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time-notifications/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widgetexplorer/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widget.clock/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widget.media/metadata.json" \
   "${repo_root}/plasmoids/org.meo.widget.performance/metadata.json" \
   "${repo_root}/assets/wallpapers/installer_background.png"; do
   if [ ! -f "${required}" ]; then
@@ -219,10 +248,14 @@ runtime_backups=(
   "${data_root}/plasma/plasmoids/org.meo.toptasks|data/plasma/plasmoids/org.meo.toptasks"
   "${data_root}/plasma/plasmoids/org.meo.launcher|data/plasma/plasmoids/org.meo.launcher"
   "${data_root}/plasma/plasmoids/org.meo.quicksettings|data/plasma/plasmoids/org.meo.quicksettings"
+  "${data_root}/plasma/plasmoids/org.meo.widgetexplorer|data/plasma/plasmoids/org.meo.widgetexplorer"
+  "${data_root}/plasma/plasmoids/org.meo.widget.clock|data/plasma/plasmoids/org.meo.widget.clock"
+  "${data_root}/plasma/plasmoids/org.meo.widget.media|data/plasma/plasmoids/org.meo.widget.media"
   "${data_root}/plasma/plasmoids/org.meo.widget.performance|data/plasma/plasmoids/org.meo.widget.performance"
   "${data_root}/icons/Meo|data/icons/Meo"
   "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
   "${data_root}/icons/MeoSymbolsDark|data/icons/MeoSymbolsDark"
+  "${data_root}/icons/hicolor/scalable/apps/meoarch-logo.svg|data/icons/hicolor/scalable/apps/meoarch-logo.svg"
   "${data_root}/color-schemes/MeoLight.colors|data/color-schemes/MeoLight.colors"
   "${data_root}/color-schemes/MeoDark.colors|data/color-schemes/MeoDark.colors"
   "${data_root}/color-schemes/MeoDynamicLight.colors|data/color-schemes/MeoDynamicLight.colors"
@@ -366,31 +399,39 @@ for icon_theme in MeoSymbols MeoSymbolsDark; do
   run rm -rf "${data_root}/icons/${icon_theme}"
   run cp -a "${desktop_root}/themes/icons/${icon_theme}" "${data_root}/icons/${icon_theme}"
 done
+run install -Dm644 "${repo_root}/assets/icons/meoarch-logo.svg" \
+  "${data_root}/icons/hicolor/scalable/apps/meoarch-logo.svg"
 
 # Meo owns the quick-settings and time surfaces; KDE owns the native System
 # Tray/StatusNotifier application icons and the bottom task manager.
-for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   if [ -e "${data_root}/plasma/plasmoids/${meo_panel_applet}" ]; then
     run mkdir -p "${backup_root}/plasmoids"
     run cp -a "${data_root}/plasma/plasmoids/${meo_panel_applet}" \
       "${backup_root}/plasmoids/${meo_panel_applet}"
   fi
 done
-for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.toptasks; do
+for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf; do
   run rm -rf "${data_root}/plasma/plasmoids/${legacy_plasmoid}"
 done
-for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   run rm -rf "${data_root}/plasma/plasmoids/${meo_panel_applet}"
   run cp -a "${repo_root}/plasmoids/${meo_panel_applet}" \
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"
 done
 
-# Source installs also expose the performance widget. The widget itself is
-# optional on the desktop, but Widget Explorer and the shared performance page
-# must never point at a package that only exists in the Arch package build.
-run rm -rf "${data_root}/plasma/plasmoids/org.meo.widget.performance"
-run cp -a "${repo_root}/plasmoids/org.meo.widget.performance" \
-  "${data_root}/plasma/plasmoids/org.meo.widget.performance"
+# Source installs expose the same user-facing widget set as the Arch package.
+# They are installed for discovery but are not added to the live desktop
+# automatically, so applying Meo never destroys a user's widget arrangement.
+for meo_optional_applet in \
+  org.meo.widgetexplorer \
+  org.meo.widget.clock \
+  org.meo.widget.media \
+  org.meo.widget.performance; do
+  run rm -rf "${data_root}/plasma/plasmoids/${meo_optional_applet}"
+  run cp -a "${repo_root}/plasmoids/${meo_optional_applet}" \
+    "${data_root}/plasma/plasmoids/${meo_optional_applet}"
+done
 
 run cp -a "${meoui_source}/." "${qml_root}/MeoUI/"
 # The QML plugin links against libmeoui.  Keep its runtime next to the module

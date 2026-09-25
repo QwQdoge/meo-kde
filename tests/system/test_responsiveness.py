@@ -18,10 +18,10 @@ class ResponsivenessContractTests(unittest.TestCase):
             "power-profiles-daemon", "gamemode",
         ):
             self.assertIn(f"'{package}'", recipe)
-        self.assertIn("'meoui-qml>=1.0.4beta1'", recipe)
+        self.assertIn("'meoui-qml>=1.0.4beta2'", recipe)
         self.assertIn("pkgver = 0.4.0", srcinfo)
-        self.assertIn("pkgrel = 5", srcinfo)
-        self.assertIn("depends = meoui-qml>=1.0.4beta1", srcinfo)
+        self.assertIn("pkgrel = 6", srcinfo)
+        self.assertIn("depends = meoui-qml>=1.0.4beta2", srcinfo)
         self.assertNotIn("'ananicy-cpp'", recipe)
         self.assertIn("disable ananicy-cpp.service", (
             ROOT / "defaults/systemd/50-meo-responsiveness.preset"

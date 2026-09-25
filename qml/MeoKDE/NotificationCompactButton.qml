@@ -12,49 +12,67 @@ QQC2.AbstractButton {
     signal statusCenterRequested()
     implicitWidth: 28 * MeoTheme.globalScale
     implicitHeight: implicitWidth
+    hoverEnabled: true
+    activeFocusOnTab: true
     Accessible.name: MeoI18n.translator.i18n("Notifications")
     Accessible.description: root.unreadCount > 0 ? MeoI18n.translator.i18n("%1 unread notifications").arg(root.unreadCount) : MeoI18n.translator.i18n("No unread notifications")
     onClicked: statusCenterRequested()
 
-    PointHandler {
-        acceptedButtons: Qt.LeftButton
-        onActiveChanged: {
-            compactStateLayer._pointerPressActive = active
-            if (active) {
-                const localPoint = compactStateLayer.mapFromItem(root,
-                                                                  point.position.x,
-                                                                  point.position.y)
-                compactStateLayer.trigger(localPoint.x, localPoint.y)
-            } else {
-                compactStateLayer.releaseRipple()
-            }
-        }
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        motionProfile: "pixel"
+        speed: "fast"
     }
+
+    transform: [
+        Translate { y: interactionMotion.resolvedOffsetY },
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.resolvedScale
+            yScale: interactionMotion.resolvedScale
+        }
+    ]
 
     Keys.onPressed: event => {
         if (!event.isAutoRepeat
                 && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                     || event.key === Qt.Key_Space))
-            compactStateLayer.triggerFromKeyboard()
+            compactSurface.triggerFromKeyboard()
     }
 
-    background: MeoShape {
-        type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
-        MeoStateLayer {
-            id: compactStateLayer
-            anchors.fill: parent
-            internalPointerTrackingEnabled: false
-            radius: parent.radius
-            hovered: root.hovered
-            pressed: root.down
-            focused: root.visualFocus
-            focusColor: MeoTheme.primary
-        }
+    background: ShellTriggerSurface {
+        id: compactSurface
+        hovered: root.hovered
+        pressed: root.down
+        focused: root.visualFocus
+        active: root.active
     }
+
     contentItem: Item {
-        MeoIcon { anchors.centerIn: parent; icon: root.inhibited ? "do_not_disturb_on" : (root.activeJobsCount > 0 ? "progress_activity" : "notifications"); size: 20; color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface }
-        MeoBadge { visible: root.showUnreadBadge && (root.unreadCount > 0 || root.activeJobsCount > 0); text: root.unreadCount > 0 ? root.unreadCount : root.activeJobsCount; target: parent }
+        MeoIcon {
+            anchors.centerIn: parent
+            icon: root.inhibited ? "do_not_disturb_on"
+                                 : (root.activeJobsCount > 0 ? "progress_activity" : "notifications")
+            size: 20
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: MeoTheme.motionDurationEffectDefault
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                }
+            }
+        }
+
+        MeoBadge {
+            visible: root.showUnreadBadge && (root.unreadCount > 0 || root.activeJobsCount > 0)
+            text: root.unreadCount > 0 ? root.unreadCount : root.activeJobsCount
+            target: parent
+        }
     }
 }
