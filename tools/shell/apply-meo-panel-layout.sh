@@ -239,6 +239,14 @@ kickoff.writeConfig("global", "Meta");
 kickoff.reloadConfig();
 
 var topOrder = [kickoff.id];
+
+// Keep the same macOS-style left-side composition used by the canonical
+// Look-and-Feel layout: Launcher -> active application name -> application
+// global menus. The Meo applet owns only the active app identity and generic
+// Settings handoff; KDE's Global Menu remains the authority for File/Edit/View.
+var activeApp = oneWidget(top, "org.meo.toptasks");
+topOrder.push(activeApp.id);
+
 var globalMenu = null;
 if (${show_global_menu}) {
     globalMenu = oneWidget(top, "org.kde.plasma.appmenu");
@@ -274,7 +282,6 @@ topOrder.push(topbar.id);
 var timeCenter = oneWidget(top, "org.meo.time-notifications");
 configureTimeCenter(timeCenter);
 topOrder.push(timeCenter.id);
-removeWidgets(top, "org.meo.toptasks");
 top.currentConfigGroup = ["General"];
 top.writeConfig("AppletOrder", topOrder.join(";"));
 top.reloadConfig();
