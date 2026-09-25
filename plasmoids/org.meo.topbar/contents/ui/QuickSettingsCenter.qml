@@ -78,7 +78,7 @@ Item {
             pushEnter: Transition {
                 NumberAnimation {
                     property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
+                    from: MeoTheme.reduceMotion ? 0 : MeoMotion.pageOffset("pixel") * MeoTheme.globalScale
                     to: 0
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
@@ -96,7 +96,7 @@ Item {
                 NumberAnimation {
                     property: "x"
                     from: 0
-                    to: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
+                    to: MeoTheme.reduceMotion ? 0 : -MeoMotion.pageOffset("pixel") * 0.5 * MeoTheme.globalScale
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
@@ -112,7 +112,7 @@ Item {
             popEnter: Transition {
                 NumberAnimation {
                     property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : -12 * MeoTheme.globalScale
+                    from: MeoTheme.reduceMotion ? 0 : -MeoMotion.pageOffset("pixel") * 0.5 * MeoTheme.globalScale
                     to: 0
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
@@ -130,7 +130,7 @@ Item {
                 NumberAnimation {
                     property: "x"
                     from: 0
-                    to: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale
+                    to: MeoTheme.reduceMotion ? 0 : MeoMotion.pageOffset("pixel") * MeoTheme.globalScale
                     duration: MeoTheme.motionDurationPage
                     easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
                 }
