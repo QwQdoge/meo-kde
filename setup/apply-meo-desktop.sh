@@ -54,7 +54,7 @@ while [ "$#" -gt 0 ]; do
     --reset-layout) reset_layout=1; apply_theme=1 ;;
     --update-meoui) refresh_meoui=1 ;;
     --no-update-meoui) refresh_meoui=0 ;;
-    *) echo "Usage: $0 [--dry-run] [--apply] [--reset-layout] [--update-meoui]" >&2; exit 2 ;;
+    *) echo "Usage: $0 [--dry-run] [--apply] [--reset-layout] [--update-meoui|--no-update-meoui]" >&2; exit 2 ;;
   esac
   shift
 done
