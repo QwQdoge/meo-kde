@@ -7,6 +7,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+BOOTSTRAP = ROOT / "bootstrap.sh"
 INSTALLER = ROOT / "install.sh"
 APPLY = ROOT / "setup" / "apply-meo-desktop.sh"
 RESET = ROOT / "setup" / "reset-meo-desktop.sh"
@@ -29,6 +30,16 @@ PACKAGED_USER_APPLETS = {
 
 
 class GuidedInstallerContractTests(unittest.TestCase):
+    def test_remote_bootstrap_is_small_interactive_launcher(self) -> None:
+        self.assertTrue(BOOTSTRAP.is_file())
+        self.assertTrue(os.access(BOOTSTRAP, os.X_OK))
+        source = BOOTSTRAP.read_text()
+        self.assertIn("MEO_KDE_REF", source)
+        self.assertIn("/dev/tty", source)
+        self.assertIn('exec "${checkout}/install.sh"', source)
+        self.assertNotIn("pacman -Syu", source)
+        self.assertNotIn("systemctl enable", source)
+
     def test_root_installer_is_executable_and_has_safe_entry_modes(self) -> None:
         self.assertTrue(INSTALLER.is_file())
         self.assertTrue(os.access(INSTALLER, os.X_OK))
