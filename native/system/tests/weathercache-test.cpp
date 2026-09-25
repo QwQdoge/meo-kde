@@ -53,6 +53,9 @@ private slots:
             {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
             {QStringLiteral("location"), QStringLiteral("Singapore")},
             {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("apparentTemperature"), 30.0},
+            {QStringLiteral("dailyHigh"), 32.0},
+            {QStringLiteral("dailyLow"), 26.0},
             {QStringLiteral("unit"), QStringLiteral("C")},
             {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
             {QStringLiteral("iconName"), QStringLiteral("weather-partly-cloudy")},
@@ -90,6 +93,9 @@ private slots:
 
         WeatherCache cache;
         QVERIFY(cache.available());
+        QCOMPARE(cache.apparentTemperatureText(), QStringLiteral("30°C"));
+        QCOMPARE(cache.highTemperatureText(), QStringLiteral("32°C"));
+        QCOMPARE(cache.lowTemperatureText(), QStringLiteral("26°C"));
         QCOMPARE(cache.forecast().size(), 2);
         const QVariantMap first = cache.forecast().at(0).toMap();
         QCOMPARE(first.value(QStringLiteral("time")).toString(), QStringLiteral("10:00"));
