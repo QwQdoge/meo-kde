@@ -48,6 +48,22 @@ Item {
     readonly property bool showWeatherLocation: configBoolean("showWeatherLocation", false)
     readonly property string notificationPrivacyLevel: configNotificationPrivacy()
 
+    // One animated scalar drives the whole ambient -> authentication
+    // transition. This keeps the motion coherent like Caelestia while using
+    // MeoUI's M3 Expressive curve rather than introducing a second motion
+    // system.
+    property real authenticationReveal: authenticationUiVisible ? 1.0 : 0.0
+
+    Behavior on authenticationReveal {
+        NumberAnimation {
+            duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: authenticationUiVisible
+                                ? MeoTheme.motionEasingEmphasizedDecelerate
+                                : MeoTheme.motionEasingEmphasizedAccelerate
+        }
+    }
+
     Component.onCompleted: ScreenCoordinator.registerSurface(org_kde_plasma_screenlocker_greeter_view)
     Component.onDestruction: ScreenCoordinator.unregisterSurface(org_kde_plasma_screenlocker_greeter_view)
 
@@ -262,17 +278,61 @@ Item {
             alwaysShowClock: true
         }
 
+        // DMS-style layered scrim: nearly invisible in the ambient state, then
+        // a lower-screen surface/primary gradient grows with authentication.
+        // It is deliberately just a visual layer inside KScreenLocker's secure
+        // window; it never captures credentials or session actions.
+        Rectangle {
+            id: expressiveScrim
+            anchors.fill: parent
+            opacity: 0.18 + lockScreenUi.authenticationReveal * 0.82
+
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+
+                GradientStop {
+                    position: 0.0
+                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                                   MeoTheme.surface.b,
+                                   0.02 + lockScreenUi.authenticationReveal * 0.08)
+                }
+                GradientStop {
+                    position: 0.48
+                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                                   MeoTheme.surface.b,
+                                   0.08 + lockScreenUi.authenticationReveal * 0.20)
+                }
+                GradientStop {
+                    position: 0.78
+                    color: Qt.rgba(MeoTheme.primaryContainer.r,
+                                   MeoTheme.primaryContainer.g,
+                                   MeoTheme.primaryContainer.b,
+                                   0.08 + lockScreenUi.authenticationReveal * 0.26)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
+                                   MeoTheme.surface.b,
+                                   0.26 + lockScreenUi.authenticationReveal * 0.52)
+                }
+            }
+        }
+
         // WallpaperFader owns the upstream `clock.shadow` visual contract.
         // Keep that adapter local to the KScreenLocker theme so MeoUI's clock
         // stays backend-agnostic for other session-entry consumers.
         Item {
             id: ambientClockFrame
             property Item shadow: ambientClockShadow
-            visible: !lockScreenRoot.uiVisible
+            visible: opacity > 0.001
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+            scale: MeoTheme.reduceMotion ? 1.0 : 1.0 - lockScreenUi.authenticationReveal * 0.055
             anchors.horizontalCenter: parent.horizontalCenter
             width: ambientClock.implicitWidth
             height: ambientClock.implicitHeight
-            y: Math.max(MeoTheme.space32, parent.height * 0.22 - height / 2)
+            y: Math.max(MeoTheme.space32,
+                        parent.height * 0.22 - height / 2
+                        - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
 
             Item {
                 id: ambientClockShadow
@@ -300,7 +360,12 @@ Item {
             }
             width: Math.min(parent.width - 2 * MeoTheme.space24, 360 * MeoTheme.globalScale)
             spacing: MeoTheme.space12
-            visible: lockScreenUi.activeAuthenticationSurface && !lockScreenRoot.uiVisible
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+            visible: lockScreenUi.activeAuthenticationSurface && opacity > 0.001
+            enabled: !lockScreenRoot.uiVisible
+            transform: Translate {
+                y: -lockScreenUi.authenticationReveal * 18 * MeoTheme.globalScale
+            }
 
             MeoWeatherStatus {
                 Layout.alignment: Qt.AlignHCenter
@@ -393,20 +458,17 @@ Item {
             height: lockScreenRoot.height + Kirigami.Units.gridUnit * 3
             focus: lockScreenUi.authenticationUiVisible
             enabled: lockScreenUi.authenticationUiVisible
-            opacity: lockScreenUi.authenticationUiVisible ? 1 : 0
+            opacity: lockScreenUi.authenticationReveal
             visible: opacity > 0.001
+            y: (1.0 - lockScreenUi.authenticationReveal) * 44 * MeoTheme.globalScale
+            scale: MeoTheme.reduceMotion
+                   ? 1.0
+                   : 0.94 + lockScreenUi.authenticationReveal * 0.06
+            transformOrigin: Item.Center
 
-            // Moving the panel never moves it through desktop space. The old
-            // surface fades out while the newly selected secure surface fades
-            // in over the P2 250 ms migration window.
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: lockScreenUi.screenMigrationDuration
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: lockScreenUi.authenticationUiVisible ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
-                }
-            }
-
+            // The secure surface stays owned by KScreenLocker. Only its
+            // presentation follows a Caelestia-style scale/translate reveal,
+            // synchronized by the single M3 Expressive progress value above.
             initialItem: MeoLockScreenMainBlock {
                 id: mainBlock
                 lockScreenUiVisible: lockScreenUi.authenticationUiVisible
