@@ -57,6 +57,8 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('i18n("Close Window")', source)
         self.assertIn('"shortcut": "Alt+F4"', source)
         self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
+        self.assertEqual(source.count('"action": function()'), 3)
+        self.assertEqual(source.count('"type": "separator"'), 1)
         self.assertIn("MeoInteractionMotion", source)
         self.assertIn("Qt.openUrlExternally(url)", source)
         self.assertNotIn("QProcess", source)
