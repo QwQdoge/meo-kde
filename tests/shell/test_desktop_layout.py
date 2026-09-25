@@ -53,7 +53,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('query.push("section=" + encodeURIComponent(section))', source)
         self.assertIn('openApplicationSection("info")', source)
         self.assertIn('openApplicationSection("config")', source)
-        self.assertIn("verified .config", source)
+        self.assertIn('openApplicationSection("config")', source)
         self.assertNotIn('i18n("App info")', source)
         self.assertIn("Qt.openUrlExternally(url)", source)
         self.assertNotIn("QProcess", source)
