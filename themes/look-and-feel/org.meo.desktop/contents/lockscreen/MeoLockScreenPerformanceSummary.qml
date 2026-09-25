@@ -107,6 +107,8 @@ Rectangle {
     }
 
     component Metric: ColumnLayout {
+        id: metric
+
         required property string label
         required property string iconName
         required property real value
@@ -118,13 +120,13 @@ Rectangle {
             Layout.fillWidth: true
             spacing: MeoTheme.space4
             MeoIcon {
-                icon: parent.parent.iconName
+                icon: metric.iconName
                 size: 18 * MeoTheme.globalScale
-                color: parent.parent.accent
+                color: metric.accent
             }
             MeoText {
                 Layout.fillWidth: true
-                text: parent.parent.label
+                text: metric.label
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
@@ -133,17 +135,17 @@ Rectangle {
         }
 
         MeoText {
-            text: Math.round(parent.value) + "%"
+            text: Math.round(metric.value) + "%"
             typeRole: "title"
             typeSize: "medium"
             emphasized: true
-            color: parent.accent
+            color: metric.accent
         }
 
         MeoProgressBar {
             Layout.fillWidth: true
-            value: parent.value / 100
-            activeColor: parent.accent
+            value: metric.value / 100
+            activeColor: metric.accent
             isThick: true
         }
     }
