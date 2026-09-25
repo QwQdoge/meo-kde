@@ -289,11 +289,13 @@ class LockScreenThemeTests(unittest.TestCase):
             "signal hibernateRequested()",
             "signal rebootRequested()",
             "signal shutdownRequested()",
+            "property bool sessionControlsEnabled: true",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.performance_card)
 
         for required in (
+            "sessionControlsEnabled: lockScreenUi.showSessionControls",
             "canSuspend: sessionManagement.canSuspend",
             "canHibernate: sessionManagement.canHibernate",
             "canReboot: sessionManagement.canReboot",
@@ -357,12 +359,23 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertIn('<entry name="showAudioControls" type="Bool">', self.config)
         self.assertIn('<entry name="showPerformance" type="Bool">', self.config)
         self.assertIn('<entry name="showSystemSummary" type="Bool">', self.config)
-        for entry in ("showMediaControls", "showAlbumArtwork", "showAudioControls", "showWeather", "showWeatherLocation", "showPerformance", "showSystemSummary"):
+        self.assertIn('<entry name="showSessionControls" type="Bool">', self.config)
+        for entry in ("showMediaControls", "showAlbumArtwork", "showAudioControls", "showWeather", "showPerformance", "showSystemSummary", "showSessionControls"):
             with self.subTest(entry=entry):
                 section = self.config.split(f'<entry name="{entry}"', 1)[1].split("</entry>", 1)[0]
                 self.assertIn("<default>true</default>", section)
-        self.assertIn('<default>full-content</default>', self.config)
-        self.assertIn("groupMode: NotificationManager.Notifications.GroupDisabled", self.notifications)
+
+        weather_location = self.config.split('<entry name="showWeatherLocation"', 1)[1].split("</entry>", 1)[0]
+        self.assertIn("<default>false</default>", weather_location)
+        notification_privacy = self.config.split('<entry name="lockScreenNotificationVisibility"', 1)[1].split("</entry>", 1)[0]
+        self.assertIn("<default>count</default>", notification_privacy)
+
+        self.assertIn("groupMode: NotificationManager.Notifications.GroupApplicationsFlat", self.notifications)
+        self.assertIn("groupLimit: 2", self.notifications)
+        self.assertIn("required property bool isGroup", self.notifications)
+        self.assertIn("required property bool isInGroup", self.notifications)
+        self.assertIn("required property bool isGroupExpanded", self.notifications)
+        self.assertIn("delegateRoot.model.isGroupExpanded = !delegateRoot.isGroupExpanded", self.notifications)
         for forbidden in ("invokeDefaultAction", "reply(", "urls", "showJobs: true", "showExpired: true"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.notifications)
