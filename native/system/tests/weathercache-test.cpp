@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTest>
@@ -63,6 +64,38 @@ private slots:
         QCOMPARE(cache.temperatureText(), QStringLiteral("28°C"));
         QCOMPARE(cache.condition(), QStringLiteral("Partly cloudy"));
         QCOMPARE(cache.location(), QStringLiteral("Singapore"));
+    }
+
+    void readsBoundedHourlyForecast()
+    {
+        KLocalizedString::setLanguages({QStringLiteral("en")});
+        writeCache({
+            {QStringLiteral("schemaVersion"), 1},
+            {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("temperature"), 28.0},
+            {QStringLiteral("unit"), QStringLiteral("C")},
+            {QStringLiteral("condition"), QStringLiteral("Partly cloudy")},
+            {QStringLiteral("weatherCode"), 3},
+            {QStringLiteral("forecast"), QJsonArray{
+                QJsonObject{{QStringLiteral("time"), QStringLiteral("2026-09-25T10:00")},
+                            {QStringLiteral("temperature"), 29.0},
+                            {QStringLiteral("weatherCode"), 2}},
+                QJsonObject{{QStringLiteral("time"), QStringLiteral("2026-09-25T11:00")},
+                            {QStringLiteral("temperature"), 30.5},
+                            {QStringLiteral("weatherCode"), 61}},
+            }},
+        });
+
+        WeatherCache cache;
+        QVERIFY(cache.available());
+        QCOMPARE(cache.forecast().size(), 2);
+        const QVariantMap first = cache.forecast().at(0).toMap();
+        QCOMPARE(first.value(QStringLiteral("time")).toString(), QStringLiteral("10:00"));
+        QCOMPARE(first.value(QStringLiteral("temperatureText")).toString(), QStringLiteral("29°C"));
+        QCOMPARE(first.value(QStringLiteral("iconName")).toString(), QStringLiteral("weather-partly-cloudy"));
+        const QVariantMap second = cache.forecast().at(1).toMap();
+        QCOMPARE(second.value(QStringLiteral("temperatureText")).toString(), QStringLiteral("30.5°C"));
+        QCOMPARE(second.value(QStringLiteral("iconName")).toString(), QStringLiteral("weather-showers"));
     }
 
     void keepsLegacyConditionWhenTheCacheHasNoStableCode()
