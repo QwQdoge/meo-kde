@@ -39,7 +39,9 @@ Item {
                                      content.implicitWidth + contentInset * 2))
     implicitHeight: content.implicitHeight + contentInset * 2
     opacity: active ? 1 : 0
-    scale: MeoTheme.reduceMotion ? 1 : (active ? 1 : 0.96)
+    // The outer secure stack owns the macro authentication scale/translate.
+    // Keeping this card at unit scale avoids multiplying two reveal motions.
+    scale: 1
     transform: Translate { x: card.failureOffset }
     visible: active || opacity > 0.001
 
@@ -63,14 +65,6 @@ Item {
             easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
         }
     }
-    Behavior on scale {
-        NumberAnimation {
-            duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
-        }
-    }
-
     MeoSpringValue {
         id: failureSpring
         motionProfile: "calm"
