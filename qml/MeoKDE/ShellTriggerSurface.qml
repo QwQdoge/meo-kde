@@ -28,7 +28,7 @@ MeoShape {
                                           : restingContentColor
 
     type: "round"
-    radius: MeoTheme.shapeSmall
+    radius: Math.min(width, height) / 2
     color: active ? selectedColor : restingColor
     strokeColor: "transparent"
     strokeWidth: 0
