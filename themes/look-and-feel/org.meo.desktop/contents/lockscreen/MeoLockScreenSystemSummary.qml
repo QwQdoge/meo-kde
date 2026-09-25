@@ -124,6 +124,8 @@ Rectangle {
     }
 
     component Status: RowLayout {
+        id: status
+
         required property string iconName
         required property string label
         property bool active: true
@@ -131,13 +133,13 @@ Rectangle {
         spacing: MeoTheme.space4
 
         MeoIcon {
-            icon: parent.iconName
+            icon: status.iconName
             size: 18 * MeoTheme.globalScale
-            color: parent.active ? MeoTheme.primary : MeoTheme.contentOnSurfaceVariant
+            color: status.active ? MeoTheme.primary : MeoTheme.contentOnSurfaceVariant
         }
         MeoText {
             Layout.fillWidth: true
-            text: parent.label
+            text: status.label
             typeRole: "label"
             typeSize: "small"
             color: MeoTheme.contentOnSurfaceVariant
