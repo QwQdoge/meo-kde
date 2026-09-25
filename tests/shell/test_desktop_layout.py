@@ -48,16 +48,43 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
         self.assertIn("tasksModel.activeTask", source)
         self.assertIn('"meosettings://applications?"', source)
+        self.assertIn('i18n("About %1")', source)
         self.assertIn('i18n("Settings…")', source)
-        self.assertIn('"section=config"', source)
-        self.assertIn("verified .config", source)
-        self.assertNotIn('i18n("App info")', source)
+        self.assertIn('i18n("Quit %1")', source)
+        self.assertIn('"shortcut": "Alt+F4"', source)
+        self.assertIn('TaskManager.AbstractTasksModel.IsClosable', source)
+        self.assertIn('tasksModel.requestClose(activeTaskIndex)', source)
+        self.assertIn('query.push("section=" + encodeURIComponent(section))', source)
+        self.assertIn('applicationDeepLink("info")', source)
+        self.assertIn('applicationDeepLink("config")', source)
         self.assertIn("Qt.openUrlExternally(url)", source)
+        self.assertIn("MeoInteractionSpring", source)
         self.assertNotIn("QProcess", source)
         self.assertNotIn("requestActivate", source)
         self.assertNotIn('i18n("File")', source)
         self.assertNotIn('i18n("Edit")', source)
         self.assertNotIn('i18n("View")', source)
+
+    def test_topbar_meo_controls_share_interaction_spring(self):
+        status = (TOPBAR / "components/SystemStatusCluster.qml").read_text(encoding="utf-8")
+        clock = (REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml").read_text(encoding="utf-8")
+        active_app = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+
+        for source in (status, clock, active_app):
+            self.assertIn("MeoInteractionSpring", source)
+            self.assertIn('motionProfile: "pixel"', source)
+            self.assertIn("interactionMotion.scale", source)
+            self.assertIn("interactionMotion.offsetY", source)
+            self.assertIn("MeoStateLayer", source)
+
+        # One shared MeoUI primitive owns the spatial response. The shell must
+        # not grow a one-off top-bar spring implementation.
+        self.assertNotIn("SpringAnimation", status)
+        self.assertNotIn("SpringAnimation", clock)
+        self.assertNotIn("SpringAnimation", active_app)
+        self.assertNotIn("TopBarAnimation", status + clock + active_app)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
