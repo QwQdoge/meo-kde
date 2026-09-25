@@ -84,8 +84,10 @@ MeoLockScreenSessionManagement {
         id: authenticationSurface
         Layout.fillWidth: true
         Layout.minimumWidth: 344 * MeoTheme.globalScale
-        Layout.maximumWidth: 480 * MeoTheme.globalScale
+        Layout.preferredWidth: sessionManager.standaloneCenterWidth
+        Layout.maximumWidth: sessionManager.standaloneCenterWidth
         active: sessionManager.activeAuthenticationSurface
+        failed: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
         avatarSource: sessionManager.avatarSource
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
         supportingText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info", "Unlock your Meo session")
