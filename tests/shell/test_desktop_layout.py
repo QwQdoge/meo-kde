@@ -17,9 +17,13 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
+        self.assertIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
         self.assertNotIn('topPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertNotIn('topPanel.addWidget("org.meo.toptasks")', source)
+        self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.kickoff")'),
+                        source.index('topPanel.addWidget("org.meo.toptasks")'))
+        self.assertLess(source.index('topPanel.addWidget("org.meo.toptasks")'),
+                        source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
         self.assertIn('timeCenter = topPanel.addWidget("org.meo.timecenter")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)
