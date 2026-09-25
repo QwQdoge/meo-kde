@@ -7,6 +7,7 @@
 */
 
 import QtQuick
+import QtQuick.Layouts
 
 import org.kde.notificationmanager as NotificationManager
 
@@ -32,9 +33,9 @@ Item {
     readonly property string body: effectivePrivacyLevel === "full-content"
                                   ? plainText(roleValue(NotificationManager.Notifications.BodyRole)) : ""
 
-    implicitWidth: notificationSummary.implicitWidth
-    implicitHeight: notificationSummary.implicitHeight
-    visible: notificationSummary.visible
+    implicitWidth: 360 * MeoTheme.globalScale
+    implicitHeight: notificationSurface.implicitHeight
+    visible: effectivePrivacyLevel !== "hidden"
 
     function roleValue(role) {
         if (!latestIndex || !notificationModel.data)
@@ -74,14 +75,72 @@ Item {
         window: org_kde_plasma_screenlocker_greeter_view
     }
 
-    MeoPrivacyNotificationSummary {
-        id: notificationSummary
-        anchors.horizontalCenter: parent.horizontalCenter
-        width: Math.min(360 * MeoTheme.globalScale, root.width)
-        privacyLevel: root.effectivePrivacyLevel
-        notificationCount: root.notificationCount
-        applicationName: root.applicationName
-        summary: root.summary
-        body: root.body
+    Rectangle {
+        id: notificationSurface
+        width: root.width
+        implicitHeight: notificationLayout.implicitHeight + MeoTheme.space16 * 2
+        radius: MeoTheme.shapeExtraLarge
+        color: Qt.rgba(MeoTheme.surfaceContainer.r, MeoTheme.surfaceContainer.g,
+                       MeoTheme.surfaceContainer.b, 0.92)
+
+        ColumnLayout {
+            id: notificationLayout
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: MeoTheme.space16
+            spacing: MeoTheme.space10
+
+            MeoText {
+                Layout.fillWidth: true
+                text: root.notificationCount > 0
+                      ? (root.notificationCount === 1
+                         ? qsTr("1 notification")
+                         : qsTr("%1 notifications").arg(root.notificationCount))
+                      : qsTr("Notifications")
+                font.family: MeoTheme.fontFamilyMonospace
+                typeRole: "label"
+                typeSize: "small"
+                emphasized: true
+                color: MeoTheme.outline
+                elide: Text.ElideRight
+            }
+
+            MeoPrivacyNotificationSummary {
+                Layout.fillWidth: true
+                visible: root.notificationCount > 0
+                privacyLevel: root.effectivePrivacyLevel
+                notificationCount: root.notificationCount
+                applicationName: root.applicationName
+                summary: root.summary
+                body: root.body
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 86 * MeoTheme.globalScale
+                visible: root.notificationCount === 0
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: MeoTheme.space6
+
+                    MeoIcon {
+                        Layout.alignment: Qt.AlignHCenter
+                        icon: "notifications_none"
+                        size: 32 * MeoTheme.globalScale
+                        color: MeoTheme.outlineVariant
+                    }
+                    MeoText {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: qsTr("No notifications")
+                        font.family: MeoTheme.fontFamilyMonospace
+                        typeRole: "label"
+                        typeSize: "medium"
+                        color: MeoTheme.outlineVariant
+                    }
+                }
+            }
+        }
     }
 }
