@@ -12,9 +12,30 @@ QQC2.AbstractButton {
     signal statusCenterRequested()
     implicitWidth: 28 * MeoTheme.globalScale
     implicitHeight: implicitWidth
+    hoverEnabled: true
+    activeFocusOnTab: true
     Accessible.name: MeoI18n.translator.i18n("Notifications")
     Accessible.description: root.unreadCount > 0 ? MeoI18n.translator.i18n("%1 unread notifications").arg(root.unreadCount) : MeoI18n.translator.i18n("No unread notifications")
     onClicked: statusCenterRequested()
+
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        motionProfile: "pixel"
+        speed: "fast"
+    }
+
+    transform: [
+        Translate { y: interactionMotion.resolvedOffsetY },
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.resolvedScale
+            yScale: interactionMotion.resolvedScale
+        }
+    ]
 
     PointHandler {
         acceptedButtons: Qt.LeftButton
@@ -39,14 +60,27 @@ QQC2.AbstractButton {
     }
 
     background: MeoShape {
+        id: compactSurface
         type: "round"
         radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
+        color: root.active
+               ? MeoTheme.primaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHighest
+                  : "transparent")
+
+        Behavior on color {
+            ColorAnimation {
+                duration: MeoTheme.motionDurationEffectDefault
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: MeoTheme.motionEasingStandard
+            }
+        }
         MeoStateLayer {
             id: compactStateLayer
             anchors.fill: parent
             internalPointerTrackingEnabled: false
-            radius: parent.radius
+            radius: compactSurface.radius
             hovered: root.hovered
             pressed: root.down
             focused: root.visualFocus
@@ -54,7 +88,26 @@ QQC2.AbstractButton {
         }
     }
     contentItem: Item {
-        MeoIcon { anchors.centerIn: parent; icon: root.inhibited ? "do_not_disturb_on" : (root.activeJobsCount > 0 ? "progress_activity" : "notifications"); size: 20; color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface }
-        MeoBadge { visible: root.showUnreadBadge && (root.unreadCount > 0 || root.activeJobsCount > 0); text: root.unreadCount > 0 ? root.unreadCount : root.activeJobsCount; target: parent }
+        MeoIcon {
+            anchors.centerIn: parent
+            icon: root.inhibited ? "do_not_disturb_on"
+                                 : (root.activeJobsCount > 0 ? "progress_activity" : "notifications")
+            size: 20
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: MeoTheme.motionDurationEffectDefault
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                }
+            }
+        }
+
+        MeoBadge {
+            visible: root.showUnreadBadge && (root.unreadCount > 0 || root.activeJobsCount > 0)
+            text: root.unreadCount > 0 ? root.unreadCount : root.activeJobsCount
+            target: parent
+        }
     }
 }
