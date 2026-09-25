@@ -21,6 +21,7 @@ Item {
     property string errorText: ""
     property bool failed: false
     property bool embedded: false
+    property real centerScale: 1.0
     property bool showClock: true
     property url avatarSource: ""
     default property alias content: contentLayout.data
@@ -156,35 +157,23 @@ Item {
         MeoLockScreenClock {
             Layout.alignment: Qt.AlignHCenter
             visible: card.showClock
+            centerScale: card.centerScale
         }
 
-        Rectangle {
+        // Reuse MeoUI's existing arbitrary-shape avatar/masking path instead
+        // of maintaining a lock-screen-only crop implementation.
+        MeoAvatar {
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 196 * MeoTheme.globalScale
-            implicitHeight: implicitWidth
-            radius: implicitWidth / 2
+            size: Math.max(196, Math.min(280, 420 * card.centerScale))
+            variant: "ClamShell"
+            source: card.avatarSource
             color: MeoTheme.surfaceContainerHighest
-            clip: true
-
-            Image {
-                anchors.fill: parent
-                source: card.avatarSource
-                visible: status === Image.Ready
-                fillMode: Image.PreserveAspectCrop
-            }
-
-            MeoIcon {
-                anchors.centerIn: parent
-                icon: "person"
-                size: 52 * MeoTheme.globalScale
-                color: MeoTheme.contentOnSurfaceVariant
-                Accessible.ignored: true
-            }
+            textColor: MeoTheme.contentOnSurfaceVariant
         }
 
         MeoText {
             Layout.fillWidth: true
-            visible: text !== ""
+            visible: !card.embedded && text !== ""
             text: card.title
             typeRole: "title"
             typeSize: "medium"
@@ -196,7 +185,7 @@ Item {
 
         MeoText {
             Layout.fillWidth: true
-            visible: text !== ""
+            visible: !card.embedded && text !== ""
             text: card.supportingText
             typeRole: "body"
             typeSize: "medium"
