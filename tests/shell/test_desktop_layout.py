@@ -39,7 +39,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
         self.assertIn('timeCenter.writeConfig("showDate", true)', source)
 
-    def test_active_application_surface_uses_kde_identity_and_settings_deeplink(self):
+    def test_active_application_surface_uses_kde_identity_and_compact_app_menu(self):
         source = (
             REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
         ).read_text(encoding="utf-8")
@@ -48,11 +48,16 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
         self.assertIn("tasksModel.activeTask", source)
         self.assertIn('"meosettings://applications?"', source)
+        self.assertIn('applicationDeepLink("info")', source)
+        self.assertIn('applicationDeepLink("config")', source)
+        self.assertIn('i18n("About %1")', source)
         self.assertIn('i18n("Settings…")', source)
-        self.assertIn('"section=config"', source)
-        self.assertIn("verified .config", source)
-        self.assertNotIn('i18n("App info")', source)
+        self.assertIn('i18n("Quit %1")', source)
+        self.assertIn('"shortcut": "Alt+F4"', source)
+        self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
         self.assertIn("Qt.openUrlExternally(url)", source)
+        self.assertIn("MeoInteractionMotion", source)
+        self.assertIn('surfaceStyle: "context"', source)
         self.assertNotIn("QProcess", source)
         self.assertNotIn("requestActivate", source)
         self.assertNotIn('i18n("File")', source)
@@ -157,9 +162,13 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("active: root.expanded", quick_main)
         self.assertIn("active: root.expanded", time_main)
-        self.assertIn("MeoSpringValue", quick_status)
-        self.assertIn("targetValue: root.down ? 0.94 : 1", quick_status)
+        self.assertIn("MeoRevealMotion", quick_main)
+        self.assertIn("MeoRevealMotion", time_main)
+        self.assertIn("hiddenScale: 0.96", quick_main)
+        self.assertIn("hiddenOffsetY: -10 * MeoTheme.globalScale", quick_main)
         for source in (quick_status, time_button):
+            self.assertIn("MeoInteractionMotion", source)
+            self.assertIn('motionProfile: "pixel"', source)
             self.assertIn("MeoTheme.primaryContainer", source)
             self.assertIn("MeoTheme.onPrimaryContainer", source)
             self.assertIn('"transparent"', source)
