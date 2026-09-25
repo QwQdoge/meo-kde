@@ -416,14 +416,6 @@ Item {
                 shadowColor: MeoTheme.shadow
             }
 
-            Behavior on scale {
-                enabled: !MeoTheme.reduceMotion
-                NumberAnimation {
-                    duration: MeoTheme.motionDurationMedium1
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
-                }
-            }
         }
 
         Item {
