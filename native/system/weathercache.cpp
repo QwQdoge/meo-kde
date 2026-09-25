@@ -11,6 +11,7 @@
 #include <QRegularExpression>
 #include <QTimer>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
