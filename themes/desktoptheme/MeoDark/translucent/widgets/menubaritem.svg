@@ -1,30 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="106" height="34" viewBox="0 0 106 34">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Highlight { color: #6750a4; }</style></defs>
+  <defs>
+    <style id="current-color-scheme" type="text/css">
+      .ColorScheme-Highlight { color: #6750a4; }
+    </style>
+  </defs>
+  <!-- Normal stays transparent so the application menu reads as panel text.
+       Hover and pressed use KDE's semantic Highlight role; KDE also supplies
+       HighlightedText for those states, preserving contrast in every scheme. -->
+
   <g id="normal">
     <rect id="normal-center" x="6" y="6" width="22" height="22" fill="transparent" fill-opacity="0.00"/>
     <rect id="normal-top" x="6" y="2" width="22" height="4" fill="transparent" fill-opacity="0.00"/>
     <rect id="normal-bottom" x="6" y="28" width="22" height="4" fill="transparent" fill-opacity="0.00"/>
     <rect id="normal-left" x="2" y="6" width="4" height="22" fill="transparent" fill-opacity="0.00"/>
     <rect id="normal-right" x="28" y="6" width="4" height="22" fill="transparent" fill-opacity="0.00"/>
-    <path id="normal-topleft" d="M 6 2 V 6 H 2 C 2 3.79 3.79 2 6 2 Z" fill="transparent"/>
-    <path id="normal-topright" d="M 28 2 V 6 H 32 C 32 3.79 30.21 2 28 2 Z" fill="transparent"/>
-    <path id="normal-bottomleft" d="M 6 32 V 28 H 2 C 2 30.21 3.79 32 6 32 Z" fill="transparent"/>
-    <path id="normal-bottomright" d="M 28 32 V 28 H 32 C 32 30.21 30.21 32 28 32 Z" fill="transparent"/>
+    <path id="normal-topleft" d="M 6 2 V 6 H 2 C 2 3.79 3.79 2 6 2 Z" fill="transparent" fill-opacity="0.00"/>
+    <path id="normal-topright" d="M 28 2 V 6 H 32 C 32 3.79 30.21 2 28 2 Z" fill="transparent" fill-opacity="0.00"/>
+    <path id="normal-bottomleft" d="M 6 32 V 28 H 2 C 2 30.21 3.79 32 6 32 Z" fill="transparent" fill-opacity="0.00"/>
+    <path id="normal-bottomright" d="M 28 32 V 28 H 32 C 32 30.21 30.21 32 28 32 Z" fill="transparent" fill-opacity="0.00"/>
     <rect id="normal-hint-top-margin" x="16" y="0" width="2" height="6" opacity="0.01"/>
     <rect id="normal-hint-bottom-margin" x="16" y="28" width="2" height="6" opacity="0.01"/>
     <rect id="normal-hint-left-margin" x="0" y="16" width="6" height="2" opacity="0.01"/>
     <rect id="normal-hint-right-margin" x="28" y="16" width="6" height="2" opacity="0.01"/>
   </g>
-  <g id="hover" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.82">
-    <rect id="hover-center" x="42" y="6" width="22" height="22"/><rect id="hover-top" x="42" y="2" width="22" height="4"/><rect id="hover-bottom" x="42" y="28" width="22" height="4"/><rect id="hover-left" x="38" y="6" width="4" height="22"/><rect id="hover-right" x="64" y="6" width="4" height="22"/>
-    <path id="hover-topleft" d="M 42 2 V 6 H 38 C 38 3.79 39.79 2 42 2 Z"/><path id="hover-topright" d="M 64 2 V 6 H 68 C 68 3.79 66.21 2 64 2 Z"/><path id="hover-bottomleft" d="M 42 32 V 28 H 38 C 38 30.21 39.79 32 42 32 Z"/><path id="hover-bottomright" d="M 64 32 V 28 H 68 C 68 30.21 66.21 32 64 32 Z"/>
-    <rect id="hover-hint-top-margin" x="52" y="0" width="2" height="6" opacity="0.01"/><rect id="hover-hint-bottom-margin" x="52" y="28" width="2" height="6" opacity="0.01"/><rect id="hover-hint-left-margin" x="36" y="16" width="6" height="2" opacity="0.01"/><rect id="hover-hint-right-margin" x="64" y="16" width="6" height="2" opacity="0.01"/>
+
+  <g id="hover">
+    <rect id="hover-center" x="42" y="6" width="22" height="22" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <rect id="hover-top" x="42" y="2" width="22" height="4" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <rect id="hover-bottom" x="42" y="28" width="22" height="4" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <rect id="hover-left" x="38" y="6" width="4" height="22" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <rect id="hover-right" x="64" y="6" width="4" height="22" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <path id="hover-topleft" d="M 42 2 V 6 H 38 C 38 3.79 39.79 2 42 2 Z" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <path id="hover-topright" d="M 64 2 V 6 H 68 C 68 3.79 66.21 2 64 2 Z" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <path id="hover-bottomleft" d="M 42 32 V 28 H 38 C 38 30.21 39.79 32 42 32 Z" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <path id="hover-bottomright" d="M 64 32 V 28 H 68 C 68 30.21 66.21 32 64 32 Z" fill="currentColor" fill-opacity="0.82" class="ColorScheme-Highlight"/>
+    <rect id="hover-hint-top-margin" x="52" y="0" width="2" height="6" opacity="0.01"/>
+    <rect id="hover-hint-bottom-margin" x="52" y="28" width="2" height="6" opacity="0.01"/>
+    <rect id="hover-hint-left-margin" x="36" y="16" width="6" height="2" opacity="0.01"/>
+    <rect id="hover-hint-right-margin" x="64" y="16" width="6" height="2" opacity="0.01"/>
   </g>
-  <g id="pressed" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.96">
-    <rect id="pressed-center" x="78" y="6" width="22" height="22"/><rect id="pressed-top" x="78" y="2" width="22" height="4"/><rect id="pressed-bottom" x="78" y="28" width="22" height="4"/><rect id="pressed-left" x="74" y="6" width="4" height="22"/><rect id="pressed-right" x="100" y="6" width="4" height="22"/>
-    <path id="pressed-topleft" d="M 78 2 V 6 H 74 C 74 3.79 75.79 2 78 2 Z"/><path id="pressed-topright" d="M 100 2 V 6 H 104 C 104 3.79 102.21 2 100 2 Z"/><path id="pressed-bottomleft" d="M 78 32 V 28 H 74 C 74 30.21 75.79 32 78 32 Z"/><path id="pressed-bottomright" d="M 100 32 V 28 H 104 C 104 30.21 102.21 32 100 32 Z"/>
-    <rect id="pressed-hint-top-margin" x="88" y="0" width="2" height="6" opacity="0.01"/><rect id="pressed-hint-bottom-margin" x="88" y="28" width="2" height="6" opacity="0.01"/><rect id="pressed-hint-left-margin" x="72" y="16" width="6" height="2" opacity="0.01"/><rect id="pressed-hint-right-margin" x="100" y="16" width="6" height="2" opacity="0.01"/>
+
+  <g id="pressed">
+    <rect id="pressed-center" x="78" y="6" width="22" height="22" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <rect id="pressed-top" x="78" y="2" width="22" height="4" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <rect id="pressed-bottom" x="78" y="28" width="22" height="4" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <rect id="pressed-left" x="74" y="6" width="4" height="22" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <rect id="pressed-right" x="100" y="6" width="4" height="22" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <path id="pressed-topleft" d="M 78 2 V 6 H 74 C 74 3.79 75.79 2 78 2 Z" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <path id="pressed-topright" d="M 100 2 V 6 H 104 C 104 3.79 102.21 2 100 2 Z" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <path id="pressed-bottomleft" d="M 78 32 V 28 H 74 C 74 30.21 75.79 32 78 32 Z" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <path id="pressed-bottomright" d="M 100 32 V 28 H 104 C 104 30.21 102.21 32 100 32 Z" fill="currentColor" fill-opacity="0.96" class="ColorScheme-Highlight"/>
+    <rect id="pressed-hint-top-margin" x="88" y="0" width="2" height="6" opacity="0.01"/>
+    <rect id="pressed-hint-bottom-margin" x="88" y="28" width="2" height="6" opacity="0.01"/>
+    <rect id="pressed-hint-left-margin" x="72" y="16" width="6" height="2" opacity="0.01"/>
+    <rect id="pressed-hint-right-margin" x="100" y="16" width="6" height="2" opacity="0.01"/>
   </g>
   <rect id="hint-stretch-borders" x="34" y="0" width="1" height="1" opacity="0.01"/>
 </svg>
