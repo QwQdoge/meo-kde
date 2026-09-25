@@ -95,7 +95,6 @@ QQC2.AbstractButton {
         pressed: root.down
         active: root.active
         enabled: root.enabled
-        pressedScale: 0.965
     }
 
     scale: interactionMotion.scale
@@ -104,7 +103,7 @@ QQC2.AbstractButton {
     background: MeoShape {
         id: statusBackground
         type: "round"
-        radius: MeoTheme.shapeSmall
+        radius: root.height / 2
         color: root.active
                ? MeoTheme.primaryContainer
                : (root.hovered || root.down
