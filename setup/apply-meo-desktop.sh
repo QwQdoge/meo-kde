@@ -197,6 +197,9 @@ for required in \
   "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time-notifications/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widgetexplorer/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widget.clock/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.widget.media/metadata.json" \
   "${repo_root}/plasmoids/org.meo.widget.performance/metadata.json" \
   "${repo_root}/assets/wallpapers/installer_background.png"; do
   if [ ! -f "${required}" ]; then
@@ -237,6 +240,9 @@ runtime_backups=(
   "${data_root}/plasma/plasmoids/org.meo.toptasks|data/plasma/plasmoids/org.meo.toptasks"
   "${data_root}/plasma/plasmoids/org.meo.launcher|data/plasma/plasmoids/org.meo.launcher"
   "${data_root}/plasma/plasmoids/org.meo.quicksettings|data/plasma/plasmoids/org.meo.quicksettings"
+  "${data_root}/plasma/plasmoids/org.meo.widgetexplorer|data/plasma/plasmoids/org.meo.widgetexplorer"
+  "${data_root}/plasma/plasmoids/org.meo.widget.clock|data/plasma/plasmoids/org.meo.widget.clock"
+  "${data_root}/plasma/plasmoids/org.meo.widget.media|data/plasma/plasmoids/org.meo.widget.media"
   "${data_root}/plasma/plasmoids/org.meo.widget.performance|data/plasma/plasmoids/org.meo.widget.performance"
   "${data_root}/icons/Meo|data/icons/Meo"
   "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
@@ -406,12 +412,18 @@ for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.m
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"
 done
 
-# Source installs also expose the performance widget. The widget itself is
-# optional on the desktop, but Widget Explorer and the shared performance page
-# must never point at a package that only exists in the Arch package build.
-run rm -rf "${data_root}/plasma/plasmoids/org.meo.widget.performance"
-run cp -a "${repo_root}/plasmoids/org.meo.widget.performance" \
-  "${data_root}/plasma/plasmoids/org.meo.widget.performance"
+# Source installs expose the same user-facing widget set as the Arch package.
+# They are installed for discovery but are not added to the live desktop
+# automatically, so applying Meo never destroys a user's widget arrangement.
+for meo_optional_applet in \
+  org.meo.widgetexplorer \
+  org.meo.widget.clock \
+  org.meo.widget.media \
+  org.meo.widget.performance; do
+  run rm -rf "${data_root}/plasma/plasmoids/${meo_optional_applet}"
+  run cp -a "${repo_root}/plasmoids/${meo_optional_applet}" \
+    "${data_root}/plasma/plasmoids/${meo_optional_applet}"
+done
 
 run cp -a "${meoui_source}/." "${qml_root}/MeoUI/"
 # The QML plugin links against libmeoui.  Keep its runtime next to the module
