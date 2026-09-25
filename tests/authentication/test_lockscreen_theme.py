@@ -97,12 +97,36 @@ class LockScreenThemeTests(unittest.TestCase):
                 self.assertNotIn(forbidden, self.auth_card)
         self.assertIn("avatarSource: kscreenlocker_userImage", self.ui)
 
+    def test_expressive_motion_and_gradient_remain_presentation_only(self):
+        for required in (
+            "property real authenticationReveal",
+            "Gradient {",
+            "expressiveScrim",
+            "motionEasingEmphasizedDecelerate",
+            "motionEasingEmphasizedAccelerate",
+            "0.94 + lockScreenUi.authenticationReveal * 0.06",
+            "primaryContainer",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.ui + self.auth_card)
+
+        self.assertIn("implicitHeight: content.implicitHeight + contentInset * 2", self.auth_card)
+        self.assertIn("Math.min(600 * MeoTheme.globalScale", self.auth_card)
+        self.assertIn("failed: sessionManager.authenticationFailed", self.main)
+
+        for forbidden in ("PamAuthenticator", "tryUnlock(", "QDBus"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.auth_card)
+
     def test_standalone_visual_geometry_keeps_breeze_models_but_expands_the_center(self):
         self.assertIn("MeoLockScreenSessionManagement", self.main)
         self.assertIn("Breeze.UserList", self.session_geometry)
         self.assertIn("property alias actionItems", self.session_geometry)
         self.assertIn("standaloneCenterWidth", self.session_geometry)
         self.assertIn("600 * MeoTheme.globalScale", self.session_geometry)
+        self.assertIn("Layout.preferredWidth: root.standaloneCenterWidth", self.session_geometry)
+        self.assertIn("Layout.fillWidth: true", self.session_geometry)
+        self.assertIn("Layout.preferredWidth: sessionManager.standaloneCenterWidth", self.main)
 
     def test_password_pill_ports_standalone_visual_without_owning_credentials(self):
         for required in (
