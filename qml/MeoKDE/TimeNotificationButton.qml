@@ -54,14 +54,15 @@ QQC2.AbstractButton {
         return MeoI18n.translator.i18n("%1 · %2").arg(timeAndDate).arg(notificationState)
     }
     onClicked: statusCenterRequested()
-            MeoInteractionMotion {
-                id: interactionMotion
-                hovered: root.hovered
-                pressed: root.down
-                active: root.active
-                motionProfile: "pixel"
-                speed: "fast"
-            }
+
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        motionProfile: "pixel"
+        speed: "fast"
+    }
 
     transform: [
         Translate { y: interactionMotion.resolvedOffsetY },
