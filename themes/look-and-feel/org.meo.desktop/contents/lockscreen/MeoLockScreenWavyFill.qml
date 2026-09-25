@@ -19,6 +19,7 @@ Item {
     property string shapeName: "Circle"
     property color fillColor: Qt.rgba(MeoTheme.primary.r, MeoTheme.primary.g,
                                       MeoTheme.primary.b, 0.28)
+    property bool animate: true
     readonly property real boundedValue: Math.max(0.0, Math.min(1.0, value))
     property real animatedValue: boundedValue
     readonly property real amplitude: Math.max(2, 3.5 * MeoTheme.globalScale)
@@ -38,7 +39,7 @@ Item {
     }
 
     NumberAnimation on waveOffset {
-        running: root.visible && root.window && root.window.visible
+        running: root.visible && root.animate
                  && !MeoTheme.reduceMotion
                  && root.boundedValue > 0.02 && root.boundedValue < 0.98
         from: 0
