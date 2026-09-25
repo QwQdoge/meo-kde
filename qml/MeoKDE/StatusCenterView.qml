@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import MeoUI 1.0
+import MeoUI 1.0 as UI
 import MeoKDE 1.0
 import Meo.System 1.0
 
@@ -70,6 +71,21 @@ MeoStatusCenter {
 
     implicitWidth: ShellMetrics.statusCenterWidth
     implicitHeight: ShellMetrics.statusCenterHeight
+    transformOrigin: Item.TopRight
+
+    MeoRevealMotion {
+        id: revealMotion
+        shown: root.visible
+        motionProfile: "pixel"
+        hiddenOffsetX: UI.MeoMotion.popupOffset("pixel") * MeoTheme.globalScale / 2
+    }
+
+    opacity: revealMotion.opacity
+    scale: revealMotion.scale
+    transform: Translate {
+        x: revealMotion.offsetX
+        y: revealMotion.offsetY
+    }
     Layout.minimumWidth: 320 * MeoTheme.globalScale
     Layout.minimumHeight: 360 * MeoTheme.globalScale
 
