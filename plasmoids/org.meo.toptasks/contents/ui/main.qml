@@ -133,14 +133,14 @@ PlasmoidItem {
             ]
 
             background: ShellTriggerSurface {
-        id: activeAppSurface
-        hovered: activeAppButton.hovered
-        pressed: activeAppButton.down
-        focused: activeAppButton.visualFocus
-        active: appMenu.opened
-    }
+                id: activeAppSurface
+                hovered: activeAppButton.hovered
+                pressed: activeAppButton.down
+                focused: activeAppButton.visualFocus
+                active: appMenu.opened
+            }
 
-    contentItem: RowLayout {
+            contentItem: RowLayout {
                 spacing: 0
 
                 MeoText {
