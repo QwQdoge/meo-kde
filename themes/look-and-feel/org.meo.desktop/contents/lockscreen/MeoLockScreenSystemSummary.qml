@@ -140,12 +140,16 @@ Rectangle {
 
                 FetchLine {
                     label: "OS"
-                    value: Performance.systemSummary
+                    value: Performance.operatingSystemName !== ""
+                           ? Performance.operatingSystemName
+                           : Performance.kernelVersion
                     iconName: "computer"
                 }
                 FetchLine {
                     label: "WM"
-                    value: "KDE Plasma"
+                    value: Performance.desktopEnvironment !== ""
+                           ? Performance.desktopEnvironment
+                           : "KDE Plasma"
                     iconName: "web_asset"
                 }
                 FetchLine {
