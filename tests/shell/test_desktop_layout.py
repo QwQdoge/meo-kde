@@ -161,6 +161,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("revealActive: root.expanded", source)
         self.assertIn("MeoInteractionMotion", compact)
+        self.assertIn("height: 28 * MeoTheme.globalScale", compact)
         self.assertIn("interactionMotion.resolvedScale", compact)
         self.assertIn("interactionMotion.resolvedOffsetY", compact)
 
