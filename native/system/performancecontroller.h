@@ -81,6 +81,9 @@ class PerformanceController final : public QObject
     Q_PROPERTY(double loadAverage5 READ loadAverage5 NOTIFY metricsChanged)
     Q_PROPERTY(double loadAverage15 READ loadAverage15 NOTIFY metricsChanged)
     Q_PROPERTY(int processCount READ processCount NOTIFY metricsChanged)
+    Q_PROPERTY(QString operatingSystemName READ operatingSystemName CONSTANT)
+    Q_PROPERTY(QString kernelVersion READ kernelVersion CONSTANT)
+    Q_PROPERTY(QString desktopEnvironment READ desktopEnvironment CONSTANT)
     Q_PROPERTY(QString systemSummary READ systemSummary NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList topCpuProcesses READ topCpuProcesses NOTIFY metricsChanged)
     Q_PROPERTY(QVariantList topMemoryProcesses READ topMemoryProcesses NOTIFY metricsChanged)
@@ -158,6 +161,9 @@ public:
     double loadAverage5() const;
     double loadAverage15() const;
     int processCount() const;
+    QString operatingSystemName() const;
+    QString kernelVersion() const;
+    QString desktopEnvironment() const;
     QString systemSummary() const;
     QVariantList topCpuProcesses() const;
     QVariantList topMemoryProcesses() const;
@@ -295,6 +301,9 @@ private:
     double m_load5 = 0;
     double m_load15 = 0;
     int m_processCount = 0;
+    QString m_operatingSystemName;
+    QString m_kernelVersion;
+    QString m_desktopEnvironment;
     QString m_systemSummary;
     QVariantList m_topCpuProcesses;
     QVariantList m_topMemoryProcesses;
