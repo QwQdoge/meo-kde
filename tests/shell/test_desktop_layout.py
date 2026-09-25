@@ -286,12 +286,16 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("interactionMotion.resolvedOffsetY", quick_status)
         self.assertNotIn("targetValue: root.down ? 0.94 : 1", quick_status)
         for source in (quick_status, time_button):
-            self.assertIn("MeoTheme.primaryContainer", source)
-            self.assertIn("MeoTheme.onPrimaryContainer", source)
-            self.assertIn('"transparent"', source)
-            self.assertIn("strokeWidth: 0", source)
-        self.assertIn("internalPointerTrackingEnabled: false", time_button)
-        self.assertIn("stateLayer.trigger(localPoint.x, localPoint.y)", time_button)
+            self.assertIn("ShellTriggerSurface", source)
+        shell_surface = (
+            REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("MeoTheme.primaryContainer", shell_surface)
+        self.assertIn("MeoTheme.onPrimaryContainer", shell_surface)
+        self.assertIn('"transparent"', shell_surface)
+        self.assertIn("strokeWidth: 0", shell_surface)
+        self.assertIn("statusSurface.triggerFromKeyboard()", time_button)
+        self.assertNotIn("stateLayer.trigger(localPoint.x, localPoint.y)", time_button)
         self.assertIn('property bool showSeconds: false', time_button)
         self.assertIn("MeoStatusStrip", quick_status)
         self.assertIn("statusModel: root.statusModel", quick_status)
