@@ -79,9 +79,11 @@ class DesktopLayoutTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         for source in (active_app, status, time_button):
-            self.assertIn('MeoMotion.interactionScale("pixel"', source)
-            self.assertIn('MeoMotion.interactionLift("pixel"', source)
-            self.assertIn("MeoSpringValue", source)
+            self.assertIn("MeoInteractionMotion", source)
+            self.assertIn("interactionMotion.resolvedScale", source)
+            self.assertIn("interactionMotion.resolvedOffsetY", source)
+            self.assertNotIn("interactionScaleSpring", source)
+            self.assertNotIn("interactionLiftSpring", source)
 
         for source in (quick_center, status_center):
             self.assertIn("MeoRevealMotion", source)
@@ -108,6 +110,24 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('i18n("Edit")', source)
         self.assertNotIn('i18n("View")', source)
 
+
+    def test_active_application_applet_is_installed_by_all_supported_paths(self):
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        installer = INSTALLER.read_text(encoding="utf-8")
+
+        self.assertIn('plasmoids/org.meo.toptasks', package)
+        self.assertIn('plasmoids/org.meo.toptasks/metadata.json', installer)
+        self.assertIn(
+            "for meo_panel_applet in org.meo.topbar org.meo.toptasks "
+            "org.meo.timecenter org.meo.time org.meo.notifications "
+            "org.meo.time-notifications; do",
+            installer,
+        )
+        self.assertNotIn(
+            "for legacy_plasmoid in org.meo.launcher org.meo.quicksettings "
+            "org.meo.shelf org.meo.toptasks; do",
+            installer,
+        )
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
@@ -207,9 +227,9 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("active: root.expanded", quick_main)
         self.assertIn("active: root.expanded", time_main)
-        self.assertIn("MeoSpringValue", quick_status)
-        self.assertIn('MeoMotion.interactionScale("pixel"', quick_status)
-        self.assertIn('MeoMotion.interactionLift("pixel"', quick_status)
+        self.assertIn("MeoInteractionMotion", quick_status)
+        self.assertIn("interactionMotion.resolvedScale", quick_status)
+        self.assertIn("interactionMotion.resolvedOffsetY", quick_status)
         self.assertNotIn("targetValue: root.down ? 0.94 : 1", quick_status)
         for source in (quick_status, time_button):
             self.assertIn("MeoTheme.primaryContainer", source)
