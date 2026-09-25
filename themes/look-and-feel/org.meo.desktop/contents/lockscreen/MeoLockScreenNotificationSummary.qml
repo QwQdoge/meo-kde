@@ -124,8 +124,12 @@ Item {
                     required property string summary
                     required property string body
                     required property int urgency
+                    required property date created
+                    required property date updated
 
                     readonly property bool contentAllowed: root.effectivePrivacyLevel === "full-content"
+                    readonly property bool critical: urgency === NotificationManager.Notifications.CriticalUrgency
+                    readonly property date effectiveTime: isNaN(updated.getTime()) ? created : updated
                     readonly property bool showRow: !isInGroup || contentAllowed
                     width: ListView.view.width
                     height: showRow ? rowSurface.implicitHeight : 0
@@ -137,8 +141,8 @@ Item {
                         width: parent.width
                         implicitHeight: rowContent.implicitHeight + MeoTheme.space12 * 2
                         radius: delegateRoot.isGroup ? MeoTheme.shapeLarge : MeoTheme.shapeMedium
-                        color: delegateRoot.urgency === NotificationManager.Notifications.CriticalUrgency
-                               ? MeoTheme.errorContainer
+                        color: delegateRoot.critical && delegateRoot.isGroup
+                               ? MeoTheme.secondaryContainer
                                : MeoTheme.surfaceContainerHigh
 
                         RowLayout {
@@ -149,13 +153,21 @@ Item {
                             anchors.margins: MeoTheme.space12
                             spacing: MeoTheme.space10
 
-                            Item {
+                            Rectangle {
                                 Layout.alignment: Qt.AlignTop
-                                implicitWidth: 32 * MeoTheme.globalScale
+                                implicitWidth: 42 * MeoTheme.globalScale
                                 implicitHeight: implicitWidth
+                                radius: implicitWidth / 2
+                                color: delegateRoot.critical
+                                       ? MeoTheme.error
+                                       : delegateRoot.urgency === NotificationManager.Notifications.LowUrgency
+                                         ? MeoTheme.surfaceContainerHighest
+                                         : MeoTheme.secondaryContainer
 
                                 Kirigami.Icon {
-                                    anchors.fill: parent
+                                    anchors.centerIn: parent
+                                    width: 25 * MeoTheme.globalScale
+                                    height: width
                                     source: delegateRoot.applicationIconName
                                     visible: delegateRoot.applicationIconName !== ""
                                 }
@@ -163,9 +175,12 @@ Item {
                                 MeoIcon {
                                     anchors.centerIn: parent
                                     visible: delegateRoot.applicationIconName === ""
-                                    icon: "notifications"
+                                    icon: delegateRoot.critical ? "priority_high" : "notifications"
                                     size: 24 * MeoTheme.globalScale
-                                    color: MeoTheme.primary
+                                    color: delegateRoot.critical
+                                           ? MeoTheme.contentOnError
+                                           : MeoTheme.contentOnSecondaryContainer
+                                    fill: true
                                 }
                             }
 
@@ -180,31 +195,55 @@ Item {
                                     MeoText {
                                         Layout.fillWidth: true
                                         text: root.plainText(delegateRoot.applicationName)
-                                        typeRole: "label"
-                                        typeSize: "medium"
-                                        emphasized: true
-                                        color: delegateRoot.urgency === NotificationManager.Notifications.CriticalUrgency
-                                               ? MeoTheme.contentOnErrorContainer
-                                               : MeoTheme.contentOnSurface
+                                        typeRole: "body"
+                                        typeSize: "small"
+                                        color: MeoTheme.contentOnSurfaceVariant
                                         elide: Text.ElideRight
                                     }
 
                                     MeoText {
-                                        visible: delegateRoot.isGroup && delegateRoot.groupChildrenCount > 0
-                                        text: String(delegateRoot.groupChildrenCount)
-                                        typeRole: "label"
+                                        visible: !isNaN(delegateRoot.effectiveTime.getTime())
+                                        text: Qt.formatTime(delegateRoot.effectiveTime, "HH:mm")
+                                        typeRole: "body"
                                         typeSize: "small"
-                                        emphasized: true
-                                        color: MeoTheme.contentOnSurfaceVariant
+                                        color: MeoTheme.outline
                                     }
 
-                                    MeoIcon {
+                                    Rectangle {
                                         visible: delegateRoot.isGroup
                                                  && delegateRoot.groupChildrenCount > 0
-                                                 && delegateRoot.contentAllowed
-                                        icon: delegateRoot.isGroupExpanded ? "expand_less" : "expand_more"
-                                        size: 20 * MeoTheme.globalScale
-                                        color: MeoTheme.contentOnSurfaceVariant
+                                        implicitHeight: 28 * MeoTheme.globalScale
+                                        implicitWidth: groupBadgeRow.implicitWidth + MeoTheme.space12
+                                        radius: implicitHeight / 2
+                                        color: delegateRoot.critical
+                                               ? MeoTheme.error
+                                               : MeoTheme.surfaceContainerHighest
+
+                                        RowLayout {
+                                            id: groupBadgeRow
+                                            anchors.centerIn: parent
+                                            spacing: MeoTheme.space2
+
+                                            MeoText {
+                                                text: String(delegateRoot.groupChildrenCount)
+                                                typeRole: "label"
+                                                typeSize: "small"
+                                                emphasized: true
+                                                color: delegateRoot.critical
+                                                       ? MeoTheme.contentOnError
+                                                       : MeoTheme.contentOnSurface
+                                            }
+
+                                            MeoIcon {
+                                                visible: delegateRoot.contentAllowed
+                                                icon: delegateRoot.isGroupExpanded
+                                                      ? "expand_less" : "expand_more"
+                                                size: 18 * MeoTheme.globalScale
+                                                color: delegateRoot.critical
+                                                       ? MeoTheme.contentOnError
+                                                       : MeoTheme.contentOnSurface
+                                            }
+                                        }
                                     }
                                 }
 
@@ -266,7 +305,7 @@ Item {
                         }
                         NumberAnimation {
                             property: "scale"
-                            from: 0.92
+                            from: 0.7
                             to: 1
                             duration: MeoTheme.motionDurationShort4
                             easing.type: Easing.BezierSpline
