@@ -135,7 +135,6 @@ preflight_plasma() {
     "${qt_plugin_dir}/plasma/applets/org.kde.plasma.kickoff.so" \
     "${qt_plugin_dir}/plasma/applets/org.kde.plasma.appmenu.so" \
     "${qt_plugin_dir}/plasma/applets/org.kde.plasma.systemtray.so" \
-    "${qt_plugin_dir}/kwin/effects/plugins/kwin4_effect_shapecorners.so" \
     "${qt_qml_dir}/org/kde/plasma/clock/qmldir" \
     "${qt_qml_dir}/org/kde/notificationmanager/qmldir" \
     "${qt_qml_dir}/org/kde/plasma/workspace/calendar/qmldir"; do
@@ -144,6 +143,15 @@ preflight_plasma() {
       exit 1
     fi
   done
+
+  # Rounded client clipping improves the Meo visual treatment but is not
+  # required for a usable Plasma session. Never block installation solely
+  # because a third-party KWin effect is unavailable in the user's repositories.
+  local rounded_effect="${qt_plugin_dir}/kwin/effects/plugins/kwin4_effect_shapecorners.so"
+  if [ ! -e "${rounded_effect}" ]; then
+    echo "Optional KWin rounded-corner effect is missing: ${rounded_effect}" >&2
+    echo "Continuing without client-surface rounded clipping." >&2
+  fi
 
   if ! has_plasma_package org.kde.plasma.icontasks; then
     echo "Required Plasma widget is missing: org.kde.plasma.icontasks" >&2
