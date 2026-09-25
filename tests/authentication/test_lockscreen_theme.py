@@ -325,6 +325,8 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             'variant: "ClamShell"',
             "centerScale: card.centerScale",
+            "420 * card.centerScale * MeoTheme.globalScale",
+            "Layout.topMargin: MeoTheme.space16 * card.centerScale",
             "visible: !card.embedded && text !== \"\"",
         ):
             with self.subTest(required=required):
