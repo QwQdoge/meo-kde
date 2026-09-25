@@ -126,17 +126,18 @@ TextField {
                 morphProgress: field.submitMorphProgress
                 rotationAngle: 90
                 color: field.hasInput ? MeoTheme.primary : MeoTheme.surfaceContainerHigh
-            }
+                scale: field.hasInput
+                       ? (submitButton.pressed ? 0.68 : submitButton.hovered ? 0.84 : 0.76)
+                       : 1.0
 
-            MeoStateLayer {
-                anchors.fill: parent
-                radius: width / 2
-                shape: field.hasInput ? "Arrow" : "Circle"
-                hovered: submitButton.hovered
-                pressed: submitButton.pressed
-                focused: submitButton.visualFocus
-                color: field.hasInput ? MeoTheme.contentOnPrimary
-                                      : MeoTheme.contentOnSurfaceVariant
+                Behavior on scale {
+                    enabled: !MeoTheme.reduceMotion
+                    NumberAnimation {
+                        duration: MeoTheme.motionDurationShort4
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                    }
+                }
             }
         }
 
