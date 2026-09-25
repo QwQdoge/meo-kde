@@ -79,10 +79,12 @@ private slots:
             {QStringLiteral("forecast"), QJsonArray{
                 QJsonObject{{QStringLiteral("time"), QStringLiteral("2026-09-25T10:00")},
                             {QStringLiteral("temperature"), 29.0},
-                            {QStringLiteral("weatherCode"), 2}},
+                            {QStringLiteral("weatherCode"), 2},
+                            {QStringLiteral("precipitationChance"), 20}},
                 QJsonObject{{QStringLiteral("time"), QStringLiteral("2026-09-25T11:00")},
                             {QStringLiteral("temperature"), 30.5},
-                            {QStringLiteral("weatherCode"), 61}},
+                            {QStringLiteral("weatherCode"), 61},
+                            {QStringLiteral("precipitationChance"), 70}},
             }},
         });
 
@@ -93,9 +95,11 @@ private slots:
         QCOMPARE(first.value(QStringLiteral("time")).toString(), QStringLiteral("10:00"));
         QCOMPARE(first.value(QStringLiteral("temperatureText")).toString(), QStringLiteral("29°C"));
         QCOMPARE(first.value(QStringLiteral("iconName")).toString(), QStringLiteral("weather-partly-cloudy"));
+        QCOMPARE(first.value(QStringLiteral("precipitationChance")).toInt(), 20);
         const QVariantMap second = cache.forecast().at(1).toMap();
         QCOMPARE(second.value(QStringLiteral("temperatureText")).toString(), QStringLiteral("30.5°C"));
         QCOMPARE(second.value(QStringLiteral("iconName")).toString(), QStringLiteral("weather-showers"));
+        QCOMPARE(second.value(QStringLiteral("precipitationChance")).toInt(), 70);
     }
 
     void keepsLegacyConditionWhenTheCacheHasNoStableCode()
