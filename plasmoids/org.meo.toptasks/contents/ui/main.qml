@@ -182,7 +182,11 @@ PlasmoidItem {
         // applet beside this widget.
         MeoMenu {
             id: appMenu
-            parent: compactRoot
+            // Host the transient surface in the real window overlay so
+            // viewport clamping uses the screen/window area rather than this
+            // 32dp compact representation. Keep a fallback for offscreen
+            // validation hosts that do not expose a Controls overlay.
+            parent: QQC2.Overlay.overlay || compactRoot
             preferredMenuWidth: 228 * MeoTheme.globalScale
             surfaceStyle: "context"
             motionProfile: "pixel"
