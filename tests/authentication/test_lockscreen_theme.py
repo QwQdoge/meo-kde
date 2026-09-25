@@ -389,7 +389,9 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             'text: "meofetch"',
             'label: "OS"',
-            "Performance.systemSummary",
+            "Performance.operatingSystemName",
+            "Performance.kernelVersion",
+            "Performance.desktopEnvironment",
             'label: "WM"',
             'value: "KDE Plasma"',
             'label: "UP"',
