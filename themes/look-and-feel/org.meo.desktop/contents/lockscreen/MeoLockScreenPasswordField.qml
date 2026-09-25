@@ -15,7 +15,16 @@ TextField {
     id: field
 
     property bool passwordVisible: false
+    property bool fingerprintAvailable: false
+    property bool smartcardAvailable: false
     property string accessibleLabel: qsTr("Password")
+    readonly property bool hasInput: text.length > 0
+    readonly property real emptyFieldWidth: 304 * MeoTheme.globalScale
+    readonly property real filledFieldWidth: Math.min(480 * MeoTheme.globalScale,
+                                                       Math.max(360 * MeoTheme.globalScale,
+                                                                parent ? parent.width * 0.8
+                                                                       : 480 * MeoTheme.globalScale))
+    property real submitMorphProgress: hasInput ? 1.0 : 0.0
     // SessionManagementScreen needs a non-TextField focus target before a
     // successful unlock response. This preserves the upstream Qt
     // shutdown workaround while keeping the visual submit affordance local.
@@ -23,7 +32,25 @@ TextField {
 
     signal unlockRequested()
 
-    implicitWidth: 360 * MeoTheme.globalScale
+    implicitWidth: hasInput ? filledFieldWidth : emptyFieldWidth
+
+    Behavior on implicitWidth {
+        enabled: !MeoTheme.reduceMotion
+        NumberAnimation {
+            duration: MeoTheme.motionDurationMedium1
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+        }
+    }
+
+    Behavior on submitMorphProgress {
+        enabled: !MeoTheme.reduceMotion
+        NumberAnimation {
+            duration: MeoTheme.motionDurationShapeSettle
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: MeoTheme.motionEasingEmphasized
+        }
+    }
     implicitHeight: 64 * MeoTheme.globalScale
     leftPadding: 64 * MeoTheme.globalScale
     rightPadding: 64 * MeoTheme.globalScale
@@ -68,22 +95,57 @@ TextField {
         anchors.verticalCenter: parent.verticalCenter
         type: "standard"
         size: "s"
-        icon.name: field.passwordVisible ? "visibility" : "lock"
+        icon.name: field.passwordVisible ? "visibility"
+                                         : field.fingerprintAvailable ? "fingerprint"
+                                         : field.smartcardAvailable ? "badge"
+                                         : "lock"
         Accessible.name: field.passwordVisible ? qsTr("Hide password") : qsTr("Show password")
         onClicked: field.passwordVisible = !field.passwordVisible
     }
 
-    MeoIconButton {
+    Button {
         id: submitButton
         objectName: "meoLockScreenSubmitButton"
         anchors.right: parent.right
         anchors.rightMargin: MeoTheme.space8
         anchors.verticalCenter: parent.verticalCenter
-        type: "filled"
-        size: "s"
-        icon.name: "arrow_forward"
-        enabled: field.enabled && field.text.length > 0
+        width: 48 * MeoTheme.globalScale
+        height: width
+        padding: 0
+        enabled: field.enabled && field.hasInput
+        hoverEnabled: true
         Accessible.name: qsTr("Unlock")
         onClicked: field.unlockRequested()
+
+        background: Item {
+            MeoShapeMorph {
+                anchors.fill: parent
+                anchors.margins: 4 * MeoTheme.globalScale
+                fromShape: "Circle"
+                toShape: "Arrow"
+                morphProgress: field.submitMorphProgress
+                rotationAngle: 90
+                color: field.hasInput ? MeoTheme.primary : MeoTheme.surfaceContainerHigh
+            }
+
+            MeoStateLayer {
+                anchors.fill: parent
+                radius: width / 2
+                shape: field.hasInput ? "Arrow" : "Circle"
+                hovered: submitButton.hovered
+                pressed: submitButton.pressed
+                focused: submitButton.visualFocus
+                color: field.hasInput ? MeoTheme.contentOnPrimary
+                                      : MeoTheme.contentOnSurfaceVariant
+            }
+        }
+
+        contentItem: MeoIcon {
+            anchors.centerIn: parent
+            visible: !field.hasInput
+            icon: "arrow_forward"
+            size: 22 * MeoTheme.globalScale
+            color: MeoTheme.contentOnSurfaceVariant
+        }
     }
 }
