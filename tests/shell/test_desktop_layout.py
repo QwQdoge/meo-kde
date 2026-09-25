@@ -54,9 +54,10 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('i18n("Settings…")', source)
         self.assertIn('"info"', source)
         self.assertIn('"config"', source)
-        self.assertIn('i18n("Close Window")', source)
+        self.assertIn('i18n("Quit %1")', source)
         self.assertIn('"shortcut": "Alt+F4"', source)
         self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
+        self.assertIn("appMenu.openFrom(activeAppButton)", source)
         self.assertEqual(source.count('"action": function()'), 3)
         self.assertEqual(source.count('"type": "separator"'), 1)
         self.assertIn("MeoInteractionMotion", source)
@@ -83,6 +84,7 @@ class DesktopLayoutTests(unittest.TestCase):
             source = surface.read_text(encoding="utf-8")
             self.assertIn("MeoInteractionMotion", source)
             self.assertNotIn("id: pressSpring", source)
+            self.assertNotIn("pressedScale: 0.965", source)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
