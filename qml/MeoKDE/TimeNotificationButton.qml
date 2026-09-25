@@ -55,6 +55,28 @@ QQC2.AbstractButton {
     }
     onClicked: statusCenterRequested()
 
+    MeoInteractionSpring {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        enabled: root.enabled
+        motionProfile: "pixel"
+    }
+
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scale
+            yScale: interactionMotion.scale
+        },
+        Translate {
+            x: interactionMotion.offsetX
+            y: interactionMotion.offsetY
+        }
+    ]
+
     PointHandler {
         acceptedButtons: Qt.LeftButton
         onActiveChanged: {
@@ -80,8 +102,12 @@ QQC2.AbstractButton {
     background: MeoShape {
         id: statusSurface
         type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active ? MeoTheme.primaryContainer : "transparent"
+        radius: root.height / 2
+        color: root.active
+               ? MeoTheme.secondaryContainer
+               : (root.hovered || root.down
+                  ? MeoTheme.surfaceContainerHigh
+                  : "transparent")
         strokeColor: "transparent"
         strokeWidth: 0
 
@@ -122,7 +148,7 @@ QQC2.AbstractButton {
                 typeSize: "medium"
                 emphasized: true
                 fontScaleOverride: root.textScale
-                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
+                color: root.active ? MeoTheme.contentOnSecondaryContainer : MeoTheme.onSurface
             }
 
             MeoText {
@@ -131,7 +157,7 @@ QQC2.AbstractButton {
                 typeRole: "label"
                 typeSize: "small"
                 fontScaleOverride: root.textScale
-                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
+                color: root.active ? MeoTheme.contentOnSecondaryContainer : MeoTheme.onSurfaceVariant
             }
         }
 
