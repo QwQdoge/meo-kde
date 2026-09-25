@@ -67,6 +67,12 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('i18n("Edit")', source)
         self.assertNotIn('i18n("View")', source)
 
+    def test_active_application_plasmoid_is_packaged_with_default_layout(self):
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        layout = LAYOUT.read_text(encoding="utf-8")
+        self.assertIn('topPanel.addWidget("org.meo.toptasks")', layout)
+        self.assertIn('plasmoids/org.meo.toptasks', package)
+
     def test_meo_owned_topbar_triggers_share_interaction_motion(self):
         surfaces = (
             REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/components/SystemStatusCluster.qml",
