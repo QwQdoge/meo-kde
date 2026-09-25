@@ -115,6 +115,29 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("TopPanelHeight=32", documentation)
         self.assertIn("false success", documentation)
 
+    def test_global_menu_uses_meo_desktop_theme_interaction_states(self):
+        assets = (
+            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/menubaritem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/menubaritem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/menubaritem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/menubaritem.svg",
+        )
+        required_parts = (
+            "center", "top", "bottom", "left", "right",
+            "topleft", "topright", "bottomleft", "bottomright",
+        )
+        for asset in assets:
+            source = asset.read_text(encoding="utf-8")
+            for state in ("normal", "hover", "pressed"):
+                for part in required_parts:
+                    self.assertIn(f'id="{state}-{part}"', source)
+                for edge in ("top", "bottom", "left", "right"):
+                    self.assertIn(f'id="{state}-hint-{edge}-margin"', source)
+            self.assertIn("ColorScheme-ButtonHover", source)
+            self.assertIn("ColorScheme-ButtonFocus", source)
+            self.assertIn('opacity="0.14"', source)
+            self.assertIn('opacity="0.22"', source)
+
     def test_panel_frame_keeps_a_compact_top_and_large_bottom_dock_variant(self):
         assets = (
             REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
