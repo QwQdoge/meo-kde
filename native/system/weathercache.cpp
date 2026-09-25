@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QTimer>
+#include <QVariantMap>
 
 #include <algorithm>
 #include <cmath>
@@ -42,7 +43,9 @@ QString iconForCode(int code)
     if (code == 0) return QStringLiteral("weather-clear");
     if (code <= 3) return QStringLiteral("weather-partly-cloudy");
     if (code == 45 || code == 48) return QStringLiteral("weather-fog");
-    if (code <= 67 || code <= 82) return QStringLiteral("weather-showers");
+    if (code <= 67) return QStringLiteral("weather-showers");
+    if (code <= 77) return QStringLiteral("weather-snow");
+    if (code <= 82) return QStringLiteral("weather-showers");
     if (code <= 86) return QStringLiteral("weather-snow");
     return QStringLiteral("weather-storm");
 }
