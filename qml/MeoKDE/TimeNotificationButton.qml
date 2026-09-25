@@ -55,6 +55,39 @@ QQC2.AbstractButton {
     }
     onClicked: statusCenterRequested()
 
+    MeoSpringValue {
+        id: interactionScaleSpring
+        value: 1
+        targetValue: MeoMotion.interactionScale("pixel",
+                                                root.hovered,
+                                                root.down,
+                                                root.active)
+        motionProfile: "pixel"
+        speed: "fast"
+    }
+
+    MeoSpringValue {
+        id: interactionLiftSpring
+        value: 0
+        targetValue: MeoMotion.interactionLift("pixel",
+                                               root.hovered,
+                                               root.down,
+                                               root.active)
+                     * MeoTheme.globalScale
+        motionProfile: "pixel"
+        speed: "fast"
+    }
+
+    transform: [
+        Translate { y: interactionLiftSpring.value },
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionScaleSpring.value
+            yScale: interactionScaleSpring.value
+        }
+    ]
+
     PointHandler {
         acceptedButtons: Qt.LeftButton
         onActiveChanged: {
