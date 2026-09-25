@@ -68,6 +68,23 @@ Item {
     // MeoUI's M3 Expressive curve rather than introducing a second motion
     // system.
     property real authenticationReveal: authenticationUiVisible ? 1.0 : 0.0
+    property real dashboardEntrance: MeoTheme.reduceMotion ? 1.0 : 0.0
+    readonly property real dashboardSpinProgress: Math.min(1.0, dashboardEntrance / 0.34)
+    readonly property real dashboardExpandProgress: Math.max(0.0,
+                                                             Math.min(1.0,
+                                                                      (dashboardEntrance - 0.18) / 0.82))
+    readonly property real dashboardContentEntrance: Math.max(0.0,
+                                                              Math.min(1.0,
+                                                                       (dashboardEntrance - 0.34) / 0.66))
+
+    NumberAnimation on dashboardEntrance {
+        running: !MeoTheme.reduceMotion
+        from: 0.0
+        to: 1.0
+        duration: MeoTheme.motionDurationExtraLong1
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+    }
 
     Behavior on authenticationReveal {
         NumberAnimation {
@@ -376,9 +393,19 @@ Item {
             border.color: Qt.rgba(MeoTheme.outlineVariant.r,
                                   MeoTheme.outlineVariant.g,
                                   MeoTheme.outlineVariant.b, 0.34)
-            scale: MeoTheme.reduceMotion
-                   ? 1.0
-                   : 0.985 + lockScreenUi.authenticationReveal * 0.015
+            opacity: lockScreenUi.dashboardEntrance
+            rotation: MeoTheme.reduceMotion
+                      ? 0
+                      : -180 * (1.0 - lockScreenUi.dashboardSpinProgress)
+            scale: {
+                const authenticationScale = MeoTheme.reduceMotion
+                                            ? 1.0
+                                            : 0.985 + lockScreenUi.authenticationReveal * 0.015
+                const entranceScale = MeoTheme.reduceMotion
+                                      ? 1.0
+                                      : 0.12 + lockScreenUi.dashboardExpandProgress * 0.88
+                return authenticationScale * entranceScale
+            }
 
             layer.enabled: visible
             layer.effect: MultiEffect {
@@ -399,6 +426,39 @@ Item {
             }
         }
 
+        Item {
+            id: dashboardEntranceGlyph
+            anchors.centerIn: parent
+            width: 104 * MeoTheme.globalScale
+            height: width
+            visible: lockScreenUi.wideAmbientDashboard
+                     && lockScreenUi.activeAuthenticationSurface
+                     && opacity > 0.001
+            opacity: MeoTheme.reduceMotion
+                     ? 0
+                     : 1.0 - lockScreenUi.dashboardContentEntrance
+            scale: 0.92 + lockScreenUi.dashboardSpinProgress * 0.08
+            rotation: -180 * (1.0 - lockScreenUi.dashboardSpinProgress)
+
+            MeoShape {
+                anchors.fill: parent
+                type: "squircle"
+                radius: MeoTheme.shapeLarge
+                color: MeoTheme.surface
+                strokeWidth: MeoTheme.strokeWidthThin
+                strokeColor: MeoTheme.outlineVariant
+            }
+
+            MeoIcon {
+                anchors.centerIn: parent
+                icon: "lock"
+                size: 48 * MeoTheme.globalScale
+                weight: 700
+                fill: true
+                color: MeoTheme.contentOnSurface
+            }
+        }
+
         // WallpaperFader owns the upstream `clock.shadow` visual contract.
         // Keep that adapter local to the KScreenLocker theme so MeoUI's clock
         // stays backend-agnostic for other session-entry consumers.
@@ -406,7 +466,8 @@ Item {
             id: ambientClockFrame
             property Item shadow: ambientClockShadow
             visible: opacity > 0.001
-            opacity: 1.0 - lockScreenUi.authenticationReveal
+            opacity: lockScreenUi.dashboardContentEntrance
+                     * (1.0 - lockScreenUi.authenticationReveal)
             scale: MeoTheme.reduceMotion ? 1.0 : 1.0 - lockScreenUi.authenticationReveal * 0.055
             anchors.horizontalCenter: parent.horizontalCenter
             width: ambientClock.implicitWidth
@@ -444,7 +505,12 @@ Item {
             active: lockScreenUi.activeAuthenticationSurface
                     && lockScreenUi.wideAmbientDashboard
             visible: active && status === Loader.Ready
-            opacity: 1.0 - lockScreenUi.authenticationReveal * 0.08
+            opacity: lockScreenUi.dashboardContentEntrance
+                     * (1.0 - lockScreenUi.authenticationReveal * 0.08)
+            scale: MeoTheme.reduceMotion
+                   ? 1.0
+                   : 0.92 + lockScreenUi.dashboardContentEntrance * 0.08
+            transformOrigin: Item.Center
             enabled: active
             transform: Translate {
                 y: -lockScreenUi.authenticationReveal * 6 * MeoTheme.globalScale
