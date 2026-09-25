@@ -176,6 +176,7 @@ for required in \
   "${repo_root}/tools/shell/apply-meo-panel-layout.sh" \
   "${repo_root}/tools/theme/apply-meo-desktop.sh" \
   "${repo_root}/plasmoids/org.meo.timecenter/metadata.json" \
+  "${repo_root}/plasmoids/org.meo.toptasks/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time-notifications/metadata.json" \
@@ -223,6 +224,7 @@ runtime_backups=(
   "${data_root}/icons/Meo|data/icons/Meo"
   "${data_root}/icons/MeoSymbols|data/icons/MeoSymbols"
   "${data_root}/icons/MeoSymbolsDark|data/icons/MeoSymbolsDark"
+  "${data_root}/icons/hicolor/scalable/apps/meoarch-logo.svg|data/icons/hicolor/scalable/apps/meoarch-logo.svg"
   "${data_root}/color-schemes/MeoLight.colors|data/color-schemes/MeoLight.colors"
   "${data_root}/color-schemes/MeoDark.colors|data/color-schemes/MeoDark.colors"
   "${data_root}/color-schemes/MeoDynamicLight.colors|data/color-schemes/MeoDynamicLight.colors"
@@ -366,17 +368,20 @@ for icon_theme in MeoSymbols MeoSymbolsDark; do
   run rm -rf "${data_root}/icons/${icon_theme}"
   run cp -a "${desktop_root}/themes/icons/${icon_theme}" "${data_root}/icons/${icon_theme}"
 done
+run install -Dm644 "${repo_root}/assets/icons/meoarch-logo.svg" \
+  "${data_root}/icons/hicolor/scalable/apps/meoarch-logo.svg"
+
 
 # Meo owns the quick-settings and time surfaces; KDE owns the native System
 # Tray/StatusNotifier application icons and the bottom task manager.
-for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications org.meo.toptasks; do
   if [ -e "${data_root}/plasma/plasmoids/${meo_panel_applet}" ]; then
     run mkdir -p "${backup_root}/plasmoids"
     run cp -a "${data_root}/plasma/plasmoids/${meo_panel_applet}" \
       "${backup_root}/plasmoids/${meo_panel_applet}"
   fi
 done
-for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.toptasks; do
+for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf; do
   run rm -rf "${data_root}/plasma/plasmoids/${legacy_plasmoid}"
 done
 for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
