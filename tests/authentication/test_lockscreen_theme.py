@@ -28,6 +28,7 @@ class LockScreenThemeTests(unittest.TestCase):
         self.config = (LOCKSCREEN / "config.xml").read_text(encoding="utf-8")
         self.media_source = (REPO_ROOT / "native/system/mediacontroller.cpp").read_text(encoding="utf-8")
         self.weather_source = (REPO_ROOT / "native/system/weathercache.cpp").read_text(encoding="utf-8")
+        self.weather_refresh_source = (REPO_ROOT / "native/system/weatherrefresh.cpp").read_text(encoding="utf-8")
         self.coordinator_header = (NATIVE_LOCKSCREEN / "screencoordinator.h").read_text(encoding="utf-8")
         self.coordinator_source = (NATIVE_LOCKSCREEN / "screencoordinator.cpp").read_text(encoding="utf-8")
         self.coordinator_cmake = (NATIVE_LOCKSCREEN / "CMakeLists.txt").read_text(encoding="utf-8")
@@ -206,6 +207,33 @@ class LockScreenThemeTests(unittest.TestCase):
                     self.assertNotIn(required, self.weather_source)
                 else:
                     self.assertIn(required, self.weather_source)
+
+    def test_weather_forecast_is_real_cache_data_and_never_locker_network(self):
+        for required in (
+            'QStringLiteral("hourly")',
+            'QStringLiteral("temperature_2m,weather_code")',
+            'QStringLiteral("forecast_hours")',
+            'QStringLiteral("6")',
+            'QStringLiteral("forecast")',
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.weather_refresh_source)
+
+        for required in (
+            "Q_PROPERTY(QVariantList forecast",
+            'object.value(QStringLiteral("forecast")).toArray()',
+            "Weather.forecast.slice(0, 4)",
+            "showForecast",
+            "dashboardHeight >= 700 * MeoTheme.globalScale",
+            "iconMapper.materialSymbolFor",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.weather_source + self.weather_card + self.ui
+                              + (REPO_ROOT / "native/system/weathercache.h").read_text(encoding="utf-8"))
+
+        self.assertNotIn("QNetwork", self.weather_source)
+        self.assertNotIn("http://", self.weather_card)
+        self.assertNotIn("https://", self.weather_card)
 
     def test_wide_ambient_dashboard_matches_reference_spatial_hierarchy(self):
         for required in (
