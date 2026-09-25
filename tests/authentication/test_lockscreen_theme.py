@@ -152,6 +152,32 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.password_field)
 
+    def test_password_mask_uses_count_only_expressive_shapes(self):
+        for required in (
+            "maskShapes",
+            '"Slanted"',
+            '"ClamShell"',
+            '"SoftBurst"',
+            "model: field.passwordVisible ? 0 : field.text.length",
+            "add: Transition",
+            "remove: Transition",
+            'icon.name: field.passwordVisible ? "visibility_off" : "visibility"',
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.password_field)
+
+        # Presentation may reveal password length, just like the upstream
+        # password echo mask, but it must never copy a password character into
+        # the decorative delegate.
+        for forbidden in (
+            "field.text[index]",
+            "field.text.charAt",
+            "modelData",
+            "property string password",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.password_field)
+
     def test_password_pill_keeps_kscreenlocker_focus_and_keyboard_contract(self):
         self.assertIn("passwordBox.unlockButton.forceActiveFocus()", self.main)
         self.assertIn("mapFromItem(passwordBox.unlockButton", self.main)
