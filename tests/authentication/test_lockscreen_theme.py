@@ -331,7 +331,7 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             'variant: "ClamShell"',
             "centerScale: card.centerScale",
-            "420 * card.centerScale * MeoTheme.globalScale",
+            "size: Math.max(196, 420 * card.centerScale)",
             "Layout.topMargin: MeoTheme.space16 * card.centerScale",
             "visible: !card.embedded && text !== \"\"",
         ):
