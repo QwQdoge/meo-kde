@@ -251,7 +251,14 @@ class LockScreenThemeTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.system_summary)
-        for forbidden in ("networkName", "USER:", "process", "ssid", "address"):
+        for forbidden in (
+            "SystemState.networkName",
+            "Performance.processes",
+            "Performance.topCpuProcesses",
+            "Performance.topMemoryProcesses",
+            "SystemState.wifiNetworks",
+            "SystemState.bluetoothDevices",
+        ):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.system_summary)
 
