@@ -72,6 +72,9 @@ class DesktopLayoutTests(unittest.TestCase):
         time_button = (
             REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml"
         ).read_text(encoding="utf-8")
+        notification_button = (
+            REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml"
+        ).read_text(encoding="utf-8")
         quick_center = (
             REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/QuickSettingsCenter.qml"
         ).read_text(encoding="utf-8")
@@ -79,7 +82,7 @@ class DesktopLayoutTests(unittest.TestCase):
             REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml"
         ).read_text(encoding="utf-8")
 
-        for source in (active_app, status, time_button):
+        for source in (active_app, status, time_button, notification_button):
             self.assertIn("MeoInteractionMotion", source)
             self.assertIn("interactionMotion.resolvedScale", source)
             self.assertIn("interactionMotion.resolvedOffsetY", source)
@@ -94,6 +97,16 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertNotIn("revealLiftSpring", source)
 
         self.assertNotIn("targetValue: root.down ? 0.94 : 1", status)
+
+    def test_active_app_menu_stays_compact_and_uses_shared_context_surface(self):
+        source = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
+        self.assertIn('surfaceStyle: "context"', source)
+        self.assertIn('type: "round"', source)
+        self.assertNotIn('"supportingText":', source)
 
     def test_active_app_menu_is_about_settings_and_quit_only(self):
         source = (
@@ -111,6 +124,19 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn('i18n("Edit")', source)
         self.assertNotIn('i18n("View")', source)
 
+
+    def test_notifications_only_popup_reuses_reveal_motion(self):
+        source = (
+            REPO_ROOT / "plasmoids/org.meo.notifications/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+        compact = (
+            REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("revealActive: root.expanded", source)
+        self.assertIn("MeoInteractionMotion", compact)
+        self.assertIn("interactionMotion.resolvedScale", compact)
+        self.assertIn("interactionMotion.resolvedOffsetY", compact)
 
     def test_active_application_applet_is_installed_by_all_supported_paths(self):
         package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
