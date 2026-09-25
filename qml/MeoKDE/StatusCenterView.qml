@@ -46,6 +46,32 @@ MeoStatusCenter {
                                        ? (showSeconds ? "hh:mm:ss" : "hh:mm")
                                        : (showSeconds ? "h:mm:ss AP" : "h:mm AP")
 
+    MeoSpringValue {
+        id: revealScaleSpring
+        value: MeoTheme.reduceMotion ? 1 : 0.975
+        targetValue: 1
+        motionProfile: "pixel"
+        speed: "default"
+    }
+
+    MeoSpringValue {
+        id: revealLiftSpring
+        value: MeoTheme.reduceMotion ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
+        targetValue: 0
+        motionProfile: "pixel"
+        speed: "default"
+    }
+
+    transform: [
+        Translate { y: revealLiftSpring.value },
+        Scale {
+            origin.x: root.width
+            origin.y: 0
+            xScale: revealScaleSpring.value
+            yScale: revealScaleSpring.value
+        }
+    ]
+
     color: Qt.rgba(configuredSurfaceBase.r,
                    configuredSurfaceBase.g,
                    configuredSurfaceBase.b,
