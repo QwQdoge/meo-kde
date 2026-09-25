@@ -8,9 +8,26 @@ data_root="${XDG_DATA_HOME:-${HOME}/.local/share}"
 qml_root="${MEO_KDE_QML_ROOT:-${HOME}/.local/share/meo-kde/qml}"
 user_plugin_root="${MEO_KDE_PLUGIN_ROOT:-${HOME}/.local/lib/qt6/plugins}"
 local_bin_root="${XDG_BIN_HOME:-${HOME}/.local/bin}"
-# MeoUI stays an independent, dynamically imported Qt QML module.  Build it
-# from the sibling project rather than carrying a source snapshot in MeoKDE.
-meoui_project_root="${MEOUI_PROJECT_ROOT:-${repo_root}/../meo-ui}"
+# MeoUI stays an independent, dynamically imported Qt QML module. Build it
+# from an explicit workspace root when supplied, otherwise discover the common
+# sibling checkout names. MEOUI_PROJECT_ROOT remains a compatibility alias.
+if [ -n "${MEO_UI_ROOT:-}" ]; then
+  meoui_project_root="${MEO_UI_ROOT}"
+elif [ -n "${MEOUI_PROJECT_ROOT:-}" ]; then
+  meoui_project_root="${MEOUI_PROJECT_ROOT}"
+else
+  meoui_project_root=""
+  for meoui_candidate in \
+    "${repo_root}/../meo-ui" \
+    "${repo_root}/../MeoUI" \
+    "${repo_root}/../meoui"; do
+    if [ -f "${meoui_candidate}/CMakeLists.txt" ]; then
+      meoui_project_root="${meoui_candidate}"
+      break
+    fi
+  done
+  meoui_project_root="${meoui_project_root:-${repo_root}/../meo-ui}"
+fi
 meoui_build_root="${MEOUI_BUILD_ROOT:-${meoui_project_root}/out/build/release}"
 meoui_source="${MEOUI_QML_SOURCE:-${meoui_build_root}/MeoUI}"
 native_build_root="${repo_root}/out/build/native"
