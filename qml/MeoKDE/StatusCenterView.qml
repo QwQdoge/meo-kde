@@ -33,6 +33,7 @@ MeoStatusCenter {
     property bool showWeekNumbers: false
     property bool showSecondaryCalendar: true
     property string defaultPage: "notifications"
+    property bool revealActive: true
 
     readonly property bool showTime: centerMode !== "notificationsOnly"
     readonly property bool showCalendar: centerMode === ""
@@ -49,7 +50,7 @@ MeoStatusCenter {
     MeoSpringValue {
         id: revealScaleSpring
         value: MeoTheme.reduceMotion ? 1 : 0.975
-        targetValue: 1
+        targetValue: root.revealActive || MeoTheme.reduceMotion ? 1 : 0.975
         motionProfile: "pixel"
         speed: "default"
     }
@@ -57,7 +58,8 @@ MeoStatusCenter {
     MeoSpringValue {
         id: revealLiftSpring
         value: MeoTheme.reduceMotion ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
-        targetValue: 0
+        targetValue: root.revealActive || MeoTheme.reduceMotion
+                     ? 0 : -MeoMotion.popupOffset("pixel") * MeoTheme.globalScale
         motionProfile: "pixel"
         speed: "default"
     }
