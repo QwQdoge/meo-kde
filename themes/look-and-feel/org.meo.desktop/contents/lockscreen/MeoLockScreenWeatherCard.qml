@@ -16,6 +16,11 @@ Rectangle {
 
     property bool showLocation: false
     property bool showForecast: false
+    property real rootHeight: 0
+    readonly property bool detailsVisible: rootHeight >= 550 * MeoTheme.globalScale
+                                           && Weather.apparentTemperatureText !== ""
+                                           && Weather.highTemperatureText !== ""
+                                           && Weather.lowTemperatureText !== ""
     readonly property bool forecastVisible: showForecast && Weather.forecast.length > 0
     readonly property int forecastItemCount: Math.min(Weather.forecast.length,
                                                        Math.max(1, Math.floor(
@@ -25,7 +30,8 @@ Rectangle {
     visible: Weather.available
     implicitWidth: 360 * MeoTheme.globalScale
     implicitHeight: visible
-                    ? (forecastVisible ? 360 : 190) * MeoTheme.globalScale
+                    ? (forecastVisible ? 420 : detailsVisible ? 244 : 190)
+                      * MeoTheme.globalScale
                     : 0
     radius: MeoTheme.shapeExtraLarge * 1.35
     color: Qt.rgba(MeoTheme.surfaceContainer.r, MeoTheme.surfaceContainer.g,
@@ -88,6 +94,26 @@ Rectangle {
             color: MeoTheme.contentOnSurfaceVariant
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
+        }
+
+        MeoText {
+            Layout.alignment: Qt.AlignHCenter
+            visible: root.detailsVisible
+            text: qsTr("Feels like %1").arg(Weather.apparentTemperatureText)
+            typeRole: "body"
+            typeSize: "large"
+            color: MeoTheme.contentOnSurfaceVariant
+        }
+
+        MeoText {
+            Layout.alignment: Qt.AlignHCenter
+            visible: root.detailsVisible
+            text: qsTr("High %1 • Low %2")
+                    .arg(Weather.highTemperatureText)
+                    .arg(Weather.lowTemperatureText)
+            typeRole: "body"
+            typeSize: "medium"
+            color: MeoTheme.contentOnSurfaceVariant
         }
 
         MeoText {
@@ -159,7 +185,7 @@ Rectangle {
                                     typeRole: "label"
                                     typeSize: "medium"
                                     emphasized: true
-                                    color: parent.parent.index === 0
+                                    color: index === 0
                                            ? MeoTheme.contentOnPrimary
                                            : MeoTheme.contentOnSurface
                                 }
