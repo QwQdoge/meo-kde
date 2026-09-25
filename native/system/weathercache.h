@@ -17,6 +17,9 @@ class WeatherCache final : public QObject
     Q_PROPERTY(bool stale READ stale NOTIFY weatherChanged)
     Q_PROPERTY(QString temperatureText READ temperatureText NOTIFY weatherChanged)
     Q_PROPERTY(QString condition READ condition NOTIFY weatherChanged)
+    Q_PROPERTY(QString apparentTemperatureText READ apparentTemperatureText NOTIFY weatherChanged)
+    Q_PROPERTY(QString highTemperatureText READ highTemperatureText NOTIFY weatherChanged)
+    Q_PROPERTY(QString lowTemperatureText READ lowTemperatureText NOTIFY weatherChanged)
     Q_PROPERTY(QString iconName READ iconName NOTIFY weatherChanged)
     Q_PROPERTY(QString location READ location NOTIFY weatherChanged)
     Q_PROPERTY(QVariantList forecast READ forecast NOTIFY weatherChanged)
@@ -30,6 +33,9 @@ public:
     bool stale() const;
     QString temperatureText() const;
     QString condition() const;
+    QString apparentTemperatureText() const;
+    QString highTemperatureText() const;
+    QString lowTemperatureText() const;
     QString iconName() const;
     QString location() const;
     QVariantList forecast() const;
@@ -54,6 +60,9 @@ private:
     bool m_stale = false;
     QString m_temperatureText;
     QString m_condition;
+    QString m_apparentTemperatureText;
+    QString m_highTemperatureText;
+    QString m_lowTemperatureText;
     QString m_iconName;
     QString m_location;
     QVariantList m_forecast;
