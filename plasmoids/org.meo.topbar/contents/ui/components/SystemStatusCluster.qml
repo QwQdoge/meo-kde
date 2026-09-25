@@ -88,14 +88,15 @@ QQC2.AbstractButton {
     hoverEnabled: true
     activeFocusOnTab: true
     onClicked: quickSettingsRequested()
-            MeoInteractionMotion {
-                id: interactionMotion
-                hovered: root.hovered
-                pressed: root.down
-                active: root.active
-                motionProfile: "pixel"
-                speed: "fast"
-            }
+
+    MeoInteractionMotion {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        motionProfile: "pixel"
+        speed: "fast"
+    }
 
     transform: [
         Translate { y: interactionMotion.resolvedOffsetY },
