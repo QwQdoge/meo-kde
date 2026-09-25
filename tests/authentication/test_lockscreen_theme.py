@@ -211,7 +211,9 @@ class LockScreenThemeTests(unittest.TestCase):
     def test_weather_forecast_is_real_cache_data_and_never_locker_network(self):
         for required in (
             'QStringLiteral("hourly")',
+            'QStringLiteral("temperature_2m,apparent_temperature,weather_code")',
             'QStringLiteral("temperature_2m,weather_code,precipitation_probability")',
+            'QStringLiteral("temperature_2m_max,temperature_2m_min")',
             'QStringLiteral("forecast_hours")',
             'QStringLiteral("6")',
             'QStringLiteral("forecast")',
@@ -220,6 +222,9 @@ class LockScreenThemeTests(unittest.TestCase):
                 self.assertIn(required, self.weather_refresh_source)
 
         for required in (
+            "Q_PROPERTY(QString apparentTemperatureText",
+            "Q_PROPERTY(QString highTemperatureText",
+            "Q_PROPERTY(QString lowTemperatureText",
             "Q_PROPERTY(QVariantList forecast",
             'object.value(QStringLiteral("forecast")).toArray()',
             "Weather.forecast.slice(0, root.forecastItemCount)",
@@ -227,6 +232,12 @@ class LockScreenThemeTests(unittest.TestCase):
             "dashboardHeight >= 975 * MeoTheme.globalScale",
             "iconMapper.materialSymbolFor",
             "precipitationChance",
+            "Weather.apparentTemperatureText",
+            "Weather.highTemperatureText",
+            "Weather.lowTemperatureText",
+            "rootHeight >= 550 * MeoTheme.globalScale",
+            'qsTr("Feels like %1")',
+            'qsTr("High %1 • Low %2")',
             'type: "Cookie4Sided"',
             'text: index === 0 ? qsTr("Now")',
         ):
