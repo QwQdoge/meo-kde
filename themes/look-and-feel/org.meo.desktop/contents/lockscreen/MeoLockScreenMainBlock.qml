@@ -108,6 +108,8 @@ MeoLockScreenSessionManagement {
             Layout.maximumWidth: authenticationSurface.width * 0.8
             placeholderText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
             accessibleLabel: placeholderText
+            fingerprintAvailable: sessionManager.fingerprintAvailable
+            smartcardAvailable: sessionManager.smartcardAvailable
             inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData
                               | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
             text: PasswordSync.password
