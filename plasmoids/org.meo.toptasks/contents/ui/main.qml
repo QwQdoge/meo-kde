@@ -133,8 +133,8 @@ PlasmoidItem {
             ]
 
             background: MeoShape {
-                type: "rounded"
-                radius: MeoTheme.shapeMedium
+                type: "round"
+                radius: MeoTheme.shapeSmall
                 color: appMenu.opened
                        ? MeoTheme.primaryContainer
                        : (activeAppButton.hovered || activeAppButton.down
@@ -169,6 +169,14 @@ PlasmoidItem {
                            : (root.activeApplicationAvailable
                               ? MeoTheme.contentOnSurface
                               : MeoTheme.contentOnSurfaceVariant)
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: MeoTheme.motionDurationEffectDefault
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingStandard
+                        }
+                    }
                 }
             }
 
@@ -187,19 +195,18 @@ PlasmoidItem {
         MeoMenu {
             id: appMenu
             parent: compactRoot
-            preferredMenuWidth: 260 * MeoTheme.globalScale
+            preferredMenuWidth: 228 * MeoTheme.globalScale
+            surfaceStyle: "context"
             motionProfile: "pixel"
             model: [
                 {
                     "label": MeoI18n.translator.i18n("About"),
                     "icon": "info",
-                    "supportingText": MeoI18n.translator.i18n("Application, version, source, and storage information"),
                     "action": function() { root.openApplicationSection("info") }
                 },
                 {
                     "label": MeoI18n.translator.i18n("Settings…"),
                     "icon": "settings",
-                    "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
                     "action": function() { root.openApplicationSection("config") }
                 },
                 {
