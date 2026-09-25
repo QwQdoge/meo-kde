@@ -69,8 +69,9 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertIn("MeoLockScreenClock", self.ui)
         self.assertIn("MeoLockScreenAuthCard", self.main)
         self.assertIn("MeoSpringValue", self.auth_card)
-        self.assertIn("clock: ambientClockFrame", self.ui)
-        self.assertIn("property Item shadow: ambientClockShadow", self.ui)
+        self.assertIn("clock: wallpaperClockProxy", self.ui)
+        self.assertIn("property Item shadow: wallpaperClockProxyShadow", self.ui)
+        self.assertIn("id: ambientClockFrame", self.ui)
         for forbidden in ("tryUnlock(", "property string password", "PamAuthenticator", "QDBus"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.ui + self.main + self.auth_card)
