@@ -175,6 +175,7 @@ for required in \
   "${repo_root}/defaults/plasma/meo-shellrc" \
   "${repo_root}/tools/shell/apply-meo-panel-layout.sh" \
   "${repo_root}/tools/theme/apply-meo-desktop.sh" \
+  "${repo_root}/plasmoids/org.meo.toptasks/metadata.json" \
   "${repo_root}/plasmoids/org.meo.timecenter/metadata.json" \
   "${repo_root}/plasmoids/org.meo.time/metadata.json" \
   "${repo_root}/plasmoids/org.meo.notifications/metadata.json" \
@@ -369,17 +370,17 @@ done
 
 # Meo owns the quick-settings and time surfaces; KDE owns the native System
 # Tray/StatusNotifier application icons and the bottom task manager.
-for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   if [ -e "${data_root}/plasma/plasmoids/${meo_panel_applet}" ]; then
     run mkdir -p "${backup_root}/plasmoids"
     run cp -a "${data_root}/plasma/plasmoids/${meo_panel_applet}" \
       "${backup_root}/plasmoids/${meo_panel_applet}"
   fi
 done
-for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf org.meo.toptasks; do
+for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf; do
   run rm -rf "${data_root}/plasma/plasmoids/${legacy_plasmoid}"
 done
-for meo_panel_applet in org.meo.topbar org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   run rm -rf "${data_root}/plasma/plasmoids/${meo_panel_applet}"
   run cp -a "${repo_root}/plasmoids/${meo_panel_applet}" \
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"
