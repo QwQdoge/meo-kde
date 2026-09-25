@@ -21,10 +21,7 @@ Rectangle {
     implicitHeight: content.implicitHeight + MeoTheme.space24 * 2
     radius: MeoTheme.shapeLarge
     color: Qt.rgba(MeoTheme.surfaceContainer.r, MeoTheme.surfaceContainer.g,
-                   MeoTheme.surfaceContainer.b, 0.88)
-    border.width: Math.max(1, MeoTheme.globalScale)
-    border.color: Qt.rgba(MeoTheme.outlineVariant.r, MeoTheme.outlineVariant.g,
-                          MeoTheme.outlineVariant.b, 0.42)
+                   MeoTheme.surfaceContainer.b, 0.92)
 
     Accessible.role: Accessible.Pane
     Accessible.name: qsTr("System status")
@@ -56,92 +53,94 @@ Rectangle {
         id: content
         anchors.fill: parent
         anchors.margins: MeoTheme.space24
-        spacing: MeoTheme.space12
+        spacing: MeoTheme.space10
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: MeoTheme.space8
+            spacing: MeoTheme.space12
 
             Rectangle {
-                implicitWidth: 36 * MeoTheme.globalScale
-                implicitHeight: implicitWidth
+                implicitWidth: 40 * MeoTheme.globalScale
+                implicitHeight: 34 * MeoTheme.globalScale
                 radius: MeoTheme.shapeMedium
-                color: MeoTheme.primaryContainer
+                color: MeoTheme.primary
 
-                MeoIcon {
+                MeoText {
                     anchors.centerIn: parent
-                    icon: "terminal"
-                    size: 20 * MeoTheme.globalScale
-                    color: MeoTheme.contentOnPrimaryContainer
+                    text: ">"
+                    font.family: MeoTheme.fontFamilyMonospace
+                    typeRole: "title"
+                    typeSize: "medium"
+                    emphasized: true
+                    color: MeoTheme.contentOnPrimary
                 }
             }
 
-            ColumnLayout {
+            MeoText {
                 Layout.fillWidth: true
-                spacing: 0
-
-                MeoText {
-                    text: "meofetch"
-                    typeRole: "label"
-                    typeSize: "medium"
-                    emphasized: true
-                    color: MeoTheme.contentOnSurface
-                }
-                MeoText {
-                    text: qsTr("UP  ·  %1").arg(root.uptimeText(Performance.uptimeSeconds))
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.contentOnSurfaceVariant
-                }
+                text: "meofetch"
+                font.family: MeoTheme.fontFamilyMonospace
+                typeRole: "body"
+                typeSize: "medium"
+                emphasized: true
+                color: MeoTheme.contentOnSurface
+                elide: Text.ElideRight
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: MeoTheme.space16
-
-            Status {
-                Layout.fillWidth: true
-                iconName: SystemState.networkConnected ? "wifi" : "wifi_off"
-                label: SystemState.networkConnected ? qsTr("Connected") : qsTr("Offline")
-                active: SystemState.networkConnected
-            }
-            Status {
-                Layout.fillWidth: true
-                visible: SystemState.batteryAvailable
-                iconName: SystemState.batteryCharging ? "battery_charging_full" : "battery_full"
-                label: SystemState.batteryPercent + "%"
-                active: !SystemState.batteryAvailable || SystemState.batteryPercent > 15
-            }
-            Status {
-                Layout.fillWidth: true
-                visible: SystemState.audioAvailable
-                iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
-                label: SystemState.audioMuted ? qsTr("Muted") : SystemState.volumePercent + "%"
-                active: !SystemState.audioMuted
-            }
+        FetchLine {
+            label: "UP"
+            value: root.uptimeText(Performance.uptimeSeconds)
+            iconName: "schedule"
+        }
+        FetchLine {
+            label: "NET"
+            value: SystemState.networkConnected ? qsTr("Connected") : qsTr("Offline")
+            iconName: SystemState.networkConnected ? "wifi" : "wifi_off"
+        }
+        FetchLine {
+            visible: SystemState.batteryAvailable
+            label: "BATT"
+            value: (SystemState.batteryCharging ? "(+) " : "") + SystemState.batteryPercent + "%"
+            iconName: SystemState.batteryCharging ? "battery_charging_full" : "battery_full"
+        }
+        FetchLine {
+            visible: SystemState.audioAvailable
+            label: "VOL"
+            value: SystemState.audioMuted ? qsTr("Muted") : SystemState.volumePercent + "%"
+            iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
         }
     }
 
-    component Status: RowLayout {
-        id: status
-
-        required property string iconName
+    component FetchLine: RowLayout {
         required property string label
-        property bool active: true
+        required property string value
+        required property string iconName
 
-        spacing: MeoTheme.space4
+        Layout.fillWidth: true
+        spacing: MeoTheme.space8
+
+        MeoText {
+            text: parent.label.padEnd(4, " ") + ":"
+            font.family: MeoTheme.fontFamilyMonospace
+            typeRole: "label"
+            typeSize: "medium"
+            emphasized: true
+            color: MeoTheme.primary
+        }
 
         MeoIcon {
-            icon: status.iconName
+            icon: parent.iconName
             size: 18 * MeoTheme.globalScale
-            color: status.active ? MeoTheme.primary : MeoTheme.contentOnSurfaceVariant
+            color: MeoTheme.secondary
         }
+
         MeoText {
             Layout.fillWidth: true
-            text: status.label
+            text: parent.value
+            font.family: MeoTheme.fontFamilyMonospace
             typeRole: "label"
-            typeSize: "small"
+            typeSize: "medium"
             color: MeoTheme.contentOnSurfaceVariant
             elide: Text.ElideRight
         }
