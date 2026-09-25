@@ -129,6 +129,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
         self.assertIn('surfaceStyle: "context"', source)
+        self.assertIn("height: 28 * MeoTheme.globalScale", source)
         self.assertIn("QQC2.Overlay.overlay || compactRoot", source)
         shell_surface = (
             REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
@@ -164,7 +165,8 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("revealActive: root.expanded", source)
         self.assertIn("MeoInteractionMotion", compact)
-        self.assertIn("height: 28 * MeoTheme.globalScale", compact)
+        self.assertIn("implicitWidth: 28 * MeoTheme.globalScale", compact)
+        self.assertIn("implicitHeight: implicitWidth", compact)
         self.assertIn("interactionMotion.resolvedScale", compact)
         self.assertIn("interactionMotion.resolvedOffsetY", compact)
 
