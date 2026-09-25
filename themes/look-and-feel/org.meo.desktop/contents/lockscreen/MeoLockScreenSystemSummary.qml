@@ -15,6 +15,7 @@ import Meo.System 1.0
 Rectangle {
     id: root
 
+    property real rootHeight: 0
     readonly property string clientId: "meo-lock-system-" + root.toString()
     readonly property var paletteSwatches: [
         MeoTheme.primary,
@@ -191,6 +192,7 @@ Rectangle {
 
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
+            visible: root.rootHeight >= 570 * MeoTheme.globalScale
             spacing: MeoTheme.space8
 
             Repeater {
