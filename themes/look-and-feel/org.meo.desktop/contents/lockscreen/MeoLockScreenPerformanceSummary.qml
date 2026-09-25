@@ -71,7 +71,18 @@ Rectangle {
             spacing: MeoTheme.space10
             opacity: root.sessionControlsShown ? 0 : 1
             transform: Translate {
-                y: root.sessionControlsShown ? root.height * 0.30 : 0
+                id: resourcesTranslate
+                y: root.sessionControlsShown ? root.height : 0
+
+                Behavior on y {
+                    NumberAnimation {
+                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: root.sessionControlsShown
+                                            ? MeoTheme.motionEasingEmphasizedAccelerate
+                                            : MeoTheme.motionEasingEmphasizedDecelerate
+                    }
+                }
             }
 
             Behavior on opacity {
@@ -159,7 +170,18 @@ Rectangle {
             opacity: root.sessionControlsShown ? 1 : 0
             enabled: root.sessionControlsShown
             transform: Translate {
-                y: root.sessionControlsShown ? 0 : -root.height * 0.30
+                id: sessionButtonsTranslate
+                y: root.sessionControlsShown ? 0 : -root.height
+
+                Behavior on y {
+                    NumberAnimation {
+                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: root.sessionControlsShown
+                                            ? MeoTheme.motionEasingEmphasizedDecelerate
+                                            : MeoTheme.motionEasingEmphasizedAccelerate
+                    }
+                }
             }
 
             Behavior on opacity {
