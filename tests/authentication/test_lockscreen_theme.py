@@ -226,9 +226,9 @@ class LockScreenThemeTests(unittest.TestCase):
 
     def test_reference_visual_language_uses_real_meoui_shapes_and_surfaces(self):
         for required in (
-            'type: "Pentagon"',
-            'type: "Slanted"',
-            'type: "Gem"',
+            'shapeName: "Pentagon"',
+            'shapeName: "Slanted"',
+            'shapeName: "Gem"',
             'Performance.cpuTemperature >= 90 ? "SoftBurst" : "Circle"',
             'text: "meofetch"',
             "font.family: MeoTheme.fontFamilyMonospace",
