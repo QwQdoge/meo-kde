@@ -174,9 +174,12 @@ int main(int argc, char **argv)
     QUrlQuery forecastQuery;
     forecastQuery.addQueryItem(QStringLiteral("latitude"), QString::number(latitude, 'f', 4));
     forecastQuery.addQueryItem(QStringLiteral("longitude"), QString::number(longitude, 'f', 4));
-    forecastQuery.addQueryItem(QStringLiteral("current"), QStringLiteral("temperature_2m,weather_code"));
+    forecastQuery.addQueryItem(QStringLiteral("current"),
+                               QStringLiteral("temperature_2m,apparent_temperature,weather_code"));
     forecastQuery.addQueryItem(QStringLiteral("hourly"),
                                QStringLiteral("temperature_2m,weather_code,precipitation_probability"));
+    forecastQuery.addQueryItem(QStringLiteral("daily"),
+                               QStringLiteral("temperature_2m_max,temperature_2m_min"));
     forecastQuery.addQueryItem(QStringLiteral("forecast_hours"), QStringLiteral("6"));
     forecastQuery.addQueryItem(QStringLiteral("temperature_unit"), QStringLiteral("celsius"));
     forecastQuery.addQueryItem(QStringLiteral("timezone"), QStringLiteral("auto"));
@@ -190,6 +193,18 @@ int main(int argc, char **argv)
 
     const int code = current.value(QStringLiteral("weather_code")).toInt(-1);
     const QString location = place.value(QStringLiteral("name")).toString().left(64);
+    const double apparentTemperature =
+        current.value(QStringLiteral("apparent_temperature"))
+            .toDouble(std::numeric_limits<double>::quiet_NaN());
+    const QJsonObject daily = forecast.value(QStringLiteral("daily")).toObject();
+    const QJsonArray dailyHighs = daily.value(QStringLiteral("temperature_2m_max")).toArray();
+    const QJsonArray dailyLows = daily.value(QStringLiteral("temperature_2m_min")).toArray();
+    const double dailyHigh = dailyHighs.isEmpty()
+        ? std::numeric_limits<double>::quiet_NaN()
+        : dailyHighs.constFirst().toDouble(std::numeric_limits<double>::quiet_NaN());
+    const double dailyLow = dailyLows.isEmpty()
+        ? std::numeric_limits<double>::quiet_NaN()
+        : dailyLows.constFirst().toDouble(std::numeric_limits<double>::quiet_NaN());
 
     QJsonArray cachedForecast;
     const QJsonObject hourly = forecast.value(QStringLiteral("hourly")).toObject();
@@ -226,6 +241,9 @@ int main(int argc, char **argv)
                             {QStringLiteral("updatedAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
                             {QStringLiteral("location"), location},
                             {QStringLiteral("temperature"), current.value(QStringLiteral("temperature_2m")).toDouble()},
+                            {QStringLiteral("apparentTemperature"), apparentTemperature},
+                            {QStringLiteral("dailyHigh"), dailyHigh},
+                            {QStringLiteral("dailyLow"), dailyLow},
                             {QStringLiteral("unit"), QStringLiteral("C")},
                             {QStringLiteral("condition"), conditionForCode(code)},
                             {QStringLiteral("weatherCode"), code},
