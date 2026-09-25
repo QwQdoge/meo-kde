@@ -83,6 +83,8 @@ QQC2.AbstractButton {
     implicitHeight: 28 * MeoTheme.globalScale
     leftPadding: MeoTheme.space8
     rightPadding: MeoTheme.space8
+    hoverEnabled: true
+    activeFocusOnTab: true
     Accessible.name: MeoI18n.translator.i18n("System status")
     Accessible.description: statusContent.statusDescription()
     onClicked: quickSettingsRequested()
