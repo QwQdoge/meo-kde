@@ -64,6 +64,16 @@ QString localizedConditionForCode(int code)
     return i18nd("meo-desktop", "Weather unavailable");
 }
 
+QString formattedTemperature(double temperature, const QString &unit)
+{
+    if (!std::isfinite(temperature) || temperature < -100 || temperature > 100) {
+        return {};
+    }
+    return QString::number(temperature, 'f',
+                           std::abs(temperature - std::round(temperature)) < 0.05 ? 0 : 1)
+        + QChar(0x00B0) + unit;
+}
+
 bool stableWeatherCode(const QJsonValue &value, int *code)
 {
     if (!value.isDouble()) {
@@ -104,6 +114,9 @@ bool WeatherCache::available() const { return m_available; }
 bool WeatherCache::stale() const { return m_stale; }
 QString WeatherCache::temperatureText() const { return m_temperatureText; }
 QString WeatherCache::condition() const { return m_condition; }
+QString WeatherCache::apparentTemperatureText() const { return m_apparentTemperatureText; }
+QString WeatherCache::highTemperatureText() const { return m_highTemperatureText; }
+QString WeatherCache::lowTemperatureText() const { return m_lowTemperatureText; }
 QString WeatherCache::iconName() const { return m_iconName; }
 QString WeatherCache::location() const { return m_location; }
 QVariantList WeatherCache::forecast() const { return m_forecast; }
@@ -187,8 +200,19 @@ void WeatherCache::reload()
         : condition;
 
     const bool stale = updatedAt.secsTo(QDateTime::currentDateTimeUtc()) > kMaximumCacheAgeSeconds;
-    const QString temperatureText = QString::number(temperature, 'f', std::abs(temperature - std::round(temperature)) < 0.05 ? 0 : 1)
-            + QChar(0x00B0) + unit;
+    const QString temperatureText = formattedTemperature(temperature, unit);
+    const QString apparentTemperatureText =
+        formattedTemperature(object.value(QStringLiteral("apparentTemperature"))
+                                 .toDouble(std::numeric_limits<double>::quiet_NaN()),
+                             unit);
+    const QString highTemperatureText =
+        formattedTemperature(object.value(QStringLiteral("dailyHigh"))
+                                 .toDouble(std::numeric_limits<double>::quiet_NaN()),
+                             unit);
+    const QString lowTemperatureText =
+        formattedTemperature(object.value(QStringLiteral("dailyLow"))
+                                 .toDouble(std::numeric_limits<double>::quiet_NaN()),
+                             unit);
     const QString location = boundedText(object.value(QStringLiteral("location")).toString(), 64);
     const QString iconName = safeIconName(object.value(QStringLiteral("iconName")).toString());
 
@@ -216,10 +240,7 @@ void WeatherCache::reload()
         const QString hourLabel = time.mid(11, 5);
         forecastItems.push_back(QVariantMap{
             {QStringLiteral("time"), hourLabel},
-            {QStringLiteral("temperatureText"),
-             QString::number(forecastTemperature, 'f',
-                             std::abs(forecastTemperature - std::round(forecastTemperature)) < 0.05 ? 0 : 1)
-                 + QChar(0x00B0) + unit},
+            {QStringLiteral("temperatureText"), formattedTemperature(forecastTemperature, unit)},
             {QStringLiteral("condition"), localizedConditionForCode(forecastCode)},
             {QStringLiteral("iconName"), iconForCode(forecastCode)},
             {QStringLiteral("precipitationChance"), precipitationChance},
@@ -228,7 +249,11 @@ void WeatherCache::reload()
 
     const bool available = !stale;
     if (m_available == available && m_stale == stale && m_temperatureText == temperatureText
-        && m_condition == displayedCondition && m_iconName == iconName && m_location == location
+        && m_condition == displayedCondition
+        && m_apparentTemperatureText == apparentTemperatureText
+        && m_highTemperatureText == highTemperatureText
+        && m_lowTemperatureText == lowTemperatureText
+        && m_iconName == iconName && m_location == location
         && m_forecast == forecastItems && m_updatedAt == updatedAt) {
         setError({});
         return;
@@ -237,6 +262,9 @@ void WeatherCache::reload()
     m_stale = stale;
     m_temperatureText = temperatureText;
     m_condition = displayedCondition;
+    m_apparentTemperatureText = apparentTemperatureText;
+    m_highTemperatureText = highTemperatureText;
+    m_lowTemperatureText = lowTemperatureText;
     m_iconName = iconName;
     m_location = location;
     m_forecast = forecastItems;
@@ -260,12 +288,17 @@ void WeatherCache::updateWatchPaths()
 void WeatherCache::clearWeather(const QString &error)
 {
     const bool changed = m_available || m_stale || !m_temperatureText.isEmpty() || !m_condition.isEmpty()
-            || !m_iconName.isEmpty() || !m_location.isEmpty() || !m_forecast.isEmpty()
+            || !m_apparentTemperatureText.isEmpty() || !m_highTemperatureText.isEmpty()
+            || !m_lowTemperatureText.isEmpty() || !m_iconName.isEmpty()
+            || !m_location.isEmpty() || !m_forecast.isEmpty()
             || m_updatedAt.isValid();
     m_available = false;
     m_stale = false;
     m_temperatureText.clear();
     m_condition.clear();
+    m_apparentTemperatureText.clear();
+    m_highTemperatureText.clear();
+    m_lowTemperatureText.clear();
     m_iconName.clear();
     m_location.clear();
     m_forecast.clear();
