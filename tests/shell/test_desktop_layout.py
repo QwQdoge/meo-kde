@@ -92,6 +92,8 @@ class DesktopLayoutTests(unittest.TestCase):
 
         for source in (quick_center, status_center):
             self.assertIn("MeoRevealMotion", source)
+            self.assertIn("resolvedOffsetX", source)
+            self.assertIn("resolvedOffsetY", source)
             self.assertIn("revealMotion.resolvedScale", source)
             self.assertIn("revealMotion.resolvedOffset", source)
             self.assertNotIn("revealScaleSpring", source)
