@@ -132,27 +132,15 @@ PlasmoidItem {
                 }
             ]
 
-            background: MeoShape {
-                type: "round"
-                radius: MeoTheme.shapeSmall
-                color: appMenu.opened
-                       ? MeoTheme.primaryContainer
-                       : (activeAppButton.hovered || activeAppButton.down
-                          ? MeoTheme.surfaceContainerHighest
-                          : "transparent")
+            background: ShellTriggerSurface {
+        id: activeAppSurface
+        hovered: activeAppButton.hovered
+        pressed: activeAppButton.down
+        focused: activeAppButton.visualFocus
+        active: appMenu.opened
+    }
 
-                MeoStateLayer {
-                    anchors.fill: parent
-                    radius: parent.radius
-                    hovered: activeAppButton.hovered
-                    pressed: activeAppButton.down
-                    focused: activeAppButton.visualFocus
-                    color: appMenu.opened ? MeoTheme.onPrimaryContainer
-                                          : MeoTheme.onSurface
-                }
-            }
-
-            contentItem: RowLayout {
+    contentItem: RowLayout {
                 spacing: 0
 
                 MeoText {
@@ -165,7 +153,7 @@ PlasmoidItem {
                     elide: Text.ElideRight
                     maximumLineCount: 1
                     color: appMenu.opened
-                           ? MeoTheme.onPrimaryContainer
+                           ? activeAppSurface.contentColor
                            : (root.activeApplicationAvailable
                               ? MeoTheme.contentOnSurface
                               : MeoTheme.contentOnSurfaceVariant)
