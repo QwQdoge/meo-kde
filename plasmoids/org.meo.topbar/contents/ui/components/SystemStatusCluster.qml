@@ -88,18 +88,37 @@ QQC2.AbstractButton {
     onClicked: quickSettingsRequested()
 
     MeoSpringValue {
-        id: pressSpring
+        id: interactionScaleSpring
         value: 1
-        targetValue: root.down ? 0.94 : 1
-        spring: MeoMotion.fastSpatial
+        targetValue: MeoMotion.interactionScale("pixel",
+                                                root.hovered,
+                                                root.down,
+                                                root.active)
+        motionProfile: "pixel"
+        speed: "fast"
     }
 
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: pressSpring.value
-        yScale: pressSpring.value
+    MeoSpringValue {
+        id: interactionLiftSpring
+        value: 0
+        targetValue: MeoMotion.interactionLift("pixel",
+                                               root.hovered,
+                                               root.down,
+                                               root.active)
+                     * MeoTheme.globalScale
+        motionProfile: "pixel"
+        speed: "fast"
     }
+
+    transform: [
+        Translate { y: interactionLiftSpring.value },
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionScaleSpring.value
+            yScale: interactionScaleSpring.value
+        }
+    ]
 
     background: MeoShape {
         id: statusBackground
