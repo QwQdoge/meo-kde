@@ -37,56 +37,21 @@ QQC2.AbstractButton {
         }
     ]
 
-    PointHandler {
-        acceptedButtons: Qt.LeftButton
-        onActiveChanged: {
-            compactStateLayer._pointerPressActive = active
-            if (active) {
-                const localPoint = compactStateLayer.mapFromItem(root,
-                                                                  point.position.x,
-                                                                  point.position.y)
-                compactStateLayer.trigger(localPoint.x, localPoint.y)
-            } else {
-                compactStateLayer.releaseRipple()
-            }
-        }
-    }
-
     Keys.onPressed: event => {
         if (!event.isAutoRepeat
                 && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                     || event.key === Qt.Key_Space))
-            compactStateLayer.triggerFromKeyboard()
+            compactSurface.triggerFromKeyboard()
     }
 
-    background: MeoShape {
+    background: ShellTriggerSurface {
         id: compactSurface
-        type: "round"
-        radius: MeoTheme.shapeSmall
-        color: root.active
-               ? MeoTheme.primaryContainer
-               : (root.hovered || root.down
-                  ? MeoTheme.surfaceContainerHighest
-                  : "transparent")
-
-        Behavior on color {
-            ColorAnimation {
-                duration: MeoTheme.motionDurationEffectDefault
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: MeoTheme.motionEasingStandard
-            }
-        }
-        MeoStateLayer {
-            id: compactStateLayer
-            anchors.fill: parent
-            internalPointerTrackingEnabled: false
-            radius: compactSurface.radius
-            hovered: root.hovered
-            pressed: root.down
-            focused: root.visualFocus
-            focusColor: MeoTheme.primary
-        }
+        hovered: root.hovered
+        pressed: root.down
+        focused: root.visualFocus
+        active: root.active
     }
+
     contentItem: Item {
         MeoIcon {
             anchors.centerIn: parent
