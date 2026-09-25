@@ -26,6 +26,7 @@
 #include <QTimer>
 #include <QUrlQuery>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
