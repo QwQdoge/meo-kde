@@ -17,11 +17,15 @@ Rectangle {
     property bool showLocation: false
     property bool showForecast: false
     readonly property bool forecastVisible: showForecast && Weather.forecast.length > 0
+    readonly property int forecastItemCount: Math.min(Weather.forecast.length,
+                                                       Math.max(1, Math.floor(
+                                                           (width - MeoTheme.space48)
+                                                           / (58 * MeoTheme.globalScale))))
 
     visible: Weather.available
     implicitWidth: 360 * MeoTheme.globalScale
     implicitHeight: visible
-                    ? (forecastVisible ? 276 : 190) * MeoTheme.globalScale
+                    ? (forecastVisible ? 360 : 190) * MeoTheme.globalScale
                     : 0
     radius: MeoTheme.shapeExtraLarge * 1.35
     color: Qt.rgba(MeoTheme.surfaceContainer.r, MeoTheme.surfaceContainer.g,
@@ -97,53 +101,96 @@ Rectangle {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(1, MeoTheme.globalScale)
-            Layout.topMargin: MeoTheme.space8
+            Layout.topMargin: MeoTheme.space10
+            Layout.preferredHeight: forecastLayout.implicitHeight + MeoTheme.space16 * 2
             visible: root.forecastVisible
-            color: Qt.rgba(MeoTheme.outlineVariant.r,
-                           MeoTheme.outlineVariant.g,
-                           MeoTheme.outlineVariant.b, 0.44)
-        }
+            radius: MeoTheme.shapeExtraLarge
+            color: MeoTheme.surfaceContainerHigh
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.topMargin: MeoTheme.space4
-            visible: root.forecastVisible
-            spacing: MeoTheme.space8
+            ColumnLayout {
+                id: forecastLayout
+                anchors.fill: parent
+                anchors.margins: MeoTheme.space16
+                spacing: MeoTheme.space10
 
-            Repeater {
-                model: Weather.forecast.slice(0, 4)
-
-                ColumnLayout {
-                    required property var modelData
-
+                RowLayout {
                     Layout.fillWidth: true
-                    spacing: MeoTheme.space2
-
-                    MeoText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: modelData.time || ""
-                        font.family: MeoTheme.fontFamilyMonospace
-                        typeRole: "label"
-                        typeSize: "small"
-                        color: MeoTheme.outline
-                    }
+                    spacing: MeoTheme.space6
 
                     MeoIcon {
-                        Layout.alignment: Qt.AlignHCenter
-                        icon: iconMapper.materialSymbolFor(modelData.iconName || "")
-                        size: 22 * MeoTheme.globalScale
-                        color: MeoTheme.secondary
-                        fill: true
+                        icon: "schedule"
+                        size: 19 * MeoTheme.globalScale
+                        color: MeoTheme.contentOnSurface
                     }
-
                     MeoText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: modelData.temperatureText || ""
-                        typeRole: "label"
-                        typeSize: "medium"
+                        Layout.fillWidth: true
+                        text: qsTr("Hourly forecast")
+                        typeRole: "title"
+                        typeSize: "small"
                         emphasized: true
                         color: MeoTheme.contentOnSurface
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: MeoTheme.space6
+
+                    Repeater {
+                        model: Weather.forecast.slice(0, root.forecastItemCount)
+
+                        ColumnLayout {
+                            required property int index
+                            required property var modelData
+
+                            Layout.fillWidth: true
+                            spacing: MeoTheme.space4
+
+                            MeoShape {
+                                Layout.alignment: Qt.AlignHCenter
+                                implicitWidth: 48 * MeoTheme.globalScale
+                                implicitHeight: implicitWidth
+                                type: "Cookie4Sided"
+                                color: index === 0 ? MeoTheme.primary : "transparent"
+
+                                MeoText {
+                                    anchors.centerIn: parent
+                                    text: modelData.temperatureText || ""
+                                    typeRole: "label"
+                                    typeSize: "medium"
+                                    emphasized: true
+                                    color: parent.parent.index === 0
+                                           ? MeoTheme.contentOnPrimary
+                                           : MeoTheme.contentOnSurface
+                                }
+                            }
+
+                            MeoIcon {
+                                Layout.alignment: Qt.AlignHCenter
+                                icon: iconMapper.materialSymbolFor(modelData.iconName || "")
+                                size: 24 * MeoTheme.globalScale
+                                color: MeoTheme.secondary
+                                fill: true
+                            }
+
+                            MeoText {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: String(modelData.precipitationChance || 0) + "%"
+                                typeRole: "label"
+                                typeSize: "small"
+                                emphasized: true
+                                color: MeoTheme.primary
+                            }
+
+                            MeoText {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: index === 0 ? qsTr("Now") : (modelData.time || "")
+                                font.family: MeoTheme.fontFamilyMonospace
+                                typeRole: "label"
+                                typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                            }
+                        }
                     }
                 }
             }
