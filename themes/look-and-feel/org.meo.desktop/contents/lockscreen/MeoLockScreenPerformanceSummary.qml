@@ -20,6 +20,17 @@ Rectangle {
 
     readonly property string clientId: "meo-lock-performance-" + root.toString()
     readonly property bool hasData: Performance.available
+    property bool canSuspend: false
+    property bool canHibernate: false
+    property bool canReboot: false
+    property bool canShutdown: false
+    readonly property bool hasSessionControls: canSuspend || canHibernate || canReboot || canShutdown
+    readonly property bool sessionControlsShown: hasSessionControls && hover.hovered
+
+    signal suspendRequested()
+    signal hibernateRequested()
+    signal rebootRequested()
+    signal shutdownRequested()
 
     visible: hasData
     implicitWidth: 360 * MeoTheme.globalScale
@@ -30,6 +41,11 @@ Rectangle {
 
     Accessible.role: Accessible.Pane
     Accessible.name: qsTr("Performance")
+
+    HoverHandler {
+        id: hover
+        enabled: root.hasSessionControls
+    }
 
     function syncSubscription() {
         if (visible)
@@ -42,80 +58,155 @@ Rectangle {
     Component.onDestruction: Performance.unsubscribe(clientId)
     onVisibleChanged: syncSubscription()
 
-    ColumnLayout {
+    Item {
         anchors.fill: parent
         anchors.margins: MeoTheme.space16
-        spacing: MeoTheme.space10
+        clip: true
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: MeoTheme.space8
-
-            MeoText {
-                Layout.fillWidth: true
-                text: qsTr("Resources")
-                typeRole: "label"
-                typeSize: "medium"
-                emphasized: true
-                color: MeoTheme.outline
+        ColumnLayout {
+            id: resourceContent
+            anchors.fill: parent
+            spacing: MeoTheme.space10
+            opacity: root.sessionControlsShown ? 0 : 1
+            transform: Translate {
+                y: root.sessionControlsShown ? root.height * 0.30 : 0
             }
 
-            MeoShape {
-                visible: Performance.cpuTemperature > 0
-                implicitWidth: 48 * MeoTheme.globalScale
-                implicitHeight: implicitWidth
-                type: Performance.cpuTemperature >= 90 ? "SoftBurst" : "Circle"
-                color: Performance.cpuTemperature >= 90
-                       ? MeoTheme.errorContainer : MeoTheme.secondaryContainer
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: MeoTheme.space8
 
                 MeoText {
-                    anchors.centerIn: parent
-                    text: Math.round(Performance.cpuTemperature) + "°"
+                    Layout.fillWidth: true
+                    text: qsTr("Resources")
                     typeRole: "label"
-                    typeSize: "small"
+                    typeSize: "medium"
                     emphasized: true
+                    color: MeoTheme.outline
+                }
+
+                MeoShape {
+                    visible: Performance.cpuTemperature > 0
+                    implicitWidth: 48 * MeoTheme.globalScale
+                    implicitHeight: implicitWidth
+                    type: Performance.cpuTemperature >= 90 ? "SoftBurst" : "Circle"
                     color: Performance.cpuTemperature >= 90
-                           ? MeoTheme.contentOnErrorContainer
-                           : MeoTheme.contentOnSecondaryContainer
+                           ? MeoTheme.errorContainer : MeoTheme.secondaryContainer
+
+                    MeoText {
+                        anchors.centerIn: parent
+                        text: Math.round(Performance.cpuTemperature) + "°"
+                        typeRole: "label"
+                        typeSize: "small"
+                        emphasized: true
+                        color: Performance.cpuTemperature >= 90
+                               ? MeoTheme.contentOnErrorContainer
+                               : MeoTheme.contentOnSecondaryContainer
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: MeoTheme.space12
+
+                ResourceShape {
+                    Layout.fillWidth: true
+                    label: "CPU"
+                    iconName: "memory"
+                    value: Math.max(0, Math.min(100, Performance.cpuUsage))
+                    shapeName: "Pentagon"
+                    containerColor: MeoTheme.primaryContainer
+                    contentColor: MeoTheme.primary
+                }
+
+                ResourceShape {
+                    Layout.fillWidth: true
+                    label: qsTr("RAM")
+                    iconName: "memory_alt"
+                    value: Math.max(0, Math.min(100, Performance.memoryUsage))
+                    shapeName: "Slanted"
+                    containerColor: MeoTheme.tertiaryContainer
+                    contentColor: MeoTheme.tertiary
+                }
+
+                ResourceShape {
+                    Layout.fillWidth: true
+                    label: qsTr("Disk")
+                    iconName: "hard_disk"
+                    value: Math.max(0, Math.min(100, Performance.storageUsage))
+                    shapeName: "Gem"
+                    containerColor: MeoTheme.secondaryContainer
+                    contentColor: MeoTheme.secondary
                 }
             }
         }
 
         RowLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+            anchors.fill: parent
             spacing: MeoTheme.space12
-
-            ResourceShape {
-                Layout.fillWidth: true
-                label: "CPU"
-                iconName: "memory"
-                value: Math.max(0, Math.min(100, Performance.cpuUsage))
-                shapeName: "Pentagon"
-                containerColor: MeoTheme.primaryContainer
-                contentColor: MeoTheme.primary
+            opacity: root.sessionControlsShown ? 1 : 0
+            enabled: root.sessionControlsShown
+            transform: Translate {
+                y: root.sessionControlsShown ? 0 : -root.height * 0.30
             }
 
-            ResourceShape {
-                Layout.fillWidth: true
-                label: qsTr("RAM")
-                iconName: "memory_alt"
-                value: Math.max(0, Math.min(100, Performance.memoryUsage))
-                shapeName: "Slanted"
-                containerColor: MeoTheme.tertiaryContainer
-                contentColor: MeoTheme.tertiary
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                }
             }
 
-            ResourceShape {
-                Layout.fillWidth: true
-                label: qsTr("Disk")
-                iconName: "hard_disk"
-                value: Math.max(0, Math.min(100, Performance.storageUsage))
-                shapeName: "Gem"
-                containerColor: MeoTheme.secondaryContainer
-                contentColor: MeoTheme.secondary
+            SessionAction {
+                visible: root.canSuspend
+                iconName: "bedtime"
+                accessibleName: qsTr("Sleep")
+                onTriggered: root.suspendRequested()
+            }
+            SessionAction {
+                visible: root.canHibernate
+                iconName: "mode_night"
+                accessibleName: qsTr("Hibernate")
+                onTriggered: root.hibernateRequested()
+            }
+            SessionAction {
+                visible: root.canReboot
+                iconName: "restart_alt"
+                accessibleName: qsTr("Restart")
+                onTriggered: root.rebootRequested()
+            }
+            SessionAction {
+                visible: root.canShutdown
+                iconName: "power_settings_new"
+                accessibleName: qsTr("Shut down")
+                onTriggered: root.shutdownRequested()
             }
         }
+    }
+
+    component SessionAction: MeoIconButton {
+        required property string iconName
+        required property string accessibleName
+        signal triggered()
+
+        Layout.fillWidth: true
+        type: "tonal"
+        size: "l"
+        shape: pressed ? "square" : "circle"
+        icon.name: iconName
+        Accessible.name: accessibleName
+        onClicked: triggered()
     }
 
     component ResourceShape: Item {
