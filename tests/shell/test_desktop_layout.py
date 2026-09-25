@@ -556,7 +556,12 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('"org.kde.plasma.vault"', source)
         self.assertIn('"org.kde.plasma.printmanager"', source)
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
-        self.assertNotIn('oneWidget(top, "org.meo.toptasks")', source)
+        self.assertIn('oneWidget(top, "org.meo.toptasks")', source)
+        self.assertNotIn('removeWidgets(top, "org.meo.toptasks")', source)
+        self.assertLess(source.index('oneWidget(top, "org.kde.plasma.kickoff")'),
+                        source.index('oneWidget(top, "org.meo.toptasks")'))
+        self.assertLess(source.index('oneWidget(top, "org.meo.toptasks")'),
+                        source.index('oneWidget(top, "org.kde.plasma.appmenu")'))
 
     def test_bottom_dock_uses_native_task_frames_by_default(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
