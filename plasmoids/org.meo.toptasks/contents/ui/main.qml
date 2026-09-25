@@ -72,21 +72,26 @@ PlasmoidItem {
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
 
-    function applicationConfigDeepLink() {
+    function applicationDeepLink(section) {
         if (!activeApplicationAvailable)
             return ""
         const query = []
         if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
             query.push("appId=" + encodeURIComponent(activeApplicationId))
         query.push("appName=" + encodeURIComponent(activeApplicationName))
-        query.push("section=config")
+        query.push("section=" + encodeURIComponent(section))
         return "meosettings://applications?" + query.join("&")
     }
 
-    function openApplicationConfiguration() {
-        const url = applicationConfigDeepLink()
+    function openApplicationSection(section) {
+        const url = applicationDeepLink(section)
         if (url !== "")
             Qt.openUrlExternally(url)
+    }
+
+    function closeActiveApplication() {
+        if (activeApplicationAvailable && activeTaskIndex)
+            tasksModel.requestClose(activeTaskIndex)
     }
 
     compactRepresentation: Item {
@@ -108,14 +113,57 @@ PlasmoidItem {
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
 
+            MeoSpringValue {
+                id: appScaleSpring
+                value: 1
+                targetValue: MeoMotion.interactionScale("pixel",
+                                                        activeAppButton.hovered,
+                                                        activeAppButton.down,
+                                                        appMenu.opened)
+                motionProfile: "pixel"
+                speed: "fast"
+            }
+
+            MeoSpringValue {
+                id: appLiftSpring
+                value: 0
+                targetValue: MeoMotion.interactionLift("pixel",
+                                                       activeAppButton.hovered,
+                                                       activeAppButton.down,
+                                                       appMenu.opened)
+                             * MeoTheme.globalScale
+                motionProfile: "pixel"
+                speed: "fast"
+            }
+
+            transform: [
+                Translate { y: appLiftSpring.value },
+                Scale {
+                    origin.x: activeAppButton.width / 2
+                    origin.y: activeAppButton.height / 2
+                    xScale: appScaleSpring.value
+                    yScale: appScaleSpring.value
+                }
+            ]
+
             background: MeoShape {
                 type: "rounded"
                 radius: MeoTheme.shapeMedium
                 color: appMenu.opened
-                       ? MeoTheme.surfaceContainerHighest
+                       ? MeoTheme.primaryContainer
                        : (activeAppButton.hovered || activeAppButton.down
-                          ? MeoTheme.surfaceContainerHigh
+                          ? MeoTheme.surfaceContainerHighest
                           : "transparent")
+
+                MeoStateLayer {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    hovered: activeAppButton.hovered
+                    pressed: activeAppButton.down
+                    focused: activeAppButton.visualFocus
+                    color: appMenu.opened ? MeoTheme.onPrimaryContainer
+                                          : MeoTheme.onSurface
+                }
             }
 
             contentItem: RowLayout {
@@ -130,9 +178,11 @@ PlasmoidItem {
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                    color: root.activeApplicationAvailable
-                           ? MeoTheme.contentOnSurface
-                           : MeoTheme.contentOnSurfaceVariant
+                    color: appMenu.opened
+                           ? MeoTheme.onPrimaryContainer
+                           : (root.activeApplicationAvailable
+                              ? MeoTheme.contentOnSurface
+                              : MeoTheme.contentOnSurfaceVariant)
                 }
             }
 
@@ -152,12 +202,28 @@ PlasmoidItem {
             id: appMenu
             parent: compactRoot
             preferredMenuWidth: 260 * MeoTheme.globalScale
+            motionProfile: "pixel"
             model: [
+                {
+                    "label": MeoI18n.translator.i18n("About"),
+                    "icon": "info",
+                    "supportingText": MeoI18n.translator.i18n("Application, version, source, and storage information"),
+                    "action": function() { root.openApplicationSection("info") }
+                },
                 {
                     "label": MeoI18n.translator.i18n("Settings…"),
                     "icon": "settings",
                     "supportingText": MeoI18n.translator.i18n("Open verified .config and app configuration"),
-                    "action": function() { root.openApplicationConfiguration() }
+                    "action": function() { root.openApplicationSection("config") }
+                },
+                {
+                    "type": "separator"
+                },
+                {
+                    "label": MeoI18n.translator.i18n("Quit"),
+                    "icon": "close",
+                    "shortcut": "Alt+F4",
+                    "action": function() { root.closeActiveApplication() }
                 }
             ]
         }
