@@ -168,12 +168,6 @@ PlasmoidItem {
                 }
             }
 
-            MeoTooltip {
-                visible: activeAppButton.hovered
-                         && root.activeApplicationAvailable
-                text: root.activeApplicationName
-                delay: MeoTheme.motionDurationLong1
-            }
         }
 
         // This is the shell-owned application-name menu, analogous to the
