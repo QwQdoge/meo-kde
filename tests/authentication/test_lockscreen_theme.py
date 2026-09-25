@@ -500,6 +500,18 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertIn("required property bool isInGroup", self.notifications)
         self.assertIn("required property bool isGroupExpanded", self.notifications)
         self.assertIn("delegateRoot.model.isGroupExpanded = !delegateRoot.isGroupExpanded", self.notifications)
+        for required in (
+            "required property date created",
+            "required property date updated",
+            "implicitWidth: 42 * MeoTheme.globalScale",
+            "MeoTheme.secondaryContainer",
+            "MeoTheme.error",
+            "id: groupBadgeRow",
+            'Qt.formatTime(delegateRoot.effectiveTime, "HH:mm")',
+            "from: 0.7",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.notifications)
         for forbidden in ("invokeDefaultAction", "reply(", "urls", "showJobs: true", "showExpired: true"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.notifications)
