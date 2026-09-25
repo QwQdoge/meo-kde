@@ -87,28 +87,36 @@ QQC2.AbstractButton {
     Accessible.description: statusContent.statusDescription()
     onClicked: quickSettingsRequested()
 
-    MeoSpringValue {
-        id: pressSpring
-        value: 1
-        targetValue: root.down ? 0.94 : 1
-        spring: MeoMotion.fastSpatial
+    MeoInteractionSpring {
+        id: interactionMotion
+        hovered: root.hovered
+        pressed: root.down
+        active: root.active
+        enabled: root.enabled
+        motionProfile: "pixel"
     }
 
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: pressSpring.value
-        yScale: pressSpring.value
-    }
+    transform: [
+        Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: interactionMotion.scale
+            yScale: interactionMotion.scale
+        },
+        Translate {
+            x: interactionMotion.offsetX
+            y: interactionMotion.offsetY
+        }
+    ]
 
     background: MeoShape {
         id: statusBackground
         type: "round"
-        radius: MeoTheme.shapeSmall
+        radius: root.height / 2
         color: root.active
-               ? MeoTheme.primaryContainer
+               ? MeoTheme.secondaryContainer
                : (root.hovered || root.down
-                  ? MeoTheme.surfaceContainerHighest
+                  ? MeoTheme.surfaceContainerHigh
                   : "transparent")
         strokeColor: "transparent"
         strokeWidth: 0
@@ -123,7 +131,7 @@ QQC2.AbstractButton {
         MeoStateLayer {
             anchors.fill: parent
             radius: statusBackground.radius
-            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
+            color: root.active ? MeoTheme.contentOnSecondaryContainer : MeoTheme.contentOnSurface
             hovered: root.hovered
             pressed: root.down
             focused: root.activeFocus
