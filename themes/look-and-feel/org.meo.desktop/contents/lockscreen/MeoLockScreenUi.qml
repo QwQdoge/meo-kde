@@ -49,6 +49,7 @@ Item {
     readonly property bool showWeatherLocation: configBoolean("showWeatherLocation", false)
     readonly property bool showPerformance: configBoolean("showPerformance", true)
     readonly property bool showSystemSummary: configBoolean("showSystemSummary", true)
+    readonly property bool showSessionControls: configBoolean("showSessionControls", true)
     readonly property string notificationPrivacyLevel: configNotificationPrivacy()
     readonly property real dashboardHeight: Math.min(height - MeoTheme.space32 * 2,
                                                       height * 0.70)
@@ -497,6 +498,7 @@ Item {
                     MeoLockScreenPerformanceSummary {
                         Layout.fillWidth: true
                         visible: lockScreenUi.showPerformance
+                        sessionControlsEnabled: lockScreenUi.showSessionControls
                         canSuspend: sessionManagement.canSuspend
                         canHibernate: sessionManagement.canHibernate
                         canReboot: sessionManagement.canReboot
