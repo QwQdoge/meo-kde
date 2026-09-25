@@ -20,6 +20,7 @@ Item {
     property string statusText: ""
     property string errorText: ""
     property bool failed: false
+    property bool embedded: false
     property bool showClock: true
     property url avatarSource: ""
     default property alias content: contentLayout.data
@@ -27,7 +28,7 @@ Item {
     readonly property string effectiveStatus: errorText !== "" ? errorText : statusText
     readonly property color statusColor: errorText !== "" ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant
     readonly property real failureOffset: failureSpring.value
-    readonly property real contentInset: MeoTheme.space32
+    readonly property real contentInset: embedded ? 0 : MeoTheme.space32
 
     // Match the wider standalone/DMS-style center while staying bounded on
     // narrow displays. The inset is included in implicit geometry so the
@@ -86,10 +87,11 @@ Item {
         id: expressiveSurface
         anchors.fill: parent
         radius: card.failed ? MeoTheme.shapeLarge : MeoTheme.shapeExtraLarge
-        border.width: Math.max(1, MeoTheme.globalScale)
+        border.width: card.embedded ? 0 : Math.max(1, MeoTheme.globalScale)
         border.color: card.failed
                       ? Qt.rgba(MeoTheme.error.r, MeoTheme.error.g, MeoTheme.error.b, 0.64)
                       : Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.24)
+        opacity: card.embedded ? 0 : 1
 
         gradient: Gradient {
             orientation: Gradient.Vertical
@@ -134,6 +136,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: Math.max(1, MeoTheme.globalScale)
+        visible: !card.embedded
         radius: Math.max(0, expressiveSurface.radius - Math.max(1, MeoTheme.globalScale))
         color: "transparent"
         border.width: Math.max(1, MeoTheme.globalScale)
