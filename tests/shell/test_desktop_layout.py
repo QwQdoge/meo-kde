@@ -129,6 +129,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
         self.assertIn('surfaceStyle: "context"', source)
+        self.assertIn("QQC2.Overlay.overlay || compactRoot", source)
         shell_surface = (
             REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
         ).read_text(encoding="utf-8")
