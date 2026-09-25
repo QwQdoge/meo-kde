@@ -104,6 +104,12 @@ class LockScreenThemeTests(unittest.TestCase):
                 self.assertNotIn(forbidden, self.auth_card)
         self.assertIn("avatarSource: kscreenlocker_userImage", self.ui)
 
+    def test_macro_auth_motion_is_not_double_scaled(self):
+        self.assertIn("scale: 1", self.auth_card)
+        self.assertNotIn("active ? 1 : 0.96", self.auth_card)
+        self.assertNotIn("Behavior on scale", self.auth_card)
+        self.assertIn("0.94 + lockScreenUi.authenticationReveal * 0.06", self.ui)
+
     def test_expressive_motion_and_gradient_remain_presentation_only(self):
         for required in (
             "property real authenticationReveal",
@@ -366,6 +372,11 @@ class LockScreenThemeTests(unittest.TestCase):
             "signal rebootRequested()",
             "signal shutdownRequested()",
             "property bool sessionControlsEnabled: true",
+            "y: root.sessionControlsShown ? root.height : 0",
+            "y: root.sessionControlsShown ? 0 : -root.height",
+            "Behavior on y",
+            "motionEasingEmphasizedAccelerate",
+            "motionEasingEmphasizedDecelerate",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.performance_card)
