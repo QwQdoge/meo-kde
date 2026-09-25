@@ -17,9 +17,13 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
+        self.assertIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
         self.assertNotIn('topPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertNotIn('topPanel.addWidget("org.meo.toptasks")', source)
+        self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.kickoff")'),
+                        source.index('topPanel.addWidget("org.meo.toptasks")'))
+        self.assertLess(source.index('topPanel.addWidget("org.meo.toptasks")'),
+                        source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
         self.assertIn('timeCenter = topPanel.addWidget("org.meo.timecenter")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)
@@ -34,6 +38,26 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('org.kde.plasma.mediacontroller', source)
         self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
         self.assertIn('timeCenter.writeConfig("showDate", true)', source)
+
+    def test_active_application_surface_uses_kde_identity_and_settings_deeplink(self):
+        source = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("TaskManager.AbstractTasksModel.AppId", source)
+        self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
+        self.assertIn("tasksModel.activeTask", source)
+        self.assertIn('"meosettings://applications?"', source)
+        self.assertIn('i18n("Settings…")', source)
+        self.assertIn('"section=config"', source)
+        self.assertIn("verified .config", source)
+        self.assertNotIn('i18n("App info")', source)
+        self.assertIn("Qt.openUrlExternally(url)", source)
+        self.assertNotIn("QProcess", source)
+        self.assertNotIn("requestActivate", source)
+        self.assertNotIn('i18n("File")', source)
+        self.assertNotIn('i18n("Edit")', source)
+        self.assertNotIn('i18n("View")', source)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")

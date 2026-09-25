@@ -1,10 +1,10 @@
 {
   "KPlugin": {
     "Id": "org.meo.toptasks",
-    "Name": "Meo Top Application Strip",
-    "Name[zh_CN]": "Meo 顶部应用栏",
-    "Description": "Compact monochrome open-application controls backed by KDE TaskManager",
-    "Description[zh_CN]": "由 KDE TaskManager 提供支持的紧凑单色已打开应用控制",
+    "Name": "Meo Active Application",
+    "Name[zh_CN]": "Meo 当前应用",
+    "Description": "macOS-style active application title and configuration entry backed by KDE TaskManager",
+    "Description[zh_CN]": "由 KDE TaskManager 提供类似 macOS 的当前应用名称与配置入口",
     "Icon": "preferences-system-windows",
     "Authors": [
       {

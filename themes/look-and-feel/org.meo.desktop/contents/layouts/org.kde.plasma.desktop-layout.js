@@ -22,6 +22,7 @@ var launcher = topPanel.addWidget("org.kde.plasma.kickoff")
 launcher.currentConfigGroup = ["Shortcuts"]
 launcher.writeConfig("global", "Meta")
 launcher.reloadConfig()
+topPanel.addWidget("org.meo.toptasks")
 topPanel.addWidget("org.kde.plasma.appmenu")
 topPanel.addWidget("org.kde.plasma.panelspacer")
 // Preserve KDE's native StatusNotifier application icons and auxiliary tray
