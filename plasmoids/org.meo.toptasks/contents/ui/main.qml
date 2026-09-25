@@ -44,7 +44,7 @@ PlasmoidItem {
     Plasmoid.title: MeoI18n.translator.i18n("Active application")
     toolTipMainText: visibleApplicationName
     toolTipSubText: activeApplicationAvailable
-                    ? MeoI18n.translator.i18n("Open this application's configuration menu")
+                    ? MeoI18n.translator.i18n("About, settings, and quit")
                     : MeoI18n.translator.i18n("No application window is active")
     preferredRepresentation: compactRepresentation
     switchWidth: 0
@@ -109,7 +109,7 @@ PlasmoidItem {
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
             Accessible.description: root.activeApplicationAvailable
-                                    ? MeoI18n.translator.i18n("Open application settings menu")
+                                    ? MeoI18n.translator.i18n("Open application menu")
                                     : MeoI18n.translator.i18n("No application window is active")
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
