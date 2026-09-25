@@ -1,0 +1,24 @@
+{
+  "appearance": {
+    "deformScale": 1.0,
+    "rounding": { "scale": 1.0 },
+    "spacing": { "scale": 1.0 },
+    "padding": { "scale": 1.0 },
+    "font": {
+      "scale": 1.0,
+      "clock": "Comfortaa",
+      "workspaces": "Roboto",
+      "headline": { "family": "Comfortaa" },
+      "title": { "family": "Comfortaa" },
+      "body": { "family": "Roboto" },
+      "label": { "family": "Roboto" },
+      "mono": { "family": "Roboto Mono" },
+      "icon": { "family": "Material Symbols Rounded" }
+    },
+    "transparency": {
+      "enabled": true,
+      "base": 0.85,
+      "layers": 0.4
+    }
+  }
+}

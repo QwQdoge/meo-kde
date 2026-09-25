@@ -1,0 +1,38 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+set -eu
+
+config="meo-lockscreen"
+
+call_lock() {
+    /usr/bin/qs -c "$config" ipc call lock lock
+}
+
+# The normal path is deliberately process-free: the resident Quickshell
+# instance already has screencopy/ICC state warmed up, so locking does not need
+# to launch a new renderer and expose the desktop while it starts.
+if call_lock >/dev/null 2>&1; then
+    exit 0
+fi
+
+# Recover if the per-user service was not running (for example after a crash).
+/usr/bin/systemctl --user start meo-lockscreen.service || true
+
+attempt=0
+while [ "$attempt" -lt 60 ]; do
+    if call_lock >/dev/null 2>&1; then
+        exit 0
+    fi
+    attempt=$((attempt + 1))
+    sleep 0.05
+done
+
+# Security wins over presentation. A broken Meo/Caelestia process must not turn
+# the lock shortcut into a no-op. Hyprlock is package-required solely as the
+# emergency fallback and is never launched on the healthy fast path.
+if command -v hyprlock >/dev/null 2>&1; then
+    exec hyprlock
+fi
+
+echo "meo-lock: no usable session locker is available" >&2
+exit 1
