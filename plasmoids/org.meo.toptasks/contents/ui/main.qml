@@ -46,13 +46,11 @@ PlasmoidItem {
         return tasksModel.data(activeTaskIndex, 1)
     }
     readonly property bool activeApplicationAvailable: activeApplicationName !== ""
-    readonly property int visibleTaskSlots: activeApplicationAvailable
-                                             ? Math.max(0, taskLimit - 1)
-                                             : taskLimit
-    // Reserve predictable panel geometry. The active app label replaces the
-    // active task's icon slot rather than duplicating it.
+    // Keep the task strip's original reserved width so Plasma never freezes
+    // this compact applet too narrow while TasksModel is still populating.
+    // The named active-app pill is an additional leading surface.
     readonly property real compactWidth: activeLabelExtent
-                                         + visibleTaskSlots * taskExtent
+                                         + taskLimit * taskExtent
                                          + 2 * stripPadding
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
