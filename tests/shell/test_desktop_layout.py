@@ -116,7 +116,7 @@ class DesktopLayoutTests(unittest.TestCase):
         surface = (
             REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
         ).read_text(encoding="utf-8")
-        self.assertIn('property color interactionColor: "transparent"', surface)
+        self.assertNotIn("interactionColor", surface)
         self.assertIn("MeoTheme.primaryContainer", surface)
         self.assertIn("MeoStateLayer", surface)
         self.assertIn("color: active ? selectedColor : restingColor", surface)
