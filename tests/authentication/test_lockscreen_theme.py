@@ -308,6 +308,29 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, self.ui)
 
+    def test_caelestia_entrance_uses_transform_motion_not_layout_animation(self):
+        for required in (
+            "property real dashboardEntrance",
+            "dashboardSpinProgress",
+            "dashboardExpandProgress",
+            "dashboardContentEntrance",
+            "NumberAnimation on dashboardEntrance",
+            "id: dashboardEntranceGlyph",
+            "-180 * (1.0 - lockScreenUi.dashboardSpinProgress)",
+            "0.12 + lockScreenUi.dashboardExpandProgress * 0.88",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, self.ui)
+
+        for forbidden in (
+            "NumberAnimation on dashboardWidth",
+            "NumberAnimation on dashboardHeight",
+            'property: "width"',
+            'property: "height"',
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.ui)
+
     def test_lock_performance_projection_is_aggregate_and_privacy_bounded(self):
         for required in (
             'Performance.subscribe(clientId, ["cpu", "memory", "disk", "system"])',
