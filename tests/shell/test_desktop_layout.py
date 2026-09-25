@@ -46,18 +46,35 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("TaskManager.AbstractTasksModel.AppId", source)
         self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
+        self.assertIn("TaskManager.AbstractTasksModel.IsClosable", source)
         self.assertIn("tasksModel.activeTask", source)
+        self.assertIn("TaskManager.TasksModel.GroupDisabled", source)
         self.assertIn('"meosettings://applications?"', source)
+        self.assertIn('i18n("About %1")', source)
         self.assertIn('i18n("Settings…")', source)
-        self.assertIn('"section=config"', source)
-        self.assertIn("verified .config", source)
-        self.assertNotIn('i18n("App info")', source)
+        self.assertIn('"info"', source)
+        self.assertIn('"config"', source)
+        self.assertIn('i18n("Close Window")', source)
+        self.assertIn('"shortcut": "Alt+F4"', source)
+        self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
+        self.assertIn("MeoInteractionMotion", source)
         self.assertIn("Qt.openUrlExternally(url)", source)
         self.assertNotIn("QProcess", source)
         self.assertNotIn("requestActivate", source)
         self.assertNotIn('i18n("File")', source)
         self.assertNotIn('i18n("Edit")', source)
         self.assertNotIn('i18n("View")', source)
+
+    def test_meo_owned_topbar_triggers_share_interaction_motion(self):
+        surfaces = (
+            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/components/SystemStatusCluster.qml",
+            REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml",
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml",
+        )
+        for surface in surfaces:
+            source = surface.read_text(encoding="utf-8")
+            self.assertIn("MeoInteractionMotion", source)
+            self.assertNotIn("id: pressSpring", source)
 
     def test_default_dock_is_the_native_plasma_task_manager(self):
         source = LAYOUT.read_text(encoding="utf-8")
