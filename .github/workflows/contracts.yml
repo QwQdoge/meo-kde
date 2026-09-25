@@ -73,6 +73,7 @@ jobs:
       - name: Check shell syntax
         working-directory: meo-kde
         run: |
+          bash -n bootstrap.sh
           bash -n install.sh
           bash -n setup/apply-meo-desktop.sh
           bash -n setup/reset-meo-desktop.sh
