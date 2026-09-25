@@ -174,8 +174,9 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("active: root.expanded", quick_main)
         self.assertIn("active: root.expanded", time_main)
-        self.assertIn("MeoSpringValue", quick_status)
-        self.assertIn("targetValue: root.down ? 0.94 : 1", quick_status)
+        self.assertIn("MeoInteractionMotion", quick_status)
+        self.assertIn("pressed: root.down", quick_status)
+        self.assertIn("active: root.active", quick_status)
         for source in (quick_status, time_button):
             self.assertIn("MeoTheme.primaryContainer", source)
             self.assertIn("MeoTheme.onPrimaryContainer", source)
