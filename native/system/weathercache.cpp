@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -33,6 +34,16 @@ QString safeIconName(const QString &value)
     const QString candidate = boundedText(value, 128);
     static const QRegularExpression validIconName(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._+\\-]*$"));
     return validIconName.match(candidate).hasMatch() ? candidate : QStringLiteral("weather-clear");
+}
+
+QString iconForCode(int code)
+{
+    if (code == 0) return QStringLiteral("weather-clear");
+    if (code <= 3) return QStringLiteral("weather-partly-cloudy");
+    if (code == 45 || code == 48) return QStringLiteral("weather-fog");
+    if (code <= 67 || code <= 82) return QStringLiteral("weather-showers");
+    if (code <= 86) return QStringLiteral("weather-snow");
+    return QStringLiteral("weather-storm");
 }
 
 QString localizedConditionForCode(int code)
@@ -91,6 +102,7 @@ QString WeatherCache::temperatureText() const { return m_temperatureText; }
 QString WeatherCache::condition() const { return m_condition; }
 QString WeatherCache::iconName() const { return m_iconName; }
 QString WeatherCache::location() const { return m_location; }
+QVariantList WeatherCache::forecast() const { return m_forecast; }
 QDateTime WeatherCache::updatedAt() const { return m_updatedAt; }
 QString WeatherCache::lastError() const { return m_lastError; }
 
@@ -175,10 +187,41 @@ void WeatherCache::reload()
             + QChar(0x00B0) + unit;
     const QString location = boundedText(object.value(QStringLiteral("location")).toString(), 64);
     const QString iconName = safeIconName(object.value(QStringLiteral("iconName")).toString());
+
+    QVariantList forecastItems;
+    const QJsonArray forecastArray = object.value(QStringLiteral("forecast")).toArray();
+    forecastItems.reserve(std::min<qsizetype>(forecastArray.size(), 6));
+    for (qsizetype index = 0; index < forecastArray.size() && index < 6; ++index) {
+        if (!forecastArray.at(index).isObject()) {
+            continue;
+        }
+        const QJsonObject entry = forecastArray.at(index).toObject();
+        const QString time = boundedText(entry.value(QStringLiteral("time")).toString(), 32);
+        const double forecastTemperature =
+            entry.value(QStringLiteral("temperature")).toDouble(std::numeric_limits<double>::quiet_NaN());
+        int forecastCode = 0;
+        if (time.size() < 16 || !std::isfinite(forecastTemperature)
+            || forecastTemperature < -100 || forecastTemperature > 100
+            || !stableWeatherCode(entry.value(QStringLiteral("weatherCode")), &forecastCode)) {
+            continue;
+        }
+
+        const QString hourLabel = time.mid(11, 5);
+        forecastItems.push_back(QVariantMap{
+            {QStringLiteral("time"), hourLabel},
+            {QStringLiteral("temperatureText"),
+             QString::number(forecastTemperature, 'f',
+                             std::abs(forecastTemperature - std::round(forecastTemperature)) < 0.05 ? 0 : 1)
+                 + QChar(0x00B0) + unit},
+            {QStringLiteral("condition"), localizedConditionForCode(forecastCode)},
+            {QStringLiteral("iconName"), iconForCode(forecastCode)},
+        });
+    }
+
     const bool available = !stale;
     if (m_available == available && m_stale == stale && m_temperatureText == temperatureText
         && m_condition == displayedCondition && m_iconName == iconName && m_location == location
-        && m_updatedAt == updatedAt) {
+        && m_forecast == forecastItems && m_updatedAt == updatedAt) {
         setError({});
         return;
     }
@@ -188,6 +231,7 @@ void WeatherCache::reload()
     m_condition = displayedCondition;
     m_iconName = iconName;
     m_location = location;
+    m_forecast = forecastItems;
     m_updatedAt = updatedAt;
     setError({});
     Q_EMIT weatherChanged();
@@ -208,13 +252,15 @@ void WeatherCache::updateWatchPaths()
 void WeatherCache::clearWeather(const QString &error)
 {
     const bool changed = m_available || m_stale || !m_temperatureText.isEmpty() || !m_condition.isEmpty()
-            || !m_iconName.isEmpty() || !m_location.isEmpty() || m_updatedAt.isValid();
+            || !m_iconName.isEmpty() || !m_location.isEmpty() || !m_forecast.isEmpty()
+            || m_updatedAt.isValid();
     m_available = false;
     m_stale = false;
     m_temperatureText.clear();
     m_condition.clear();
     m_iconName.clear();
     m_location.clear();
+    m_forecast.clear();
     m_updatedAt = {};
     setError(error);
     if (changed) {
