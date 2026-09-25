@@ -2,6 +2,39 @@
 
 MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主题、默认配置、KDE/Qt 原生桥接和 Arch 打包定义都在这里。通用 MD3 QML 组件和 token 由相邻的 `meo-ui` 提供；MeoKDE 不复制它们。
 
+## 快速安装 / Quick install
+
+在已有的 Plasma 6 系统上，推荐直接使用仓库根目录的安装入口：
+
+```bash
+./install.sh
+```
+
+它会用交互式 Yes/No 向导确认是否立即应用主题、是否重建推荐的顶栏与 Dock
+布局，以及是否更新处于 `main` 的 MeoUI checkout。安装前会创建可恢复备份；
+开发分支上的 MeoUI 不会被自动切回 `main`。
+
+如果需要一条命令直接套用推荐的完整桌面配置：
+
+```bash
+./install.sh --full
+```
+
+`--full` 会应用 Meo Desktop 并重建推荐布局，但不会擅自覆盖已有的 MeoUI
+开发分支。MeoUI 可通过 `MEO_UI_ROOT` 指定；未指定时会自动寻找相邻的
+`meo-ui`、`MeoUI` 或 `meoui` checkout。若完整模式下完全找不到 MeoUI，
+安装器会获取官方 MeoUI checkout。
+
+原有的 `setup/apply-meo-desktop.sh` 保留为无交互、可自动化的底层部署入口。
+窗口装饰、KWin 原生插件和部分环境变量需要下一次正常登录才能全部生效；
+安装器不会强制重启 Plasma/KWin 或擅自注销当前会话。
+
+恢复安装前的桌面：
+
+```bash
+./setup/reset-meo-desktop.sh
+```
+
 ## License
 
 除另有文件级声明外，MeoKDE 原创代码采用 GNU General Public License
