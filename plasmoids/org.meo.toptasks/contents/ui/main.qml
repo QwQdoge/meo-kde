@@ -74,8 +74,8 @@ PlasmoidItem {
         filterByActivity: false
         filterByScreen: false
         filterHidden: true
-        // The active row must stay window-scoped: "Close Window" mirrors
-        // Alt+F4 and must never turn into "close every window in this app".
+        // The active row must stay window-scoped: "Quit <App>" mirrors the
+        // active-window Alt+F4 action and must never close every app window.
         groupMode: TaskManager.TasksModel.GroupDisabled
         sortMode: TaskManager.TasksModel.SortLastActivated
     }
@@ -97,7 +97,7 @@ PlasmoidItem {
             Qt.openUrlExternally(url)
     }
 
-    function closeActiveWindow() {
+    function quitActiveApplicationWindow() {
         if (!activeApplicationClosable)
             return
         tasksModel.requestClose(activeTaskIndex)
@@ -116,11 +116,11 @@ PlasmoidItem {
             hoverEnabled: true
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
+            activeFocusOnTab: true
             Accessible.description: root.activeApplicationAvailable
                                     ? MeoI18n.translator.i18n("Open application menu")
                                     : MeoI18n.translator.i18n("No application window is active")
-            onClicked: appMenu.openAt(activeAppButton, 0,
-                                      activeAppButton.height + MeoTheme.space4)
+            onClicked: appMenu.openFrom(activeAppButton)
 
             MeoInteractionMotion {
                 id: activeAppMotion
@@ -128,9 +128,6 @@ PlasmoidItem {
                 pressed: activeAppButton.down
                 active: appMenu.opened
                 enabled: activeAppButton.enabled
-                hoverScale: 1.012
-                activeScale: 1.018
-                pressedScale: 0.965
             }
 
             scale: activeAppMotion.scale
@@ -202,7 +199,7 @@ PlasmoidItem {
         // applet beside this widget.
         MeoMenu {
             id: appMenu
-            parent: compactRoot
+            parent: QQC2.Overlay.overlay || compactRoot
             preferredMenuWidth: 248 * MeoTheme.globalScale
             placement: "below"
             placementGap: MeoTheme.space4
@@ -219,11 +216,11 @@ PlasmoidItem {
                 },
                 { "type": "separator" },
                 {
-                    "label": MeoI18n.translator.i18n("Close Window"),
+                    "label": MeoI18n.translator.i18n("Quit %1").arg(root.activeApplicationName),
                     "icon": "close",
                     "shortcut": "Alt+F4",
                     "enabled": root.activeApplicationClosable,
-                    "action": function() { root.closeActiveWindow() }
+                    "action": function() { root.quitActiveApplicationWindow() }
                 }
             ]
         }
