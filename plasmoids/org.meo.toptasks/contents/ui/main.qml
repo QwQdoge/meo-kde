@@ -105,6 +105,7 @@ PlasmoidItem {
             width: root.appExtent
             height: 30 * MeoTheme.globalScale
             hoverEnabled: true
+            activeFocusOnTab: true
             enabled: root.activeApplicationAvailable
             Accessible.name: root.visibleApplicationName
             Accessible.description: root.activeApplicationAvailable
@@ -112,37 +113,22 @@ PlasmoidItem {
                                     : MeoI18n.translator.i18n("No application window is active")
             onClicked: appMenu.openAt(activeAppButton, 0,
                                       activeAppButton.height + MeoTheme.space4)
-
-            MeoSpringValue {
-                id: appScaleSpring
-                value: 1
-                targetValue: MeoMotion.interactionScale("pixel",
-                                                        activeAppButton.hovered,
-                                                        activeAppButton.down,
-                                                        appMenu.opened)
-                motionProfile: "pixel"
-                speed: "fast"
-            }
-
-            MeoSpringValue {
-                id: appLiftSpring
-                value: 0
-                targetValue: MeoMotion.interactionLift("pixel",
-                                                       activeAppButton.hovered,
-                                                       activeAppButton.down,
-                                                       appMenu.opened)
-                             * MeoTheme.globalScale
+            MeoInteractionMotion {
+                id: interactionMotion
+                hovered: activeAppButton.hovered
+                pressed: activeAppButton.down
+                active: appMenu.opened
                 motionProfile: "pixel"
                 speed: "fast"
             }
 
             transform: [
-                Translate { y: appLiftSpring.value },
+                Translate { y: interactionMotion.resolvedOffsetY },
                 Scale {
                     origin.x: activeAppButton.width / 2
                     origin.y: activeAppButton.height / 2
-                    xScale: appScaleSpring.value
-                    yScale: appScaleSpring.value
+                    xScale: interactionMotion.resolvedScale
+                    yScale: interactionMotion.resolvedScale
                 }
             ]
 
