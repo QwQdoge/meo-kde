@@ -88,7 +88,9 @@ FocusScope {
         ColumnLayout {
             Layout.minimumHeight: implicitHeight
             Layout.maximumHeight: Math.max(implicitHeight, root.height - Kirigami.Units.gridUnit * 4)
+            Layout.preferredWidth: root.standaloneCenterWidth
             Layout.maximumWidth: root.standaloneCenterWidth
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
 
             ColumnLayout {
