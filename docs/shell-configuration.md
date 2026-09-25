@@ -9,7 +9,7 @@ overwriting an existing profile.
 After changing the profile, apply it without restarting Plasma:
 
 ```bash
-/home/shekong/Projects/meo-kde/tools/shell/apply-meo-panel-layout.sh
+./tools/shell/apply-meo-panel-layout.sh
 ```
 
 This command is deliberately separate from ordinary theme application. It
@@ -33,7 +33,8 @@ Mode=dual
 # KDE's native Icons-Only Task Manager is the sole Dock implementation.
 DockImplementation=native
 ShowSystemTray=true
-# Active-window KDE global menu next to the launcher (File, Edit, View, Help).
+# The active application name always follows Launcher. This toggles the
+# application-provided KDE Global Menu after it (File, Edit, View, Help).
 ShowGlobalMenu=true
 # Optional second task manager beside the menu; off because application tray
 # icons already appear beside the Meo controls and the bottom Dock owns tasks.
@@ -53,9 +54,14 @@ DockHeight=80
   StatusNotifier application icons, input-method state, clipboard and other
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
   audio, power, media and notification applets are filtered to avoid duplicates.
-- `ShowGlobalMenu` is `true` or `false`. It shows the active application's
-  native KDE global menu beside the top-left launcher (for example **File**,
-  **Edit**, **View**, and **Help**). This is separate from the bottom Dock.
+- The top-left composition is always **Launcher → active application name**.
+  Clicking the application name opens only Meo's generic **Settings…** handoff
+  to that app's verified Configuration (.config) view. Meo does not synthesize
+  application menus.
+- `ShowGlobalMenu` is `true` or `false`. It places the active application's
+  native KDE Global Menu immediately after the app name (for example **File**,
+  **Edit**, **View**, and **Help**). Those menus remain application/KDE-owned.
+  This is separate from the bottom Dock.
 - `ShowTopAppTasks` is `true` or `false`. Its default is `false`; enabling it
   adds a second KDE Icons-Only Task Manager beside the Global Menu. The bottom
   Dock remains the primary task manager for pinned launchers, window actions
