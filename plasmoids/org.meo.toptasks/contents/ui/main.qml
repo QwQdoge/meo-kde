@@ -90,7 +90,7 @@ PlasmoidItem {
         if (!activeApplicationAvailable)
             return ""
         const query = []
-        if (activeApplicationId !== "")
+        if (/^[A-Za-z0-9][A-Za-z0-9._+@-]{0,255}$/.test(activeApplicationId))
             query.push("appId=" + encodeURIComponent(activeApplicationId))
         query.push("appName=" + encodeURIComponent(activeApplicationName))
         query.push("section=" + encodeURIComponent(section))
