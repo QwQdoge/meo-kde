@@ -98,6 +98,26 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertNotIn("targetValue: root.down ? 0.94 : 1", status)
 
+    def test_meo_owned_topbar_triggers_share_shell_visual_surface(self):
+        paths = (
+            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml",
+            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/components/SystemStatusCluster.qml",
+            REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml",
+            REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml",
+        )
+        for path in paths:
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("ShellTriggerSurface", source)
+            self.assertNotIn("background: MeoShape {", source)
+
+        surface = (
+            REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("MeoTheme.surfaceContainerHighest", surface)
+        self.assertIn("MeoTheme.primaryContainer", surface)
+        self.assertIn("MeoStateLayer", surface)
+        self.assertNotIn("MeoInteractionMotion", surface)
+
     def test_active_app_menu_stays_compact_and_uses_shared_context_surface(self):
         source = (
             REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
