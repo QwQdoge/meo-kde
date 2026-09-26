@@ -128,7 +128,8 @@ class DesktopLayoutTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
-        self.assertIn('surfaceStyle: "context"', source)
+        self.assertIn("MeoContextMenu {", source)
+        self.assertNotIn('surfaceStyle: "context"', source)
         self.assertIn("height: 28 * MeoTheme.globalScale", source)
         self.assertIn("QQC2.Overlay.overlay || compactRoot", source)
         shell_surface = (
