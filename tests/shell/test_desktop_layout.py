@@ -128,7 +128,8 @@ class DesktopLayoutTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
-        self.assertIn('surfaceStyle: "context"', source)
+        self.assertIn("MeoContextMenu {", source)
+        self.assertNotIn('surfaceStyle: "context"', source)
         self.assertIn("height: 28 * MeoTheme.globalScale", source)
         self.assertIn("QQC2.Overlay.overlay || compactRoot", source)
         shell_surface = (
@@ -214,6 +215,35 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn('id="hover-center"', source)
             self.assertIn('id="pressed-center"', source)
             self.assertIn("ColorScheme-Highlight", source)
+
+    def test_plasma_menu_and_delegate_surfaces_use_meo_viewitem_frames(self):
+        generator = (REPO_ROOT / "tools/theme/build_viewitem_assets.py").read_text(
+            encoding="utf-8"
+        )
+        assets = (
+            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/viewitem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/viewitem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/viewitem.svg",
+            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/viewitem.svg",
+        )
+
+        self.assertIn("PlasmaComponents", generator)
+        self.assertIn("widgets/viewitem.svg", generator)
+        self.assertIn("ColorScheme-ButtonBackground", generator)
+        self.assertIn("ColorScheme-ButtonHover", generator)
+        self.assertIn("ColorScheme-Highlight", generator)
+        for asset in assets:
+            source = asset.read_text(encoding="utf-8")
+            for prefix in ("normal", "hover", "selected", "selected+hover"):
+                for part in (
+                    "center", "top", "bottom", "left", "right",
+                    "topleft", "topright", "bottomleft", "bottomright",
+                ):
+                    self.assertIn(f'id="{prefix}-{part}"', source)
+            self.assertIn("ColorScheme-ButtonBackground", source)
+            self.assertIn("ColorScheme-ButtonHover", source)
+            self.assertIn("ColorScheme-Highlight", source)
+            self.assertIn("A 16 16", source)
 
     def test_launcher_identity_is_installed_for_package_and_source_paths(self):
         package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")

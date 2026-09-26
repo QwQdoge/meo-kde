@@ -445,6 +445,45 @@ private slots:
         QVERIFY2(imageHasContent(menuImage), "The offscreen menu rendered no meaningful pixels");
     }
 
+    void rendersSegmentedMenuContract()
+    {
+        const auto style = createMeoStyle();
+        QVERIFY(style);
+        const QPalette palette = semanticPalette(QColor("#6750a4"));
+
+        QStyleOptionMenuItem normal;
+        normal.palette = palette;
+        normal.state = QStyle::State_Active | QStyle::State_Enabled;
+        normal.menuItemType = QStyleOptionMenuItem::Normal;
+        normal.text = QStringLiteral("Open");
+        normal.font = QApplication::font();
+        normal.fontMetrics = QFontMetrics(normal.font);
+
+        QStyleOptionMenuItem separator(normal);
+        separator.menuItemType = QStyleOptionMenuItem::Separator;
+        separator.text.clear();
+
+        const QSize normalSize = style->sizeFromContents(
+            QStyle::CT_MenuItem, &normal, QSize(96, 20), nullptr);
+        const QSize separatorSize = style->sizeFromContents(
+            QStyle::CT_MenuItem, &separator, QSize(96, 1), nullptr);
+
+        QVERIFY(normalSize.height() >= 48);
+        QVERIFY(separatorSize.height() < normalSize.height());
+        QCOMPARE(style->pixelMetric(QStyle::PM_MenuHMargin), 4);
+        QCOMPARE(style->pixelMetric(QStyle::PM_MenuVMargin), 4);
+        QCOMPARE(style->pixelMetric(QStyle::PM_MenuPanelWidth), 0);
+
+        const QImage resting = renderControl(
+            style.get(), ControlKind::Menu, QStyle::State_None, palette);
+        const QImage selected = renderControl(
+            style.get(), ControlKind::Menu, QStyle::State_Selected, palette);
+        QVERIFY(imageHasContent(resting));
+        QVERIFY(imageContainsColor(
+            resting, palette.color(QPalette::Active, QPalette::AlternateBase)));
+        QVERIFY(resting != selected);
+    }
+
     void rendersEveryInteractionState()
     {
         const auto style = createMeoStyle();
