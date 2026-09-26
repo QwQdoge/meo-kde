@@ -1,3 +1,4 @@
+#include <QtGui/QKeySequence>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -36,7 +37,8 @@ int main(int argc, char *argv[])
     auto *disabledAction = fileMenu->addAction(QStringLiteral("Unavailable action"));
     disabledAction->setEnabled(false);
     fileMenu->addSeparator();
-    fileMenu->addAction(QStringLiteral("Quit"), &app, &QApplication::quit, QKeySequence::Quit);
+    fileMenu->addAction(QStringLiteral("Quit"), &app, &QApplication::quit,
+                        QKeySequence(QKeySequence::Quit));
 
     auto *central = new QWidget;
     auto *layout = new QVBoxLayout(central);
