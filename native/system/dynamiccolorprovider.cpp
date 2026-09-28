@@ -26,7 +26,26 @@ QColor parseConfiguredColor(const QString &serialized)
 
 DynamicColorProvider::DynamicColorProvider(QObject *parent)
     : QObject(parent)
+    , m_configWatcher(KConfigWatcher::create(
+          KSharedConfig::openConfig(QStringLiteral("kdeglobals"))))
 {
+    connect(m_configWatcher.data(), &KConfigWatcher::configChanged, this,
+            [this](const KConfigGroup &group, const QByteArrayList &names) {
+        if (group.name() != QLatin1String("General")) {
+            return;
+        }
+        static const QList<QByteArray> relevantKeys = {
+            QByteArrayLiteral("MeoDynamicColorSeed"),
+            QByteArrayLiteral("MeoDynamicColorSource"),
+            QByteArrayLiteral("AccentColor"),
+        };
+        for (const QByteArray &key : relevantKeys) {
+            if (names.contains(key)) {
+                Q_EMIT schemeChanged();
+                return;
+            }
+        }
+    });
 }
 
 QVariantMap DynamicColorProvider::schemeFor(const QColor &seed, bool dark) const

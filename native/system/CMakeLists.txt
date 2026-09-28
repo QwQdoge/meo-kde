@@ -64,6 +64,7 @@ target_link_libraries(meosystemplugin PRIVATE
     KF6::Solid
     KF6::PulseAudioQt
     KF6::GuiAddons
+    KF6::ConfigCore
     KF6::I18n
     Plasma::Plasma
 )
