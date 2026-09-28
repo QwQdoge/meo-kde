@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QObject>
+#include <KConfigWatcher>
 #include <QVariantMap>
 
 class DynamicColorProvider final : public QObject
@@ -27,4 +28,10 @@ public:
     // scheme.  It lets every MeoUI client explain whether the shared HCT table
     // came from KDE's accent, the desktop wallpaper, or an explicit color.
     Q_INVOKABLE QString sourceId() const;
+
+Q_SIGNALS:
+    void schemeChanged();
+
+private:
+    KConfigWatcher::Ptr m_configWatcher;
 };
