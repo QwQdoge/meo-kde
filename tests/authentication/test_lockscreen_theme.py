@@ -45,6 +45,15 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, self.root)
 
+    def test_root_installs_shared_session_dynamic_theme(self):
+        self.assertIn("import MeoUI 1.0", self.root)
+        self.assertIn("import MeoKDE 1.0", self.root)
+        self.assertIn("MeoShellTheme.sync()", self.root)
+        # Dynamic-color generation stays in the shared read-only bridge; the
+        # secure lock-screen presentation must not parse or write kdeglobals.
+        self.assertNotIn("MaterialColors.currentScheme", self.root)
+        self.assertNotIn("KSharedConfig", self.root)
+
     def test_uses_upstream_authenticator_and_single_password_sync_owner(self):
         self.assertIn("text: PasswordSync.password", self.main)
         self.assertIn('target: PasswordSync', self.main)
