@@ -1,0 +1,64 @@
+name: Native application style build
+
+on:
+  pull_request:
+    paths:
+      - 'native/application-style/**'
+      - '.github/workflows/native-application-style-build.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'native/application-style/**'
+      - '.github/workflows/native-application-style-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-style-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Arch application-style build
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm \
+            base-devel cmake ninja git \
+            qt6-base qt6-declarative breeze
+
+      - name: Check out MeoKDE
+        uses: actions/checkout@v6
+
+      - name: Check out MeoUI token runtime
+        uses: actions/checkout@v6
+        with:
+          repository: QwQdoge/MeoUI
+          ref: main
+          path: deps/MeoUI
+
+      - name: Configure
+        run: >-
+          cmake --fresh
+          -S native/application-style
+          -B build/application-style
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DBUILD_TESTING=ON
+          -DMEOUI_SOURCE_DIR="$PWD/deps/MeoUI"
+
+      - name: Build
+        run: cmake --build build/application-style --parallel 2
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build/application-style --output-on-failure --timeout 60

@@ -200,6 +200,13 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
         return qRound(Meo::DesignTokens::space2() / 2.0);
     case PM_ButtonMargin:
         return qRound(Meo::DesignTokens::space12());
+    case PM_MenuHMargin:
+    case PM_MenuVMargin:
+        return qRound(Meo::DesignTokens::space4());
+    case PM_MenuPanelWidth:
+        // The rounded PE_PanelMenu surface owns the outline. A second native
+        // frame would reintroduce the square Breeze border around Meo menus.
+        return 0;
     case PM_IndicatorWidth:
     case PM_IndicatorHeight:
     case PM_ExclusiveIndicatorWidth:
@@ -228,6 +235,21 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
     case CT_SpinBox:
         result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
         break;
+    case CT_MenuItem: {
+        const auto *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+        if (menuItem && menuItem->menuItemType == QStyleOptionMenuItem::Separator
+            && menuItem->text.isEmpty()) {
+            // A separator is breathing room between action-card groups. The
+            // menu item painter intentionally does not draw a rule for it.
+            result.setHeight(qRound(Meo::DesignTokens::space8()));
+        } else {
+            result.setHeight(qMax(result.height(),
+                                  qRound(Meo::DesignTokens::controlHeight()
+                                         + Meo::DesignTokens::space8())));
+            result.rwidth() += qRound(Meo::DesignTokens::space8());
+        }
+        break;
+    }
     default:
         break;
     }
@@ -242,6 +264,23 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     const bool pressed = option->state.testFlag(State_Sunken);
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
+
+    if (element == PE_PanelMenu) {
+        QColor outline = option->palette.color(group, QPalette::Mid);
+        outline.setAlphaF(0.22);
+        MeoStyleHelper::drawRoundedSurface(
+            painter,
+            option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
+            Meo::DesignTokens::shapeLargeIncreased(),
+            option->palette.color(group, QPalette::Window),
+            outline);
+        return;
+    }
+
+    if (element == PE_FrameMenu) {
+        // PE_PanelMenu already paints the semantic surface and outline.
+        return;
+    }
 
     if (element == PE_PanelButtonCommand || element == PE_PanelButtonTool) {
         const auto *button = element == PE_PanelButtonCommand
@@ -397,36 +436,87 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
         }
     }
 
-    if (element == CE_MenuItem || element == CE_MenuBarItem) {
+    if (element == CE_MenuItem) {
         const auto *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
-        if (!menuItem || (element == CE_MenuItem && menuItem->menuItemType == QStyleOptionMenuItem::Separator)) {
+        if (!menuItem) {
+            QProxyStyle::drawControl(element, option, painter, widget);
+            return;
+        }
+
+        if (menuItem->menuItemType == QStyleOptionMenuItem::Separator) {
+            // Plain separators are intentionally visual gaps, matching the
+            // segmented MeoContextMenu contract. Preserve section labels that
+            // applications intentionally supplied rather than erasing content.
+            if (!menuItem->text.isEmpty()) {
+                QStyleOptionMenuItem section(*menuItem);
+                section.state &= ~(State_Selected | State_Sunken | State_MouseOver | State_HasFocus);
+                QProxyStyle::drawControl(element, &section, painter, widget);
+            }
+            return;
+        }
+
+        const QColor accent = primaryColor(option->palette, group);
+        const QColor restingSurface = enabled
+            ? tonalContainerColor(option->palette, group)
+            : option->palette.color(QPalette::Disabled, QPalette::AlternateBase);
+        const qreal opacity = pressed ? Meo::DesignTokens::stateOpacityPressed()
+                                      : focus ? Meo::DesignTokens::stateOpacityFocus()
+                                              : (hover || option->state.testFlag(State_Selected))
+                                                    ? Meo::DesignTokens::stateOpacityHover()
+                                                    : 0.0;
+        const QColor fill = enabled
+            ? MeoStyleHelper::blend(restingSurface, accent, opacity)
+            : restingSurface;
+        const QRectF background = option->rect.adjusted(
+            Meo::DesignTokens::space2(),
+            Meo::DesignTokens::space2(),
+            -Meo::DesignTokens::space2(),
+            -Meo::DesignTokens::space2());
+        MeoStyleHelper::drawRoundedSurface(
+            painter, background, Meo::DesignTokens::shapeLarge(), fill);
+
+        if (focus) {
+            MeoStyleHelper::drawFocusRing(
+                painter, background, Meo::DesignTokens::shapeLarge(), accent);
+        }
+
+        // Breeze remains responsible for icon/check/submenu/mnemonic geometry.
+        // Strip only interaction state so its own selected rectangle does not
+        // paint over the Meo action card.
+        QStyleOptionMenuItem content(*menuItem);
+        content.state &= ~(State_Selected | State_Sunken | State_MouseOver | State_HasFocus);
+        QProxyStyle::drawControl(element, &content, painter, widget);
+        return;
+    }
+
+    if (element == CE_MenuBarItem) {
+        const auto *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+        if (!menuItem) {
             QProxyStyle::drawControl(element, option, painter, widget);
             return;
         }
 
         const bool selected = option->state.testFlag(State_Selected);
         if (selected || hover || pressed || focus) {
-            const QColor surface = element == CE_MenuBarItem
-                ? tonalContainerColor(option->palette, group)
-                : option->palette.color(group, QPalette::Window);
+            const QColor surface = tonalContainerColor(option->palette, group);
             const QColor accent = primaryColor(option->palette, group);
             const qreal opacity = pressed ? Meo::DesignTokens::stateOpacityPressed()
                                           : focus ? Meo::DesignTokens::stateOpacityFocus()
                                                   : Meo::DesignTokens::stateOpacityHover();
-            const QRectF background = option->rect.adjusted(Meo::DesignTokens::space2(),
-                                                             Meo::DesignTokens::space2(),
-                                                             -Meo::DesignTokens::space2(),
-                                                             -Meo::DesignTokens::space2());
-            MeoStyleHelper::drawRoundedSurface(painter, background, Meo::DesignTokens::shapeSmall(),
-                                                MeoStyleHelper::blend(surface, accent, opacity));
+            const QRectF background = option->rect.adjusted(
+                Meo::DesignTokens::space2(),
+                Meo::DesignTokens::space2(),
+                -Meo::DesignTokens::space2(),
+                -Meo::DesignTokens::space2());
+            MeoStyleHelper::drawRoundedSurface(
+                painter, background, Meo::DesignTokens::shapeSmall(),
+                MeoStyleHelper::blend(surface, accent, opacity));
             if (focus) {
-                MeoStyleHelper::drawFocusRing(painter, background, Meo::DesignTokens::shapeSmall(), accent);
+                MeoStyleHelper::drawFocusRing(
+                    painter, background, Meo::DesignTokens::shapeSmall(), accent);
             }
         }
 
-        // Ask the platform base to retain native icon/check/submenu/mnemonic
-        // layout, but suppress its own selected rectangle so the Meo state
-        // layer above remains the single visual selection treatment.
         QStyleOptionMenuItem content(*menuItem);
         content.state &= ~(State_Selected | State_Sunken | State_MouseOver | State_HasFocus);
         QProxyStyle::drawControl(element, &content, painter, widget);

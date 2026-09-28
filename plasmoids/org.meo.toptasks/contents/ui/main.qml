@@ -174,7 +174,7 @@ PlasmoidItem {
         // application-name menu on macOS. Only generic Meo integration lives
         // here. The application's actual menus remain the KDE Global Menu
         // applet beside this widget.
-        MeoMenu {
+        MeoContextMenu {
             id: appMenu
             // Host the transient surface in the real window overlay so
             // viewport clamping uses the screen/window area rather than this
@@ -182,7 +182,6 @@ PlasmoidItem {
             // validation hosts that do not expose a Controls overlay.
             parent: QQC2.Overlay.overlay || compactRoot
             preferredMenuWidth: 228 * MeoTheme.globalScale
-            surfaceStyle: "context"
             motionProfile: "pixel"
             model: [
                 {

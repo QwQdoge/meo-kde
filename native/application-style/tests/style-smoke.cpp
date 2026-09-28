@@ -445,6 +445,45 @@ private slots:
         QVERIFY2(imageHasContent(menuImage), "The offscreen menu rendered no meaningful pixels");
     }
 
+    void rendersSegmentedMenuContract()
+    {
+        const auto style = createMeoStyle();
+        QVERIFY(style);
+        const QPalette palette = semanticPalette(QColor("#6750a4"));
+
+        QStyleOptionMenuItem normal;
+        normal.palette = palette;
+        normal.state = QStyle::State_Active | QStyle::State_Enabled;
+        normal.menuItemType = QStyleOptionMenuItem::Normal;
+        normal.text = QStringLiteral("Open");
+        normal.font = QApplication::font();
+        normal.fontMetrics = QFontMetrics(normal.font);
+
+        QStyleOptionMenuItem separator(normal);
+        separator.menuItemType = QStyleOptionMenuItem::Separator;
+        separator.text.clear();
+
+        const QSize normalSize = style->sizeFromContents(
+            QStyle::CT_MenuItem, &normal, QSize(96, 20), nullptr);
+        const QSize separatorSize = style->sizeFromContents(
+            QStyle::CT_MenuItem, &separator, QSize(96, 1), nullptr);
+
+        QVERIFY(normalSize.height() >= 48);
+        QVERIFY(separatorSize.height() < normalSize.height());
+        QCOMPARE(style->pixelMetric(QStyle::PM_MenuHMargin), 4);
+        QCOMPARE(style->pixelMetric(QStyle::PM_MenuVMargin), 4);
+        QCOMPARE(style->pixelMetric(QStyle::PM_MenuPanelWidth), 0);
+
+        const QImage resting = renderControl(
+            style.get(), ControlKind::Menu, QStyle::State_None, palette);
+        const QImage selected = renderControl(
+            style.get(), ControlKind::Menu, QStyle::State_Selected, palette);
+        QVERIFY(imageHasContent(resting));
+        QVERIFY(imageContainsColor(
+            resting, palette.color(QPalette::Active, QPalette::AlternateBase)));
+        QVERIFY(resting != selected);
+    }
+
     void rendersEveryInteractionState()
     {
         const auto style = createMeoStyle();
@@ -456,8 +495,16 @@ private slots:
                                   ControlKind::Tab, ControlKind::ScrollBar, ControlKind::ItemView};
 
         for (const ControlKind control : controls) {
+            const QByteArray controlId = QByteArray::number(static_cast<int>(control));
             const QImage normal = renderControl(style.get(), control, QStyle::State_None, palette);
-            QVERIFY2(imageHasContent(normal), "A normal control rendered no meaningful pixels");
+            // A menu-bar item is intentionally quiet at rest. The real-widget
+            // gallery above verifies its text/layout; interaction states below
+            // verify the Meo tonal treatment without forcing a resting fill.
+            if (control != ControlKind::MenuBar) {
+                QVERIFY2(imageHasContent(normal),
+                         qPrintable(QStringLiteral("Control %1 normal rendering produced no meaningful pixels")
+                                        .arg(QString::fromLatin1(controlId))));
+            }
 
             QStyle::State selectedHover = QStyle::State_MouseOver;
             if (control == ControlKind::Menu || control == ControlKind::MenuBar) {
@@ -480,7 +527,6 @@ private slots:
             QVERIFY2(imageHasContent(pressed), "A pressed control rendered no meaningful pixels");
             QVERIFY2(imageHasContent(focus), "A focused control rendered no meaningful pixels");
             QVERIFY2(imageHasContent(disabled), "A disabled control rendered no meaningful pixels");
-            const QByteArray controlId = QByteArray::number(static_cast<int>(control));
             // The indicator's hit-target state layer is intentionally allowed
             // to be subtle at this direct primitive scale. Checked,
             // indeterminate, disabled and focus appearances are asserted by

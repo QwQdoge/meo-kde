@@ -1,3 +1,13 @@
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    cmake_minimum_required(VERSION 3.21)
+    project(MeoApplicationStyle LANGUAGES CXX)
+
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    include(CTest)
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Test)
 
 find_path(meoui_tokens_include NAMES meotokens.h PATH_SUFFIXES include/MeoUI)
