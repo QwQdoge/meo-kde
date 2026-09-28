@@ -1,3 +1,4 @@
+#include <QtGui/QKeySequence>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -29,7 +30,15 @@ int main(int argc, char *argv[])
     auto *tools = window.addToolBar(QStringLiteral("Actions"));
     tools->addAction(QStringLiteral("New"));
     tools->addAction(QStringLiteral("Open"));
-    window.menuBar()->addMenu(QStringLiteral("File"))->addAction(QStringLiteral("Quit"), &app, &QApplication::quit);
+    auto *fileMenu = window.menuBar()->addMenu(QStringLiteral("File"));
+    fileMenu->addAction(QStringLiteral("Open"));
+    fileMenu->addAction(QStringLiteral("Save"));
+    fileMenu->addSeparator();
+    auto *disabledAction = fileMenu->addAction(QStringLiteral("Unavailable action"));
+    disabledAction->setEnabled(false);
+    fileMenu->addSeparator();
+    fileMenu->addAction(QStringLiteral("Quit"), &app, &QApplication::quit,
+                        QKeySequence(QKeySequence::Quit));
 
     auto *central = new QWidget;
     auto *layout = new QVBoxLayout(central);
@@ -82,6 +91,9 @@ int main(int argc, char *argv[])
     toolButton->setPopupMode(QToolButton::MenuButtonPopup);
     auto *toolMenu = new QMenu(toolButton);
     toolMenu->addAction(QStringLiteral("Refresh"));
+    toolMenu->addAction(QStringLiteral("Pin"));
+    toolMenu->addSeparator();
+    toolMenu->addAction(QStringLiteral("Details"));
     toolButton->setMenu(toolMenu);
     form->addRow(QStringLiteral("Tool button"), toolButton);
     auto *combo = new QComboBox;
