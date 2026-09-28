@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="198" height="48" viewBox="0 0 198 48">
+  <defs>
+    <style id="current-color-scheme" type="text/css">
+      .ColorScheme-ButtonBackground { color: #ece6f0; }
+      .ColorScheme-ButtonHover { color: #e8def8; }
+      .ColorScheme-Highlight { color: #6750a4; }
+    </style>
+  </defs>
+  <!-- Plasma substitutes the CSS classes above with the active system/accent
+       colours.  The literals are deterministic fallback colours for previews. -->
+
+  <g id="normal">
+    <rect id="normal-center" x="16" y="16" width="16" height="16" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <rect id="normal-top" x="16" y="0" width="16" height="16" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <rect id="normal-bottom" x="16" y="32" width="16" height="16" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <rect id="normal-left" x="0" y="16" width="16" height="16" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <rect id="normal-right" x="32" y="16" width="16" height="16" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <path id="normal-topleft" d="M 16 0 V 16 H 0 A 16 16 0 0 1 16 0 Z" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <path id="normal-topright" d="M 32 0 V 16 H 48 A 16 16 0 0 0 32 0 Z" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <path id="normal-bottomleft" d="M 0 32 H 16 V 48 A 16 16 0 0 1 0 32 Z" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+    <path id="normal-bottomright" d="M 32 32 H 48 A 16 16 0 0 1 32 48 Z" class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.88"/>
+  </g>
+
+  <g id="hover">
+    <rect id="hover-center" x="66" y="16" width="16" height="16" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="hover-top" x="66" y="0" width="16" height="16" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="hover-bottom" x="66" y="32" width="16" height="16" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="hover-left" x="50" y="16" width="16" height="16" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="hover-right" x="82" y="16" width="16" height="16" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <path id="hover-topleft" d="M 66 0 V 16 H 50 A 16 16 0 0 1 66 0 Z" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <path id="hover-topright" d="M 82 0 V 16 H 98 A 16 16 0 0 0 82 0 Z" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <path id="hover-bottomleft" d="M 50 32 H 66 V 48 A 16 16 0 0 1 50 32 Z" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+    <path id="hover-bottomright" d="M 82 32 H 98 A 16 16 0 0 1 82 48 Z" class="ColorScheme-ButtonHover" fill="currentColor" fill-opacity="1.00"/>
+  </g>
+
+  <g id="selected">
+    <rect id="selected-center" x="116" y="16" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <rect id="selected-top" x="116" y="0" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <rect id="selected-bottom" x="116" y="32" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <rect id="selected-left" x="100" y="16" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <rect id="selected-right" x="132" y="16" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <path id="selected-topleft" d="M 116 0 V 16 H 100 A 16 16 0 0 1 116 0 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <path id="selected-topright" d="M 132 0 V 16 H 148 A 16 16 0 0 0 132 0 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <path id="selected-bottomleft" d="M 100 32 H 116 V 48 A 16 16 0 0 1 100 32 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+    <path id="selected-bottomright" d="M 132 32 H 148 A 16 16 0 0 1 132 48 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="0.86"/>
+  </g>
+
+  <g id="selected+hover">
+    <rect id="selected+hover-center" x="166" y="16" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="selected+hover-top" x="166" y="0" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="selected+hover-bottom" x="166" y="32" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="selected+hover-left" x="150" y="16" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <rect id="selected+hover-right" x="182" y="16" width="16" height="16" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <path id="selected+hover-topleft" d="M 166 0 V 16 H 150 A 16 16 0 0 1 166 0 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <path id="selected+hover-topright" d="M 182 0 V 16 H 198 A 16 16 0 0 0 182 0 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <path id="selected+hover-bottomleft" d="M 150 32 H 166 V 48 A 16 16 0 0 1 150 32 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+    <path id="selected+hover-bottomright" d="M 182 32 H 198 A 16 16 0 0 1 182 48 Z" class="ColorScheme-Highlight" fill="currentColor" fill-opacity="1.00"/>
+  </g>
+</svg>
