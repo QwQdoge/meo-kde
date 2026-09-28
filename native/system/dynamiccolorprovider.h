@@ -17,6 +17,12 @@ public:
     // .colors generator. This keeps shell controls and KDE widgets in one
     // color system rather than deriving roles with QML RGB interpolation.
     Q_INVOKABLE QVariantMap schemeFor(const QColor &seed, bool dark) const;
+    // Read the currently applied Meo seed from kdeglobals and derive the same
+    // complete Material role table used by the desktop. This is the supported
+    // consumer path for Meo applications; applications must not parse KDE
+    // configuration or regenerate palettes independently.
+    Q_INVOKABLE QColor currentSeed() const;
+    Q_INVOKABLE QVariantMap currentScheme(bool dark) const;
     // Diagnostic source metadata written atomically with the active Meo
     // scheme.  It lets every MeoUI client explain whether the shared HCT table
     // came from KDE's accent, the desktop wallpaper, or an explicit color.
