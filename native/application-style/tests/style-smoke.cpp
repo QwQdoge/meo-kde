@@ -495,8 +495,11 @@ private slots:
                                   ControlKind::Tab, ControlKind::ScrollBar, ControlKind::ItemView};
 
         for (const ControlKind control : controls) {
+            const QByteArray controlId = QByteArray::number(static_cast<int>(control));
             const QImage normal = renderControl(style.get(), control, QStyle::State_None, palette);
-            QVERIFY2(imageHasContent(normal), "A normal control rendered no meaningful pixels");
+            QVERIFY2(imageHasContent(normal),
+                     qPrintable(QStringLiteral("Control %1 normal rendering produced no meaningful pixels")
+                                    .arg(QString::fromLatin1(controlId))));
 
             QStyle::State selectedHover = QStyle::State_MouseOver;
             if (control == ControlKind::Menu || control == ControlKind::MenuBar) {
@@ -519,7 +522,6 @@ private slots:
             QVERIFY2(imageHasContent(pressed), "A pressed control rendered no meaningful pixels");
             QVERIFY2(imageHasContent(focus), "A focused control rendered no meaningful pixels");
             QVERIFY2(imageHasContent(disabled), "A disabled control rendered no meaningful pixels");
-            const QByteArray controlId = QByteArray::number(static_cast<int>(control));
             // The indicator's hit-target state layer is intentionally allowed
             // to be subtle at this direct primitive scale. Checked,
             // indeterminate, disabled and focus appearances are asserted by
