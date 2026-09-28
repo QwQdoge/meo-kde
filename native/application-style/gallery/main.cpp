@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
     auto *disabledAction = fileMenu->addAction(QStringLiteral("Unavailable action"));
     disabledAction->setEnabled(false);
     fileMenu->addSeparator();
-    fileMenu->addAction(QStringLiteral("Quit"), &app, &QApplication::quit,
-                        QKeySequence(QKeySequence::Quit));
+    fileMenu->addAction(QStringLiteral("Quit"), QKeySequence(QKeySequence::Quit),
+                        &app, &QApplication::quit);
 
     auto *central = new QWidget;
     auto *layout = new QVBoxLayout(central);
