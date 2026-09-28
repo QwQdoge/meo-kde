@@ -15,5 +15,10 @@ class ShellThemeDynamicRefreshTests(unittest.TestCase):
         self.assertIn("root.sync()", source)
 
 
+    def test_shell_theme_uses_the_applied_provider_seed(self) -> None:
+        source = SHELL_THEME.read_text(encoding="utf-8")
+        self.assertIn("provider.currentScheme(darkMode)", source)
+        self.assertNotIn("provider.schemeFor(accentColor, darkMode)", source)
+
 if __name__ == "__main__":
     unittest.main()
