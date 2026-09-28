@@ -42,7 +42,10 @@ QtObject {
     }
 
     function scheme(provider) {
-        return provider ? provider.schemeFor(accentColor, darkMode) : null
+        // The native provider owns the applied Meo seed/source. Consumers must
+        // not regenerate the scheme from Kirigami's accent because wallpaper
+        // and manual dynamic-color sources can intentionally differ from it.
+        return provider ? provider.currentScheme(darkMode) : null
     }
 
     function sync() {
