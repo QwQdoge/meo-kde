@@ -29,6 +29,6 @@ Do not restart/reload Plasma or KWin, log out, reboot, unload effects, switch di
 
 ## Files and generated output
 
-Keep maintained code contracts in `docs/`. Project records belong under `$MEO_DOCS_ROOT/Projects/meo-kde/`; generated output under `$MEO_OUTPUT_ROOT/meo-kde/{build,install,validation,packages,tmp}/`. Do not invent machine-specific paths if those roots are unset.
+Keep maintained code contracts in `docs/`. Project records belong under `$MEO_DOCS_ROOT/Projects/meo-kde/`. Existing workflows may use ephemeral local build trees; retained evidence and deliverables belong under `$MEO_OUTPUT_ROOT/meo-kde/{build,install,validation,packages,tmp}/`. Do not invent machine-specific paths if those roots are unset.
 
 Preserve unrelated dirty work. Never use broad deletion, `git reset`, or `git clean` as routine cleanup.
