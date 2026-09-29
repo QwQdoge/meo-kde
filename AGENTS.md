@@ -1,24 +1,34 @@
-# MeoKDE Agent Rules
+# MeoKDE agent rules
 
-## Ownership and runtime boundary
+## Start here
 
-MeoKDE owns Plasma packages, KDE models, native bridges, layouts/defaults, shell integration, and packaging. Platform-neutral MD3 controls/tokens/responsive behavior belong in MeoUI; resolve it through `$MEO_UI_ROOT` when needed instead of copying shared UI here.
+MeoKDE owns Plasma/KWin/KDE-native integration. Inspect `git status`, the affected package/native bridge, and its nearest contract/test before editing. Read only the relevant docs; do not scan all packages or historical material by default.
 
-Plasma, KWin, and KDE/system services are authoritative. Use real Qt/KDE/DBus APIs or an explicit maintained KCM handoff; never fake network, Bluetooth, brightness, power, audio, task, or session state.
+## Ownership
 
-## Work sequence and validation
+- Reusable platform-neutral MD3 controls/tokens/motion belong in MeoUI.
+- Plasma packages, plasmoids, shell/layout defaults, themes, native KDE/Qt bridges, Meo.System, packaging, and KDE-specific policy belong here.
+- Use real KDE/Qt/DBus APIs or a maintained KCM handoff. Do not fake network, Bluetooth, audio, brightness, power, task, display, or session state.
+- Do not copy shared MeoUI components into this repository to avoid a dependency boundary.
 
-Inspect `git status`, the owning source/package, relevant contract, and installed/runtime boundary before editing. Run the smallest applicable checks first.
+## Validation matrix
 
-- Shell change: `bash -n` the affected entrypoint.
-- Source-contract change: run the relevant Python unittest group under `tests/`; for broad contract changes mirror `.github/workflows/contracts.yml`.
-- Native C++/QML integration: configure/build/CTest using the matching native CI workflow.
-- Shared MeoUI delivery change: make it in MeoUI and follow MeoUI's real gate—mechanical coverage for public QML exports plus Showcase/checklist evidence for affected non-QML or behavioral delivery.
+Run only the checks matching the changed surface.
 
-Compilation/static/offscreen evidence does not prove a live Plasma/KWin session.
+- Shell/script change: `bash -n` the affected entry points.
+- Source-contract/theme/widget/input/auth change: run the matching unittest suite under `tests/`; use the full set from `.github/workflows/contracts.yml` only when the change crosses several areas.
+- `native/system/` or related Meo.System change: mirror `.github/workflows/native-system-build.yml` — configure with `BUILD_TESTING=ON`, build, staged-install if relevant, then `QT_QPA_PLATFORM=offscreen ctest --test-dir build/native-system --output-on-failure --timeout 60`.
+- Other native components: follow their nearest CMake target/workflow rather than compiling unrelated native trees.
+- Shared visual primitive change: make it in MeoUI and satisfy MeoUI's own validation/Showcase requirements there.
 
-## Files and live-system safety
+Static/build/offscreen success does not prove a real Plasma/KWin session, hardware integration, login/session behavior, or live configuration changes.
 
-Use `$MEO_DOCS_ROOT/Projects/meo-kde/` for plans/audits/decisions and `$MEO_OUTPUT_ROOT/meo-kde/{build,install,validation,packages,tmp}/` for new generated output. Do not add new output to legacy repository `build/`, `out/`, or `artifacts/`; leave existing material untouched.
+## Live-system boundary
 
-Do not restart/reload Plasma or KWin, log out, reboot, unload effects, change live display/theme state, or install system-wide changes without explicit authorization. Preserve unrelated dirty work and prefer the smallest reversible repair.
+Do not restart/reload Plasma or KWin, log out, reboot, unload effects, switch display managers, or change the live display/theme/session state without explicit authorization. Prefer source, offscreen, staged, or VM validation first.
+
+## Files and generated output
+
+Keep maintained code contracts in `docs/`. Project records belong under `$MEO_DOCS_ROOT/Projects/meo-kde/`; generated output under `$MEO_OUTPUT_ROOT/meo-kde/{build,install,validation,packages,tmp}/`. Do not invent machine-specific paths if those roots are unset.
+
+Preserve unrelated dirty work. Never use broad deletion, `git reset`, or `git clean` as routine cleanup.
