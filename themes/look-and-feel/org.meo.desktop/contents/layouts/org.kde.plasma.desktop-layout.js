@@ -24,7 +24,6 @@ launcher.writeConfig("icon", "meoarch-logo")
 launcher.currentConfigGroup = ["Shortcuts"]
 launcher.writeConfig("global", "Meta")
 launcher.reloadConfig()
-topPanel.addWidget("org.meo.toptasks")
 topPanel.addWidget("org.kde.plasma.appmenu")
 topPanel.addWidget("org.kde.plasma.panelspacer")
 // Preserve KDE's native StatusNotifier application icons and auxiliary tray
@@ -32,7 +31,7 @@ topPanel.addWidget("org.kde.plasma.panelspacer")
 // those duplicate compact representations from the tray's requested items.
 var systemTray = topPanel.addWidget("org.kde.plasma.systemtray")
 systemTray.currentConfigGroup = ["General"]
-systemTray.writeConfig("extraItems", "org.kde.kdeconnect,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.manage-inputmethod,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.kscreen,org.kde.plasma.keyboardlayout,org.kde.plasma.vault,org.kde.plasma.printmanager")
+systemTray.writeConfig("extraItems", "org.kde.plasma.vault,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.manage-inputmethod,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.kscreen,org.kde.plasma.keyboardlayout,org.kde.plasma.printmanager")
 systemTray.writeConfig("hiddenItems", "org.kde.plasma.devicenotifier,org.kde.plasma.networkmanagement,org.kde.plasma.bluetooth,org.kde.plasma.volume,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.mediacontroller,org.kde.plasma.notifications")
 systemTray.reloadConfig()
 var quickSettings = topPanel.addWidget("org.meo.topbar")
@@ -48,7 +47,7 @@ quickSettings.writeConfig("use24HourClock", true)
 quickSettings.writeConfig("quickTileVisibility", "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot")
 quickSettings.writeConfig("quickTileDensity", "comfortable")
 quickSettings.reloadConfig()
-var timeCenter = topPanel.addWidget("org.meo.timecenter")
+var timeCenter = topPanel.addWidget("org.meo.time-notifications")
 timeCenter.currentConfigGroup = ["Appearance"]
 timeCenter.writeConfig("textScalePercent", 100)
 timeCenter.writeConfig("showDate", true)
@@ -56,20 +55,8 @@ timeCenter.writeConfig("showNotifications", true)
 timeCenter.writeConfig("use24HourClock", true)
 timeCenter.reloadConfig()
 
-// One native Plasma Dock. Plasma owns the task model, hover feedback, grouping,
-// previews, drag-and-drop and activation; the Meo desktop theme supplies the
-// dynamic Material surface and task frames without a second pointer model.
-var bottomPanel = new Panel
-bottomPanel.location = "bottom"
-bottomPanel.height = 80
-bottomPanel.floating = true
-bottomPanel.hiding = "autohide"
-bottomPanel.lengthMode = "fit"
-bottomPanel.alignment = "center"
-bottomPanel.currentConfigGroup = ["MeoShell"]
-bottomPanel.writeConfig("Managed", true)
-bottomPanel.writeConfig("Role", "dock")
-bottomPanel.addWidget("org.kde.plasma.icontasks")
+// The independent Meo Dock starts with the user session. Do not create a
+// second bottom Plasma panel behind it.
 
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())

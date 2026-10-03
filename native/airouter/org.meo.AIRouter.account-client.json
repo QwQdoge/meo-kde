@@ -1,0 +1,9 @@
+{
+  "id": "org.meo.AIRouter",
+  "name": "Meo AI Router",
+  "oauthClientId": "registered-meo-ai-router-oauth-client-id",
+  "redirectUri": "meo-ai-router://auth/callback",
+  "executables": ["/usr/bin/meo-ai-router"],
+  "scopes": ["openid"],
+  "capabilities": ["local_ai"]
+}

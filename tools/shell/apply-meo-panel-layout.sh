@@ -62,13 +62,8 @@ case "${panel_mode}" in
   *) echo "Panels/Mode must be single or dual, found: ${panel_mode}" >&2; exit 1 ;;
 esac
 case "${dock_implementation}" in
-  native) ;;
-  standalone)
-    # Compatibility for version-3 profiles: never recreate the retired
-    # Layer Shell Dock or leave the user without a bottom task manager.
-    dock_implementation=native
-    ;;
-  *) echo "Panels/DockImplementation must be native, found: ${dock_implementation}" >&2; exit 1 ;;
+  native|standalone) ;;
+  *) echo "Panels/DockImplementation must be native or standalone, found: ${dock_implementation}" >&2; exit 1 ;;
 esac
 for boolean in show_system_tray show_global_menu show_top_app_tasks show_network show_bluetooth show_volume show_date show_notifications use_24_hour_clock; do
   case "${!boolean,,}" in
@@ -188,7 +183,7 @@ function configureTray(widget) {
         "org.kde.plasma.notifications"
     ];
     var usefulDefaults = [
-        "org.kde.kdeconnect",
+        "org.kde.plasma.vault",
         "org.kde.plasma.cameraindicator",
         "org.kde.plasma.clipboard",
         "org.kde.plasma.devicenotifier",
@@ -197,7 +192,6 @@ function configureTray(widget) {
         "org.kde.plasma.weather",
         "org.kde.kscreen",
         "org.kde.plasma.keyboardlayout",
-        "org.kde.plasma.vault",
         "org.kde.plasma.printmanager"
     ];
     widget.currentConfigGroup = ["General"];
@@ -242,12 +236,10 @@ kickoff.reloadConfig();
 
 var topOrder = [kickoff.id];
 
-// Keep the same macOS-style left-side composition used by the canonical
-// Look-and-Feel layout: Launcher -> active application name -> application
-// global menus. The Meo applet owns only the active app identity and generic
-// Settings handoff; KDE's Global Menu remains the authority for File/Edit/View.
-var activeApp = oneWidget(top, "org.meo.toptasks");
-topOrder.push(activeApp.id);
+// Match the default top panel: Launcher -> native global menu -> spacer ->
+// native tray -> Meo quick settings -> Meo time and notifications.
+removeWidgets(top, "org.meo.toptasks");
+removeWidgets(top, "org.meo.timecenter");
 
 var globalMenu = null;
 if (${show_global_menu}) {
@@ -289,7 +281,7 @@ top.writeConfig("AppletOrder", topOrder.join(";"));
 top.reloadConfig();
 
 var dock = firstPanel("bottom");
-if ("${panel_mode}" === "dual") {
+if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
     if (!dock) {
         dock = new Panel;
         dock.location = "bottom";

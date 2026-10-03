@@ -18,15 +18,13 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
         self.assertIn('launcher.writeConfig("icon", "meoarch-logo")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
-        self.assertIn('topPanel.addWidget("org.meo.toptasks")', source)
+        self.assertNotIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
         self.assertNotIn('topPanel.addWidget("org.kde.plasma.icontasks")', source)
         self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.kickoff")'),
-                        source.index('topPanel.addWidget("org.meo.toptasks")'))
-        self.assertLess(source.index('topPanel.addWidget("org.meo.toptasks")'),
                         source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
-        self.assertIn('timeCenter = topPanel.addWidget("org.meo.timecenter")', source)
+        self.assertIn('timeCenter = topPanel.addWidget("org.meo.time-notifications")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)
         self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.systemtray")'), source.index('topPanel.addWidget("org.meo.topbar")'))
         extra_items_line = next(
@@ -256,26 +254,39 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', setup)
         self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', reset)
 
-    def test_default_dock_is_the_native_plasma_task_manager(self):
+    def test_default_dock_uses_the_independent_meo_dock(self):
         source = LAYOUT.read_text(encoding="utf-8")
 
-        self.assertIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertIn('bottomPanel.floating = true', source)
-        self.assertIn('bottomPanel.hiding = "autohide"', source)
-        self.assertIn('bottomPanel.lengthMode = "fit"', source)
-        self.assertNotIn('org.meo.dock', source)
+        self.assertNotIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
+        self.assertNotIn('var bottomPanel = new Panel', source)
         self.assertNotIn('org.meo.shelf', source)
 
-    def test_retired_standalone_dock_is_not_built_or_installed_by_default(self):
+    def test_fresh_dock_pins_settings_store_and_files_in_that_order(self):
+        source = (REPO_ROOT / "native/dock/dockconfig.cpp").read_text(encoding="utf-8")
+        defaults = source[source.index('if (launchers.isEmpty()) {', source.index('void DockConfig::reload()')):]
+        entries = ('org.meo.settings.desktop', 'omnistore.desktop', 'org.kde.dolphin.desktop')
+        positions = [defaults.index(entry) for entry in entries]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn('QStringLiteral("applications/") + desktopFile', defaults)
+
+    def test_standalone_dock_is_explicit_and_does_not_duplicate_native_dock(self):
         native = (REPO_ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")
         package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
         installer = INSTALLER.read_text(encoding="utf-8")
+        helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
 
-        self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the retired experimental Layer Shell Dock" OFF', native)
+        self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the optional independent Layer Shell Dock" OFF', native)
         self.assertIn("if(MEO_BUILD_STANDALONE_DOCK)", native)
-        self.assertNotIn('data/autostart/org.meo.dock.desktop', package)
-        self.assertNotIn('native_build_root}/dock/meo-dock', installer)
+        self.assertIn('MEO_BUILD_STANDALONE_DOCK=ON', package)
+        self.assertIn('data/autostart/org.meo.dock.desktop', package)
+        self.assertIn('"${requested_dock}" = standalone', installer)
+        self.assertIn('dock_build_enabled=ON', installer)
+        self.assertIn('native_build_root}/dock/meo-dock', installer)
+        self.assertIn('data/autostart/org.meo.dock.desktop', installer)
+        self.assertIn('applications/org.meo.dock.desktop', installer)
+        self.assertIn('Exec=${local_bin_root}/meo-dock', installer)
         self.assertIn('rm -f "${config_root}/autostart/org.meo.dock.desktop"', installer)
+        self.assertIn('"${dock_implementation}" === "native"', helper)
 
     def test_top_panel_uses_the_compact_32px_baseline_everywhere(self):
         layout = LAYOUT.read_text(encoding="utf-8")
@@ -769,22 +780,19 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('"org.kde.plasma.vault"', source)
         self.assertIn('"org.kde.plasma.printmanager"', source)
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
-        self.assertIn('oneWidget(top, "org.meo.toptasks")', source)
-        self.assertNotIn('removeWidgets(top, "org.meo.toptasks")', source)
+        self.assertIn('removeWidgets(top, "org.meo.toptasks")', source)
         self.assertLess(source.index('oneWidget(top, "org.kde.plasma.kickoff")'),
-                        source.index('oneWidget(top, "org.meo.toptasks")'))
-        self.assertLess(source.index('oneWidget(top, "org.meo.toptasks")'),
                         source.index('oneWidget(top, "org.kde.plasma.appmenu")'))
 
-    def test_bottom_dock_uses_native_task_frames_by_default(self):
+    def test_default_profile_selects_standalone_dock(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
         helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
         metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
 
         self.assertIn("DockHeight=80", profile)
-        self.assertIn("DockImplementation=native", profile)
+        self.assertIn("DockImplementation=standalone", profile)
         self.assertIn("shelfPanelHeight: 80 * MeoTheme.globalScale", metrics)
-        self.assertIn('if ("${panel_mode}" === "dual")', helper)
+        self.assertIn('if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native")', helper)
         self.assertNotIn('writeConfig("maxStripes"', helper)
         expected_fallbacks = {
             "MeoLight": ("#1c1b1f", "#6750a4", "#b3261e"),

@@ -269,11 +269,16 @@ void DockConfig::reload()
         launchers = migratedLauncherList();
     }
     if (launchers.isEmpty()) {
-        launchers = {
-            QStringLiteral("applications:org.kde.dolphin.desktop"),
-            QStringLiteral("applications:org.kde.konsole.desktop"),
-            QStringLiteral("applications:org.meo.settings.desktop"),
-        };
+        for (const QString &desktopFile : {
+                 QStringLiteral("org.meo.settings.desktop"),
+                 QStringLiteral("omnistore.desktop"),
+                 QStringLiteral("org.kde.dolphin.desktop"),
+             }) {
+            if (!QStandardPaths::locate(QStandardPaths::GenericDataLocation,
+                                        QStringLiteral("applications/") + desktopFile).isEmpty()) {
+                launchers.append(QStringLiteral("applications:") + desktopFile);
+            }
+        }
     }
     const QString mode = general.readEntry("IconMode", QStringLiteral("original")).trimmed().toLower();
     const bool nextReduceMotion = general.readEntry("ReduceMotion", false);

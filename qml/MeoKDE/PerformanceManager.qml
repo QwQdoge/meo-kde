@@ -10,11 +10,25 @@ Item {
 
     property int initialPage: 0
     property int currentPage: initialPage
+    property string navigationSearchText: ""
     readonly property string performanceClientId: "system-monitor-performance-" + root.toString()
     readonly property string tasksClientId: "system-monitor-tasks-" + root.toString()
     readonly property real scaleFactor: MeoTheme.globalScale
     readonly property bool useNavigationRail: width >= 760 * scaleFactor
     readonly property bool expandedRail: width >= 1080 * scaleFactor
+    readonly property string selectedNavigationRoute: navigationModel[currentPage]
+                                                      ? String(navigationModel[currentPage].id) : ""
+    readonly property var navigationGroups: [{ "title": "", "rows": navigationModel.map(function(item) {
+        return { "route": String(item.id), "title": item.label, "leadingIcon": item.icon }
+    }) }]
+    readonly property var navigationSearchResults: {
+        const query = navigationSearchText.trim().toLocaleLowerCase()
+        if (!query)
+            return []
+        return navigationGroups[0].rows.filter(function(row) {
+            return row.title.toLocaleLowerCase().includes(query)
+        })
+    }
     readonly property bool updatesPaused: MeoSystem.Tasks.paused
                                           || MeoSystem.Performance.paused
 
@@ -42,6 +56,15 @@ Item {
         return process && process.pid
                ? (process.appName || process.name || ("PID " + process.pid))
                : MeoI18n.translator.i18n("Select a process to inspect")
+    }
+
+    function selectNavigationRoute(route) {
+        for (let index = 0; index < navigationModel.length; ++index) {
+            if (String(navigationModel[index].id) === String(route)) {
+                currentPage = index
+                return
+            }
+        }
     }
 
     function syncSubscription() {
@@ -117,6 +140,13 @@ Item {
                 onClicked: root.closeRequested()
             }
 
+            MeoIconButton {
+                visible: root.useNavigationRail && !root.expandedRail
+                icon.name: "menu"
+                Accessible.name: MeoI18n.translator.i18n("Open navigation")
+                onClicked: navigationSidebarModal.openForNavigation()
+            }
+
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 0
@@ -166,22 +196,33 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: root.useNavigationRail ? MeoTheme.space12 : 0
+            spacing: root.expandedRail ? MeoTheme.space12 : 0
 
             MeoNavigationRail {
                 id: navigationRail
                 Layout.fillHeight: true
-                Layout.preferredWidth: root.expandedRail
-                                       ? 252 * root.scaleFactor
-                                       : 96 * root.scaleFactor
-                visible: root.useNavigationRail
+                Layout.preferredWidth: 96 * root.scaleFactor
+                visible: root.useNavigationRail && !root.expandedRail
                 model: root.navigationModel
                 currentIndex: root.currentPage
-                isExpanded: root.expandedRail
-                expandedWidth: 252 * root.scaleFactor
-                labelType: root.expandedRail ? "always" : "selected"
                 onClicked: function(index) {
                     root.currentPage = index
+                }
+            }
+
+            MeoSidebar {
+                id: navigationSidebar
+                Layout.fillHeight: true
+                Layout.preferredWidth: 280 * root.scaleFactor
+                visible: root.expandedRail
+                groups: root.navigationGroups
+                title: MeoI18n.translator.i18n("Performance")
+                searchText: root.navigationSearchText
+                searchResults: root.navigationSearchResults
+                selectedRoute: root.selectedNavigationRoute
+                onSearchTextChanged: root.navigationSearchText = searchText
+                onRouteActivated: (route, row) => {
+                    root.selectNavigationRoute(route)
                 }
             }
 
@@ -249,5 +290,16 @@ Item {
                 }
             }
         }
+    }
+
+    MeoSidebarModal {
+        id: navigationSidebarModal
+        groups: root.navigationGroups
+        title: MeoI18n.translator.i18n("Performance")
+        selectedRoute: root.selectedNavigationRoute
+        searchText: root.navigationSearchText
+        searchResults: root.navigationSearchResults
+        onSearchTextChanged: root.navigationSearchText = searchText
+        onRouteActivated: (route, row) => root.selectNavigationRoute(route)
     }
 }

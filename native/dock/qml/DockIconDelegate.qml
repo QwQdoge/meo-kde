@@ -108,7 +108,7 @@ Item {
 
         Behavior on color {
             enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
-            ColorAnimation { duration: MeoMotion.stateChange; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
+            ColorAnimation { duration: MeoTheme.motionDurationState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
         }
 
         Kirigami.Icon {
@@ -156,7 +156,7 @@ Item {
 
             Behavior on width {
                 enabled: !MeoTheme.reduceMotion && !DockConfig.reduceMotion
-                NumberAnimation { duration: MeoMotion.stateChange; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                NumberAnimation { duration: MeoTheme.motionDurationState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
             }
         }
 

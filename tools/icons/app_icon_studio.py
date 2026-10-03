@@ -769,6 +769,9 @@ def qimage_to_pillow(image) -> Image.Image | None:
     ).copy()
 
 
+_qt_icon_app = None
+
+
 def qicon_image(icon_name: str) -> Image.Image | None:
     # Qt handles SVG and theme inheritance correctly.  Force a known base
     # theme so an existing Meo override can never become its own source.
@@ -777,8 +780,10 @@ def qicon_image(icon_name: str) -> Image.Image | None:
         from PySide6.QtGui import QGuiApplication, QIcon
     except ImportError:
         return None
-    app = QGuiApplication.instance() or QGuiApplication(["meo-app-icon-studio"])
-    _ = app
+    # Keep the Python owner alive across icon calls. Otherwise PySide can
+    # destroy the application between renders while Qt still caches icons.
+    global _qt_icon_app
+    _qt_icon_app = QGuiApplication.instance() or QGuiApplication(["meo-app-icon-studio"])
     QIcon.setThemeSearchPaths([str(root / "icons") for root in data_roots()])
     for theme in ("breeze", "Breeze", "hicolor", "Adwaita"):
         QIcon.setThemeName(theme)
@@ -806,9 +811,8 @@ def qicon_file_image(path: Path, size: int = MASTER_SIZE) -> Image.Image | None:
         from PySide6.QtSvg import QSvgRenderer
     except ImportError:
         return None
-
-    app = QGuiApplication.instance() or QGuiApplication(["meo-app-icon-studio"])
-    _ = app
+    global _qt_icon_app
+    _qt_icon_app = QGuiApplication.instance() or QGuiApplication(["meo-app-icon-studio"])
 
     if path.suffix.lower() == ".svg":
         renderer = QSvgRenderer(str(path))
@@ -996,8 +1000,20 @@ def alpha_bounds(image: Image.Image) -> tuple[int, int, int, int] | None:
 
 
 def pixel_values(image: Image.Image):
-    """Use Pillow's non-deprecated flattened pixel iterator."""
-    return image.get_flattened_data()
+    """Iterate stable pixel values for the modes used by icon rendering.
+
+    Pillow's flattened ImagingCore iterator has intermittently returned scalar
+    values for an RGBA image with the current Python/Pillow build, and has also
+    crashed during the release icon checks. Work from its copied byte buffer.
+    """
+    if image.mode not in {"L", "RGB", "RGBA"}:
+        raise ValueError(f"Unsupported icon image mode: {image.mode}")
+    data = image.tobytes()
+    channels = len(image.getbands())
+    if channels == 1:
+        return iter(data)
+    return (tuple(data[index:index + channels])
+            for index in range(0, len(data), channels))
 
 
 def foreground_luminance(image: Image.Image) -> float:

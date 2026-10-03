@@ -2,6 +2,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# This validation runs Qt through Python as well as qmlscene.  The icon tests
+# create QGuiApplication before the QML smoke tests, so pin their platform too.
+export QT_QPA_PLATFORM=offscreen
 meoui_import="${MEOUI_IMPORT_ROOT:-/home/shekong/Projects/meo-ui/out/build/release}"
 meoui_source="${MEOUI_SOURCE_DIR:-/home/shekong/Projects/meo-ui}"
 validation_run_id="${MEO_KDE_VALIDATION_RUN_ID:-$(date -u +%Y-%m-%dT%H%M%SZ)-validate}"
@@ -52,12 +55,14 @@ run cmake -S "${repo_root}/native/system" -B "${system_build}" -DCMAKE_BUILD_TYP
 run cmake --build "${system_build}" --parallel
 run test -s "${system_import}/Meo/System/plugins.qmltypes"
 run "${system_build}/meo-system-state-smoke"
-run ctest --test-dir "${system_build}" --output-on-failure
+run env QML_IMPORT_PATH="${system_import}:${meoui_import}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
+  ctest --test-dir "${system_build}" --output-on-failure
 run cmake -S "${repo_root}/native" -B "${application_style_build}" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}" \
   -DMEOUI_IMPORT_ROOT_PATH="${meoui_import}" -DMEO_BUILD_STANDALONE_DOCK=OFF
 run cmake --build "${application_style_build}" --parallel
-run ctest --test-dir "${application_style_build}" --output-on-failure
+run env QML_IMPORT_PATH="${application_style_build}/qml:${system_import}:${meoui_import}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
+  ctest --test-dir "${application_style_build}" --output-on-failure
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
   qmlscene6 -I "${meoui_import}" \
   "${repo_root}/validation/lockscreen-widgets-preview.qml" \
@@ -78,7 +83,7 @@ run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYL
   "--compact" "--summary" "--hide-history" "--hide-jobs" \
   "--snapshot=${screenshot_root}/notification-center-filtered.png"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
-  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
   "${repo_root}/validation/time-notification-button-smoke.qml" \
   "--snapshot=${screenshot_root}/time-notification-button.png"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
@@ -102,7 +107,7 @@ run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYL
   "${repo_root}/validation/quick-settings-customization-smoke.qml" \
   "--snapshot=${screenshot_root}/quick-settings-customization.png"
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
-  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" \
+  qmlscene6 -I "${meoui_import}" -I "${repo_root}/qml" -I "${system_import}" \
   "${repo_root}/validation/authentication-dialog-smoke.qml"
 for desktop_theme in MeoLight MeoDark; do
   run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \

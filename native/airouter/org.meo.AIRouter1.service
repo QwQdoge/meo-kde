@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.meo.AIRouter1
+Exec=/usr/bin/meo-ai-router

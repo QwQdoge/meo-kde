@@ -79,7 +79,7 @@ QtObject {
     // The Material provider can change its Meo seed/source without KDE's
     // Kirigami highlight color changing. Keep every MeoShellTheme consumer
     // live in that case instead of requiring each application to reconnect.
-    Connections {
+    property Connections providerConnections: Connections {
         target: root.materialProvider()
         ignoreUnknownSignals: true
 

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=MeoArch (Wayland)
+Comment=MeoArch desktop based on KDE Plasma 6
+Exec=/usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland
+TryExec=/usr/bin/startplasma-wayland
+X-KDE-PluginInfo-Version=6

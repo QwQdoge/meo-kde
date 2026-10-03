@@ -6,8 +6,8 @@ ProfileVersion=4
 # dual: Meo top bar plus a separate bottom dock (default)
 # single: one top panel; no bottom dock
 Mode=dual
-# KDE's native Icons-Only Task Manager is the sole Dock implementation.
-DockImplementation=native
+# Match the independent Meo Dock used by the current desktop.
+DockImplementation=standalone
 ShowSystemTray=true
 # Display the active window's native KDE global menu (File, Edit, View, Help)
 # beside the launcher. This is not the task manager or the bottom dock.
@@ -16,7 +16,7 @@ ShowGlobalMenu=true
 # Tray/StatusNotifier area. Do not add a second task manager to the top panel.
 ShowTopAppTasks=false
 TopPanelHeight=32
-# Native Plasma Dock height: 48 dp task targets plus Material panel margins.
+# Used only if an existing profile selects the native Plasma Dock.
 DockHeight=80
 
 [StatusBar]

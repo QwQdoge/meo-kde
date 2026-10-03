@@ -219,13 +219,26 @@ done
 preflight_plasma
 prepare_meoui
 
+# A fresh profile starts the independent Meo Dock. Existing profiles keep
+# their selected implementation, including the native Plasma alternative.
+requested_mode=dual
+requested_dock=standalone
+if [ -f "${config_root}/meo-shellrc" ]; then
+  requested_mode="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key Mode --default dual)"
+  requested_dock="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation --default standalone)"
+fi
+dock_build_enabled=OFF
+if [ "${requested_mode}" = dual ] && [ "${requested_dock}" = standalone ]; then
+  dock_build_enabled=ON
+fi
+
 # Build every native artifact before changing user data or configuration. A
 # failed compiler or missing KDE development dependency therefore leaves the
 # desktop exactly as it was.
 if [ -n "${native_cxx}" ]; then
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}" -DMEO_BUILD_STANDALONE_DOCK=OFF
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}" -DMEO_BUILD_STANDALONE_DOCK="${dock_build_enabled}"
 else
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEO_BUILD_STANDALONE_DOCK=OFF
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEO_BUILD_STANDALONE_DOCK="${dock_build_enabled}"
 fi
 run cmake --build "${native_build_root}" --parallel
 
@@ -283,6 +296,7 @@ runtime_backups=(
   "${local_bin_root}/meo-system-monitor|bin/meo-system-monitor"
   "${data_root}/applications/org.meo.systemmonitor.desktop|data/applications/org.meo.systemmonitor.desktop"
   "${local_bin_root}/meo-dock|bin/meo-dock"
+  "${data_root}/applications/org.meo.dock.desktop|data/applications/org.meo.dock.desktop"
   "${config_root}/autostart/org.meo.dock.desktop|config/autostart/org.meo.dock.desktop"
   "${config_root}/fontconfig/conf.d/50-meo-fonts.conf|config/fontconfig/conf.d/50-meo-fonts.conf"
   "${config_root}/environment.d/90-meo-kde.conf|config/environment.d/90-meo-kde.conf"
@@ -377,10 +391,12 @@ if [ "${profile_version}" -lt 3 ] && [ -f "${config_root}/meo-shellrc" ]; then
   run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 3
 fi
 if [ "${profile_version}" -lt 4 ] && [ -f "${config_root}/meo-shellrc" ]; then
-  # The standalone Layer Shell prototype duplicated Plasma's task manager and
-  # could leave two Docks visible. Version 4 makes KDE's native Icons-Only Task
-  # Manager the sole Dock implementation while retaining Meo theme geometry.
-  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation native
+  # Preserve an explicitly selected standalone Dock. The layout reconciler
+  # removes a Meo-managed native bottom panel when this option is active.
+  legacy_dock="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation --default native)"
+  if [ "${legacy_dock}" != standalone ]; then
+    run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation native
+  fi
   run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 4
 fi
 
@@ -450,20 +466,27 @@ run install -Dm755 "${repo_root}/tools/input-method/meo-input-method.sh" "${loca
 run install -Dm755 "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "${local_bin_root}/meo-desktop-layout"
 run install -Dm755 "${repo_root}/tools/theme/apply-meo-desktop.sh" "${local_bin_root}/meo-desktop-apply"
 run install -Dm755 "${repo_root}/tools/icons/app_icon_studio.py" "${local_bin_root}/meo-app-icon-studio"
-# Retire the old independent Dock after it has been backed up above. KDE's
-# native panel now owns the only task-manager surface and all hover behavior.
-if command -v busctl >/dev/null 2>&1 \
-    && busctl --user status org.meo.Dock >/dev/null 2>&1; then
-  if busctl --user introspect org.meo.Dock /Dock 2>/dev/null | grep -q '[.]Quit'; then
-    run busctl --user call org.meo.Dock /Dock org.meo.Dock Quit
-  elif command -v pkill >/dev/null 2>&1; then
-    # Pre-version-4 previews registered the bus name without exporting Quit.
-    # Match only the retired executable name; never touch plasmashell.
-    run pkill -TERM -x meo-dock
+if [ "${dock_build_enabled}" = ON ]; then
+  run install -Dm755 "${native_build_root}/dock/meo-dock" "${local_bin_root}/meo-dock"
+  run install -Dm644 "${repo_root}/data/autostart/org.meo.dock.desktop" "${data_root}/applications/org.meo.dock.desktop"
+  run install -Dm644 "${repo_root}/data/autostart/org.meo.dock.desktop" "${config_root}/autostart/org.meo.dock.desktop"
+  run sed -i "s|^Exec=meo-dock$|Exec=${local_bin_root}/meo-dock|" "${data_root}/applications/org.meo.dock.desktop"
+  run sed -i "s|^Exec=meo-dock$|Exec=${local_bin_root}/meo-dock|" "${config_root}/autostart/org.meo.dock.desktop"
+else
+  # Retire a previous independent Dock only when the profile selects the
+  # native Plasma task manager. Never leave both task surfaces running.
+  if command -v busctl >/dev/null 2>&1 \
+      && busctl --user status org.meo.Dock >/dev/null 2>&1; then
+    if busctl --user introspect org.meo.Dock /Dock 2>/dev/null | grep -q '[.]Quit'; then
+      run busctl --user call org.meo.Dock /Dock org.meo.Dock Quit
+    elif command -v pkill >/dev/null 2>&1; then
+      run pkill -TERM -x meo-dock
+    fi
   fi
+  run rm -f "${local_bin_root}/meo-dock"
+  run rm -f "${data_root}/applications/org.meo.dock.desktop"
+  run rm -f "${config_root}/autostart/org.meo.dock.desktop"
 fi
-run rm -f "${local_bin_root}/meo-dock"
-run rm -f "${config_root}/autostart/org.meo.dock.desktop"
 run install -Dm644 "${repo_root}/defaults/kwin/kwinrc" "${data_root}/meo-kde/defaults/kwinrc"
 run mkdir -p "${data_root}/fcitx5/themes"
 for input_theme in MeoInputMethod-Light MeoInputMethod-Dark; do

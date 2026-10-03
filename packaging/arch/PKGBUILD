@@ -9,10 +9,10 @@ depends=('meoui-qml>=1.0.4beta2' 'meo-settings' 'plasma-desktop' 'plasma-workspa
          'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'plasma-login-manager' 'breeze'
          'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
          'kwin-effect-rounded-corners' 'qt6-base' 'qt6-declarative' 'polkit-qt6' 'kwindowsystem'
-         'kconfig' 'ki18n' 'kirigami' 'libplasma' 'system76-scheduler'
+         'kconfig' 'ki18n' 'kirigami' 'libplasma' 'layer-shell-qt' 'system76-scheduler'
          'zram-generator' 'dbus-broker-units' 'power-profiles-daemon' 'gamemode')
 makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative' 'polkit-qt6'
-             'kwindowsystem' 'kconfig' 'ki18n' 'kirigami' 'libplasma')
+             'kwindowsystem' 'kconfig' 'ki18n' 'kirigami' 'libplasma' 'layer-shell-qt')
 provides=('polkit-kde-agent')
 conflicts=('polkit-kde-agent')
 replaces=('polkit-kde-agent')
@@ -33,7 +33,7 @@ build() {
     -DCMAKE_BUILD_TYPE=None \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DMEOUI_SOURCE_DIR="${workspace}/../meo-ui" \
-    -DMEO_BUILD_STANDALONE_DOCK=OFF
+    -DMEO_BUILD_STANDALONE_DOCK=ON
   cmake --build "${srcdir}/native-build" --parallel
 }
 
@@ -42,6 +42,8 @@ package() {
   install -d "${pkgdir}/usr/share/plasma/look-and-feel"
   cp -a "${workspace}/themes/look-and-feel/org.meo.desktop" \
     "${pkgdir}/usr/share/plasma/look-and-feel/"
+  install -Dm644 "${workspace}/defaults/sessions/meoarch-wayland.desktop" \
+    "${pkgdir}/usr/share/wayland-sessions/meoarch-wayland.desktop"
   install -d "${pkgdir}/usr/share/plasma/desktoptheme"
   for desktop_theme in MeoLight MeoDark; do
     cp -a "${workspace}/themes/desktoptheme/${desktop_theme}" \
@@ -76,6 +78,10 @@ package() {
     "${pkgdir}/usr/share/meo-desktop/defaults/kwinrc"
   install -Dm755 "${workspace}/tools/shell/apply-meo-panel-layout.sh" \
     "${pkgdir}/usr/bin/meo-desktop-layout"
+  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
+    "${pkgdir}/usr/share/applications/org.meo.dock.desktop"
+  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
+    "${pkgdir}/etc/xdg/autostart/org.meo.dock.desktop"
   install -Dm644 "${workspace}/defaults/plasma/meo-shellrc" \
     "${pkgdir}/etc/xdg/meo-shellrc"
   # The base image uses Plasma Login Manager.  Legacy SDDM branding is kept

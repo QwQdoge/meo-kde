@@ -30,8 +30,8 @@ the matching Meo desktop theme before trying again.
 # dual: top bar + separate auto-hidden bottom dock
 # single: top bar only
 Mode=dual
-# KDE's native Icons-Only Task Manager is the sole Dock implementation.
-DockImplementation=native
+# standalone matches the current Meo Dock; native remains available per profile.
+DockImplementation=standalone
 ShowSystemTray=true
 # The active application name always follows Launcher. This toggles the
 # application-provided KDE Global Menu after it (File, Edit, View, Help).
@@ -46,18 +46,18 @@ DockHeight=80
 ```
 
 - `Mode` is `dual` or `single`.
-- `DockImplementation` is `native`. Version-3 profiles that still say
-  `standalone` are migrated to the same native path. Plasma owns task identity,
-  hover feedback, grouping, previews, drag-and-drop and window activation;
-  Meo supplies the dynamic-color panel and task-frame appearance.
+- `DockImplementation` accepts `standalone` or `native`. Fresh profiles use the
+  independent Meo Dock with the existing Material surface. It uses Plasma's
+  task model and persists user launcher choices in `meodockrc`. Its first-run
+  launchers are Meo Settings, OmniStore, and Dolphin, in that order, when the
+  applications are installed. An existing profile may keep the native Plasma
+  Icons-Only Task Manager; the layout helper never changes that choice.
 - `ShowSystemTray` is `true` or `false`. The default is `true` so native
   StatusNotifier application icons, input-method state, clipboard and other
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
   audio, power, media and notification applets are filtered to avoid duplicates.
-- The top-left composition is always **Launcher → active application name**.
-  Clicking the application name opens only Meo's generic **Settings…** handoff
-  to that app's verified Configuration (.config) view. Meo does not synthesize
-  application menus.
+- The default top-panel order follows the current desktop: **Launcher → Global
+  Menu → spacer → System Tray → Meo quick settings → Meo time/notifications**.
 - `ShowGlobalMenu` is `true` or `false`. It places the active application's
   native KDE Global Menu immediately after the app name (for example **File**,
   **Edit**, **View**, and **Help**). Those menus remain application/KDE-owned.
@@ -67,9 +67,8 @@ DockHeight=80
   Dock remains the primary task manager for pinned launchers, window actions
   and autohide behavior.
 - `TopPanelHeight` accepts `32`–`96` pixels.
-- `DockHeight` accepts `40`–`112` pixels. The 80 dp default leaves a calm
-  Material margin around Plasma's native task targets. The panel theme owns
-  the rounded dynamic-color capsule; no independent Dock window is started.
+- `DockHeight` accepts `40`–`112` pixels for the native Dock. The standalone
+  Dock uses its own MeoUI geometry.
 - Existing `~/.config/meo-shellrc` profiles are intentionally preserved. To
   opt an existing desktop into the 80 dp default, set `DockHeight=80` in that
   file and explicitly run the panel-layout helper above; normal theme updates
