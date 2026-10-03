@@ -82,7 +82,11 @@ class ResponsivenessContractTests(unittest.TestCase):
         dock_cmake = (ROOT / "native/dock/CMakeLists.txt").read_text()
         self.assertIn("MeoTheme.isExpressive = true", shell_theme)
         self.assertIn("MeoTheme.isBouncy = !MeoTheme.reduceMotion", shell_theme)
-        self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the retired experimental Layer Shell Dock" OFF', native_cmake)
+        standalone_dock_option = next(
+            line for line in native_cmake.splitlines()
+            if line.startswith("option(MEO_BUILD_STANDALONE_DOCK ")
+        )
+        self.assertTrue(standalone_dock_option.endswith(" OFF)"))
         self.assertIn("if(MEO_BUILD_STANDALONE_DOCK)", native_cmake)
         self.assertIn("qt_add_qml_module(meo-dock", dock_cmake)
         self.assertNotIn("qt_add_resources(meo-dock", dock_cmake)
