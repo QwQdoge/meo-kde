@@ -78,9 +78,7 @@ Rectangle {
                     NumberAnimation {
                         duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
                         easing.type: Easing.BezierSpline
-                        easing.bezierCurve: root.sessionControlsShown
-                                            ? MeoTheme.motionEasingEmphasizedAccelerate
-                                            : MeoTheme.motionEasingEmphasizedDecelerate
+                        easing.bezierCurve: root.sessionControlsShown ? MeoTheme.motionEasingEmphasizedAccelerate : MeoTheme.motionEasingEmphasizedDecelerate
                     }
                 }
             }
@@ -177,9 +175,7 @@ Rectangle {
                     NumberAnimation {
                         duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
                         easing.type: Easing.BezierSpline
-                        easing.bezierCurve: root.sessionControlsShown
-                                            ? MeoTheme.motionEasingEmphasizedDecelerate
-                                            : MeoTheme.motionEasingEmphasizedAccelerate
+                        easing.bezierCurve: root.sessionControlsShown ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
                     }
                 }
             }

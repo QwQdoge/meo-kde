@@ -302,6 +302,8 @@ Item {
                             from: 0
                             to: 1
                             duration: MeoTheme.motionDurationShort4
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingStandard
                         }
                         NumberAnimation {
                             property: "scale"

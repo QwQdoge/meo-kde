@@ -7,14 +7,12 @@
 */
 
 import QtQuick
-import QtQuick.Controls
 
 import MeoUI 1.0
 
-TextField {
+MeoTextField {
     id: field
 
-    property bool passwordVisible: false
     property bool fingerprintAvailable: false
     property bool smartcardAvailable: false
     property string accessibleLabel: qsTr("Password")
@@ -206,7 +204,7 @@ TextField {
         }
     }
 
-    Button {
+    MeoButton {
         id: submitButton
         objectName: "meoLockScreenSubmitButton"
         anchors.right: parent.right
@@ -214,6 +212,8 @@ TextField {
         anchors.verticalCenter: parent.verticalCenter
         width: 48 * MeoTheme.globalScale
         height: width
+        type: "text"
+        size: "m"
         padding: 0
         enabled: field.enabled && field.hasInput
         hoverEnabled: true

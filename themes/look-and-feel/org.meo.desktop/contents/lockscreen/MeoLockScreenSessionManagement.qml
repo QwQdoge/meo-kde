@@ -82,8 +82,24 @@ FocusScope {
             SequentialAnimation {
                 id: bounceAnimation
                 loops: 1
-                PropertyAnimation { target: notificationsLabel; properties: "scale"; from: 1.0; to: 1.1; duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuad }
-                PropertyAnimation { target: notificationsLabel; properties: "scale"; from: 1.1; to: 1.0; duration: Kirigami.Units.longDuration; easing.type: Easing.InQuad }
+                PropertyAnimation {
+                    target: notificationsLabel
+                    properties: "scale"
+                    from: 1.0
+                    to: 1.1
+                    duration: MeoTheme.motionDurationShort4
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                }
+                PropertyAnimation {
+                    target: notificationsLabel
+                    properties: "scale"
+                    from: 1.1
+                    to: 1.0
+                    duration: MeoTheme.motionDurationShort4
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+                }
             }
         }
 

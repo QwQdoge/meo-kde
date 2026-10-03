@@ -71,7 +71,8 @@ Item {
         to: root.width
         duration: MeoTheme.motionDurationExtraLong4 * 2
         loops: Animation.Infinite
-        easing.type: Easing.Linear
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: MeoTheme.motionEasingStandard
     }
 
     layer.enabled: visible

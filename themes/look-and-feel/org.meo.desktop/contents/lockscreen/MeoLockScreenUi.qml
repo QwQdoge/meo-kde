@@ -90,9 +90,7 @@ Item {
         NumberAnimation {
             duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: authenticationUiVisible
-                                ? MeoTheme.motionEasingEmphasizedDecelerate
-                                : MeoTheme.motionEasingEmphasizedAccelerate
+                    easing.bezierCurve: authenticationUiVisible ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
         }
     }
 
