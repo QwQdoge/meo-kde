@@ -676,6 +676,7 @@ private slots:
 
 int main(int argc, char **argv)
 {
+    qputenv("QT_PLUGIN_PATH", QByteArrayLiteral(MEO_STYLE_PLUGIN_ROOT));
     QApplication app(argc, argv);
     // Keep the staged Meo plugin ahead of a previously installed user copy,
     // while retaining the system style path so the Breeze base remains usable.
