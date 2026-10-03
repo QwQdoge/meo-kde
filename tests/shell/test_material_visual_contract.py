@@ -113,9 +113,12 @@ class MaterialVisualContractTests(unittest.TestCase):
             "org.kde.plasma.kickoff",
             "org.kde.plasma.appmenu",
             "org.kde.plasma.systemtray",
-            "org.kde.plasma.icontasks",
         ):
             self.assertIn(plugin, layout)
+
+        # The standalone Meo Dock owns task presentation when selected; the
+        # look-and-feel layout must not create a duplicate Plasma task panel.
+        self.assertNotIn('org.kde.plasma.icontasks', layout)
 
         launcher = read("plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml")
         self.assertIn("Kicker.RootModel", launcher)
