@@ -3,15 +3,15 @@
   "KPlugin": {
     "Authors": [
       {
-        "Name": "MeoArch"
+        "Name": "Meo Project"
       }
     ],
-    "Category": "MeoArch",
-    "Description": "MeoArch adaptive Material 3 desktop for KDE Plasma 6",
+    "Category": "Meo",
+    "Description": "Meo Desktop, an adaptive Material 3 desktop experience for MeoArch powered by KDE Plasma 6",
     "Id": "org.meo.desktop",
     "License": "GPL-3.0-or-later",
     "Name": "Meo Desktop",
     "Version": "0.2.0",
-    "Website": "https://github.com/QwQdoge/MeoArch_os-workspace"
+    "Website": "https://github.com/QwQdoge/MeoArch-os-workspace"
   }
 }
