@@ -11,6 +11,19 @@ MeoKDE owns Plasma/KWin/KDE-native integration. Inspect `git status`, the affect
 - Use real KDE/Qt/DBus APIs or a maintained KCM handoff. Do not fake network, Bluetooth, audio, brightness, power, task, display, or session state.
 - Do not copy shared MeoUI components into this repository to avoid a dependency boundary.
 
+## Runtime system state
+
+System-facing UI must derive variable facts and capabilities from the real runtime rather than hard-coded production values.
+
+- Machine/session/hardware/service/account/package/configuration facts that can vary between systems must come from their authoritative KDE/Qt/DBus/native owner or a documented Meo.System contract whenever practical.
+- Prefer maintained native APIs over parsing generic command output. Use stable read-only kernel/system interfaces only where no suitable owner API exists.
+- Never substitute guessed or plausible hardware/system values when detection fails. Expose unavailable/unknown, hide the hardware-specific surface, or disable the capability with an explanation.
+- Keep mutable state reactive where practical and re-read authoritative state after requested changes rather than assuming success.
+- Test/preview fixtures may use fake deterministic values only behind explicit test/preview paths; production startup must not silently use them.
+- Static branding, design policy, translated copy, stable identifiers, and the compile-time version of the exact component being run are product constants and may remain static.
+
+This applies in particular to Meo.System, Plasma shell surfaces, Quick Settings, login/lock integration, system monitoring, power, displays, network, audio, Bluetooth, notifications, sessions, and hardware-dependent presentation.
+
 ## Validation matrix
 
 Run only the checks matching the changed surface.
