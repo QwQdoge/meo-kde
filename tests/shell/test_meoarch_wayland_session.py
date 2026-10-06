@@ -10,7 +10,7 @@ PKGBUILD = ROOT / "packaging/arch/PKGBUILD"
 class MeoArchWaylandSessionTests(unittest.TestCase):
     def test_session_is_a_named_plasma_wayland_entry(self):
         content = SESSION.read_text(encoding="utf-8")
-        self.assertIn("Name=MeoArch (Wayland)", content)
+        self.assertIn("Name=Meo Desktop", content)
         self.assertIn("Exec=/usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland", content)
         self.assertIn("TryExec=/usr/bin/startplasma-wayland", content)
         self.assertNotIn("DesktopNames=", content)
