@@ -29,7 +29,18 @@ The v26.08.1 main window keeps the mature file-management implementation intact:
 
 `split_stash` is removed from the default toolbar because it remains available through Dolphin's View menu. No action implementation is duplicated or removed from Dolphin.
 
-This is the first pilot patch, not a claim that the whole Dolphin roadmap is complete. Toolbar spacing/density should be supplied generically by MeoStyle where possible. Places/sidebar presentation is the next application-specific candidate and must remain a small patch against stable upstream APIs.
+## Patch 0002 — Places navigation surface
+
+`0002-meo-places-navigation-surface.patch` leaves the upstream `KFilePlacesView` model, device lifecycle, drag/drop, context actions and URL activation intact while making the panel an explicit piece of Meo navigation chrome:
+
+- assigns `meo.role=navigation` as a stable MeoStyle hook;
+- removes the generic item-view frame;
+- disables horizontal scrolling for the navigation surface;
+- gives rows a small fixed spacing without replacing the upstream delegate/model.
+
+The semantic property is intentionally harmless under another Qt style. Any stronger visual treatment should be implemented generically in MeoStyle against this role instead of accumulating Dolphin-only paint code.
+
+These patches are not a claim that the whole Dolphin roadmap is complete. Toolbar density and standard control treatment should still be supplied generically by MeoStyle where possible. Places selection geometry, section hierarchy and the final top-app-bar appearance remain subject to real packaged visual acceptance.
 
 ## Validation
 
