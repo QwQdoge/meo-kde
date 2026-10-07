@@ -32,7 +32,7 @@ class LauncherNavigationTests(unittest.TestCase):
 
     def setUp(self):
         self.engine = QJSEngine()
-        qt = {name: int(getattr(Qt, name)) for name in (
+        qt = {name: getattr(Qt, name).value for name in (
             'AltModifier', 'MetaModifier', 'ControlModifier',
             'Key_J', 'Key_N', 'Key_K', 'Key_P', 'Key_PageDown', 'Key_PageUp', 'Key_A')}
         setup = 'var Qt = ' + json.dumps(qt) + ''';
