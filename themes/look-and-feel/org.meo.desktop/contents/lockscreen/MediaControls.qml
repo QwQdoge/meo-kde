@@ -62,6 +62,7 @@ Item {
             onPauseRequested: Media.playPause()
             onPreviousRequested: Media.previous()
             onNextRequested: Media.next()
+            onSeekRequested: newPosition => Media.seekTo(newPosition)
             onVolumeRequested: value => SystemState.volumePercent = Math.round(value * 100)
         }
 
