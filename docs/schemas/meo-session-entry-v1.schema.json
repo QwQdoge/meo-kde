@@ -184,7 +184,7 @@
       "properties": {
         "notificationVisibility": {
           "enum": ["hidden", "count", "app-name", "full-content"],
-          "default": "full-content"
+          "default": "count"
         },
         "showAlbumArtwork": {
           "type": "boolean",
