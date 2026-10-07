@@ -2,7 +2,7 @@ diff --git a/src/panels/places/placespanel.cpp b/src/panels/places/placespanel.c
 index 647243a..18763c5 100644
 --- a/src/panels/places/placespanel.cpp
 +++ b/src/panels/places/placespanel.cpp
-@@ -31,6 +31,14 @@ PlacesPanel::PlacesPanel(QWidget *parent)
+@@ -31,6 +31,15 @@ PlacesPanel::PlacesPanel(QWidget *parent)
      : KFilePlacesView(parent)
  {
      setDropOnPlaceEnabled(true);
