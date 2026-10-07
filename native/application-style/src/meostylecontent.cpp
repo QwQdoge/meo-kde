@@ -324,7 +324,7 @@ void drawToolButtonLabel(const MeoStyleContent *style, const QStyleOptionToolBut
         : QSize(iconExtent, iconExtent);
     const bool hasIcon = button->arrowType != Qt::NoArrow || !button->icon.isNull();
     const bool hasText = !button->text.isEmpty() && presentation != Qt::ToolButtonIconOnly;
-    const int gap = hasIcon && hasText ? qRound(Meo::DesignTokens::space6()) : 0;
+    const int gap = hasIcon && hasText ? qRound(Meo::DesignTokens::space8()) : 0;
 
     const auto drawIcon = [&](const QRect &rect) {
         if (button->arrowType != Qt::NoArrow) {
