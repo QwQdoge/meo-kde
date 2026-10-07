@@ -16,7 +16,7 @@ int px(qreal value)
     return qRound(value);
 }
 
-QRect visualRect(const QStyleOption *option, const QRect &logical)
+QRect meoVisualRect(const QStyleOption *option, const QRect &logical)
 {
     if (!option) {
         return logical;
@@ -36,7 +36,7 @@ QRect centeredLeadingIndicator(const QStyleOption *option)
                         option->rect.center().y() - size / 2,
                         size,
                         size);
-    return visualRect(option, logical);
+    return meoVisualRect(option, logical);
 }
 
 QRect labeledControlContents(const QStyleOption *option)
@@ -50,7 +50,7 @@ QRect labeledControlContents(const QStyleOption *option)
         + px(Meo::DesignTokens::space8());
     const int trailing = px(Meo::DesignTokens::space4());
     const QRect logical = option->rect.adjusted(leading, 0, -trailing, 0);
-    return visualRect(option, logical);
+    return meoVisualRect(option, logical);
 }
 
 } // namespace
@@ -129,7 +129,7 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
                                 option->rect.top(),
                                 arrowWidth,
                                 option->rect.height());
-            return visualRect(option, logical);
+            return meoVisualRect(option, logical);
         }
         case SC_ComboBoxEditField: {
             const int width = qMax(0, option->rect.width() - contentLeading
@@ -138,7 +138,7 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
                                 option->rect.top() + vertical,
                                 width,
                                 qMax(0, option->rect.height() - 2 * vertical));
-            return visualRect(option, logical);
+            return meoVisualRect(option, logical);
         }
         default:
             break;
@@ -168,14 +168,14 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
                                 option->rect.top(),
                                 menuWidth,
                                 option->rect.height());
-            return visualRect(option, logical);
+            return meoVisualRect(option, logical);
         }
         if (subControl == SC_ToolButton) {
             const QRect logical(option->rect.left(),
                                 option->rect.top(),
                                 qMax(0, option->rect.width() - menuWidth),
                                 option->rect.height());
-            return visualRect(option, logical);
+            return meoVisualRect(option, logical);
         }
     }
 
