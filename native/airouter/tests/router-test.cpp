@@ -7,6 +7,7 @@ class RouterTest final : public QObject
 {
     Q_OBJECT
 private Q_SLOTS:
+    void capabilityMetadataIsExplicit();
     void ordinaryActionRunsWithoutPrompt();
     void reversiblePersistentActionRunsWithoutRouterPrompt();
     void unknownAndMalformedAreRejected();
@@ -28,6 +29,31 @@ static Router::Capability capability(Router::Effect effect, int *calls)
     };
     entry.dispatch = [calls](const QString &, const QVariantMap &) { ++*calls; };
     return entry;
+}
+
+void RouterTest::capabilityMetadataIsExplicit()
+{
+    Router router;
+    int calls = 0;
+    Router::Capability entry = capability(Router::Effect::Session, &calls);
+    entry.verification = Router::Verification::ReadBack;
+    entry.maturity = Router::Maturity::Stable;
+    QVERIFY(router.addCapability(std::move(entry)));
+
+    const QVariantList listed = router.capabilities();
+    QCOMPARE(listed.size(), 1);
+    const QVariantMap metadata = listed.first().toMap();
+    QCOMPARE(metadata.value(QStringLiteral("id")).toString(), QStringLiteral("org.meo.test.action"));
+    QCOMPARE(metadata.value(QStringLiteral("owner")).toString(), QStringLiteral("org.meo.test"));
+    QCOMPARE(metadata.value(QStringLiteral("effect")).toString(), QStringLiteral("session"));
+    QCOMPARE(metadata.value(QStringLiteral("verification")).toString(), QStringLiteral("read-back"));
+    QCOMPARE(metadata.value(QStringLiteral("maturity")).toString(), QStringLiteral("stable"));
+    QCOMPARE(metadata.value(QStringLiteral("requiresConfirmation")).toBool(), false);
+
+    Router invalid;
+    Router::Capability malformed = capability(Router::Effect::Read, &calls);
+    malformed.id = QStringLiteral("invalid");
+    QVERIFY(!invalid.addCapability(std::move(malformed)));
 }
 
 void RouterTest::ordinaryActionRunsWithoutPrompt()
