@@ -7,6 +7,7 @@
 #include "taskmanagercontroller.h"
 #include "sessionactionclient.h"
 #include "desktopwidgetbridge.h"
+#include "inputmethodcontroller.h"
 
 #include <QQmlEngine>
 #include <QQmlExtensionPlugin>
@@ -80,6 +81,13 @@ QObject *desktopWidgetProvider(QQmlEngine *, QJSEngine *)
     return bridge;
 }
 
+QObject *inputMethodsProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *controller = new InputMethodController;
+    QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
+    return controller;
+}
+
 class MeoSystemPlugin final : public QQmlExtensionPlugin
 {
     Q_OBJECT
@@ -98,6 +106,7 @@ public:
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);
         qmlRegisterSingletonType<SessionActionClient>(uri, 1, 0, "SessionActions", sessionActionProvider);
         qmlRegisterSingletonType<DesktopWidgetBridge>(uri, 1, 0, "DesktopWidgets", desktopWidgetProvider);
+        qmlRegisterSingletonType<InputMethodController>(uri, 1, 0, "InputMethods", inputMethodsProvider);
     }
 };
 }
