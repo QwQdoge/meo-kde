@@ -5,14 +5,22 @@ set -euo pipefail
 runtime_root="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/meo-lockscreen"
 config_home="${runtime_root}/config"
 config_dir="${config_home}/meo-lockscreen"
+user_config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
 state_home="${XDG_STATE_HOME:-${HOME}/.local/state}"
 state_dir="${state_home}/meo-lockscreen"
 
 mkdir -p "${config_dir}" "${state_dir}"
 
-# The session-lock configuration is managed by MeoArch. Keep it separate from
-# any user shell configuration so the security surface always uses the Meo
-# typography and Material role contract.
+# The presentation document and weather cache remain in the user's normal XDG
+# roots. Export their absolute paths before XDG_CONFIG_HOME is replaced with the
+# lock-only runtime root below. QML receives data paths, not generic filesystem
+# authority or a path supplied by the session-entry document itself.
+export MEO_SESSION_ENTRY_CONFIG="${user_config_home}/meo/session-entry/lockscreen-v1.json"
+export MEO_LOCKSCREEN_WEATHER_CACHE="${state_home}/meo/weather/lockscreen.json"
+
+# The shell implementation configuration is managed by MeoArch and isolated
+# from any ordinary user shell configuration so the security surface always
+# uses the Meo typography and Material role contract.
 install -m 0644 /usr/share/meo-lockscreen/shell.json "${config_dir}/shell.json"
 
 mode="${MEO_LOCKSCREEN_COLOR_SCHEME:-auto}"
