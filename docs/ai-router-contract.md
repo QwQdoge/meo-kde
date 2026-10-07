@@ -16,6 +16,42 @@ without a Router confirmation card. `ListCapabilities()` reports the currently
 executable allowlist. `GetRequest(requestId)` is limited to the original D-Bus
 caller. Requests and results are transient daemon memory.
 
+## Capability metadata
+
+Each registered capability has machine-readable metadata in addition to its
+typed argument schema. `ListCapabilities()` returns this metadata only for
+capabilities that are actually executable in the current Router policy.
+
+The current metadata fields are:
+
+- `id` — stable capability identifier;
+- `title` — trusted human-readable action title;
+- `owner` — component namespace responsible for the action;
+- `effect` — one of `read`, `session`, `persistent`, or `irreversible`;
+- `verification` — the result contract used by the owning dispatcher (`owner-result` or `read-back`);
+- `maturity` — `preview` or `stable`;
+- `requiresConfirmation` — whether the Router confirmation protocol applies.
+
+A capability that does not provide an explicit owner derives it conservatively
+from its capability namespace by removing the final action segment. For
+example `org.meo.desktop.audio.setVolume` derives the owner
+`org.meo.desktop.audio`. An identifier that cannot produce a meaningful owner
+namespace is rejected at registration time.
+
+Maturity is deliberately independent from availability. A `preview` capability
+may be executable and tested while still carrying a narrower compatibility or
+acceptance guarantee. Adding metadata must never promote a capability to
+`stable` implicitly. Likewise, metadata never grants authority: the Router
+still validates the capability ID, exact typed arguments, effect policy,
+caller binding, and confirmation fingerprint before dispatch.
+
+The verification field describes the dispatcher's completion contract, not a
+promise that the Router independently understands every subsystem. An owner
+may complete a request from its authoritative operation result, or use a
+read-back check when the capability requires state verification. Either way,
+state-changing integrations should prefer an authoritative post-operation
+check when practical.
+
 `SubmitText(text)` resolves an unambiguous installed application name after
 `open` or `打开`, simple `set volume to 30%` / `音量调到30%` requests,
 and current-volume queries locally,
