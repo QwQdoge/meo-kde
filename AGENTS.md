@@ -4,6 +4,18 @@
 
 MeoKDE owns Plasma/KWin/KDE-native integration. Inspect `git status`, the affected package/native bridge, and its nearest contract/test before editing. Read only the relevant docs; do not scan all packages or historical material by default.
 
+## Scope control
+
+Product contracts deliberately describe long-term MeoArch coverage. They are not an instruction to implement every missing feature during an unrelated task.
+
+- Follow the current MeoArch milestone/scope contract when one is provided by the workspace/release task.
+- Implement only the requested/current-milestone capability, work required to integrate it safely, and security/data-loss correctness fixes discovered directly in that work.
+- Record unrelated bugs, missing features, architecture improvements, historical experiments, and technical debt instead of implementing them automatically.
+- Do not restore an old branch feature merely because it is absent from `main`; first confirm that it still belongs to the current product direction.
+- If a historical design conflicts with the current owning-repository contract, the current contract wins. Keep historical material only for migration/provenance where useful.
+
+Repository cleanup, validation, and review tasks must not silently turn into open-ended feature development.
+
 ## Ownership
 
 - Reusable platform-neutral MD3 controls/tokens/motion belong in MeoUI.
