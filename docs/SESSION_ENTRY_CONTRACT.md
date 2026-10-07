@@ -1,201 +1,196 @@
-# Meo lock screen and login entry contract
+# Meo session-entry presentation contract
 
-## Scope and ownership
+## Scope and authority
 
-This document is the version-one presentation contract for the Meo session
-entry surfaces.  `kscreenlocker` remains the logged-in lock screen's security
-core: Meo supplies a Look-and-Feel `contents/lockscreen/LockScreen.qml` in P1,
-not a replacement locker or authentication daemon.  The separate Meo Login
-Manager fork preserves the upstream Plasma Login Manager PAM, daemon, D-Bus,
-service and session-start interfaces.
+This document defines the version-one **presentation and configuration contract** shared by the logged-in Meo Session Lock and the separate Meo Login surface. It does not make those two security boundaries interchangeable.
 
-MeoUI owns generic cards, clock/media/weather presentation, semantic dynamic
-colors, motion and accessibility.  MeoKDE owns the KScreenLocker/Plasma,
-KScreen, MPRIS and weather-cache adaptors.  Meo Settings owns the user-facing
-editor, safe preview, reset and authorized system-login commit flow.  No
-surface stores a password or emulates authentication state.
+The authoritative normal lock path is the Meo-owned resident `meo-lockscreen` process documented in `LOCKSCREEN.md`. It acquires the compositor's Wayland session lock and delegates authentication to the maintained PAM-backed authentication integration. KScreenLocker-based Meo presentation work is historical/compatibility material and is not a second normal lock owner.
 
-## Version-one configuration
+The login surface is owned by the Meo Login Manager fork and preserves its reviewed upstream authentication, daemon, service, D-Bus, and session-start boundaries. Login and unlock may share MeoUI presentation primitives and the schema below, but they never share transient credential state or assume that a login session and an unlock operation are the same lifecycle.
 
-`schemas/meo-session-entry-v1.schema.json` is the formal schema.  A document
-has `schemaVersion: 1` and exactly one `scope`:
+Ownership is therefore:
 
-- `lockscreen` is per-user data, consumed only inside that user's already
-  authenticated session.  It may reference a current-user wallpaper asset.
-- `login` is system data, written only through the authorized Meo Settings
-  transaction.  It cannot enable media, notifications, album artwork or a
-  precise location, and may reference only a system default or managed asset.
+- **MeoUI** — generic cards, typography, semantic dynamic colors, motion, accessibility primitives, and preview components;
+- **MeoKDE / Meo Session Lock** — the installed session-lock process, Wayland lock surfaces, lock-safe media/weather/status projections, display coordination, and typed presentation adapters;
+- **Meo Login Manager** — the system login/greeter lifecycle and authentication/session-start authority;
+- **Meo Settings** — the user-facing editor, safe preview, per-user lock configuration writer, reset flow, and authorized request flow for system-login presentation configuration.
 
-The schema holds presentation preferences only: large/compact clock, date,
-background treatment, `wallpaperMode`, media/weather/audio enablement, city
-preference for the separate weather refresher, notification and content
-privacy, output-specific wallpaper refs, active-authentication-screen policy
-and Reduce Motion override. `wallpaperMode: follow-desktop` resolves only the
-wallpaper that KScreenLocker already supplies for that secure output. Wallpaper references are symbolic asset IDs;
-consumers resolve them through their trusted owner and do not accept arbitrary
-QML, URLs or raw filesystem paths from the settings document.  Output keys are
-opaque KScreen identities, never coordinates or raw EDID payloads.
+No presentation surface stores a password, compares credentials in QML, or emulates authentication success.
 
-Unknown properties, wrong schema versions, unresolved assets, invalid output
-keys and invalid values fail closed to the safe defaults.  A parse failure does
-not prevent a security surface from appearing or a user from authenticating.
+## Version-one document
 
-## Defaults and privacy
+`schemas/meo-session-entry-v1.schema.json` is the formal schema. A document has `schemaVersion: 1` and exactly one `scope`:
 
-The rich lock-screen profile defaults to `full-content` notifications, album
-artwork, city-level cached weather, current-session media, and output
-volume/mute. Privacy controls can independently reduce this to application
-name, count, or hidden. Media remains asynchronous and time-bounded; all
-external cards remain removable without affecting authentication. Login surfaces
-never query a prior user's session, MPRIS player, notification store or private
-weather settings.  Login weather, if enabled later, is city-granularity,
-system-cache data only.
+- `lockscreen` is per-user presentation data for an already authenticated user's session. It may reference a current-user wallpaper asset.
+- `login` is system presentation data written only through an authorized transaction. It cannot consume a previous user's media, notifications, private weather state, or current-user wallpaper asset.
 
-## State, displays and fallback
+The schema contains presentation preferences only:
 
-Each current screen receives a true full-screen security surface.  One logical
-authentication state is shared through the existing KDE-owned locker/login
-backend; a presentation coordinator may select an active screen but must not
-make a second credential model.  `auto`, `fixed-primary` and
-`follow-interaction` are the supported policies.  A selection change uses a
-250 ms fade-through, while screen add/remove, DPMS recovery, sleep resume,
-mixed scaling, rotation and negative geometry retain a covered surface on
-every usable output.
+- clock/date presentation;
+- background treatment;
+- wallpaper mode and symbolic wallpaper asset reference;
+- lock-safe module enablement;
+- notification/media/weather privacy;
+- output-specific wallpaper presentation;
+- active authentication-screen policy;
+- Reduce Motion override.
 
-The P2 lock-screen bridge is the `Meo.KScreenLocker` QML module's
-`ScreenCoordinator`. It is instantiated inside KScreenLocker's already shared
-QML engine and accepts only the per-output secure `QWindow` supplied by that
-process. It observes Qt screen/topology changes, chooses among those existing
-windows, and asks the selected one to activate. It persists no display
-identity, never creates a security window, and exposes neither a credential
-nor a PAM, D-Bus, or network API. Meo Settings may bind the validated layout
-policy to this bridge only after its transaction/preview flow is implemented.
+It must not contain passwords, password hashes, PAM module names, biometric enablement, service control, arbitrary QML, arbitrary URLs, raw filesystem paths, shell commands, or raw display coordinates.
 
-If the active screen vanishes, focus immediately moves to a remaining eligible
-screen.  If the Meo lock screen cannot load, KScreenLocker falls back to the
-configured KDE theme.  If a Meo data provider fails, its card hides; it never
-blocks authentication.  The Login Manager follows the equivalent upstream
-greeter fallback documented in its fork contract.
+Wallpaper references are **symbolic asset identifiers** resolved by the trusted owning component. In version one:
 
-## P3 external-data projection
+- `system-default` requires an empty `assetId`;
+- `current-user` is allowed only for `lockscreen` and requires a non-empty safe symbolic ID;
+- `managed-asset` requires a non-empty safe symbolic ID;
+- path traversal, URLs, empty path segments, and direct filesystem paths are invalid.
 
-The lock screen creates the media card only when the user enables its module.
-`Meo.System.Media` reads the current user's MPRIS services through asynchronous
-D-Bus calls with a 750 ms deadline. It exposes only title, artist, playback
-state, next/previous capability and the three safe controls. Remote artwork is
-rejected; local artwork is accepted only when present and no larger than 5 MiB.
-Album artwork remains opt-in independently of the media card.
+Output identities are opaque stable display identities. They are not coordinates and must not expose raw EDID payloads as configuration keys.
 
-`Meo.System.Weather` performs no network I/O. It reads the bounded (64 KiB)
-`$XDG_STATE_HOME/meo/weather/lockscreen.json` cache written by a separately
-authorized MeoKDE provider. The supported version-one cache contains only an
-ISO timestamp, city-granularity location, temperature/unit, condition and an
-icon name. Invalid, future-dated or older-than-six-hour data hides the widget;
-the city name itself is opt-in.
+Unknown properties, wrong schema versions, unresolved assets, invalid output identities, duplicate output entries, oversized documents, and invalid values fail closed. A parse/configuration failure falls back to safe presentation defaults; it never prevents the secure lock/login surface from appearing or prevents the real authentication authority from operating.
 
-`meo-weather-refresh` is a per-user, systemd-timer driven Open-Meteo client.
-Meo Settings stores a bounded city name and can explicitly request a refresh;
-the refresher has a 10-second deadline and atomically replaces the cache only
-after a complete, validated response. It has no greeter integration. A network
-error, invalid provider response, or stale cache simply hides weather on the
-locker.
+## Privacy defaults
 
-The audio module is a read-only/output-control projection of the existing
-PipeWire/PulseAudio authority. It exposes only volume (clamped to 100%) and
-mute; it has no output-device, microphone, or input-device selector.
+Version-one defaults are intentionally conservative:
 
-The notification module is a read-only `NotificationManager` projection. It
-never exposes actions, reply controls, URLs, images, jobs or history. `hidden`
-does not instantiate the notification model, and only
-the explicit `app-name` or `full-content` preference evaluates text fields.
-All text passes through a bounded plain-text projection before it reaches
-MeoUI. Media, weather and notification widgets are shown only on the active
-secure output; non-active displays disclose none of that content.
+- lock-screen notifications expose **count only** by default;
+- application names and full notification content require explicit opt-in;
+- album artwork is opt-in;
+- precise weather location is opt-in;
+- media/weather/status modules remain removable and asynchronous and must never gate authentication;
+- the login scope exposes no notifications, media, album artwork, user-session audio state, or user-private weather state.
 
-## Interaction, controls and session actions
+Version one does **not** enable login weather. A future schema revision may add a city-level, system-owned public weather cache after that data source and its privacy model are explicitly specified. It must not reuse a prior user's private weather cache.
 
-The lock screen has two presentation states on every secure surface:
+## Lock-surface and display rules
 
-1. **Ambient lock screen** is the covered-at-rest state. It may show the
-   clock and enabled, privacy-filtered Meo widgets on the active secure output.
-   It does not start a biometric exchange, open a camera, or retain a password
-   field.
-2. **Authentication screen** opens only after an intentional upward swipe on a
-   touch display, or an equivalent explicit keyboard accessibility
-   action. The swipe has a 72 dp travel threshold, is cancelled below that
-   threshold, and uses the 250 ms emphasized-decelerate transition. It then
-   requests the existing KDE authenticator; it does not implement a second
-   authentication path.
+Every usable output must remain covered while the Wayland session lock is held. The lock process may designate one output as the active interaction/authentication surface, but an active-screen policy must never turn another output into an uncovered desktop.
 
-The authentication screen contains one ordinary upstream-bound MeoUI text
-field for a password, with the existing `PasswordSync` and authenticator as
-its only credential owners. The virtual keyboard, keyboard-layout selector,
-Caps Lock state, accessibility affordances and a capability-gated session
-action menu remain available. Widgets and their content are absent from this
-screen, so an unlocking user sees only the input task and necessary controls.
+The supported presentation policies are:
 
-Fingerprint, smartcard and a future face method are status affordances, not
-separate Meo credentials. A face label may appear only when the upstream KDE
-authenticator exposes a trusted corresponding method. It begins only after the
-authentication screen has been explicitly requested; Meo never opens a camera,
-probes a face service, or performs passive recognition on the ambient screen.
-If the upstream API has no face method, no face control is rendered.
+- `auto` — choose an appropriate active output from current topology and interaction;
+- `fixed-primary` — prefer the current primary output while it remains eligible;
+- `follow-interaction` — move the active authentication/presentation focus to the output receiving an allowed interaction.
 
-All sleep, hibernate, switch-user, restart and shutdown actions call the
-upstream session-management authority and are visible only when it reports the
-capability and policy as available. A lock screen preserves its existing
-sleep/hibernate/switch-user behavior; Login Manager P4 also exposes shutdown,
-restart, suspend, hibernate, user switching and session selection through its
-upstream greeter models. Meo must never invoke commands directly, infer an
-available action, or substitute a decorative button for an unavailable action.
-The Login Manager is function-first and deliberately shows no media, weather,
-notification, album-art or arbitrary-widget surface.
+Hotplug, output removal, DPMS recovery, suspend/resume, mixed scaling, rotation, and negative desktop geometry must preserve secure coverage. If the active output disappears, focus moves to another covered eligible output without creating a second credential model.
 
-## Secure widget layout editor
+The schema controls presentation only. It must not write the live KScreen topology, create security windows from Settings, or alter compositor output geometry.
 
-Meo Settings provides a **Lock-screen layout editor**, not an actual unlocked
-KScreenLocker window. It renders a clearly labelled simulated security surface
-inside the already unlocked Settings session, with the same validated output
-geometry and placement model. Entering edit mode cannot authenticate, cover a
-display, query lock-screen private data, or change a live KScreen layout.
+## Lock-safe external data
 
-The editor may reuse Plasma's widget-management interaction vocabulary:
-selection handles, drag placement, per-output target selection, snapping and a
-toggleable alignment/grid guide. It does **not** load Plasma applets into the
-security surface. Lock-screen widgets are a small `MeoSecureWidgetRegistry` of
-signed, reviewed Meo components with bounded data contracts (clock, media,
-weather and notification summary in version one). Arbitrary third-party QML,
-desktop applets, network widgets and desktop-widget instances are rejected.
+External cards are optional projections. Their failure or timeout hides the card; it never blocks authentication.
 
-Desktop editing remains Plasma's normal containment/widget manager. A Meo
-first-party widget may offer a copy of its *safe placement preset* between the
-desktop editor and the lock-screen editor, but it is instantiated separately
-on each surface; a desktop widget is never dragged wholesale into the locker.
-Desktop and lock-screen guides are off by default, edit-mode-only, use logical
-output coordinates and snap to an 8 dp grid. They do not create a permanent
-desktop overlay or write raw KScreen coordinates.
+### Media
+
+The lock screen creates media presentation only when the user enables it. The maintained media bridge reads the current user's MPRIS services asynchronously and exposes only bounded presentation metadata and explicitly allowed playback controls.
+
+Remote artwork is rejected. Local artwork is accepted only through the reviewed bounded asset path/size policy. Album artwork visibility is controlled separately from media-control availability.
+
+### Weather
+
+The lock surface performs no network request during authentication. Weather, when enabled for the logged-in user's lock screen, is read from a bounded per-user cache produced by the separate refresher. Invalid, stale, future-dated, oversized, or unavailable cache data hides the weather surface.
+
+The login surface has no weather provider in schema v1.
+
+### Audio
+
+The lock projection may expose output volume and mute only. It does not expose microphone/input controls, arbitrary device routing, or privileged audio configuration.
+
+### Notifications
+
+The lock notification projection is read-only and bounded. It must not expose arbitrary application actions, replies, URLs, jobs, or privileged operations. Data fields are evaluated only at the privacy level the user selected.
+
+Sensitive widgets appear only on the active secure presentation output. Other covered outputs remain non-sensitive unless a future contract explicitly defines otherwise.
+
+## Interaction and authentication
+
+The lock screen has two logical presentation states:
+
+1. **Ambient** — secure covered-at-rest presentation. It may show the clock and enabled privacy-filtered widgets.
+2. **Authentication** — entered after an explicit user interaction. It shows only authentication and required accessibility/session controls; lock-screen content cards do not become a second interactive desktop.
+
+The password field is only a view over the maintained authentication integration. Authentication success comes from the backend; animation never causes authentication success.
+
+Fingerprint, smart-card, or future biometric methods are capability/status affordances over maintained authentication interfaces. They are not separate Meo credential databases. Password fallback remains available according to the underlying authentication policy.
+
+The lock surface must never:
+
+- persist plaintext credentials;
+- send credentials to Meo Account, AI, analytics, or general application state;
+- silently weaken upstream retry/rate-limit behavior;
+- start passive camera/face recognition merely because the ambient lock surface is visible.
+
+## Session and power actions
+
+Sleep, hibernate, switch-user, logout, restart, and shutdown actions call their owning session/system authorities and are shown only when those authorities report the action as available.
+
+User switching hands off to the supported login/session manager. The lock screen does not implement a second login manager.
+
+## Secure layout editor
+
+Meo Settings provides a **session-entry preview/layout editor**, not an unlocked real locker or greeter instance.
+
+The editor:
+
+- renders a clearly labelled simulated surface inside the already unlocked Settings session;
+- edits only schema-approved presentation values;
+- may provide drag handles, snapping, grid/alignment guides, and per-output preview targeting;
+- may instantiate only reviewed Meo secure-widget definitions with bounded data contracts;
+- never authenticates, acquires a real session lock, changes live display topology, loads arbitrary third-party QML, or imports a desktop Plasma widget instance into the secure surface.
+
+A preview proves layout/configuration behavior only. It is not security acceptance evidence.
 
 ## Motion and accessibility baseline
 
-All visual roles come from `MeoTheme` semantic dynamic roles, never a
-page-local color palette.  The minimum touch target is 48 dp.  Keyboard,
-virtual keyboard, screen reader, high contrast, RTL and CJK input remain
-upstream functional requirements.
+All visual roles come from Meo semantic roles rather than page-local palettes. The minimum touch target is 48 dp. Keyboard access, virtual-keyboard compatibility where supported, screen-reader semantics, high contrast, RTL, and CJK text entry remain product requirements.
 
-| Interaction | Motion | Reduce Motion |
-| --- | --- | --- |
-| Hover/focus | 100 ms Standard | opacity only, at most 100 ms |
-| Authentication panel enter | 250 ms Emphasized Decelerate | opacity only, at most 100 ms |
-| Authentication panel exit | 150 ms Emphasized Accelerate | opacity only, at most 100 ms |
-| Authentication failure | 300 ms damped spring, max 8 dp horizontal | opacity only, at most 100 ms |
-| Authentication success | 300 ms fade and small scale, after upstream success | opacity only, at most 100 ms |
-| Screen migration | 250 ms fade-through | opacity only, at most 100 ms |
+Reduce Motion must remove decorative spatial/spring motion without changing security ordering. In particular, the desktop is not exposed before successful authentication and lock release simply because motion is disabled.
 
 ## Settings transaction contract
 
-P1/P4 implementation follows `Inspect -> Plan -> Preview -> Authorize ->
-Snapshot -> Apply -> Validate -> Commit -> Rollback`.  Preview uses a mock
-surface in the existing Settings session and cannot claim to test the real lock
-screen or greeter.  A failed apply restores the prior validated document;
-"restore defaults" removes only the relevant Meo document after confirmation,
-never upstream PAM/KScreenLocker/Login Manager configuration.
+Both scopes validate the same presentation schema but use different writers.
+
+### Per-user lock-screen scope
+
+The lock-screen writer:
+
+1. validates the complete document;
+2. snapshots the previous validated document when one exists;
+3. atomically writes the new user-scoped document with private permissions;
+4. reads the persisted document back and validates it again;
+5. restores the previous snapshot on verification failure when doing so cannot overwrite a concurrent newer write;
+6. refuses blind rollback if the file changed concurrently.
+
+`Restore defaults` removes/replaces only the scoped Meo presentation document. It does not delete user media, PAM configuration, the locker package, or unrelated KDE state.
+
+### System login scope
+
+The login writer is a separate privileged transaction boundary. Meo Settings sends only a closed schema-validated request. The authorized service owns authorization, snapshot, safe asset resolution, atomic apply, validation, commit/rollback, and structured failure reporting.
+
+The login writer must not edit PAM policy, service enablement, arbitrary display-manager files, or authentication configuration as a side effect of changing presentation settings.
+
+## Compatibility boundary
+
+KScreenLocker and upstream KDE tools may remain available as compatibility/recovery components where the installed desktop still needs them, but they are not a parallel normal Meo session-lock architecture. Do not configure two independent normal lock owners or allow them to race for the same session.
+
+Historical KScreenLocker-specific Meo modules and documents should be treated as migration/provenance material unless another current contract gives them an explicit compatibility responsibility.
+
+## Acceptance boundary
+
+Source review, schema validation, unit tests, and package builds are necessary but are not proof that the real security path works.
+
+Before Meo Session Lock is considered release-ready as the default locker, installed-session evidence must cover at least:
+
+- manual lock;
+- idle-triggered lock;
+- lock before suspend and resume into a locked state;
+- correct and incorrect password behavior;
+- biometric success/failure/password fallback when supported;
+- primary lock process failure and secure fallback behavior;
+- repeated lock/unlock cycles;
+- no visible desktop frame before completed unlock;
+- multiple monitors and monitor hotplug/removal while locked;
+- DPMS off/on;
+- notification/media privacy modes;
+- session/power actions using their owning authorities.
+
+Failure to securely acquire or maintain the session lock is a release blocker when Meo Session Lock is the default installed locker.
