@@ -40,7 +40,17 @@ The v26.08.1 main window keeps the mature file-management implementation intact:
 
 The semantic property is intentionally harmless under another Qt style. Any stronger visual treatment should be implemented generically in MeoStyle against this role instead of accumulating Dolphin-only paint code.
 
-These patches are not a claim that the whole Dolphin roadmap is complete. Toolbar density and standard control treatment should still be supplied generically by MeoStyle where possible. Places selection geometry, section hierarchy and the final top-app-bar appearance remain subject to real packaged visual acceptance.
+## Patch 0003 — top app bar density
+
+`0003-meo-top-app-bar-density.patch` keeps the upstream `KToolBar` and all existing actions, shortcuts and KXmlGui ownership while adding only desktop chrome presentation:
+
+- assigns `meo.role=top-app-bar` so MeoStyle can treat the toolbar as a named application surface;
+- applies small outer margins and 4 px item spacing after Dolphin creates its real toolbar;
+- does not lock toolbar position, remove customization, replace action widgets, or change navigation/search behavior.
+
+This is intentionally the page-level density part of the Dolphin patch. Standard button, menu, field and tool-button geometry remains MeoStyle's responsibility rather than being redrawn in Dolphin.
+
+These patches are not a claim that the whole Dolphin roadmap is complete. Places section hierarchy and the final top-app-bar appearance still need real packaged visual acceptance, and compact/icon/details/split/tab behavior must be exercised before the pilot is considered complete.
 
 ## Validation
 
