@@ -13,11 +13,19 @@ Router::Router(bool irreversibleEnabled, QObject *parent)
 bool Router::addCapability(Capability capability)
 {
     if (capability.id.isEmpty() || capability.title.trimmed().isEmpty()
-        || capability.owner.trimmed().isEmpty() || !capability.dispatch
-        || m_capabilities.contains(capability.id)
+        || !capability.dispatch || m_capabilities.contains(capability.id)
         || (capability.effect == Effect::Irreversible && !capability.describeTarget)) {
         return false;
     }
+
+    if (capability.owner.trimmed().isEmpty()) {
+        const qsizetype separator = capability.id.lastIndexOf(QLatin1Char('.'));
+        if (separator <= 0) {
+            return false;
+        }
+        capability.owner = capability.id.left(separator);
+    }
+
     m_capabilities.insert(capability.id, std::move(capability));
     return true;
 }
