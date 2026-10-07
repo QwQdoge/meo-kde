@@ -95,14 +95,15 @@ class SessionEntryContractTests(unittest.TestCase):
             "wayland session lock",
             "pam-backed authentication",
             "not a second normal lock owner",
-            "separate lifecycle/security boundary",
+            "not make those two security boundaries interchangeable",
+            "same lifecycle",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.contract_lower)
 
     def test_contract_keeps_credentials_and_authentication_out_of_presentation_state(self):
         for required in (
-            "does not store a password",
+            "no presentation surface stores a password",
             "compares credentials in qml",
             "authentication success comes from the backend",
             "persist plaintext credentials",
