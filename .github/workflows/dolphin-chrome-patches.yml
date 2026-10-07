@@ -21,4 +21,4 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Validate pinned Dolphin patch series
-        run: ./setup/prepare-meo-dolphin-source.sh --check-only
+        run: bash ./setup/prepare-meo-dolphin-source.sh --check-only
