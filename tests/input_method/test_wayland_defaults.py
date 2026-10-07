@@ -1,5 +1,6 @@
 import configparser
 import os
+import re
 import stat
 import subprocess
 import tempfile
@@ -12,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 KWIN_DEFAULTS = ROOT / "defaults" / "kwin" / "kwinrc"
 ENVIRONMENT_DEFAULTS = ROOT / "defaults" / "environment" / "90-meo-applications.conf"
 APPLY_DESKTOP = ROOT / "tools" / "theme" / "apply-meo-desktop.sh"
+LOCAL_PKGBUILD = ROOT / "packaging" / "arch" / "PKGBUILD"
 
 
 def read_config(path: Path) -> configparser.ConfigParser:
@@ -47,6 +49,16 @@ class FcitxWaylandDefaultTests(unittest.TestCase):
         self.assertNotIn("autostart/org.fcitx", combined)
         self.assertNotIn("systemctl --user", combined)
         self.assertNotIn("Exec=/usr/bin/fcitx5", combined)
+
+    def test_local_package_requires_the_default_fcitx_runtime(self):
+        source = LOCAL_PKGBUILD.read_text(encoding="utf-8")
+        match = re.search(r"depends=\((.*?)\)\nmakedepends=", source, re.S)
+        self.assertIsNotNone(match)
+        depends = match.group(1)
+        for package in ("fcitx5", "fcitx5-qt", "fcitx5-gtk"):
+            with self.subTest(package=package):
+                self.assertRegex(depends, rf"'{re.escape(package)}'")
+        self.assertNotRegex(depends, r"'fcitx5-(?:rime|mozc|hangul|m17n|chinese-addons)'")
 
     def _run_kwin_only_apply(self, initial_kwinrc: str) -> configparser.ConfigParser:
         with tempfile.TemporaryDirectory() as directory:
@@ -110,7 +122,6 @@ class FcitxWaylandDefaultTests(unittest.TestCase):
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
             parser = read_config(kwinrc)
-            # Copy the parsed state before TemporaryDirectory removes the file.
             snapshot = configparser.ConfigParser(interpolation=None)
             snapshot.optionxform = str
             for section in parser.sections():
