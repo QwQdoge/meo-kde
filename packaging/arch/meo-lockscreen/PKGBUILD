@@ -2,7 +2,7 @@
 
 pkgname=meo-lockscreen
 pkgver=0.2.0
-pkgrel=1
+pkgrel=2
 pkgdesc="MeoArch Wayland session lock with Meo Material 3 styling"
 arch=('x86_64')
 url="https://github.com/QwQdoge/meo-kde"
@@ -88,6 +88,21 @@ package() {
     "${pkgdir}/usr/bin/meo-lockscreen-launch"
   install -Dm644 "${workspace}/lockscreen/meo-lockscreen.service" \
     "${pkgdir}/usr/lib/systemd/user/meo-lockscreen.service"
+
+  # Keep the pinned upstream PAM/session-lock implementation, but replace the
+  # presentation components that consume Meo-owned privacy/configuration state.
+  # This is intentionally a small audited override surface rather than a second
+  # locker implementation.
+  local lock_module_dir="${pkgdir}/etc/xdg/quickshell/meo-lockscreen/modules/lock"
+  install -d "${lock_module_dir}"
+  install -m644 \
+    "${workspace}/lockscreen/overrides/modules/lock/MeoSessionEntry.qml" \
+    "${workspace}/lockscreen/overrides/modules/lock/MeoWeatherCache.qml" \
+    "${workspace}/lockscreen/overrides/modules/lock/MeoNotificationPane.qml" \
+    "${workspace}/lockscreen/overrides/modules/lock/Content.qml" \
+    "${workspace}/lockscreen/overrides/modules/lock/Media.qml" \
+    "${workspace}/lockscreen/overrides/modules/lock/WeatherInfo.qml" \
+    "${lock_module_dir}/"
 
   # Canonical Meo visual contract for the lock surface. The launcher copies
   # these into an isolated runtime config and selects light/dark from KDE.
