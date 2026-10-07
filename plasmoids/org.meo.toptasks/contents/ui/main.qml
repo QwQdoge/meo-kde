@@ -36,6 +36,8 @@ PlasmoidItem {
         return name || tasksModel.data(activeTaskIndex, 0) || ""
     }
     readonly property bool activeApplicationAvailable: activeApplicationName !== ""
+    readonly property bool activeApplicationClosable: activeApplicationAvailable
+            && !!tasksModel.data(activeTaskIndex, TaskManager.AbstractTasksModel.IsClosable)
     readonly property string visibleApplicationName: activeApplicationAvailable
                                                      ? activeApplicationName
                                                      : MeoI18n.translator.i18n("Desktop")
@@ -90,7 +92,7 @@ PlasmoidItem {
     }
 
     function closeActiveApplication() {
-        if (activeApplicationAvailable && activeTaskIndex)
+        if (activeApplicationClosable && activeTaskIndex)
             tasksModel.requestClose(activeTaskIndex)
     }
 
@@ -201,6 +203,7 @@ PlasmoidItem {
                     "label": MeoI18n.translator.i18n("Quit"),
                     "icon": "close",
                     "shortcut": "Alt+F4",
+                    "enabled": root.activeApplicationClosable,
                     "action": function() { root.closeActiveApplication() }
                 }
             ]
