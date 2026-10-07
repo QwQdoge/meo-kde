@@ -1,15 +1,17 @@
 diff --git a/src/dolphinmainwindow.cpp b/src/dolphinmainwindow.cpp
-index 5dbf28d..1aa9076 100644
 --- a/src/dolphinmainwindow.cpp
 +++ b/src/dolphinmainwindow.cpp
-@@ -86,6 +86,7 @@
+@@ -84,6 +84,7 @@
+ #include <QDomDocument>
  #include <QFileInfo>
  #include <QLineEdit>
 +#include <QLayout>
  #include <QMenuBar>
  #include <QPushButton>
  #include <QSharedPointer>
-@@ -205,6 +206,17 @@ DolphinMainWindow::DolphinMainWindow()
+@@ -210,6 +211,17 @@ DolphinMainWindow::DolphinMainWindow()
+     setupFileItemActions();
+ 
      const bool usePhoneUi{KRuntimePlatform::runtimePlatform().contains(QLatin1String("phone"))};
      setupGUI(Save | Create | ToolBar, usePhoneUi ? QStringLiteral("dolphinuiforphones.rc") : QString() /* load the default dolphinui.rc file */);
 +
