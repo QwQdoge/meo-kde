@@ -1,0 +1,20 @@
+diff --git a/src/panels/places/placespanel.cpp b/src/panels/places/placespanel.cpp
+index 647243a..18763c5 100644
+--- a/src/panels/places/placespanel.cpp
++++ b/src/panels/places/placespanel.cpp
+@@ -31,6 +31,14 @@ PlacesPanel::PlacesPanel(QWidget *parent)
+     : KFilePlacesView(parent)
+ {
+     setDropOnPlaceEnabled(true);
++
++    // Meo keeps the upstream places model, drag/drop and device lifecycle,
++    // while treating this widget as application navigation chrome rather than
++    // a framed generic list. The semantic property is consumed by MeoStyle and
++    // is harmless when Dolphin is run with another Qt style.
++    setProperty("meo.role", QStringLiteral("navigation"));
++    setFrameShape(QFrame::NoFrame);
++    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
++    setSpacing(4);
+     connect(this, &PlacesPanel::urlsDropped, this, &PlacesPanel::slotUrlsDropped);
+ 
+     setAutoResizeItemsEnabled(false);
