@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QProxyStyle>
 
-class MeoStyle final : public QProxyStyle
+class MeoStyle : public QProxyStyle
 {
     Q_OBJECT
 
