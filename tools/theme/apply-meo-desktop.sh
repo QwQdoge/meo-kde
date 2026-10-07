@@ -44,6 +44,30 @@ run() {
   fi
 }
 
+read_ini_value() {
+  local file="$1" section="$2" key="$3"
+  [ -f "${file}" ] || return 0
+  awk -v section="[${section}]" -v key="${key}" '
+    $0 == section { in_section = 1; next }
+    /^\[/ { in_section = 0 }
+    in_section && index($0, key "=") == 1 {
+      print substr($0, length(key) + 2)
+      exit
+    }
+  ' "${file}"
+}
+
+has_ini_key() {
+  local file="$1" section="$2" key="$3"
+  [ -f "${file}" ] || return 1
+  awk -v section="[${section}]" -v key="${key}" '
+    $0 == section { in_section = 1; next }
+    /^\[/ { in_section = 0 }
+    in_section && index($0, key "=") == 1 { found = 1; exit }
+    END { exit(found ? 0 : 1) }
+  ' "${file}"
+}
+
 required_commands=(kwriteconfig6)
 if [ "${kwin_only}" -eq 0 ]; then
   required_commands+=(plasma-apply-lookandfeel)
@@ -54,6 +78,45 @@ for command in "${required_commands[@]}"; do
     exit 1
   fi
 done
+
+# Input-method lifecycle is not an appearance setting. The packaged KWin
+# profile provides Fcitx 5 only as a system default for a new user. Preserve an
+# explicit per-user Virtual Keyboard choice across both Look-and-Feel and
+# --kwin-only synchronisation; if the user has never selected one, remove any
+# temporary user-layer value written by the appearance projection so the XDG
+# default remains authoritative and user-overridable.
+user_kwinrc="${config_root}/kwinrc"
+had_user_input_method=0
+user_input_method=""
+if has_ini_key "${user_kwinrc}" Wayland InputMethod; then
+  had_user_input_method=1
+  user_input_method="$(read_ini_value "${user_kwinrc}" Wayland InputMethod)"
+fi
+input_method_restore_pending=0
+if [ "${dry_run}" -eq 0 ]; then
+  input_method_restore_pending=1
+fi
+
+restore_user_input_method_direct() {
+  [ "${input_method_restore_pending}" -eq 1 ] || return 0
+  if [ "${had_user_input_method}" -eq 1 ]; then
+    kwriteconfig6 --file "${user_kwinrc}" --group Wayland --key InputMethod "${user_input_method}" >/dev/null 2>&1 || true
+  else
+    kwriteconfig6 --file "${user_kwinrc}" --group Wayland --key InputMethod --delete '' >/dev/null 2>&1 || true
+  fi
+  input_method_restore_pending=0
+}
+
+restore_user_input_method() {
+  if [ "${had_user_input_method}" -eq 1 ]; then
+    run kwriteconfig6 --file "${user_kwinrc}" --group Wayland --key InputMethod "${user_input_method}"
+  else
+    run kwriteconfig6 --file "${user_kwinrc}" --group Wayland --key InputMethod --delete ''
+  fi
+  input_method_restore_pending=0
+}
+
+trap restore_user_input_method_direct EXIT
 
 input_helper="${MEO_INPUT_METHOD_HELPER:-}"
 if [ -z "${input_helper}" ] && command -v meo-input-method >/dev/null 2>&1; then
@@ -87,7 +150,9 @@ apply_kwin_defaults() {
 
   # defaults/kwin/kwinrc is the sole authority for Meo-owned KWin values.
   # Write explicit user values because plasma-apply-lookandfeel only projects
-  # a subset of custom KWin groups into kdedefaults.
+  # a subset of custom KWin groups into kdedefaults. Wayland/InputMethod is
+  # restored immediately afterwards because it is a lifecycle/user choice,
+  # not an appearance preference.
   while IFS= read -r line || [ -n "${line}" ]; do
     case "${line}" in
       ''|'#'*|';'*) continue ;;
@@ -129,6 +194,7 @@ fi
 
 if [ "${kwin_only}" -eq 1 ]; then
   apply_kwin_defaults "${kwin_defaults}"
+  restore_user_input_method
   info "Meo KWin defaults synchronized. They take effect at the next normal login; no compositor restart was requested."
   exit 0
 fi
@@ -157,6 +223,7 @@ fi
 # Plasma only copies recognized keys to kdedefaults; explicit values prevent a
 # later login from reviving stale decoration/effect settings.
 apply_kwin_defaults "${kwin_defaults}"
+restore_user_input_method
 
 # Input frameworks own their candidate-window theming. Apply only to an
 # already running framework, after Look-and-Feel changed KDE color roles.
@@ -202,4 +269,6 @@ if [ "${reset_layout}" -eq 1 ]; then
   info "The packaged layout will be used at the next normal Plasma login; no shell or compositor restart was requested."
 fi
 
+input_method_restore_pending=0
+trap - EXIT
 info "Meo Desktop theme applied."
