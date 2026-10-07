@@ -48,6 +48,8 @@ add_library(meosystemplugin MODULE
     weathercache.h
     desktopwidgetbridge.cpp
     desktopwidgetbridge.h
+    inputmethodcontroller.cpp
+    inputmethodcontroller.h
 )
 set_target_properties(meosystemplugin PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/Meo/System"
@@ -143,6 +145,15 @@ if(BUILD_TESTING)
     target_link_libraries(meo-desktop-widget-bridge-test PRIVATE
         Qt6::Core Qt6::Test KF6::I18n Plasma::Plasma)
     add_test(NAME meo-desktop-widget-bridge COMMAND meo-desktop-widget-bridge-test)
+
+    add_executable(meo-input-method-controller-test
+        tests/inputmethodcontroller-test.cpp
+        inputmethodcontroller.cpp
+        inputmethodcontroller.h
+    )
+    target_include_directories(meo-input-method-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-input-method-controller-test PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
+    add_test(NAME meo-input-method-controller COMMAND meo-input-method-controller-test)
 endif()
 
 add_executable(meo-task-role-smoke task-role-smoke.cpp)
