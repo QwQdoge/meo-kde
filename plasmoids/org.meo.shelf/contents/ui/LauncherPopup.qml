@@ -192,6 +192,26 @@ MeoMotionPopup {
         return closeRequested
     }
 
+    function handleSearchNavigation(event) {
+        if (!searching || !paneLoader.item
+                || typeof paneLoader.item.moveSelection !== "function"
+                || (event.modifiers & (Qt.AltModifier | Qt.MetaModifier)))
+            return false
+        const ctrl = event.modifiers & Qt.ControlModifier
+        if (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))
+            paneLoader.item.moveSelection(1, false)
+        else if (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))
+            paneLoader.item.moveSelection(-1, false)
+        else if (event.key === Qt.Key_PageDown)
+            paneLoader.item.moveSelection(1, true)
+        else if (event.key === Qt.Key_PageUp)
+            paneLoader.item.moveSelection(-1, true)
+        else
+            return false
+        event.accepted = true
+        return true
+    }
+
     function triggerAction(model, row, actionId, actionArgument) {
         if (!model || row < 0 || !actionId || typeof model.trigger !== "function")
             return false
@@ -445,6 +465,9 @@ MeoMotionPopup {
                     if (paneLoader.item && typeof paneLoader.item.focusFirst === "function")
                         paneLoader.item.focusFirst()
                 }
+                Keys.onPressed: function(event) {
+                    launcherPopup.handleSearchNavigation(event)
+                }
             }
 
             RowLayout {
@@ -577,6 +600,17 @@ MeoMotionPopup {
 
         FocusScope {
             id: searchPaneRoot
+
+            function moveSelection(direction, byPage) {
+                if (searchResultList.count <= 0)
+                    return
+                const rowHeight = searchResultList.currentItem
+                        ? searchResultList.currentItem.height : 60 * MeoTheme.globalScale
+                const step = byPage ? Math.max(1, Math.floor(searchResultList.height / rowHeight)) : 1
+                searchResultList.currentIndex = Math.max(0, Math.min(searchResultList.count - 1,
+                        searchResultList.currentIndex + direction * step))
+                searchResultList.positionViewAtIndex(searchResultList.currentIndex, ListView.Contain)
+            }
 
             function focusFirst() {
                 if (searchResultList.count <= 0)
@@ -715,6 +749,8 @@ MeoMotionPopup {
                         }
                     }
                     Keys.onPressed: function(event) {
+                        if (launcherPopup.handleSearchNavigation(event))
+                            return
                         if ((event.key === Qt.Key_Menu || event.key === Qt.Key_F10)
                                 && currentIndex >= 0) {
                             const item = itemAtIndex(currentIndex)
