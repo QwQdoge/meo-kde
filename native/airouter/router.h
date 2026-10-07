@@ -11,11 +11,17 @@ class Router final : public QObject
     Q_OBJECT
 public:
     enum class Effect { Read, Session, Persistent, Irreversible };
+    enum class Verification { OwnerResult, ReadBack };
+    enum class Maturity { Preview, Stable };
+
     struct Capability {
         QString id;
         QString title;
+        QString owner;
         QString impact;
-        Effect effect;
+        Effect effect = Effect::Read;
+        Verification verification = Verification::OwnerResult;
+        Maturity maturity = Maturity::Preview;
         QHash<QString, QMetaType::Type> arguments;
         std::function<QString(const QVariantMap &)> describeTarget;
         std::function<void(const QString &, const QVariantMap &)> dispatch;
@@ -49,8 +55,13 @@ private:
         QDateTime created;
         QDateTime expires;
     };
+
     QVariantMap view(const Request &request) const;
     static QString fingerprint(const QString &id, const QVariantMap &arguments);
+    static QString effectName(Effect effect);
+    static QString verificationName(Verification verification);
+    static QString maturityName(Maturity maturity);
+
     QHash<QString, Capability> m_capabilities;
     QHash<QString, Request> m_requests;
     bool m_irreversibleEnabled;
