@@ -34,6 +34,8 @@ endif()
 add_library(meostyle MODULE
     src/meostyle.cpp
     src/meostyle.h
+    src/meostylecontent.cpp
+    src/meostylecontent.h
     src/meostylegeometry.cpp
     src/meostylehelper.cpp
     src/meostylehelper.h
