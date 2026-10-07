@@ -1,17 +1,17 @@
 diff --git a/src/dolphinui.rc b/src/dolphinui.rc
+index 395436d..586b218 100644
 --- a/src/dolphinui.rc
 +++ b/src/dolphinui.rc
-@@ -103,13 +103,12 @@
-     <ToolBar noMerge="1" name="mainToolBar" >
+@@ -110,11 +110,10 @@
          <text context="@title:menu">Main Toolbar</text>
          <Action name="go_back" />
          <Action name="go_forward" />
 -        <Action name="view_settings" />
          <Action name="url_navigators" />
-+        <Action name="toggle_search" />
-         <Action name="split_view" />
+-        <Action name="split_view" />
 -        <Action name="split_stash" />
--        <Action name="toggle_search" />
+         <Action name="toggle_search" />
++        <Action name="split_view" />
 +        <Action name="view_settings" />
          <Action name="hamburger_menu" />
      </ToolBar>
