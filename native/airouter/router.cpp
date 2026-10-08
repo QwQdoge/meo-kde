@@ -3,6 +3,7 @@
 #include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 #include <QUuid>
 
 Router::Router(bool irreversibleEnabled, QObject *parent)
@@ -25,6 +26,11 @@ bool Router::addCapability(Capability capability)
         }
         capability.owner = capability.id.left(separator);
     }
+
+    if (capability.argumentSchema.isEmpty())
+        capability.argumentSchema = defaultArgumentSchema(capability.arguments);
+    if (!argumentSchemaMatches(capability.argumentSchema, capability.arguments))
+        return false;
 
     m_capabilities.insert(capability.id, std::move(capability));
     return true;
@@ -72,6 +78,85 @@ QString Router::maturityName(Maturity maturity)
         return QStringLiteral("stable");
     }
     return QStringLiteral("unknown");
+}
+
+QString Router::argumentTypeName(QMetaType::Type type)
+{
+    switch (type) {
+    case QMetaType::QString:
+        return QStringLiteral("string");
+    case QMetaType::Int:
+        return QStringLiteral("integer");
+    case QMetaType::Bool:
+        return QStringLiteral("boolean");
+    case QMetaType::Double:
+        return QStringLiteral("number");
+    case QMetaType::QStringList:
+        return QStringLiteral("array");
+    case QMetaType::QVariantMap:
+        return QStringLiteral("object");
+    default:
+        return {};
+    }
+}
+
+QVariantMap Router::defaultArgumentSchema(const QHash<QString, QMetaType::Type> &arguments)
+{
+    QVariantMap properties;
+    QStringList required;
+    required.reserve(arguments.size());
+    QStringList keys = arguments.keys();
+    keys.sort();
+    for (const QString &key : keys) {
+        const QString type = argumentTypeName(arguments.value(key));
+        if (type.isEmpty())
+            return {};
+        QVariantMap property{{QStringLiteral("type"), type}};
+        if (arguments.value(key) == QMetaType::QStringList)
+            property.insert(QStringLiteral("items"), QVariantMap{{QStringLiteral("type"), QStringLiteral("string")}});
+        properties.insert(key, property);
+        required.append(key);
+    }
+    return {
+        {QStringLiteral("type"), QStringLiteral("object")},
+        {QStringLiteral("properties"), properties},
+        {QStringLiteral("required"), required},
+        {QStringLiteral("additionalProperties"), false},
+    };
+}
+
+bool Router::argumentSchemaMatches(const QVariantMap &schema, const QHash<QString, QMetaType::Type> &arguments)
+{
+    if (schema.value(QStringLiteral("type")).toString() != QLatin1String("object")
+        || !schema.contains(QStringLiteral("additionalProperties"))
+        || schema.value(QStringLiteral("additionalProperties")).toBool())
+        return false;
+
+    const QVariantMap properties = schema.value(QStringLiteral("properties")).toMap();
+    if (properties.size() != arguments.size())
+        return false;
+
+    const QStringList required = schema.value(QStringLiteral("required")).toStringList();
+    const QSet<QString> requiredSet(required.cbegin(), required.cend());
+    QSet<QString> argumentSet;
+    for (auto it = arguments.cbegin(); it != arguments.cend(); ++it)
+        argumentSet.insert(it.key());
+    if (requiredSet != argumentSet || required.size() != arguments.size())
+        return false;
+
+    for (auto it = arguments.cbegin(); it != arguments.cend(); ++it) {
+        const QString expectedType = argumentTypeName(it.value());
+        if (expectedType.isEmpty())
+            return false;
+        const QVariantMap property = properties.value(it.key()).toMap();
+        if (property.value(QStringLiteral("type")).toString() != expectedType)
+            return false;
+        if (it.value() == QMetaType::QStringList
+            && property.value(QStringLiteral("items")).toMap().value(QStringLiteral("type")).toString()
+                != QLatin1String("string"))
+            return false;
+    }
+    return true;
 }
 
 QVariantMap Router::view(const Request &request) const
@@ -179,6 +264,7 @@ QVariantList Router::capabilities() const
             {QStringLiteral("verification"), verificationName(capability.verification)},
             {QStringLiteral("maturity"), maturityName(capability.maturity)},
             {QStringLiteral("requiresConfirmation"), capability.effect == Effect::Irreversible},
+            {QStringLiteral("argumentSchema"), capability.argumentSchema},
         };
     }
     return result;
