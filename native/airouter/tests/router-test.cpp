@@ -50,10 +50,30 @@ void RouterTest::capabilityMetadataIsExplicit()
     QCOMPARE(metadata.value(QStringLiteral("maturity")).toString(), QStringLiteral("stable"));
     QCOMPARE(metadata.value(QStringLiteral("requiresConfirmation")).toBool(), false);
 
+    const QVariantMap schema = metadata.value(QStringLiteral("argumentSchema")).toMap();
+    QCOMPARE(schema.value(QStringLiteral("type")).toString(), QStringLiteral("object"));
+    QCOMPARE(schema.value(QStringLiteral("required")).toStringList(), QStringList{QStringLiteral("target")});
+    QCOMPARE(schema.value(QStringLiteral("additionalProperties")).toBool(), false);
+    const QVariantMap properties = schema.value(QStringLiteral("properties")).toMap();
+    QCOMPARE(properties.value(QStringLiteral("target")).toMap().value(QStringLiteral("type")).toString(),
+             QStringLiteral("string"));
+
     Router invalid;
     Router::Capability malformed = capability(Router::Effect::Read, &calls);
     malformed.id = QStringLiteral("invalid");
     QVERIFY(!invalid.addCapability(std::move(malformed)));
+
+    Router invalidSchema;
+    Router::Capability mismatched = capability(Router::Effect::Read, &calls);
+    mismatched.argumentSchema = {
+        {QStringLiteral("type"), QStringLiteral("object")},
+        {QStringLiteral("properties"), QVariantMap{
+            {QStringLiteral("target"), QVariantMap{{QStringLiteral("type"), QStringLiteral("integer")}}},
+        }},
+        {QStringLiteral("required"), QStringList{QStringLiteral("target")}},
+        {QStringLiteral("additionalProperties"), false},
+    };
+    QVERIFY(!invalidSchema.addCapability(std::move(mismatched)));
 }
 
 void RouterTest::ordinaryActionRunsWithoutPrompt()
