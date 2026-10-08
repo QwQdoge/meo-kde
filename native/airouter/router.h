@@ -23,6 +23,7 @@ public:
         Verification verification = Verification::OwnerResult;
         Maturity maturity = Maturity::Preview;
         QHash<QString, QMetaType::Type> arguments;
+        QVariantMap argumentSchema;
         std::function<QString(const QVariantMap &)> describeTarget;
         std::function<void(const QString &, const QVariantMap &)> dispatch;
     };
@@ -61,6 +62,9 @@ private:
     static QString effectName(Effect effect);
     static QString verificationName(Verification verification);
     static QString maturityName(Maturity maturity);
+    static QString argumentTypeName(QMetaType::Type type);
+    static QVariantMap defaultArgumentSchema(const QHash<QString, QMetaType::Type> &arguments);
+    static bool argumentSchemaMatches(const QVariantMap &schema, const QHash<QString, QMetaType::Type> &arguments);
 
     QHash<QString, Capability> m_capabilities;
     QHash<QString, Request> m_requests;
