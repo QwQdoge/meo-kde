@@ -77,7 +77,7 @@ Item {
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: MeoTheme.space16
-            spacing: MeoTheme.space10
+            spacing: MeoTheme.space12
 
             MeoText {
                 Layout.fillWidth: true
@@ -151,7 +151,7 @@ Item {
                             anchors.right: parent.right
                             anchors.top: parent.top
                             anchors.margins: MeoTheme.space12
-                            spacing: MeoTheme.space10
+                            spacing: MeoTheme.space12
 
                             Rectangle {
                                 Layout.alignment: Qt.AlignTop

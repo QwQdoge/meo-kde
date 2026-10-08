@@ -113,8 +113,8 @@ void drawButtonLabel(const MeoStyleContent *style, const QStyleOptionButton *but
                 qMin(contents.height(), qMax(1, button->iconSize.height())))
         : QSize();
     const int textWidth = hasText
-        ? qMin(contents.width(), button->fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic,
-                                                          button->text).width())
+        ? qMin(contents.width(), painter->fontMetrics().size(Qt::TextSingleLine | Qt::TextShowMnemonic,
+                                                          button->text).width() + qRound(Meo::DesignTokens::space8()))
         : 0;
     const int totalWidth = qMin(contents.width(), iconSize.width() + gap + textWidth);
     int x = contents.x() + (contents.width() - totalWidth) / 2;

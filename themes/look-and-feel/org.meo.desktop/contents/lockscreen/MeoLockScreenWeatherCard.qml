@@ -127,7 +127,7 @@ Rectangle {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.topMargin: MeoTheme.space10
+            Layout.topMargin: MeoTheme.space12
             Layout.preferredHeight: forecastLayout.implicitHeight + MeoTheme.space16 * 2
             visible: root.forecastVisible
             radius: MeoTheme.shapeExtraLarge
@@ -137,7 +137,7 @@ Rectangle {
                 id: forecastLayout
                 anchors.fill: parent
                 anchors.margins: MeoTheme.space16
-                spacing: MeoTheme.space10
+                spacing: MeoTheme.space12
 
                 RowLayout {
                     Layout.fillWidth: true

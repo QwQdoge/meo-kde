@@ -64,7 +64,7 @@ Rectangle {
         id: content
         anchors.fill: parent
         anchors.margins: MeoTheme.space24
-        spacing: MeoTheme.space10
+        spacing: MeoTheme.space12
 
         RowLayout {
             Layout.fillWidth: true

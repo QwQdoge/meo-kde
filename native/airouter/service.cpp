@@ -27,6 +27,9 @@ RouterService::RouterService(QObject *parent) : QObject(parent)
         SLOT(onChanged(QString,QString,QVariantMap)));
     connect(&m_accountSignals, &AccountSignalReceiver::changed, this,
             &RouterService::handleAccountResult);
+    // Start asynchronous audio discovery before exposing capabilities. Otherwise
+    // the first volume request creates the context and observes an empty sink.
+    PulseAudioQt::Context::instance();
     auto *expiryTimer = new QTimer(this);
     expiryTimer->setInterval(1000);
     connect(expiryTimer, &QTimer::timeout, &m_router, [this] { m_router.expirePending(); });

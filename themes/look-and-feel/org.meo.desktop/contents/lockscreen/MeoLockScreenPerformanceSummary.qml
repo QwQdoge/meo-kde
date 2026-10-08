@@ -68,7 +68,7 @@ Rectangle {
         ColumnLayout {
             id: resourceContent
             anchors.fill: parent
-            spacing: MeoTheme.space10
+            spacing: MeoTheme.space12
             opacity: root.sessionControlsShown ? 0 : 1
             transform: Translate {
                 id: resourcesTranslate

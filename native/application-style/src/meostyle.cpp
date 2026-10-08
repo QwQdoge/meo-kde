@@ -227,11 +227,27 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
     QSize result = QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
     switch (type) {
     case CT_PushButton:
-    case CT_ToolButton:
+        result.setWidth(qMax(result.width(), contentsSize.width() + 2 * qRound(Meo::DesignTokens::space16()) + qRound(Meo::DesignTokens::space8())));
+        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
+        break;
+    case CT_ToolButton: {
+        int horizontal = 2 * qRound(Meo::DesignTokens::space8());
+        const auto *button = qstyleoption_cast<const QStyleOptionToolButton *>(option);
+        if (button && button->features.testFlag(QStyleOptionToolButton::HasMenu)) {
+            horizontal += qRound(button->features.testFlag(QStyleOptionToolButton::MenuButtonPopup)
+                ? Meo::DesignTokens::space32() : Meo::DesignTokens::iconSizeS());
+        }
+        result.setWidth(qMax(result.width(), contentsSize.width() + horizontal));
+        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
+        break;
+    }
+    case CT_ComboBox:
+        result.setWidth(qMax(result.width(), contentsSize.width()
+            + qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space8()
+                     + Meo::DesignTokens::controlHeight())));
         result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
         break;
     case CT_LineEdit:
-    case CT_ComboBox:
     case CT_SpinBox:
         result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
         break;

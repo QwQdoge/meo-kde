@@ -17,6 +17,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void pushButtonContentUsesMeoInsets();
+    void sizeHintsReserveContentAndMenuInsets();
     void searchFieldGetsWiderContentInset();
     void checkIndicatorMirrorsInRtl();
     void comboArrowAndContentMirrorInRtl();
@@ -35,6 +36,22 @@ void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()
     QCOMPARE(contents.top(), qRound(Meo::DesignTokens::space4()));
     QCOMPARE(contents.right(), option.rect.right() - qRound(Meo::DesignTokens::space16()));
     QCOMPARE(contents.bottom(), option.rect.bottom() - qRound(Meo::DesignTokens::space4()));
+}
+
+void MeoStyleGeometryTest::sizeHintsReserveContentAndMenuInsets()
+{
+    MeoStyle style;
+    const QSize text(100, 20);
+    QStyleOptionButton button;
+    button.rect = QRect(QPoint(), style.sizeFromContents(QStyle::CT_PushButton, &button, text, nullptr));
+    QVERIFY(style.subElementRect(QStyle::SE_PushButtonContents, &button).width() >= text.width());
+    QStyleOptionComboBox combo;
+    combo.rect = QRect(QPoint(), style.sizeFromContents(QStyle::CT_ComboBox, &combo, text, nullptr));
+    QVERIFY(style.subControlRect(QStyle::CC_ComboBox, &combo, QStyle::SC_ComboBoxEditField).width() >= text.width());
+    QStyleOptionToolButton tool;
+    tool.features = QStyleOptionToolButton::HasMenu | QStyleOptionToolButton::MenuButtonPopup;
+    tool.rect = QRect(QPoint(), style.sizeFromContents(QStyle::CT_ToolButton, &tool, text, nullptr));
+    QVERIFY(style.subControlRect(QStyle::CC_ToolButton, &tool, QStyle::SC_ToolButton).width() >= text.width());
 }
 
 void MeoStyleGeometryTest::searchFieldGetsWiderContentInset()
