@@ -95,3 +95,7 @@ install(TARGETS meostyle
 install(TARGETS meo-style-gallery
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
+
+# Explicit real-display acceptance, never run automatically by CTest.
+add_executable(meo-style-live-gallery EXCLUDE_FROM_ALL tests/live-gallery.cpp)
+target_link_libraries(meo-style-live-gallery PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)

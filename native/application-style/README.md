@@ -57,3 +57,14 @@ focused, hovered, and pressed states. Repeat after a dynamic accent change. If
 VCL substitutes its own application style or palette, integration belongs in a
 reversible LibreOffice theme/extension layer rather than in assumptions inside
 this Qt Widgets plugin.
+
+## Opt-in live gallery capture
+
+Build the `meo-style-live-gallery` target explicitly and run it on the current
+Wayland/X11 display with `QT_STYLE_OVERRIDE=Meo`, `QT_PLUGIN_PATH` pointing to
+this build's `qt-plugins`, and an explicit `MEO_CAPTURE_PREFIX` output path.
+The helper uses the production gallery, saves window/menu PNGs and a JSON record
+of the loaded style, display platform and device-pixel ratio, then closes its own
+window. Set `QT_SCALE_FACTOR` to `1`, `1.25` or `1.5` to test one process without
+changing the session's display settings. It never runs under CTest and does not
+prove third-party application interactions or live global theme changes.
