@@ -153,7 +153,11 @@ if(BUILD_TESTING)
     )
     target_include_directories(meo-input-method-controller-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(meo-input-method-controller-test PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
-    add_test(NAME meo-input-method-controller COMMAND meo-input-method-controller-test)
+    find_program(MEO_DBUS_RUN_SESSION dbus-run-session REQUIRED)
+    add_test(NAME meo-input-method-controller
+        COMMAND "${MEO_DBUS_RUN_SESSION}" -- $<TARGET_FILE:meo-input-method-controller-test>)
+    set_tests_properties(meo-input-method-controller PROPERTIES
+        ENVIRONMENT "MEO_INPUT_METHOD_TEST_BUS=1")
 endif()
 
 add_executable(meo-task-role-smoke task-role-smoke.cpp)

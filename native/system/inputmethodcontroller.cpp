@@ -3,7 +3,7 @@
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
-#include <QDBusInterface>
+#include <QDBusMessage>
 #include <QDBusMetaType>
 #include <QDBusPendingCallWatcher>
 #include <QDBusReply>
@@ -91,14 +91,6 @@ void registerDbusTypes()
     Q_UNUSED(registered)
 }
 
-QDBusInterface controllerInterface()
-{
-    return QDBusInterface(QString::fromLatin1(kFcitxService),
-                          QString::fromLatin1(kFcitxControllerPath),
-                          QString::fromLatin1(kFcitxControllerInterface),
-                          QDBusConnection::sessionBus());
-}
-
 QString operationError(const QString &operation, const QString &detail)
 {
     return QObject::tr("%1 failed: %2").arg(operation, detail);
@@ -118,29 +110,21 @@ InputMethodController::InputMethodController(QObject *parent)
     const QDBusConnection bus = QDBusConnection::sessionBus();
     m_serviceWatcher = new QDBusServiceWatcher(QString::fromLatin1(kFcitxService),
                                                 bus,
-                                                QDBusServiceWatcher::WatchForRegistration
-                                                    | QDBusServiceWatcher::WatchForUnregistration,
+                                                QDBusServiceWatcher::WatchForOwnerChange,
                                                 this);
-    connect(m_serviceWatcher, &QDBusServiceWatcher::serviceRegistered,
-            this, [this](const QString &) { refresh(); });
-    connect(m_serviceWatcher, &QDBusServiceWatcher::serviceUnregistered,
-            this, [this](const QString &) {
+    connect(m_serviceWatcher, &QDBusServiceWatcher::serviceOwnerChanged,
+            this, [this](const QString &, const QString &, const QString &newOwner) {
                 ++m_refreshGeneration;
+                ++m_operationGeneration;
                 m_pendingRefreshCalls = 0;
-                setBusy(false);
-                const bool stateWasPopulated = m_available || m_active || m_canRestart
-                    || !m_currentUi.isEmpty();
-                const bool inventoryWasPopulated = !m_groups.isEmpty()
-                    || !m_currentGroup.isEmpty()
-                    || !m_currentInputMethod.isEmpty()
-                    || !m_activeInputMethods.isEmpty()
-                    || !m_availableInputMethods.isEmpty();
+                m_mutationInFlight = false;
+                m_refreshDeferred = false;
                 clearRuntimeState();
-                if (stateWasPopulated) {
-                    Q_EMIT stateChanged();
-                }
-                if (inventoryWasPopulated) {
-                    Q_EMIT inventoryChanged();
+                setBusy(false);
+                Q_EMIT stateChanged();
+                Q_EMIT inventoryChanged();
+                if (!newOwner.isEmpty()) {
+                    refresh();
                 }
             });
 
@@ -204,6 +188,10 @@ QString InputMethodController::lastError() const
 
 void InputMethodController::refresh()
 {
+    if (m_mutationInFlight) {
+        m_refreshDeferred = true;
+        return;
+    }
     const quint64 generation = ++m_refreshGeneration;
     m_pendingRefreshCalls = 0;
 
@@ -221,7 +209,7 @@ void InputMethodController::refresh()
         return;
     }
 
-    const QDBusReply<bool> registered = bus.interface()->isServiceRegistered(
+    const QDBusReply<QString> registered = bus.interface()->serviceOwner(
         QString::fromLatin1(kFcitxService));
     if (!registered.isValid()) {
         clearRuntimeState();
@@ -232,7 +220,7 @@ void InputMethodController::refresh()
         return;
     }
 
-    if (!registered.value()) {
+    if (registered.value().isEmpty()) {
         const bool hadState = m_available || m_active || !m_groups.isEmpty()
             || !m_currentGroup.isEmpty() || !m_currentInputMethod.isEmpty()
             || !m_availableInputMethods.isEmpty() || !m_activeInputMethods.isEmpty();
@@ -246,12 +234,19 @@ void InputMethodController::refresh()
         return;
     }
 
+    m_serviceOwner = registered.value();
     if (!m_available) {
         m_available = true;
         Q_EMIT stateChanged();
     }
     clearError();
     setBusy(true);
+    m_groups.clear();
+    m_currentGroup.clear();
+    m_currentInputMethod.clear();
+    m_activeInputMethods.clear();
+    m_availableInputMethods.clear();
+    Q_EMIT inventoryChanged();
 
     startRefreshCall(QStringLiteral("InputMethodGroups"), {}, generation,
                      &InputMethodController::acceptGroups);
@@ -376,6 +371,7 @@ void InputMethodController::setError(const QString &error)
 
 void InputMethodController::clearRuntimeState()
 {
+    m_serviceOwner.clear();
     m_available = false;
     m_active = false;
     m_canRestart = false;
@@ -415,9 +411,12 @@ void InputMethodController::startRefreshCall(const QString &method,
                                              ReplyHandler handler)
 {
     ++m_pendingRefreshCalls;
-    QDBusInterface controller = controllerInterface();
+    QDBusMessage request = QDBusMessage::createMethodCall(
+        m_serviceOwner, QString::fromLatin1(kFcitxControllerPath),
+        QString::fromLatin1(kFcitxControllerInterface), method);
+    request.setArguments(arguments);
     auto *watcher = new QDBusPendingCallWatcher(
-        controller.asyncCallWithArgumentList(method, arguments), this);
+        QDBusConnection::sessionBus().asyncCall(request, 5000), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this,
             [this, watcher, generation, handler, method](QDBusPendingCallWatcher *) {
                 watcher->deleteLater();
@@ -454,16 +453,32 @@ bool InputMethodController::startMutationCall(const QString &method,
     }
 
     clearError();
+    m_mutationInFlight = true;
+    m_refreshDeferred = false;
+    const quint64 operationGeneration = ++m_operationGeneration;
     setBusy(true);
-    QDBusInterface controller = controllerInterface();
+    QDBusMessage request = QDBusMessage::createMethodCall(
+        m_serviceOwner, QString::fromLatin1(kFcitxControllerPath),
+        QString::fromLatin1(kFcitxControllerInterface), method);
+    request.setArguments(arguments);
     auto *watcher = new QDBusPendingCallWatcher(
-        controller.asyncCallWithArgumentList(method, arguments), this);
+        QDBusConnection::sessionBus().asyncCall(request, 5000), this);
     connect(watcher, &QDBusPendingCallWatcher::finished, this,
-            [this, watcher, operationName](QDBusPendingCallWatcher *) {
+            [this, watcher, operationName, operationGeneration](QDBusPendingCallWatcher *) {
                 watcher->deleteLater();
+                if (operationGeneration != m_operationGeneration) {
+                    return;
+                }
+                m_mutationInFlight = false;
+                const bool refreshDeferred = m_refreshDeferred;
+                m_refreshDeferred = false;
                 setBusy(false);
                 if (watcher->isError()) {
-                    setError(operationError(operationName, watcher->error().message()));
+                    const QString error = operationError(operationName, watcher->error().message());
+                    if (refreshDeferred) {
+                        refresh();
+                    }
+                    setError(error);
                     return;
                 }
                 refresh();
@@ -525,7 +540,7 @@ void InputMethodController::acceptCurrentUi(const QList<QVariant> &arguments)
 
 void InputMethodController::acceptState(const QList<QVariant> &arguments)
 {
-    const bool next = !arguments.isEmpty() && arguments.first().toInt() != 0;
+    const bool next = !arguments.isEmpty() && arguments.first().toInt() == 2;
     if (next == m_active) {
         return;
     }

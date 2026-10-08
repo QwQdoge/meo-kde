@@ -87,6 +87,10 @@ private:
     static bool safeLayout(const QString &value);
 
     QDBusServiceWatcher *m_serviceWatcher = nullptr;
+    QString m_serviceOwner;
+    quint64 m_operationGeneration = 0;
+    bool m_mutationInFlight = false;
+    bool m_refreshDeferred = false;
     quint64 m_refreshGeneration = 0;
     int m_pendingRefreshCalls = 0;
     bool m_available = false;
