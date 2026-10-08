@@ -21,6 +21,12 @@ LayoutName=thumbnail_grid
 [Windows]
 FocusPolicy=ClickToFocus
 
+[Wayland]
+# Fcitx 5 is the Meo-managed default input-method client on Plasma Wayland.
+# KWin owns its launch so native text-input protocols work correctly. This is
+# only an XDG default: a user's kwinrc can override or disable it later.
+InputMethod=/usr/share/applications/org.fcitx.Fcitx5.desktop
+
 [org.kde.kdecoration2]
 library=org.meo.decoration
 theme=Meo Chrome Frame

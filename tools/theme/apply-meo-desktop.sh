@@ -87,7 +87,8 @@ apply_kwin_defaults() {
 
   # defaults/kwin/kwinrc is the sole authority for Meo-owned KWin values.
   # Write explicit user values because plasma-apply-lookandfeel only projects
-  # a subset of custom KWin groups into kdedefaults.
+  # a subset of custom KWin groups into kdedefaults. Input-method lifecycle
+  # choices stay outside appearance application entirely.
   while IFS= read -r line || [ -n "${line}" ]; do
     case "${line}" in
       ''|'#'*|';'*) continue ;;
@@ -101,6 +102,9 @@ apply_kwin_defaults() {
     fi
     key="${line%%=*}"
     value="${line#*=}"
+    if [ "${section}" = Wayland ] && [ "${key}" = InputMethod ]; then
+      continue
+    fi
     run kwriteconfig6 --file "${config_root}/kwinrc" --group "${section}" --key "${key}" "${value}"
   done < "${defaults_file}"
 }
