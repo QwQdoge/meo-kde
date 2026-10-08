@@ -34,6 +34,9 @@ endif()
 add_library(meostyle MODULE
     src/meostyle.cpp
     src/meostyle.h
+    src/meostylecontent.cpp
+    src/meostylecontent.h
+    src/meostylegeometry.cpp
     src/meostylehelper.cpp
     src/meostylehelper.h
     src/meostyleplugin.cpp
@@ -63,6 +66,28 @@ target_compile_definitions(meo-style-smoke PRIVATE
 )
 add_test(NAME meo-style-smoke COMMAND meo-style-smoke)
 set_tests_properties(meo-style-smoke PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(meo-style-geometry-smoke
+    tests/geometry-smoke.cpp
+    src/meostyle.cpp
+    src/meostylegeometry.cpp
+    src/meostylehelper.cpp
+    src/meostylehelper.h
+    src/meostyle.h
+)
+target_include_directories(meo-style-geometry-smoke PRIVATE src)
+target_link_libraries(meo-style-geometry-smoke PRIVATE
+    ${meoui_tokens_target}
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+)
+if(meoui_tokens_include)
+    target_include_directories(meo-style-geometry-smoke PRIVATE "${meoui_tokens_include}")
+endif()
+add_test(NAME meo-style-geometry-smoke COMMAND meo-style-geometry-smoke)
+set_tests_properties(meo-style-geometry-smoke PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 install(TARGETS meostyle
     LIBRARY DESTINATION "${QT6_INSTALL_PLUGINS}/styles"
