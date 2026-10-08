@@ -1,0 +1,64 @@
+name: Lock presentation bridge
+
+on:
+  pull_request:
+    paths:
+      - "lockscreen/overrides/**"
+      - "lockscreen/meo-lockscreen-launch"
+      - "packaging/arch/meo-lockscreen/PKGBUILD"
+      - "tests/authentication/test_session_entry_runtime_bridge.py"
+      - ".github/workflows/lockscreen-presentation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "lockscreen/overrides/**"
+      - "lockscreen/meo-lockscreen-launch"
+      - "packaging/arch/meo-lockscreen/PKGBUILD"
+      - "tests/authentication/test_session_entry_runtime_bridge.py"
+      - ".github/workflows/lockscreen-presentation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lock-presentation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-check:
+    name: QML and privacy contract
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Install focused tooling
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm bash python qt6-declarative qt6-tools
+
+      - name: Check out MeoKDE
+        uses: actions/checkout@v6
+
+      - name: Check launcher syntax
+        run: bash -n lockscreen/meo-lockscreen-launch
+
+      - name: Parse Meo lock QML overrides
+        shell: bash
+        run: |
+          qmlformat_bin="$(command -v qmlformat || true)"
+          if [[ -z "${qmlformat_bin}" && -x /usr/lib/qt6/bin/qmlformat ]]; then
+            qmlformat_bin=/usr/lib/qt6/bin/qmlformat
+          fi
+          if [[ -z "${qmlformat_bin}" || ! -x "${qmlformat_bin}" ]]; then
+            echo "Qt6 qmlformat was not found" >&2
+            exit 1
+          fi
+          while IFS= read -r file; do
+            "${qmlformat_bin}" --ignore-settings "${file}" >/dev/null
+          done < <(find lockscreen/overrides -name '*.qml' -type f | sort)
+
+      - name: Run focused privacy/source contract
+        run: python -m unittest tests.authentication.test_session_entry_runtime_bridge -v
