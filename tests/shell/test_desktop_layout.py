@@ -922,8 +922,15 @@ class DesktopLayoutTests(unittest.TestCase):
         )
         for section in canonical.sections():
             projected = f"kwinrc][{section}"
+            # Input-method lifecycle defaults belong to /etc/xdg/kwinrc,
+            # never to a theme projection which can rewrite user selections.
+            expected = {key: value for key, value in canonical[section].items()
+                        if (section, key) != ("Wayland", "InputMethod")}
+            if not expected:
+                self.assertFalse(look_and_feel.has_section(projected), section)
+                continue
             self.assertTrue(look_and_feel.has_section(projected), section)
-            self.assertEqual(dict(canonical[section]), dict(look_and_feel[projected]))
+            self.assertEqual(expected, dict(look_and_feel[projected]))
 
         apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
             encoding="utf-8"
