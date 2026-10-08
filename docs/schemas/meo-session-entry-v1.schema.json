@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://meoarch.org/schemas/session-entry/v1",
   "title": "Meo session entry configuration",
-  "description": "Validated, presentation-only preferences for one Meo lock screen or login greeter surface.",
+  "description": "Validated, presentation-only preferences for one Meo session-lock or login surface.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -42,7 +42,8 @@
       "if": {
         "properties": {
           "scope": {"const": "login"}
-        }
+        },
+        "required": ["scope"]
       },
       "then": {
         "properties": {
@@ -68,7 +69,7 @@
             "properties": {
               "notificationVisibility": {"const": "hidden"},
               "showAlbumArtwork": {"const": false},
-              "weatherLocation": {"enum": ["hidden", "city"]}
+              "weatherLocation": {"const": "hidden"}
             }
           },
           "layout": {
@@ -101,7 +102,8 @@
         },
         "assetId": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$"
+          "maxLength": 256,
+          "description": "Symbolic asset identifier. It is empty only for system-default; consumers must additionally reject traversal-like segments, URLs, and raw filesystem paths."
         },
         "fillMode": {
           "enum": ["cover", "contain", "stretch", "center"]
@@ -112,7 +114,8 @@
           "if": {
             "properties": {
               "source": {"const": "system-default"}
-            }
+            },
+            "required": ["source"]
           },
           "then": {
             "properties": {
@@ -121,7 +124,10 @@
           },
           "else": {
             "properties": {
-              "assetId": {"minLength": 1}
+              "assetId": {
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$"
+              }
             }
           }
         }
@@ -142,7 +148,7 @@
           "enum": ["dim", "blur", "solid"]
         },
         "wallpaperMode": {
-          "description": "follow-desktop resolves only the wallpaper already supplied by the KScreenLocker output; it never accepts a path or URL.",
+          "description": "follow-desktop resolves only a wallpaper already supplied by the trusted logged-in desktop/session-lock integration; it never accepts a path or URL from this document.",
           "enum": ["follow-desktop", "managed"],
           "default": "follow-desktop"
         },
@@ -170,7 +176,7 @@
           "default": true
         },
         "weatherCity": {
-          "description": "City-granularity user preference consumed only by the separate cache refresher, never by the locker.",
+          "description": "City-granularity preference consumed only by the separate per-user cache refresher, never by the login surface.",
           "type": "string",
           "maxLength": 96,
           "default": ""
@@ -188,10 +194,11 @@
         },
         "showAlbumArtwork": {
           "type": "boolean",
-          "default": true
+          "default": false
         },
         "weatherLocation": {
-          "enum": ["hidden", "city", "precise"]
+          "enum": ["hidden", "city", "precise"],
+          "default": "city"
         }
       }
     },
@@ -201,7 +208,7 @@
       "required": ["outputKey", "wallpaper"],
       "properties": {
         "outputKey": {
-          "description": "Opaque stable KScreen output identity, never a raw EDID or coordinate.",
+          "description": "Opaque stable output identity, never a raw EDID or coordinate.",
           "type": "string",
           "minLength": 1,
           "maxLength": 256
