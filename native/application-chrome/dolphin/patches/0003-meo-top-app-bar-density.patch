@@ -1,0 +1,31 @@
+diff --git a/src/dolphinmainwindow.cpp b/src/dolphinmainwindow.cpp
+--- a/src/dolphinmainwindow.cpp
++++ b/src/dolphinmainwindow.cpp
+@@ -84,6 +84,7 @@
+ #include <QDomDocument>
+ #include <QFileInfo>
+ #include <QLineEdit>
++#include <QLayout>
+ #include <QMenuBar>
+ #include <QPushButton>
+ #include <QSharedPointer>
+@@ -210,7 +211,19 @@ DolphinMainWindow::DolphinMainWindow()
+     setupFileItemActions();
+ 
+     const bool usePhoneUi{KRuntimePlatform::runtimePlatform().contains(QLatin1String("phone"))};
+     setupGUI(Save | Create | ToolBar, usePhoneUi ? QStringLiteral("dolphinuiforphones.rc") : QString() /* load the default dolphinui.rc file */);
++
++    // Keep Dolphin's real KToolBar/action ownership, but make the desktop
++    // toolbar read as Meo application chrome. The semantic role lets MeoStyle
++    // provide generic toolbar treatment while these margins only establish the
++    // page-level density that QStyle cannot safely infer for every application.
++    if (KToolBar *mainToolBar = toolBar()) {
++        mainToolBar->setProperty("meo.role", QStringLiteral("top-app-bar"));
++        mainToolBar->setContentsMargins(8, 4, 8, 4);
++        if (QLayout *toolbarLayout = mainToolBar->layout()) {
++            toolbarLayout->setSpacing(4);
++        }
++    }
+     stateChanged(QStringLiteral("new_file"));
+ 
+     QClipboard *clipboard = QApplication::clipboard();

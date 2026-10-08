@@ -1,0 +1,24 @@
+name: Dolphin chrome patch validation
+
+on:
+  pull_request:
+    paths:
+      - "native/application-chrome/dolphin/**"
+      - "setup/prepare-meo-dolphin-source.sh"
+      - ".github/workflows/dolphin-chrome-patches.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  patch-check:
+    name: Dolphin v26.08.1 patch check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out MeoKDE
+        uses: actions/checkout@v5
+
+      - name: Validate pinned Dolphin patch series
+        run: bash ./setup/prepare-meo-dolphin-source.sh --check-only
