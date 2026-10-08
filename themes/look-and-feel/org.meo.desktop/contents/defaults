@@ -44,9 +44,6 @@ LayoutName=thumbnail_grid
 [kwinrc][Windows]
 FocusPolicy=ClickToFocus
 
-[kwinrc][Wayland]
-InputMethod=/usr/share/applications/org.fcitx.Fcitx5.desktop
-
 [kwinrc][org.kde.kdecoration2]
 library=org.meo.decoration
 theme=Meo Chrome Frame

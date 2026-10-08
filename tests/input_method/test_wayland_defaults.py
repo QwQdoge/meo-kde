@@ -83,6 +83,8 @@ class FcitxWaylandDefaultTests(unittest.TestCase):
                     path = Path(args[args.index("--file") + 1])
                     group = args[args.index("--group") + 1]
                     key = args[args.index("--key") + 1]
+                    if group == "Wayland" and key == "InputMethod":
+                        raise SystemExit("Appearance must never write InputMethod")
                     delete = "--delete" in args
                     value = "" if delete else args[args.index("--key") + 2]
 
@@ -140,10 +142,20 @@ class FcitxWaylandDefaultTests(unittest.TestCase):
         )
         self.assertEqual(parser["Windows"]["FocusPolicy"], "ClickToFocus")
 
+    def test_appearance_apply_preserves_disabled_and_expanded_user_choices(self):
+        for key, value in (("InputMethod", ""), ("InputMethod[$e]", "$HOME/custom.desktop")):
+            with self.subTest(key=key, value=value):
+                parser = self._run_kwin_only_apply(f"[Wayland]\n{key}={value}\n")
+                self.assertEqual(parser["Wayland"][key], value)
+
+    def test_look_and_feel_does_not_project_a_lifecycle_selection(self):
+        source = (ROOT / "themes/look-and-feel/org.meo.desktop/contents/defaults").read_text()
+        self.assertNotIn("[kwinrc][Wayland]", source)
+        self.assertNotIn("InputMethod=", source)
+
     def test_appearance_apply_does_not_pin_system_default_into_user_config(self):
         parser = self._run_kwin_only_apply("")
-        self.assertTrue(parser.has_section("Wayland"))
-        self.assertNotIn("InputMethod", parser["Wayland"])
+        self.assertFalse(parser.has_section("Wayland"))
         self.assertEqual(parser["Windows"]["FocusPolicy"], "ClickToFocus")
 
 
