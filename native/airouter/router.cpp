@@ -12,9 +12,20 @@ Router::Router(bool irreversibleEnabled, QObject *parent)
 
 bool Router::addCapability(Capability capability)
 {
-    if (capability.id.isEmpty() || !capability.dispatch || m_capabilities.contains(capability.id)
-        || (capability.effect == Effect::Irreversible && !capability.describeTarget))
+    if (capability.id.isEmpty() || capability.title.trimmed().isEmpty()
+        || !capability.dispatch || m_capabilities.contains(capability.id)
+        || (capability.effect == Effect::Irreversible && !capability.describeTarget)) {
         return false;
+    }
+
+    if (capability.owner.trimmed().isEmpty()) {
+        const qsizetype separator = capability.id.lastIndexOf(QLatin1Char('.'));
+        if (separator <= 0) {
+            return false;
+        }
+        capability.owner = capability.id.left(separator);
+    }
+
     m_capabilities.insert(capability.id, std::move(capability));
     return true;
 }
@@ -24,6 +35,43 @@ QString Router::fingerprint(const QString &id, const QVariantMap &arguments)
     const QByteArray canonical = QJsonDocument(QJsonObject{{QStringLiteral("capability"), id},
         {QStringLiteral("arguments"), QJsonObject::fromVariantMap(arguments)}}).toJson(QJsonDocument::Compact);
     return QString::fromLatin1(QCryptographicHash::hash(canonical, QCryptographicHash::Sha256).toHex());
+}
+
+QString Router::effectName(Effect effect)
+{
+    switch (effect) {
+    case Effect::Read:
+        return QStringLiteral("read");
+    case Effect::Session:
+        return QStringLiteral("session");
+    case Effect::Persistent:
+        return QStringLiteral("persistent");
+    case Effect::Irreversible:
+        return QStringLiteral("irreversible");
+    }
+    return QStringLiteral("unknown");
+}
+
+QString Router::verificationName(Verification verification)
+{
+    switch (verification) {
+    case Verification::OwnerResult:
+        return QStringLiteral("owner-result");
+    case Verification::ReadBack:
+        return QStringLiteral("read-back");
+    }
+    return QStringLiteral("unknown");
+}
+
+QString Router::maturityName(Maturity maturity)
+{
+    switch (maturity) {
+    case Maturity::Preview:
+        return QStringLiteral("preview");
+    case Maturity::Stable:
+        return QStringLiteral("stable");
+    }
+    return QStringLiteral("unknown");
 }
 
 QVariantMap Router::view(const Request &request) const
@@ -123,8 +171,15 @@ QVariantList Router::capabilities() const
     for (const auto &capability : m_capabilities) {
         if (capability.effect == Effect::Irreversible && !m_irreversibleEnabled)
             continue;
-        result << QVariantMap{{QStringLiteral("id"), capability.id}, {QStringLiteral("title"), capability.title},
-                              {QStringLiteral("requiresConfirmation"), capability.effect == Effect::Irreversible}};
+        result << QVariantMap{
+            {QStringLiteral("id"), capability.id},
+            {QStringLiteral("title"), capability.title},
+            {QStringLiteral("owner"), capability.owner},
+            {QStringLiteral("effect"), effectName(capability.effect)},
+            {QStringLiteral("verification"), verificationName(capability.verification)},
+            {QStringLiteral("maturity"), maturityName(capability.maturity)},
+            {QStringLiteral("requiresConfirmation"), capability.effect == Effect::Irreversible},
+        };
     }
     return result;
 }

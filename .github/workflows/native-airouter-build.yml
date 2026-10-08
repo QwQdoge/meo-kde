@@ -1,0 +1,57 @@
+name: Native AI Router build
+
+on:
+  pull_request:
+    paths:
+      - "native/airouter/**"
+      - "docs/ai-router-contract.md"
+      - ".github/workflows/native-airouter-build.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "native/airouter/**"
+      - ".github/workflows/native-airouter-build.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-airouter-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Arch AI Router build and tests
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm \
+            base-devel cmake ninja extra-cmake-modules \
+            qt6-base kservice kio pulseaudio-qt
+
+      - name: Check out MeoKDE
+        uses: actions/checkout@v6
+
+      - name: Configure
+        run: >-
+          cmake --fresh
+          -S native/airouter
+          -B build/native-airouter
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build/native-airouter --parallel 2
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build/native-airouter --output-on-failure --timeout 60
