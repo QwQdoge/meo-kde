@@ -5,7 +5,65 @@ not implement an input method, invent active-engine state, or replace Plasma's
 virtual-keyboard ownership. This keeps the result compatible with any engine
 that uses the supported framework UI.
 
-## Fcitx 5
+Presentation/theming and runtime management are separate responsibilities.
+The theme helper may style an already selected framework; normal Meo Settings
+management uses the typed `Meo.System/InputMethods` runtime boundary described
+below rather than parsing command output or granting QML shell authority.
+
+## Typed runtime management
+
+`Meo.System/InputMethods` is the native runtime adapter for the supported
+Fcitx 5 session. It talks directly to the user-session Fcitx Controller1 D-Bus
+API (`org.fcitx.Fcitx5`, `/controller`, `org.fcitx.Fcitx.Controller1`). It does
+not invoke `fcitx5`, `fcitx5-remote`, `dbus-send`, a shell, or a package manager.
+
+The adapter exposes only authoritative runtime state returned by Fcitx:
+
+- whether the Fcitx session service is present;
+- activation state and current UI;
+- available input-method groups;
+- current group;
+- current input method;
+- active group members and per-entry keyboard layout;
+- the available input-method inventory and configurability metadata;
+- whether the running Fcitx instance advertises restart support.
+
+The first mutation surface is intentionally narrow:
+
+- switch to an existing authoritative group;
+- switch to an input method already present in the active group;
+- replace the current group's ordered input-method list using only IDs from the
+  current authoritative inventory;
+- reload Fcitx configuration;
+- request restart only when Fcitx reports that restart is supported.
+
+All mutations use typed D-Bus arguments. Input-method IDs, group names and
+layout values are bounded and checked for invalid control characters before a
+request is sent. Group updates reject duplicates, unknown input-method IDs,
+mismatched ID/layout lists and empty groups. The adapter re-reads Fcitx state
+after a successful mutation rather than assuming that the requested state was
+accepted.
+
+The adapter does **not** own:
+
+- installation or removal of Fcitx packages/engines;
+- KWin virtual-keyboard selection;
+- global toolkit environment-variable policy;
+- arbitrary Fcitx configuration URIs;
+- per-engine specialist settings;
+- credentials, package authorization, or Polkit.
+
+Those responsibilities require their owning backend/transaction service. Meo
+Settings may compose them into one user workflow, but it must not bypass the
+ownership boundaries from QML.
+
+If the Fcitx service is absent, the adapter reports unavailable and an empty
+runtime inventory. It must not fabricate a plausible engine list from package
+names or static defaults. Build/offscreen tests prove only the C++/D-Bus
+contract; active-engine mutation and toolkit integration still require a real
+logged-in Wayland session.
+
+## Fcitx 5 presentation
 
 The package provides `MeoInputMethod-Light` and `MeoInputMethod-Dark` Classic
 UI fallback themes plus `/etc/xdg/fcitx5/conf/classicui.conf`. When the helper
@@ -43,9 +101,9 @@ adding a decorative animation.
 
 Only the theme-selection keys are written. Candidate orientation, font, paging,
 accent preference, preedit behaviour, engine list, shortcuts, and per-engine
-settings remain Fcitx defaults or the user's existing choices. The same capsule therefore works with
-horizontal and vertical candidate layouts and with compatible engines such as
-Pinyin, Rime, Mozc, Hangul, and emoji.
+settings remain Fcitx defaults or the user's existing choices. The same capsule
+therefore works with horizontal and vertical candidate layouts and with
+compatible engines such as Pinyin, Rime, Mozc, Hangul, and emoji.
 
 Existing `~/.config/fcitx5/conf/classicui.conf` files take precedence. To opt
 an existing user configuration into the Meo presentation without changing its
@@ -57,11 +115,11 @@ meo-input-method --enable fcitx5
 
 On Plasma Wayland, select **Fcitx 5** under **System Settings → Keyboard →
 Virtual Keyboard**. KWin then owns the process and candidate-popup protocol.
-The helper deliberately does not make that compositor-level choice, start or
-stop Fcitx, or set global `GTK_IM_MODULE` / `QT_IM_MODULE` variables. Keeping
-native Wayland text-input available avoids forcing a toolkit fallback across
-every app; install the normal Fcitx GTK/Qt integration packages only when an
-XWayland or legacy application needs them.
+The presentation helper deliberately does not make that compositor-level
+choice, start or stop Fcitx, or set global `GTK_IM_MODULE` / `QT_IM_MODULE`
+variables. Keeping native Wayland text-input available avoids forcing a
+toolkit fallback across every app; install the normal Fcitx GTK/Qt integration
+packages only when an XWayland or legacy application needs them.
 
 ## IBus
 
