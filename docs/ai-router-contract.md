@@ -30,7 +30,15 @@ The current metadata fields are:
 - `effect` — one of `read`, `session`, `persistent`, or `irreversible`;
 - `verification` — the result contract used by the owning dispatcher (`owner-result` or `read-back`);
 - `maturity` — `preview` or `stable`;
-- `requiresConfirmation` — whether the Router confirmation protocol applies.
+- `requiresConfirmation` — whether the Router confirmation protocol applies;
+- `argumentSchema` — Router-owned JSON-Schema-shaped metadata for the exact typed argument object.
+
+`argumentSchema` is generated from the same `Capability.arguments` table used by
+`SubmitRequest()` type validation unless an owner supplies a richer schema. A
+supplied schema is accepted only when its required keys and JSON types still
+match the authoritative QMetaType argument table. This lets clients expose
+argument names and constraints without copying an allowlist or inventing types,
+while the Router remains the final validator at execution time.
 
 A capability that does not provide an explicit owner derives it conservatively
 from its capability namespace by removing the final action segment. For
