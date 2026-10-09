@@ -50,6 +50,8 @@ add_library(meosystemplugin MODULE
     desktopwidgetbridge.h
     inputmethodcontroller.cpp
     inputmethodcontroller.h
+    inputdevicescontroller.cpp
+    inputdevicescontroller.h
 )
 set_target_properties(meosystemplugin PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/Meo/System"

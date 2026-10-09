@@ -243,6 +243,8 @@ void InputMethodController::refresh()
     setBusy(true);
     m_groups.clear();
     m_currentGroup.clear();
+    m_currentGroupLayout.clear();
+    m_groupInfoReady = false;
     m_currentInputMethod.clear();
     m_activeInputMethods.clear();
     m_availableInputMethods.clear();
@@ -377,6 +379,8 @@ void InputMethodController::clearRuntimeState()
     m_canRestart = false;
     m_groups.clear();
     m_currentGroup.clear();
+    m_currentGroupLayout.clear();
+    m_groupInfoReady = false;
     m_currentInputMethod.clear();
     m_currentUi.clear();
     m_activeInputMethods.clear();
@@ -514,6 +518,8 @@ void InputMethodController::acceptCurrentGroup(const QList<QVariant> &arguments)
         return;
     }
     m_currentGroup = next;
+    m_currentGroupLayout.clear();
+    m_groupInfoReady = false;
     m_activeInputMethods.clear();
     Q_EMIT inventoryChanged();
 }
@@ -565,6 +571,8 @@ void InputMethodController::acceptActiveInputMethods(const QList<QVariant> &argu
         return;
     }
 
+    const QString defaultLayout = arguments.first().toString();
+    if (!safeLayout(defaultLayout)) { setError(tr("Fcitx returned an invalid group layout.")); return; }
     const GroupEntryList entries = qdbus_cast<GroupEntryList>(arguments.at(1));
     QVariantList next;
     next.reserve(entries.size());
@@ -578,10 +586,13 @@ void InputMethodController::acceptActiveInputMethods(const QList<QVariant> &argu
         item.insert(QStringLiteral("current"), entry.inputMethodId == m_currentInputMethod);
         next.push_back(item);
     }
-    if (next == m_activeInputMethods) {
+    const bool wasReady = m_groupInfoReady;
+    m_groupInfoReady = true;
+    if (wasReady && next == m_activeInputMethods && defaultLayout == m_currentGroupLayout) {
         return;
     }
     m_activeInputMethods = next;
+    m_currentGroupLayout = defaultLayout;
     Q_EMIT inventoryChanged();
 }
 
@@ -664,4 +675,21 @@ bool InputMethodController::safeLayout(const QString &value)
         }
     }
     return true;
+}
+
+bool InputMethodController::configureMethods(const QStringList &ids)
+{
+    if (!m_groupInfoReady) { setError(tr("Refresh the current input-method group before editing it.")); return false; }
+    bool hasKeyboard = false; QStringList layouts;
+    for (const QString &id : ids) {
+        if (id.startsWith(QStringLiteral("keyboard-"))) hasKeyboard = true;
+        QString layout;
+        for (const QVariant &entry : m_activeInputMethods) {
+            const auto current = entry.toMap();
+            if (current.value("id").toString() == id) { layout = current.value("layout").toString(); break; }
+        }
+        layouts.append(layout);
+    }
+    if (!hasKeyboard) { setError(tr("Keep at least one keyboard layout in the group.")); return false; }
+    return applyCurrentGroup(ids, layouts, m_currentGroupLayout);
 }

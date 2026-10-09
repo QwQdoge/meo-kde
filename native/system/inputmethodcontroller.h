@@ -18,6 +18,7 @@ class InputMethodController final : public QObject
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(QStringList groups READ groups NOTIFY inventoryChanged)
     Q_PROPERTY(QString currentGroup READ currentGroup NOTIFY inventoryChanged)
+    Q_PROPERTY(QString currentGroupLayout READ currentGroupLayout NOTIFY inventoryChanged)
     Q_PROPERTY(QString currentInputMethod READ currentInputMethod NOTIFY inventoryChanged)
     Q_PROPERTY(QString currentUi READ currentUi NOTIFY stateChanged)
     Q_PROPERTY(bool canRestart READ canRestart NOTIFY stateChanged)
@@ -33,6 +34,8 @@ public:
     bool busy() const;
     QStringList groups() const;
     QString currentGroup() const;
+    QString currentGroupLayout() const { return m_currentGroupLayout; }
+    Q_INVOKABLE bool configureMethods(const QStringList &ids);
     QString currentInputMethod() const;
     QString currentUi() const;
     bool canRestart() const;
@@ -93,12 +96,14 @@ private:
     bool m_refreshDeferred = false;
     quint64 m_refreshGeneration = 0;
     int m_pendingRefreshCalls = 0;
+    bool m_groupInfoReady = false;
     bool m_available = false;
     bool m_active = false;
     bool m_busy = false;
     bool m_canRestart = false;
     QStringList m_groups;
     QString m_currentGroup;
+    QString m_currentGroupLayout;
     QString m_currentInputMethod;
     QString m_currentUi;
     QVariantList m_activeInputMethods;

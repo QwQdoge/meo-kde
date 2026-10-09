@@ -8,6 +8,7 @@
 #include "sessionactionclient.h"
 #include "desktopwidgetbridge.h"
 #include "inputmethodcontroller.h"
+#include "inputdevicescontroller.h"
 
 #include <QQmlEngine>
 #include <QQmlExtensionPlugin>
@@ -88,6 +89,11 @@ QObject *inputMethodsProvider(QQmlEngine *, QJSEngine *)
     return controller;
 }
 
+static QObject *inputDevicesProvider(QQmlEngine *engine, QJSEngine *)
+{
+    return new InputDevicesController(engine);
+}
+
 class MeoSystemPlugin final : public QQmlExtensionPlugin
 {
     Q_OBJECT
@@ -106,6 +112,7 @@ public:
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);
         qmlRegisterSingletonType<SessionActionClient>(uri, 1, 0, "SessionActions", sessionActionProvider);
         qmlRegisterSingletonType<DesktopWidgetBridge>(uri, 1, 0, "DesktopWidgets", desktopWidgetProvider);
+        qmlRegisterSingletonType<InputDevicesController>(uri, 1, 0, "InputDevices", inputDevicesProvider);
         qmlRegisterSingletonType<InputMethodController>(uri, 1, 0, "InputMethods", inputMethodsProvider);
     }
 };
