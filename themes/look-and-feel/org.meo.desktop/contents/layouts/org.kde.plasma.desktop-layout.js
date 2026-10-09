@@ -3,9 +3,8 @@
 // the system menu, compact status controls and paired launcher/search surface.
 var topPanel = new Panel
 topPanel.location = "top"
-// Keep the initial panel aligned with the compact Meo status controls. Plasma
-// adds its own framing around this value, so the former 40 px request produced
-// an unnecessarily tall top bar on a 1x output.
+// Googlebook OS keeps its status surfaces compact at the top edge. Keep Meo's
+// bar equally quiet while preserving Plasma's native app-menu/tray backends.
 topPanel.height = 32
 topPanel.floating = false
 topPanel.hiding = "none"
@@ -45,18 +44,19 @@ timeCenter.writeConfig("showNotifications", true)
 timeCenter.writeConfig("use24HourClock", true)
 timeCenter.reloadConfig()
 
-// Full-width Material shelf with centered controls and KDE-owned tasks.
+// Googlebook OS keeps a compact dock centered at the bottom instead of
+// painting a full-width taskbar. Plasma 6 exposes FitContent directly, so let
+// the native IconTasks backend grow the dock with the running/pinned apps.
 var shelf = new Panel
 shelf.location = "bottom"
-shelf.height = 48
-shelf.floating = false
+shelf.height = 64
+shelf.floating = true
 shelf.hiding = "none"
-shelf.lengthMode = "fill"
+shelf.lengthMode = "fit"
 shelf.alignment = "center"
 shelf.currentConfigGroup = ["MeoShell"]
 shelf.writeConfig("Managed", true)
 shelf.writeConfig("Role", "dock")
-shelf.addWidget("org.kde.plasma.panelspacer")
 var launcher = shelf.addWidget("org.meo.shelf")
 launcher.currentConfigGroup = ["Shortcuts"]
 launcher.writeConfig("global", "Meta")
@@ -66,12 +66,11 @@ tasks.currentConfigGroup = ["General"]
 tasks.writeConfig("fill", false)
 tasks.writeConfig("launchers", "applications:org.meo.settings.desktop,applications:omnistore.desktop,applications:org.kde.dolphin.desktop")
 tasks.reloadConfig()
-shelf.addWidget("org.kde.plasma.panelspacer")
 
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())
 for (var i = 0; i < existingDesktops.length; ++i) {
-    // A compact, desktop-only entry point to the Meo Widget Explorer.  It
+    // A compact, desktop-only entry point to the Meo Widget Explorer. It
     // adds reviewed widgets to this containment but never configures panels,
     // task managers, or the native Dock.
     existingDesktops[i].addWidget("org.meo.widgetexplorer")
