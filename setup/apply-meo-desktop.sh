@@ -30,14 +30,14 @@ else
 fi
 meoui_build_root="${MEOUI_BUILD_ROOT:-${meoui_project_root}/out/build/release}"
 meoui_source="${MEOUI_QML_SOURCE:-${meoui_build_root}/MeoUI}"
-native_build_root="${repo_root}/out/build/native"
+native_build_root="${MEO_KDE_NATIVE_BUILD_ROOT:-${repo_root}/out/build/native}"
 native_cxx="${MEO_KDE_CXX:-}"
 if [ -z "${native_cxx}" ] && command -v clang++ >/dev/null 2>&1 \
   && c++ --version 2>/dev/null | head -1 | grep -q 'GCC) 16\|g++.*16\|GCC 16'; then
   # GCC 16 currently crashes internally while compiling Qt 6.11 headers on
   # this host. Prefer Clang when that compiler combination is detected.
   native_cxx="$(command -v clang++)"
-  native_build_root="${repo_root}/out/build/native-clang"
+  native_build_root="${MEO_KDE_NATIVE_BUILD_ROOT:-${repo_root}/out/build/native-clang}"
 fi
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/meo-desktop"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -181,8 +181,8 @@ prepare_meoui() {
   fi
 
   run cmake -S "${meoui_project_root}" -B "${meoui_build_root}" \
-    -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_BUILD_SHOWCASE=OFF
-  run cmake --build "${meoui_build_root}" --parallel
+    -DCMAKE_BUILD_TYPE="${MEO_BUILD_TYPE:-Release}" -DMEOUI_BUILD_SHOWCASE=OFF
+  run cmake --build "${meoui_build_root}" --parallel "${MEO_BUILD_JOBS:-2}"
 
   if [ "${dry_run}" -eq 0 ] && [ ! -f "${meoui_source}/qmldir" ]; then
     echo "MeoUI build did not produce a loadable QML module: ${meoui_source}" >&2
@@ -236,11 +236,11 @@ fi
 # failed compiler or missing KDE development dependency therefore leaves the
 # desktop exactly as it was.
 if [ -n "${native_cxx}" ]; then
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER="${native_cxx}" -DMEO_BUILD_STANDALONE_DOCK="${dock_build_enabled}"
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE="${MEO_BUILD_TYPE:-Release}" -DCMAKE_CXX_COMPILER="${native_cxx}" -DMEO_BUILD_STANDALONE_DOCK="${dock_build_enabled}" -DMEOUI_SOURCE_DIR="${meoui_project_root}"
 else
-  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEO_BUILD_STANDALONE_DOCK="${dock_build_enabled}"
+  run cmake -S "${repo_root}/native" -B "${native_build_root}" -DCMAKE_BUILD_TYPE="${MEO_BUILD_TYPE:-Release}" -DMEO_BUILD_STANDALONE_DOCK="${dock_build_enabled}" -DMEOUI_SOURCE_DIR="${meoui_project_root}"
 fi
-run cmake --build "${native_build_root}" --parallel
+run cmake --build "${native_build_root}" --parallel "${MEO_BUILD_JOBS:-2}"
 
 run mkdir -p "${backup_root}" "${data_root}/applications" "${data_root}/color-schemes" "${data_root}/plasma/look-and-feel" "${data_root}/plasma/desktoptheme" "${data_root}/plasma/plasmoids" "${data_root}/icons" "${data_root}/wallpapers/MeoArch" "${data_root}/fonts/meo" "${qml_root}/MeoKDE" "${qml_root}/MeoUI" "${config_root}/fontconfig/conf.d" "${config_root}/environment.d" "${config_root}/systemd/user" "${config_root}/autostart" "${user_plugin_root}/styles" "${user_plugin_root}/org.kde.kdecoration3" "${user_plugin_root}/org.kde.kdecoration3.kcm" "${local_bin_root}"
 

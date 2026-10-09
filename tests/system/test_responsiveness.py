@@ -17,10 +17,13 @@ class ResponsivenessContractTests(unittest.TestCase):
             "system76-scheduler", "zram-generator", "dbus-broker-units",
             "power-profiles-daemon", "gamemode",
         ):
-            self.assertIn(f"'{package}'", recipe)
+            if package == "dbus-broker-units":
+                self.assertIn(f"'{package}'", recipe)
+            else:
+                self.assertNotIn(f"'{package}'", recipe)
         self.assertIn("'meoui-qml>=1.0.4beta2'", recipe)
         self.assertIn("pkgver = 0.4.0", srcinfo)
-        self.assertIn("pkgrel = 6", srcinfo)
+        self.assertIn("pkgrel = 12", srcinfo)
         self.assertIn("depends = meoui-qml>=1.0.4beta2", srcinfo)
         self.assertNotIn("'ananicy-cpp'", recipe)
         self.assertIn("disable ananicy-cpp.service", (

@@ -1,168 +1,38 @@
+# Source-checkout convenience recipe. Distribution recipes are owned by meo-repo.
 pkgname=meo-desktop
 pkgver=0.4.0
-pkgrel=7
-pkgdesc="MeoArch KDE Plasma desktop defaults and Meo Qt application style"
+pkgrel=12
+pkgdesc="Meo Desktop independent Plasma session"
 arch=('x86_64')
-url="https://github.com/QwQdoge"
+url='https://github.com/QwQdoge/meo-kde'
 license=('GPL-3.0-or-later' 'GPL-2.0-or-later' 'MIT' 'Apache-2.0' 'OFL-1.1')
-depends=('meoui-qml>=1.0.4beta2' 'meo-settings' 'plasma-desktop' 'plasma-workspace' 'plasma-nm' 'plasma-pa' 'powerdevil'
-         'bluedevil' 'systemsettings' 'dolphin' 'konsole' 'plasma-login-manager' 'breeze'
-         'networkmanager-qt' 'bluez-qt' 'solid' 'pulseaudio-qt' 'meo-icons>=0.3.0-4'
-         'kwin-effect-rounded-corners' 'qt6-base' 'qt6-declarative' 'polkit-qt6' 'kwindowsystem'
-         'kconfig' 'ki18n' 'kirigami' 'libplasma' 'layer-shell-qt' 'system76-scheduler'
-         'fcitx5' 'fcitx5-gtk' 'fcitx5-qt'
-         'zram-generator' 'dbus-broker-units' 'power-profiles-daemon' 'gamemode')
-makedepends=('cmake' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative' 'polkit-qt6'
-             'kwindowsystem' 'kconfig' 'ki18n' 'kirigami' 'libplasma' 'layer-shell-qt')
-provides=('polkit-kde-agent')
-conflicts=('polkit-kde-agent')
-replaces=('polkit-kde-agent')
-optdepends=('omnistore-bin: MeoArch application discovery and package management'
-            'preload-ng: optional learned application prefetching (disabled by default)'
-            'prelockd: optional bounded desktop memory locking (disabled by default)'
-            'fcitx5-configtool: optional upstream graphical Fcitx 5 configuration tool'
-            'ibus: alternative candidate panel bridge; enable with meo-input-method')
+depends=('meoui-qml>=1.0.4beta2' 'meo-icons>=0.4.0' 'plasma-desktop' 'plasma-workspace'
+         'plasma-nm' 'plasma-pa' 'powerdevil' 'bluedevil' 'systemsettings' 'dolphin'
+         'konsole' 'breeze' 'polkit-kde-agent' 'networkmanager-qt' 'bluez-qt'
+         'solid' 'pulseaudio-qt' 'kguiaddons' 'kwindowsystem' 'kconfig' 'kirigami'
+         'libplasma' 'layer-shell-qt' 'kdecoration' 'kcmutils' 'kcolorscheme'
+         'fcitx5' 'fcitx5-gtk' 'fcitx5-qt' 'dbus-broker-units')
+makedepends=('cmake' 'ninja' 'extra-cmake-modules' 'qt6-base' 'qt6-declarative' 'polkit-qt6')
+optdepends=('fcitx5-configtool: upstream input method configuration'
+            'ibus: optional alternative input method'
+            'kwin-effect-rounded-corners: optional window rounding effect')
+options=('!debug')
+provides=('meo-kde-runtime=0.4.0' 'meo-desktop-session=1')
+conflicts=('meo-kde-runtime')
+replaces=('meo-kde-runtime')
 source=()
 sha256sums=()
 
 build() {
   local workspace="${startdir}/../.."
-  cmake -S "${workspace}/native" -B "${srcdir}/native-build" \
-    -DCMAKE_BUILD_TYPE=None \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DMEOUI_SOURCE_DIR="${workspace}/../meo-ui" \
-    -DMEO_BUILD_STANDALONE_DOCK=ON
+  cmake -S "${workspace}/native" -B "${srcdir}/native-build" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+    -DMEOUI_SOURCE_DIR="${MEO_UI_ROOT:-${workspace}/../meo-ui}" \
+    -DMEO_BUILD_STANDALONE_DOCK=OFF
   cmake --build "${srcdir}/native-build" --parallel
 }
 
 package() {
   local workspace="${startdir}/../.."
-  install -d "${pkgdir}/usr/share/plasma/look-and-feel"
-  cp -a "${workspace}/themes/look-and-feel/org.meo.desktop" \
-    "${pkgdir}/usr/share/plasma/look-and-feel/"
-  install -Dm644 "${workspace}/defaults/sessions/meoarch-wayland.desktop" \
-    "${pkgdir}/usr/share/wayland-sessions/meoarch-wayland.desktop"
-  install -d "${pkgdir}/usr/share/plasma/desktoptheme"
-  for desktop_theme in MeoLight MeoDark; do
-    cp -a "${workspace}/themes/desktoptheme/${desktop_theme}" \
-      "${pkgdir}/usr/share/plasma/desktoptheme/"
-  done
-  install -d "${pkgdir}/usr/share/plasma/plasmoids"
-  cp -a "${workspace}/plasmoids/org.meo.systemmenu" \
-    "${workspace}/plasmoids/org.meo.shelf" \
-    "${workspace}/plasmoids/org.meo.topbar" \
-    "${workspace}/plasmoids/org.meo.toptasks" \
-    "${workspace}/plasmoids/org.meo.time" \
-    "${workspace}/plasmoids/org.meo.notifications" \
-    "${workspace}/plasmoids/org.meo.time-notifications" \
-    "${workspace}/plasmoids/org.meo.timecenter" \
-    "${workspace}/plasmoids/org.meo.widgetexplorer" \
-    "${workspace}/plasmoids/org.meo.widget.clock" \
-    "${workspace}/plasmoids/org.meo.widget.media" \
-    "${workspace}/plasmoids/org.meo.widget.performance" \
-    "${pkgdir}/usr/share/plasma/plasmoids/"
-  install -d "${pkgdir}/usr/share/color-schemes"
-  install -m644 "${workspace}"/themes/color-schemes/*.colors \
-    "${pkgdir}/usr/share/color-schemes/"
-  install -Dm644 "${workspace}/assets/wallpapers/installer_background.png" \
-    "${pkgdir}/usr/share/wallpapers/MeoArch/installer_background.png"
-  install -Dm644 "${workspace}/assets/icons/meoarch-logo.svg" \
-    "${pkgdir}/usr/share/pixmaps/meoarch-logo.svg"
-  install -Dm644 "${workspace}/assets/icons/meoarch-logo.svg" \
-    "${pkgdir}/usr/share/icons/hicolor/scalable/apps/meoarch-logo.svg"
-  install -Dm755 "${workspace}/tools/theme/apply-meo-mode.sh" \
-    "${pkgdir}/usr/bin/meo-theme-mode"
-  install -Dm755 "${workspace}/tools/theme/apply-meo-desktop.sh" \
-    "${pkgdir}/usr/bin/meo-desktop-apply"
-  install -Dm644 "${workspace}/defaults/kwin/kwinrc" \
-    "${pkgdir}/usr/share/meo-desktop/defaults/kwinrc"
-  install -Dm755 "${workspace}/tools/shell/apply-meo-panel-layout.sh" \
-    "${pkgdir}/usr/bin/meo-desktop-layout"
-  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
-    "${pkgdir}/usr/share/applications/org.meo.dock.desktop"
-  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
-    "${pkgdir}/etc/xdg/autostart/org.meo.dock.desktop"
-  install -Dm644 "${workspace}/defaults/plasma/meo-shellrc" \
-    "${pkgdir}/etc/xdg/meo-shellrc"
-  # The base image uses Plasma Login Manager.  Legacy SDDM branding is kept
-  # outside this package for an explicit compatibility adapter only.
-  install -Dm644 "${workspace}/defaults/system/os-release" \
-    "${pkgdir}/etc/os-release"
-  install -Dm644 "${workspace}/defaults/kde/kdeglobals" \
-    "${pkgdir}/etc/xdg/kdeglobals"
-  install -Dm644 "${workspace}/defaults/kde/kglobalshortcutsrc" \
-    "${pkgdir}/etc/xdg/kglobalshortcutsrc"
-  install -Dm644 "${workspace}/defaults/kwin/kwinrc" \
-    "${pkgdir}/etc/xdg/kwinrc"
-  install -Dm644 "${workspace}/defaults/plasma/plasmarc" \
-    "${pkgdir}/etc/xdg/plasmarc"
-  install -Dm644 "${workspace}/defaults/plasma/plasma-welcomerc" \
-    "${pkgdir}/etc/xdg/plasma-welcomerc"
-  install -Dm644 "${workspace}/defaults/environment/90-meo-applications.conf" \
-    "${pkgdir}/etc/environment.d/90-meo-applications.conf"
-  install -Dm644 "${workspace}/defaults/responsiveness/zram-generator.conf" \
-    "${pkgdir}/usr/lib/systemd/zram-generator.conf.d/50-meo-desktop.conf"
-  install -Dm644 "${workspace}/defaults/responsiveness/gamemode.ini" \
-    "${pkgdir}/etc/gamemode.ini"
-  install -Dm644 "${workspace}/defaults/responsiveness/cachyos-ananicy.kdl" \
-    "${pkgdir}/etc/system76-scheduler/process-scheduler/meo-cachyos.kdl"
-  install -Dm644 "${workspace}/defaults/responsiveness/preload-ng-meo.toml" \
-    "${pkgdir}/usr/share/meo-desktop/optional/preload-ng.toml"
-  install -Dm644 "${workspace}/defaults/responsiveness/prelockd-meo.conf" \
-    "${pkgdir}/usr/share/meo-desktop/optional/prelockd.conf"
-  install -Dm644 "${workspace}/defaults/systemd/50-meo-responsiveness.preset" \
-    "${pkgdir}/usr/lib/systemd/system-preset/50-meo-responsiveness.preset"
-  install -Dm644 "${workspace}/defaults/input-method/fcitx5/conf/classicui.conf" \
-    "${pkgdir}/etc/xdg/fcitx5/conf/classicui.conf"
-  install -d "${pkgdir}/usr/share/fcitx5/themes"
-  cp -a "${workspace}/themes/input-method/fcitx5/MeoInputMethod-Light" \
-    "${workspace}/themes/input-method/fcitx5/MeoInputMethod-Dark" \
-    "${pkgdir}/usr/share/fcitx5/themes/"
-  install -Dm755 "${workspace}/tools/input-method/meo-input-method.sh" \
-    "${pkgdir}/usr/bin/meo-input-method"
-  install -Dm644 "${workspace}/themes/input-method/ibus/gtk.css.in" \
-    "${pkgdir}/usr/share/meo-desktop/input-method/ibus/gtk.css.in"
-  install -Dm644 "${workspace}/themes/input-method/ibus/index.theme" \
-    "${pkgdir}/usr/share/meo-desktop/input-method/ibus/index.theme"
-
-  install -Dm644 "${workspace}/defaults/systemd/meo-dynamic-colors.path" \
-    "${pkgdir}/usr/lib/systemd/user/meo-dynamic-colors.path"
-  install -Dm644 "${workspace}/defaults/systemd/meo-dynamic-colors.service" \
-    "${pkgdir}/usr/lib/systemd/user/meo-dynamic-colors.service"
-  sed -i 's|%h/.local/bin/|/usr/bin/|g' \
-    "${pkgdir}/usr/lib/systemd/user/meo-dynamic-colors.service"
-  install -d "${pkgdir}/usr/lib/systemd/user/default.target.wants"
-  ln -s ../meo-dynamic-colors.path \
-    "${pkgdir}/usr/lib/systemd/user/default.target.wants/meo-dynamic-colors.path"
-
-  install -d "${pkgdir}/usr/lib/qt6/qml/MeoKDE"
-  cp -a "${workspace}/qml/MeoKDE/." "${pkgdir}/usr/lib/qt6/qml/MeoKDE/"
-  DESTDIR="${pkgdir}" cmake --install "${srcdir}/native-build"
-  # The cache is only useful if the user service is scheduled.  Package-enable
-  # the timer exactly like the existing dynamic-colors user path unit; it runs
-  # in each user's session and never enables anything on the build host.
-  ln -s ../meo-weather-refresh.timer \
-    "${pkgdir}/usr/lib/systemd/user/default.target.wants/meo-weather-refresh.timer"
-  install -d "${pkgdir}/usr/share/fonts/meo"
-  install -m644 "${workspace}"/assets/fonts/*.ttf "${pkgdir}/usr/share/fonts/meo/"
-  install -Dm644 "${workspace}/LICENSE" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 "${workspace}/assets/licenses/GPL-2.0-or-later.txt" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/GPL-2.0-or-later.txt"
-  install -Dm644 "${workspace}/THIRD_PARTY_NOTICES.md" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/THIRD_PARTY_NOTICES.md"
-  install -Dm644 "${workspace}/assets/fonts/OFL-Roboto.txt" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/OFL-Roboto.txt"
-  install -Dm644 "${workspace}/assets/fonts/OFL-Comfortaa.txt" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/OFL-Comfortaa.txt"
-  install -Dm644 "${workspace}/assets/licenses/Material-Symbols-Apache-2.0.txt" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/Material-Symbols-Apache-2.0.txt"
-  install -Dm644 "${workspace}/native/third_party/material-color-utilities/LICENSE" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/Material-Color-Utilities-Apache-2.0.txt"
-  install -Dm644 "${workspace}/assets/licenses/DankMaterialShell-MIT.txt" \
-    "${pkgdir}/usr/share/licenses/${pkgname}/DankMaterialShell-MIT.txt"
-  install -Dm644 "${workspace}/defaults/fonts/50-meo-fonts.conf" \
-    "${pkgdir}/etc/fonts/conf.avail/50-meo-fonts.conf"
-  install -d "${pkgdir}/etc/fonts/conf.d"
-  ln -s ../conf.avail/50-meo-fonts.conf "${pkgdir}/etc/fonts/conf.d/50-meo-fonts.conf"
+  "${workspace}/tools/session/package-meo-desktop" "${workspace}" "${srcdir}/native-build" "${pkgdir}"
 }

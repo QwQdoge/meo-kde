@@ -285,10 +285,11 @@ class InputMethodAssetsTests(unittest.TestCase):
             self.assertNotIn("[ClassicUI]", rendered)
 
     def test_package_and_mode_switch_expose_the_integration(self) -> None:
-        package = (ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        package = (ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8") + (ROOT / "tools/session/deploy-meo-runtime").read_text()
         self.assertIn("defaults/input-method/fcitx5/conf/classicui.conf", package)
-        self.assertIn("themes/input-method/fcitx5/MeoInputMethod-Light", package)
-        self.assertIn("themes/input-method/fcitx5/MeoInputMethod-Dark", package)
+        self.assertIn("themes/input-method/fcitx5/.", package)
+        for theme in ("MeoInputMethod-Light", "MeoInputMethod-Dark"):
+            self.assertTrue((ROOT / "themes/input-method/fcitx5" / theme / "theme.conf").is_file())
         self.assertIn("meo-input-method", package)
         self.assertIn("meo-desktop-apply", package)
         self.assertIn("fcitx5-configtool", package)

@@ -2,12 +2,12 @@
 set -Eeuo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-apply_script="${repo_root}/setup/apply-meo-desktop.sh"
+apply_script="${repo_root}/setup/install-meo-session.sh"
 system_apply_script="${repo_root}/setup/apply-meo-system.sh"
 official_meoui_repo="https://github.com/QwQdoge/MeoUI.git"
 
 full_mode=0
-kde_only=0
+kde_only=1
 auto_yes=0
 dry_run=0
 force_no_color=0
@@ -66,10 +66,10 @@ Usage:
       Interactive guided installation.
 
   ./install.sh --full
-      Recommended complete Meo desktop plus system-wide responsiveness tuning.
+      Install the independent Meo Desktop session.
 
   ./install.sh --full --kde-only
-      Complete Meo KDE experience without system-wide tuning.
+      Install the independent Meo Desktop session (compatibility alias).
 
 Options:
   --full       Accept the recommended complete setup.
@@ -366,7 +366,7 @@ on_error() {
     printf 'System-wide changes can be restored with:\n  %s./setup/reset-meo-system.sh%s\n' "${accent}" "${reset}" >&2
   fi
   if [ "${desktop_started}" -eq 1 ]; then
-    printf 'Desktop changes can be restored with:\n  %s./setup/reset-meo-desktop.sh%s\n' "${accent}" "${reset}" >&2
+    printf 'The previous Meo runtime is retained; KDE configuration was not modified.\n' >&2
   fi
   printf '%sPackages installed by pacman are intentionally not auto-removed.%s\n' "${muted}" "${reset}" >&2
   exit "${exit_code}"
@@ -515,47 +515,23 @@ meoui_branch="$(git_branch "${MEO_UI_ROOT}")"
 [ -n "${meokde_branch}" ] && note "MeoKDE branch: ${meokde_branch}"
 [ -n "${meoui_branch}" ] && note "MeoUI branch: ${meoui_branch}"
 
-apply_now=yes
-reset_layout=yes
+apply_now=no
+reset_layout=no
 update_meoui=no
-
-if [ "${full_mode}" -eq 0 ]; then
-  section "Choose your Meo experience"
-  if prompt_yes_no "Apply Meo theme, components, dynamic colors and native KDE integration now?" yes; then
-    apply_now=yes
-  else
-    apply_now=no
-  fi
-
-  if [ "${apply_now}" = yes ]; then
-    if prompt_yes_no "Rebuild the top bar and Dock to the recommended Meo layout?" yes; then
-      reset_layout=yes
-    else
-      reset_layout=no
-    fi
-  else
-    reset_layout=no
-  fi
-
-  if [ "${meoui_branch}" = main ]; then
-    if prompt_yes_no "Fast-forward the MeoUI main checkout before building?" no; then
-      update_meoui=yes
-    fi
-  elif [ -n "${meoui_branch}" ]; then
-    note "MeoUI update is not offered on branch '${meoui_branch}'; your development checkout is preserved."
-  fi
+if [ "${meoui_branch}" = main ] && [ -z "$(git -C "${MEO_UI_ROOT}" status --porcelain)" ]; then
+  update_meoui=yes
 fi
 
 section "Plan"
 if [ "${apply_now}" = yes ]; then
   ok "Install and apply Meo Desktop"
 else
-  note "Install Meo Desktop files without switching the current theme"
+  note "Install the independent Meo Desktop session; leave KDE configuration untouched"
 fi
 if [ "${reset_layout}" = yes ]; then
   ok "Apply recommended top bar + native Dock layout"
 else
-  note "Preserve the current Plasma panel layout"
+  note "Preserve the current KDE theme, panels, shortcuts and login selection"
 fi
 if [ "${update_meoui}" = yes ]; then
   ok "Fast-forward MeoUI main before build"
@@ -567,8 +543,8 @@ if [ "${apply_system_tuning}" = yes ]; then
 else
   note "Leave system-wide responsiveness configuration untouched"
 fi
-note "Display manager and default login session are never changed."
-note "A timestamped desktop backup is created before Meo replaces user configuration."
+note "Install a separate Meo Desktop session; preserve the display manager and default login selection."
+note "Meo assets and defaults use their own runtime directory; no current KDE configuration is replaced."
 if [ "${apply_system_tuning}" = yes ]; then
   note "System-wide configuration gets a separate root-owned rollback backup."
 fi
@@ -602,10 +578,17 @@ if [ "${dry_run}" -eq 1 ]; then
 fi
 
 section "Installing Meo Desktop"
-note "MeoUI and native MeoKDE components are built before user configuration is changed."
+note "Build and install the private Meo runtime without applying it to KDE."
 printf '\n'
 desktop_started=1
 MEO_UI_ROOT="${MEO_UI_ROOT}" "${apply_script}" "${args[@]}"
+
+section "Installing the Meo Desktop login session"
+if [ "${dry_run}" -eq 1 ]; then
+  printf '  sudo %q %q / %q\n' "${repo_root}/tools/session/install-meo-session" "${repo_root}" "${MEO_SESSION_RUNTIME:-${XDG_DATA_HOME:-${HOME}/.local/share}/meo-desktop/runtime}"
+else
+  sudo "${repo_root}/tools/session/install-meo-session" "${repo_root}" / "${MEO_SESSION_RUNTIME:-${XDG_DATA_HOME:-${HOME}/.local/share}/meo-desktop/runtime}"
+fi
 
 if [ "${apply_system_tuning}" = yes ]; then
   section "Applying system responsiveness"
@@ -632,11 +615,9 @@ if [ "${apply_system_tuning}" = yes ]; then
 fi
 printf '\n'
 say "  ${bold}One final step${reset}"
-say "  Native KWin decoration/plugin and environment changes are discovered on the"
-say "  next normal Plasma login. The installer never forces a logout or reboot."
+say "  Choose Meo Desktop at your next login. Plasma (Wayland) keeps its current configuration."
 printf '\n'
-say "  ${muted}Restore desktop configuration:${reset}"
-say "  ${accent}./setup/reset-meo-desktop.sh${reset}"
+say "  Meo preferences: ~/.config/meo-desktop. Current KDE preferences were not changed."
 if [ "${apply_system_tuning}" = yes ]; then
   say "  ${muted}Restore system-wide responsiveness configuration:${reset}"
   say "  ${accent}./setup/reset-meo-system.sh${reset}"

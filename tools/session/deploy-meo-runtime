@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo_root="${1:?source root required}"
+native_build="${2:?native build required}"
+runtime_target="${3:?private runtime required}"
+case "$runtime_target" in /|""|.) echo "Unsafe runtime destination" >&2; exit 2 ;; esac
+runtime="${runtime_target}.staging-$$"
+meoui_build="${4:-}"
+run() { "$@"; }
+run mkdir -p "$runtime/qml/MeoUI" "$runtime/qml/MeoKDE" "$runtime/share/plasma/plasmoids" "$runtime/share/plasma/look-and-feel" "$runtime/share/plasma/desktoptheme" "$runtime/share/color-schemes" "$runtime/share/icons/hicolor/scalable/apps" "$runtime/share/wallpapers/MeoArch" "$runtime/plugins/styles" "$runtime/plugins/org.kde.kdecoration3" "$runtime/plugins/org.kde.kdecoration3.kcm" "$runtime/bin" "$runtime/lib" "$runtime/session-defaults"
+if [ -n "${meoui_build}" ]; then
+  run cp -a "$meoui_build/MeoUI/." "$runtime/qml/MeoUI/"
+  run cp -a "$meoui_build"/libmeoui.so* "$runtime/lib/"
+fi
+run cp -a "${repo_root}/qml/MeoKDE/." "$runtime/qml/MeoKDE/"
+run cp -a "$native_build/qml/." "$runtime/qml/"
+run cp -a "${repo_root}/plasmoids/." "$runtime/share/plasma/plasmoids/"
+run cp -a "${repo_root}/themes/look-and-feel/org.meo.desktop" "$runtime/share/plasma/look-and-feel/"
+run cp -a "${repo_root}/themes/desktoptheme/." "$runtime/share/plasma/desktoptheme/"
+run cp -a "${repo_root}/themes/color-schemes/." "$runtime/share/color-schemes/"
+run cp -a "${repo_root}/themes/icons/." "$runtime/share/icons/"
+run cp -a "${repo_root}/assets/icons/meoarch-logo.svg" "$runtime/share/icons/hicolor/scalable/apps/"
+run cp -a "${repo_root}/assets/wallpapers/installer_background.png" "$runtime/share/wallpapers/MeoArch/"
+run cp -a "$native_build/qt-plugins/styles/meostyle.so" "$runtime/plugins/styles/"
+run cp -a "$native_build/bin/org.kde.kdecoration3/org.meo.decoration.so" "$runtime/plugins/org.kde.kdecoration3/"
+run cp -a "$native_build/decoration/kcm_meodecoration.so" "$runtime/plugins/org.kde.kdecoration3.kcm/"
+for name in meo-system-monitor meo-weather-refresh meo-session-actiond; do
+  run cp -a "$native_build/system/$name" "$runtime/bin/"
+done
+run cp -a "$native_build/dynamic-color/meo-dynamic-colors" "$runtime/bin/"
+run cp -a "$native_build/airouter/meo-ai-router" "$runtime/bin/"
+run mkdir -p "$runtime/share/dbus-1/services" "$runtime/share/meo-account/clients" "$runtime/share/fonts/meo"
+run cp -a "${repo_root}/native/airouter/org.meo.AIRouter1.service" "$runtime/share/dbus-1/services/"
+run sed -i "s|Exec=/usr/bin/meo-ai-router|Exec=/usr/bin/start-meo-desktop --service meo-ai-router|" "$runtime/share/dbus-1/services/org.meo.AIRouter1.service"
+run cp -a "${repo_root}/native/airouter/org.meo.AIRouter.account-client.json" "$runtime/share/meo-account/clients/org.meo.AIRouter.json"
+run cp -a "${repo_root}/assets/fonts/"*.ttf "$runtime/share/fonts/meo/"
+if [ -d "$native_build/translations/locale" ]; then
+  run cp -a "$native_build/translations/locale" "$runtime/share/"
+fi
+for relative in kde/kdeglobals kde/kglobalshortcutsrc kwin/kwinrc plasma/plasmarc plasma/meo-shellrc plasma/plasma-welcomerc; do
+  run cp -a "${repo_root}/defaults/$relative" "$runtime/session-defaults/"
+done
+run mkdir -p "$runtime/share/fcitx5/themes" "$runtime/share/meo-desktop/input-method/ibus" "$runtime/etc/xdg/fcitx5/conf"
+run cp -a "${repo_root}/themes/input-method/fcitx5/." "$runtime/share/fcitx5/themes/"
+run cp -a "${repo_root}/themes/input-method/ibus/." "$runtime/share/meo-desktop/input-method/ibus/"
+run cp -a "${repo_root}/defaults/input-method/fcitx5/conf/classicui.conf" "$runtime/etc/xdg/fcitx5/conf/"
+run cp -a "${repo_root}/tools/input-method/meo-input-method.sh" "$runtime/bin/meo-input-method"
+run cp -a "${repo_root}/tools/theme/apply-meo-mode.sh" "$runtime/bin/meo-theme-mode"
+run cp -a "${repo_root}/tools/theme/apply-meo-desktop.sh" "$runtime/bin/meo-desktop-apply"
+run cp -a "${repo_root}/tools/shell/apply-meo-panel-layout.sh" "$runtime/bin/meo-desktop-layout"
+run mkdir -p "$runtime/share/meo-desktop/defaults" "$runtime/share/icons/hicolor/scalable/apps"
+run cp -a "${repo_root}/defaults/kwin/kwinrc" "$runtime/share/meo-desktop/defaults/kwinrc"
+run mkdir -p "$runtime/share/applications"
+run cp -a "${repo_root}/data/applications/org.meo.systemmonitor.desktop" "$runtime/share/applications/"
+run mkdir -p "$runtime/etc/xdg/autostart"
+cat > "$runtime/etc/xdg/autostart/org.meo.session-actions.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Meo Session Actions
+Exec=meo-session-actiond
+OnlyShowIn=KDE;
+NoDisplay=true
+EOF
+
+run cp -a "${repo_root}/tools/session/start-meo-session-services" "$runtime/bin/"
+cat > "$runtime/bin/meo-session-colors" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+bin="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+"$bin/meo-dynamic-colors" --follow-meo --apply
+"$bin/meo-input-method" --sync --quiet
+EOF
+run chmod 755 "$runtime/bin/meo-session-colors"
+cat > "$runtime/etc/xdg/autostart/org.meo.session-services.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Meo Session Services
+Exec=start-meo-session-services
+OnlyShowIn=KDE;
+NoDisplay=true
+EOF
+
+# Font discovery is scoped to this session through FONTCONFIG_FILE.
+run mkdir -p "$runtime/etc/fonts"
+cat > "$runtime/etc/fonts/fonts.conf" <<'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <include>/etc/fonts/fonts.conf</include>
+  <dir prefix="relative">../../share/fonts</dir>
+</fontconfig>
+EOF
+
+# Replace directory names instead of truncating libraries loaded by a session.
+# Keep the previous runtime for recovery and existing mapped library pages.
+if [ -e "$runtime_target" ] || [ -L "$runtime_target" ]; then
+  mv "$runtime_target" "${runtime_target}.previous-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+fi
+mv "$runtime" "$runtime_target"

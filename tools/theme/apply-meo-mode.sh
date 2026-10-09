@@ -31,17 +31,19 @@ if [ -z "${dynamic_color_helper}" ] && command -v meo-dynamic-colors >/dev/null 
   dynamic_color_helper="$(command -v meo-dynamic-colors)"
 fi
 
-theme_available() {
-  [ -d "${data_root}/plasma/desktoptheme/${desktop_theme}" ] || [ -d "/usr/share/plasma/desktoptheme/${desktop_theme}" ]
+resource_available() {
+  local relative="$1" directory
+  local -a directories
+  IFS=: read -r -a directories <<< "${data_root}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+  for directory in "${directories[@]}"; do
+    [ -e "${directory}/${relative}" ] && return 0
+  done
+  return 1
 }
 
-scheme_available() {
-  [ -f "${data_root}/color-schemes/${color_scheme}.colors" ] || [ -f "/usr/share/color-schemes/${color_scheme}.colors" ]
-}
-
-icon_theme_available() {
-  [ -f "${data_root}/icons/${icon_theme}/index.theme" ] || [ -f "/usr/share/icons/${icon_theme}/index.theme" ]
-}
+theme_available() { resource_available "plasma/desktoptheme/${desktop_theme}"; }
+scheme_available() { resource_available "color-schemes/${color_scheme}.colors"; }
+icon_theme_available() { resource_available "icons/${icon_theme}/index.theme"; }
 
 read_ini_value() {
   local file="$1" group="$2" key="$3"

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source_root="${1:?MeoKDE source required}"
+native_build="${2:?native build required}"
+target_root="${3:?package root required}"
+case "$target_root" in /|""|.) echo "Unsafe package root" >&2; exit 2 ;; esac
+"${source_root}/tools/session/deploy-meo-runtime" "${source_root}" "${native_build}" \
+  "${target_root}/usr/share/meo-desktop/runtime"
+"${source_root}/tools/session/install-meo-session" "${source_root}" "${target_root}"
+# Public application imports remain usable in ordinary KDE when this package
+# replaces meo-kde-runtime. These modules are passive and install no defaults.
+install -d "${target_root}/usr/lib/qt6/qml/Meo/System" "${target_root}/usr/lib/qt6/qml/MeoKDE"
+cp -a "${native_build}/qml/Meo/System/." "${target_root}/usr/lib/qt6/qml/Meo/System/"
+cp -a "${source_root}/qml/MeoKDE/." "${target_root}/usr/lib/qt6/qml/MeoKDE/"
+if [ -d "${native_build}/translations/locale" ]; then
+  install -d "${target_root}/usr/share/locale"
+  cp -a "${native_build}/translations/locale/." "${target_root}/usr/share/locale/"
+fi
+install -Dm644 "${source_root}/data/applications/org.meo.systemmonitor.desktop" "${target_root}/usr/share/applications/org.meo.systemmonitor.desktop"
+# Namespaced helpers are passive; no KDE unit or config is replaced.
+install -d "${target_root}/usr/bin" "${target_root}/usr/share/dbus-1/services"
+for name in meo-system-monitor meo-session-actiond meo-weather-refresh; do
+  install -m755 "${native_build}/system/${name}" "${target_root}/usr/bin/${name}"
+done
+install -Dm755 "${native_build}/dynamic-color/meo-dynamic-colors" "${target_root}/usr/bin/meo-dynamic-colors"
+install -Dm755 "${source_root}/tools/input-method/meo-input-method.sh" "${target_root}/usr/bin/meo-input-method"
+install -Dm644 "${source_root}/native/system/org.meo.SessionAction1.service" "${target_root}/usr/share/dbus-1/services/org.meo.SessionAction1.service"
+# Branding and OS policy templates are consumed only by the OS installer.
+install -Dm644 "${source_root}/defaults/system/os-release" "${target_root}/usr/share/meo-desktop/os-release"
+install -d "${target_root}/usr/share/meo-desktop/os-defaults"
+cp -a "${source_root}/defaults/responsiveness" "${source_root}/defaults/systemd" \
+  "${target_root}/usr/share/meo-desktop/os-defaults/"
+install -Dm644 "${source_root}/LICENSE" "${target_root}/usr/share/licenses/meo-desktop/LICENSE"
+install -Dm644 "${source_root}/THIRD_PARTY_NOTICES.md" "${target_root}/usr/share/licenses/meo-desktop/THIRD_PARTY_NOTICES.md"
+for notice in assets/licenses/GPL-2.0-or-later.txt assets/fonts/OFL-Roboto.txt assets/fonts/OFL-Comfortaa.txt assets/licenses/Material-Symbols-Apache-2.0.txt assets/licenses/DankMaterialShell-MIT.txt; do
+  install -Dm644 "${source_root}/${notice}" "${target_root}/usr/share/licenses/meo-desktop/${notice##*/}"
+done
+install -Dm644 "${source_root}/native/third_party/material-color-utilities/LICENSE" "${target_root}/usr/share/licenses/meo-desktop/Material-Color-Utilities-Apache-2.0.txt"

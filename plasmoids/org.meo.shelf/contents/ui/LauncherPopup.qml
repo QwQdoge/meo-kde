@@ -96,19 +96,20 @@ MeoMotionPopup {
                                                       : 664 * MeoTheme.globalScale
     readonly property bool compactLayout: width < 620 * MeoTheme.globalScale
 
-    // This plasmoid lives in the bottom Shelf, so popup coordinates are local
-    // to that bottom-edge surface. Convert the desired screen-space positions
-    // back into that local coordinate system.
+    // A Popup.Window may extend beyond a panel. The generic MeoUI viewport
+    // clamp is for application windows; here the screen is the viewport.
     readonly property real topPlacementMargin: 96 * MeoTheme.globalScale
-    readonly property real centeredPlacementY: parent
-                                               ? parent.height - (Screen.height + height) / 2
-                                               : -height - ShellMetrics.popupGap
-    readonly property real topPlacementY: parent
-                                          ? parent.height - Screen.height + topPlacementMargin
-                                          : -height - ShellMetrics.popupGap
+    function clampToViewport() {
+        if (!parent)
+            return
+        const bounds = shellApplet ? shellApplet.screenGeometry
+                                   : Qt.rect(0, 0, Screen.width, Screen.height)
+        const origin = parent.mapToGlobal(0, 0)
+        x = bounds.x + (bounds.width - width) / 2 - origin.x
+        y = bounds.y + (placementMode === "top" ? topPlacementMargin
+                                                : (bounds.height - height) / 2) - origin.y
+    }
 
-    y: placementMode === "top" ? topPlacementY : centeredPlacementY
-    x: (parent.width - width) / 2
     width: Math.min(configuredWidth,
                     Screen.width - 24 * MeoTheme.globalScale)
     height: Math.min(desiredLauncherHeight, availableLauncherHeight)
@@ -413,6 +414,7 @@ MeoMotionPopup {
     }
 
     onOpened: {
+        launcherPopup.clampToViewport()
         searchField.forceSearchFocus()
     }
 

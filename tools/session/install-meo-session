@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source_root="${1:?MeoKDE source required}"
+target_root="${2:-/}"
+runtime_source="${3:-}"
+if [ -n "$runtime_source" ]; then
+  [ -d "$runtime_source/share" ] && [ -d "$runtime_source/qml/MeoUI" ] || { echo "Incomplete Meo runtime" >&2; exit 1; }
+  runtime_target="${target_root%/}/usr/share/meo-desktop/runtime"
+  runtime_stage="${runtime_target}.staging-$$"
+  install -d "$runtime_stage"
+  cp -a "$runtime_source/." "$runtime_stage/"
+  chown -hR 0:0 "$runtime_stage"
+  if [ -e "$runtime_target" ]; then
+    mv "$runtime_target" "${runtime_target}.previous-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  fi
+  mv "$runtime_stage" "$runtime_target"
+fi
+install -Dm755 "${source_root}/tools/session/start-meo-desktop" "${target_root%/}/usr/bin/start-meo-desktop"
+install -Dm644 "${source_root}/defaults/sessions/meoarch-wayland.desktop" "${target_root%/}/usr/share/wayland-sessions/meoarch-wayland.desktop"
+for relative in kde/kdeglobals kde/kglobalshortcutsrc kwin/kwinrc plasma/plasmarc plasma/meo-shellrc plasma/plasma-welcomerc; do
+  install -Dm644 "${source_root}/defaults/${relative}" "${target_root%/}/usr/share/meo-desktop/runtime/session-defaults/${relative##*/}"
+done

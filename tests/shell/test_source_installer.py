@@ -51,7 +51,7 @@ class GuidedInstallerContractTests(unittest.TestCase):
         self.assertIn("--kde-only", source)
         self.assertIn("sudo pacman -Syu --needed", source)
         self.assertIn("MEO_UI_ROOT", source)
-        self.assertIn("setup/reset-meo-desktop.sh", source)
+        self.assertIn("setup/install-meo-session.sh", source)
         self.assertIn("setup/reset-meo-system.sh", source)
         self.assertTrue(os.access(SYSTEM_APPLY, os.X_OK))
         self.assertTrue(os.access(SYSTEM_RESET, os.X_OK))
@@ -73,10 +73,13 @@ class GuidedInstallerContractTests(unittest.TestCase):
         apply_source = APPLY.read_text()
         reset_source = RESET.read_text()
         package_source = PKGBUILD.read_text()
+        self.assertIn("tools/session/package-meo-desktop", package_source)
+        self.assertIn("tools/session/deploy-meo-runtime", (ROOT / "tools/session/package-meo-desktop").read_text())
+        self.assertIn('"${repo_root}/plasmoids/."', (ROOT / "tools/session/deploy-meo-runtime").read_text())
 
         for plugin_id in sorted(PACKAGED_USER_APPLETS):
             with self.subTest(plugin_id=plugin_id):
-                self.assertIn(plugin_id, package_source)
+                self.assertTrue((ROOT / "plasmoids" / plugin_id / "metadata.json").is_file())
                 self.assertIn(plugin_id, apply_source)
                 self.assertIn(plugin_id, reset_source)
 

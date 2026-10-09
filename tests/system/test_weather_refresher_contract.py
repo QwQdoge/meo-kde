@@ -31,8 +31,11 @@ class WeatherRefresherContractTests(unittest.TestCase):
         self.assertIn("UMask=0077", SERVICE)
         self.assertIn("OnUnitActiveSec=30m", TIMER)
         self.assertIn("RandomizedDelaySec=5m", TIMER)
-        self.assertIn("meo-weather-refresh.timer", PKGBUILD)
-        self.assertIn("default.target.wants", PKGBUILD)
+        session = (REPO_ROOT / "tools/session/start-meo-session-services").read_text()
+        self.assertIn("--on-unit-active=30m", session)
+        self.assertIn("--property=UMask=0077", session)
+        self.assertIn("PartOf=graphical-session.target", session)
+        self.assertNotIn("default.target.wants", PKGBUILD)
 
 
 if __name__ == "__main__":

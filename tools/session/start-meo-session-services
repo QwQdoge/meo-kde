@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Session-local units: never enable a default.target watcher for normal KDE.
+set -euo pipefail
+[ "${MEO_DESKTOP_SESSION:-0}" = 1 ] || exit 0
+runtime="${MEO_SESSION_RUNTIME:?Meo session runtime required}"
+config="${XDG_CONFIG_HOME:?Meo session config required}"
+environment=()
+for name in XDG_CONFIG_HOME XDG_DATA_HOME XDG_CACHE_HOME XDG_STATE_HOME XDG_DATA_DIRS XDG_CONFIG_DIRS PATH LD_LIBRARY_PATH; do
+  environment+=("--setenv=${name}=${!name-}")
+done
+# Units are collected when the graphical session stops; each login recreates
+# them with that session's paths, including custom XDG homes.
+systemd-run --user --collect --unit=meo-desktop-colors \
+  --property=PartOf=graphical-session.target \
+  --path-property=PartOf=graphical-session.target \
+  --path-property="PathChanged=${config}/plasma-org.kde.plasma.desktop-appletsrc" \
+  --path-property="PathChanged=${config}/kdeglobals" \
+  --path-property="PathChanged=${config}/meo-dynamic-colorsrc" \
+  "${environment[@]}" "$runtime/bin/meo-session-colors"
+systemd-run --user --collect --unit=meo-desktop-weather \
+  --property=PartOf=graphical-session.target \
+  --property=UMask=0077 \
+  --on-active=2m --on-unit-active=30m \
+  --timer-property=RandomizedDelaySec=5m \
+  --timer-property=PartOf=graphical-session.target \
+  "${environment[@]}" "$runtime/bin/meo-weather-refresh"
+"$runtime/bin/meo-session-colors"

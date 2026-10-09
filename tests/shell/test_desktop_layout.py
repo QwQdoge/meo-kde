@@ -173,10 +173,11 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("interactionMotion.resolvedOffsetY", compact)
 
     def test_active_application_applet_is_installed_by_all_supported_paths(self):
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8") + (REPO_ROOT / "tools/session/package-meo-desktop").read_text() + (REPO_ROOT / "tools/session/deploy-meo-runtime").read_text()
         installer = INSTALLER.read_text(encoding="utf-8")
 
-        self.assertIn('plasmoids/org.meo.toptasks', package)
+        self.assertIn('plasmoids/.', package)
+        self.assertTrue((REPO_ROOT / 'plasmoids/org.meo.toptasks/metadata.json').is_file())
         self.assertIn('plasmoids/org.meo.toptasks/metadata.json', installer)
         self.assertIn(
             "for meo_panel_applet in org.meo.systemmenu org.meo.shelf org.meo.topbar org.meo.toptasks "
@@ -247,12 +248,12 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn("A 16 16", source)
 
     def test_launcher_identity_is_installed_for_package_and_source_paths(self):
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8") + (REPO_ROOT / "tools/session/package-meo-desktop").read_text() + (REPO_ROOT / "tools/session/deploy-meo-runtime").read_text()
         setup = (REPO_ROOT / "setup/apply-meo-desktop.sh").read_text(encoding="utf-8")
         reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
 
         self.assertIn('assets/icons/meoarch-logo.svg', package)
-        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', package)
+        self.assertIn('share/icons/hicolor/scalable/apps/', package)
         self.assertIn('assets/icons/meoarch-logo.svg', setup)
         self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', setup)
         self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', reset)
@@ -277,14 +278,14 @@ class DesktopLayoutTests(unittest.TestCase):
 
     def test_standalone_dock_is_explicit_and_does_not_duplicate_native_dock(self):
         native = (REPO_ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8") + (REPO_ROOT / "tools/session/package-meo-desktop").read_text() + (REPO_ROOT / "tools/session/deploy-meo-runtime").read_text()
         installer = INSTALLER.read_text(encoding="utf-8")
         helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
 
         self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the optional independent Layer Shell Dock" OFF', native)
         self.assertIn("if(MEO_BUILD_STANDALONE_DOCK)", native)
-        self.assertIn('MEO_BUILD_STANDALONE_DOCK=ON', package)
-        self.assertIn('data/autostart/org.meo.dock.desktop', package)
+        self.assertIn('MEO_BUILD_STANDALONE_DOCK=OFF', package)
+        self.assertNotIn('data/autostart/org.meo.dock.desktop', package)
         self.assertIn('"${requested_dock}" = standalone', installer)
         self.assertIn('dock_build_enabled=ON', installer)
         self.assertIn('native_build_root}/dock/meo-dock', installer)
@@ -722,15 +723,15 @@ class DesktopLayoutTests(unittest.TestCase):
 
         installer = INSTALLER.read_text(encoding="utf-8")
         reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8") + (REPO_ROOT / "tools/session/package-meo-desktop").read_text() + (REPO_ROOT / "tools/session/deploy-meo-runtime").read_text()
         apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
             encoding="utf-8"
         )
         self.assertIn('qt-plugins/styles/meostyle.so', installer)
         self.assertIn('styles/meostyle.so', reset)
         self.assertIn('MEO_DYNAMIC_COLORS_HELPER', installer)
-        self.assertIn('meo-dynamic-colors.path', package)
-        self.assertIn('default.target.wants/meo-dynamic-colors.path', package)
+        self.assertIn('defaults/systemd', package)
+        self.assertNotIn('default.target.wants/meo-dynamic-colors.path', package)
         self.assertIn('enable --now meo-dynamic-colors.path', apply_helper)
 
     def test_reset_reloads_restored_input_method_state(self):
@@ -808,7 +809,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('org.kde.plasma.systemtray', source)
         self.assertIn('org.kde.plasma.kickoff', source)
         self.assertIn('kwin4_effect_shapecorners.so', source)
-        self.assertIn("'kwin-effect-rounded-corners'", package)
+        self.assertIn("'kwin-effect-rounded-corners: optional window rounding effect'", package)
         self.assertNotIn('kwin-effect-rounded-corners-git', source)
         self.assertNotIn('paru ', source)
         self.assertNotIn('yay ', source)
@@ -903,14 +904,14 @@ class DesktopLayoutTests(unittest.TestCase):
         apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
             encoding="utf-8"
         )
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
+        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8") + (REPO_ROOT / "tools/session/package-meo-desktop").read_text() + (REPO_ROOT / "tools/session/deploy-meo-runtime").read_text()
         workspace_sync = (REPO_ROOT / "scripts/sync-to-workspace.sh").read_text(
             encoding="utf-8"
         )
         self.assertIn('apply_kwin_defaults "${kwin_defaults}"', apply_helper)
         self.assertIn("--kwin-only", apply_helper)
         self.assertIn('/usr/share/meo-desktop/defaults/kwinrc', apply_helper)
-        self.assertIn('usr/share/meo-desktop/defaults/kwinrc', package)
+        self.assertIn('share/meo-desktop/defaults/kwinrc', package)
         self.assertIn("scripts/sync-installer-to-airootfs.sh", workspace_sync)
         self.assertIn('exec "${workspace_sync}"', workspace_sync)
 

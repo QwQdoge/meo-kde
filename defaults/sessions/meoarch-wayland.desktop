@@ -2,6 +2,6 @@
 Type=Application
 Name=Meo Desktop
 Comment=MeoArch desktop powered by KDE Plasma 6
-Exec=/usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland
-TryExec=/usr/bin/startplasma-wayland
+Exec=/usr/bin/start-meo-desktop
+TryExec=/usr/bin/start-meo-desktop
 X-KDE-PluginInfo-Version=6

@@ -37,7 +37,8 @@ class MeoWidgetExplorerTests(unittest.TestCase):
             metadata = json.loads((APPLETS / package_id / "metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["KPlugin"]["Id"], package_id)
             self.assertEqual(metadata["KPlugin"]["FormFactors"], ["desktop"])
-            self.assertIn(f"plasmoids/{package_id}", package_source)
+            self.assertIn("tools/session/package-meo-desktop", package_source)
+            self.assertIn('"${repo_root}/plasmoids/."', (REPO_ROOT / "tools/session/deploy-meo-runtime").read_text())
 
     def test_explorer_uses_two_real_hosts_without_panel_or_dock_management(self):
         explorer = (APPLETS / "org.meo.widgetexplorer/contents/ui/main.qml").read_text(encoding="utf-8")
@@ -90,7 +91,7 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("MeoWidget.LockScreen", media)
         self.assertIn("supportedSurfaces: [MeoWidget.Desktop]", performance)
         self.assertNotIn("MeoWidget.LockScreen", performance)
-        self.assertIn('existingDesktops[i].addWidget("org.meo.widgetexplorer")', LAYOUT.read_text(encoding="utf-8"))
+        self.assertNotIn('existingDesktops[i].addWidget("org.meo.widgetexplorer")', LAYOUT.read_text(encoding="utf-8"))
 
     def test_performance_manager_is_shared_and_reachable(self):
         qmldir = (MEO_KDE_QML / "qmldir").read_text(encoding="utf-8")

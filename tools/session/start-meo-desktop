@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# A separate desktop profile on the system's updated Plasma/KWin runtime.
+export MEO_SESSION_BASE_CONFIG="${MEO_SESSION_BASE_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}}"
+export MEO_SESSION_BASE_DATA="${MEO_SESSION_BASE_DATA:-${XDG_DATA_HOME:-${HOME}/.local/share}}"
+export MEO_SESSION_BASE_CACHE="${MEO_SESSION_BASE_CACHE:-${XDG_CACHE_HOME:-${HOME}/.cache}}"
+export MEO_SESSION_BASE_STATE="${MEO_SESSION_BASE_STATE:-${XDG_STATE_HOME:-${HOME}/.local/state}}"
+base_config="$MEO_SESSION_BASE_CONFIG"
+base_data="$MEO_SESSION_BASE_DATA"
+private_runtime="${MEO_SESSION_RUNTIME:-${base_data}/meo-desktop/runtime}"
+if [ ! -d "${private_runtime}/share" ] && [ -z "${MEO_SESSION_RUNTIME:-}" ]; then
+  private_runtime=/usr/share/meo-desktop/runtime
+fi
+export XDG_CONFIG_HOME="${MEO_SESSION_CONFIG_HOME:-${base_config}/meo-desktop}"
+export XDG_CACHE_HOME="${MEO_SESSION_BASE_CACHE}/meo-desktop"
+export XDG_STATE_HOME="${MEO_SESSION_BASE_STATE}/meo-desktop"
+export XDG_DATA_HOME="${MEO_SESSION_DATA_HOME:-${base_data}/meo-desktop/data}"
+export XDG_DATA_DIRS="${private_runtime}/share:${base_data}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export XDG_CONFIG_DIRS="${private_runtime}/etc/xdg:${XDG_CONFIG_DIRS:-/etc/xdg}"
+defaults="${MEO_SESSION_DEFAULTS:-${private_runtime}/session-defaults}"
+mkdir -p "${XDG_CONFIG_HOME}" "${XDG_DATA_HOME}"
+for name in kdeglobals kwinrc plasmarc kglobalshortcutsrc meo-shellrc plasma-welcomerc; do
+  if [ ! -e "${XDG_CONFIG_HOME}/${name}" ] && [ -f "${defaults}/${name}" ]; then
+    cp -n "${defaults}/${name}" "${XDG_CONFIG_HOME}/${name}"
+  fi
+done
+if [ -f "${private_runtime}/share/wallpapers/MeoArch/installer_background.png" ]; then
+  mkdir -p "${XDG_DATA_HOME}/wallpapers/MeoArch"
+  cp -n "${private_runtime}/share/wallpapers/MeoArch/installer_background.png" "${XDG_DATA_HOME}/wallpapers/MeoArch/installer_background.png" || true
+fi
+export MEO_SESSION_RUNTIME="${private_runtime}"
+export MEO_DESKTOP_SESSION=1
+export XDG_CURRENT_DESKTOP=KDE
+export QT_QUICK_CONTROLS_STYLE=org.kde.desktop
+export QT_STYLE_OVERRIDE=Meo
+export QML_IMPORT_PATH="${private_runtime}/qml:/usr/lib/qt6/qml"
+export QML2_IMPORT_PATH="${QML_IMPORT_PATH}"
+export QT_PLUGIN_PATH="${private_runtime}/plugins:/usr/lib/qt6/plugins"
+export LD_LIBRARY_PATH="${private_runtime}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+export PATH="${private_runtime}/bin:${PATH}"
+if [ -f "${private_runtime}/etc/fonts/fonts.conf" ]; then
+  export FONTCONFIG_FILE="${private_runtime}/etc/fonts/fonts.conf"
+fi
+if [ "${1:-}" = "--service" ]; then
+  case "${2:-}" in meo-ai-router) exec "${private_runtime}/bin/$2" ;; esac
+  echo "Unsupported Meo session service" >&2
+  exit 2
+fi
+if [ "${1:-}" = --prepare-only ]; then
+  exit 0
+fi
+for asset in share/plasma/look-and-feel/org.meo.desktop/metadata.json qml/Meo/System/libmeosystemplugin.so plugins/styles/meostyle.so; do
+  if [ ! -s "${private_runtime}/${asset}" ]; then
+    echo "Meo Desktop runtime is incomplete: ${private_runtime}/${asset}" >&2
+    exit 1
+  fi
+done
+if [ "${1:-}" = --preview ]; then
+  exec env -u DISPLAY -u XAUTHORITY dbus-run-session -- kwin_wayland --wayland-display "${WAYLAND_DISPLAY:?Preview requires an existing Wayland desktop}" --socket "meo-preview-$$" --width 1440 --height 900 --no-lockscreen --no-global-shortcuts --no-kactivities --exit-with-session "/usr/bin/plasmashell --no-respawn"
+fi
+exec /usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland "$@"

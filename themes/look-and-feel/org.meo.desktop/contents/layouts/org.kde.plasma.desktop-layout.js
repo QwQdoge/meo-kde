@@ -64,19 +64,21 @@ launcher.reloadConfig()
 var tasks = shelf.addWidget("org.kde.plasma.icontasks")
 tasks.currentConfigGroup = ["General"]
 tasks.writeConfig("fill", false)
-tasks.writeConfig("launchers", "applications:org.meo.settings.desktop,applications:omnistore.desktop,applications:org.kde.dolphin.desktop")
+// Minimal ISO installs omit optional Meo apps. Never create dead launchers.
+var pinnedApps = []
+var settingsApp = applicationExists("org.meo.settings.desktop") ? "org.meo.settings.desktop" : "systemsettings.desktop"
+if (applicationExists(settingsApp)) pinnedApps.push("applications:" + settingsApp)
+if (applicationExists("omnistore.desktop")) pinnedApps.push("applications:omnistore.desktop")
+if (applicationExists("org.kde.dolphin.desktop")) pinnedApps.push("applications:org.kde.dolphin.desktop")
+tasks.writeConfig("launchers", pinnedApps.join(","))
 tasks.reloadConfig()
 shelf.addWidget("org.kde.plasma.panelspacer")
 
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())
 for (var i = 0; i < existingDesktops.length; ++i) {
-    // A compact, desktop-only entry point to the Meo Widget Explorer.  It
-    // adds reviewed widgets to this containment but never configures panels,
-    // task managers, or the native Dock.
-    existingDesktops[i].addWidget("org.meo.widgetexplorer")
     existingDesktops[i].wallpaperPlugin = "org.kde.image"
     existingDesktops[i].currentConfigGroup = ["/Wallpaper/org.kde.image/General"]
-    existingDesktops[i].writeConfig("Image", "file:///usr/share/wallpapers/MeoArch/installer_background.png")
+    existingDesktops[i].writeConfig("Image", "file://" + userDataPath("data") + "/wallpapers/MeoArch/installer_background.png")
     existingDesktops[i].writeConfig("FillMode", "2")
 }

@@ -18,7 +18,11 @@ PlasmoidItem {
     Layout.minimumHeight: 40 * MeoTheme.globalScale
     Component.onCompleted: MeoShellTheme.sync()
 
-    compactRepresentation: MeoButtonGroup {
+    compactRepresentation: entryButtons
+    fullRepresentation: entryButtons
+    Component {
+        id: entryButtons
+        MeoButtonGroup {
         variant: "connected"
         type: "tonal"
         size: "xs"
@@ -35,9 +39,7 @@ PlasmoidItem {
             else launcherPopup.openQuickSearch()
         }
     }
-    // Plasma requires both representation slots even for a compact-only
-    // entry applet; the actual launcher uses its separate popup window.
-    fullRepresentation: Item { implicitWidth: 100 * MeoTheme.globalScale; implicitHeight: 40 * MeoTheme.globalScale }
+    }
     Connections {
         target: Plasmoid
         function onActivated() { launcherPopup.toggleFullLauncher() }

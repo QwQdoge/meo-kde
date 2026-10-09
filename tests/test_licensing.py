@@ -12,7 +12,7 @@ class LicensingTests(unittest.TestCase):
         self.assertIn("Version 2, June 1991", license_text)
 
     def test_meo_desktop_installs_gpl2_text(self):
-        recipe = (ROOT / "packaging/arch/PKGBUILD").read_text()
+        recipe = (ROOT / "packaging/arch/PKGBUILD").read_text() + (ROOT / "tools/session/package-meo-desktop").read_text()
         self.assertIn("'GPL-2.0-or-later'", recipe)
         self.assertIn("assets/licenses/GPL-2.0-or-later.txt", recipe)
 

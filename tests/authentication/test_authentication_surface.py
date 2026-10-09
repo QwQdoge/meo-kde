@@ -94,14 +94,15 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("discardTemporaryWifiConnection()", backend)
         self.assertNotIn('QStringLiteral("persist"), QStringLiteral("disk")', backend)
 
-    def test_package_replaces_the_stock_agent_without_double_starting(self):
+    def test_independent_package_keeps_the_stock_agent(self):
         pkgbuild = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
         service = (AUTH / "data/plasma-polkit-agent.service").read_text(encoding="utf-8")
         autostart = (AUTH / "data/polkit-kde-authentication-agent-1.desktop").read_text(encoding="utf-8")
 
-        self.assertIn("provides=('polkit-kde-agent')", pkgbuild)
-        self.assertIn("conflicts=('polkit-kde-agent')", pkgbuild)
-        self.assertIn("replaces=('polkit-kde-agent')", pkgbuild)
+        self.assertIn("'polkit-kde-agent'", pkgbuild)
+        self.assertNotIn("provides=('polkit-kde-agent')", pkgbuild)
+        self.assertNotIn("conflicts=('polkit-kde-agent')", pkgbuild)
+        self.assertNotIn("replaces=('polkit-kde-agent')", pkgbuild)
         self.assertIn("'qt6-base'", pkgbuild)
         self.assertIn("'qt6-declarative'", pkgbuild)
         self.assertIn("ExecStart=/usr/lib/meo-polkit-agent", service)
