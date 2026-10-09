@@ -12,15 +12,17 @@ Meo Desktop bootstrap
 
 Usage:
   curl -fsSL <bootstrap-url> | bash
-  curl -fsSL <bootstrap-url> | bash -s -- --full
-  curl -fsSL <bootstrap-url> | bash -s -- --full --kde-only
+  curl -fsSL <bootstrap-url> | bash -s -- -y
+  curl -fsSL <bootstrap-url> | bash -s -- --dry-run
 
 Environment:
   MEO_KDE_REPO_URL  Override the MeoKDE Git repository.
   MEO_KDE_REF       Branch/tag/commit to install. Defaults to main.
   MEO_INSTALL_ROOT  Cache directory for the installer checkout.
 
-All remaining arguments are forwarded to ./install.sh.
+All remaining arguments are forwarded to ./install.sh. The public installer is
+package-first: it installs the signed meo-desktop package and never falls back
+to source deployment of the current Plasma session.
 EOF
 }
 
@@ -68,9 +70,8 @@ if [ ! -x "${checkout}/install.sh" ]; then
   exit 1
 fi
 
-# curl | bash owns stdin, but the actual installer is intentionally
-# interactive. Reattach it to the controlling terminal when available so the
-# Yes/No wizard still works from a one-line remote bootstrap.
+# curl | bash owns stdin. Reattach the package installer to the controlling
+# terminal when available so pacman/sudo interaction remains usable.
 if [ -r /dev/tty ] && [ -w /dev/tty ]; then
   exec "${checkout}/install.sh" "$@" </dev/tty >/dev/tty
 fi
