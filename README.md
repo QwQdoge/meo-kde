@@ -4,14 +4,25 @@ MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主�
 
 ## 快速安装 / Quick install
 
-最快的入口可以直接从 GitHub 启动：
+在已经配置官方签名 MeoArch 软件仓库的 Arch / MeoArch 系统上，公开安装入口只有这一条：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash
 ```
 
-远程 bootstrap 只负责获取/刷新 MeoKDE checkout，然后把终端重新交给真正的
-`install.sh` Yes/No 向导；它自己不执行 pacman、systemctl 或桌面修改。
+它会取得当前 MeoKDE 安装入口，并由 `install.sh` 通过 pacman 安装仓库中的 `meo-desktop` 包。它不会从源码覆盖当前 Plasma，也不会修改当前 KDE 的面板、主题、`~/.config`、`/etc/xdg`、显示管理器或默认登录会话。
+
+非交互安装：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- -y
+```
+
+只检查仓库和包是否已经满足安全安装条件：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --dry-run
+```
 
 已经 clone 仓库时，也可以直接运行：
 
@@ -19,67 +30,19 @@ curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh |
 ./install.sh
 ```
 
-交互模式会先检测 Arch/Plasma/Qt/构建依赖，再逐项询问是否：
+安装完成后，显示管理器会新增一个独立的 **Meo Desktop** Wayland 会话。Meo Desktop 使用自己的配置与状态目录（默认 `~/.config/meo-desktop` 和 `~/.local/state/meo-desktop`），但底层直接启动系统安装的 Plasma/KWin，因此 Arch/KDE 正常升级时 Meo 也继续跟随更新。普通 **Plasma (Wayland)** 会话保留原配置，不会因为安装 Meo Desktop 被重写。
 
-- 用一次 `sudo pacman -Syu --needed ...` 安装缺失的必需依赖；
-- 安装 Dolphin、Konsole 等推荐 KDE 应用；
-- 安装可用的 rounded-corners KWin 视觉增强；
-- 安装 zram-generator、power-profiles-daemon、GameMode、System76 Scheduler；
-- 应用系统级 zram/GameMode/scheduler 策略并启用支持的服务；
-- 立即应用 Meo 主题和原生集成；
-- 重建推荐的 Meo 顶栏与 KDE 原生 Dock；
-- 更新处于 `main` 的 MeoUI checkout。
+`meo-desktop` 本身不强制安装或替换显示管理器。完整 MeoArch ISO 安装流程会另外安装 `meo-plasma-login-manager`，并在登录界面预选 `meo.desktop`；这属于 MeoArch OS 的整机安装策略，而不是独立桌面包的副作用。
 
-包安装和系统服务不会偷偷执行：交互模式会先显示选择。Arch 包事务使用
-`-Syu`，避免 partial upgrade。显示管理器和默认登录 session 不会被修改或启用。
+当前公开安装器要求官方签名 MeoArch 仓库已经配置，并要求仓库中至少提供 `meo-desktop 0.4.0-14`。如果仓库仍只有旧包，安装器会停止，而不是退回旧的“直接改当前 KDE”安装方式。
 
-完整推荐配置：
-
-```bash
-./install.sh --full
-```
-
-或一行远程执行：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --full
-```
-
-如果机器同时有 GNOME、Hyprland 等桌面，只希望安装 Meo KDE 而不改变整机的
-zram / power profile / scheduler / GameMode 策略：
-
-```bash
-./install.sh --full --kde-only
-```
-
-远程一行版本：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/QwQdoge/meo-kde/main/bootstrap.sh | bash -s -- --full --kde-only
-```
-
-MeoUI 可通过 `MEO_UI_ROOT` 指定；未指定时会自动寻找相邻的
-`meo-ui`、`MeoUI` 或 `meoui` checkout。完整模式找不到 MeoUI 时会获取官方
-checkout。开发分支不会被安装器擅自切回 `main`。
-
-系统级 responsiveness 配置使用独立的 root-owned 备份，桌面配置也保留原有的
-用户级备份。分别恢复：
-
-```bash
-./setup/reset-meo-desktop.sh
-./setup/reset-meo-system.sh
-```
-
-原有的 `setup/apply-meo-desktop.sh` 继续作为无交互、可自动化的 KDE/用户级
-部署后端。安装器不会强制重启 Plasma/KWin、注销或重启机器；窗口装饰和部分
-环境设置在下一次正常 Plasma 登录后完整生效。
+开发者仍可使用 `setup/apply-meo-desktop.sh` 做源码部署和当前会话开发验证，但它不是公开安装路径，也不代表可发布包已经上线。
 
 ## License
 
 除另有文件级声明外，MeoKDE 原创代码采用 GNU General Public License
 v3.0 或更高版本（`GPL-3.0-or-later`），见 [LICENSE](LICENSE)。KDE/Plasma
-衍生文件、第三方实现、字体、符号与上游 Widget 保留各自许可证；完整归属见
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+衍生文件、第三方实现、字体、符号与上游 Widget 保留各自许可证；完整归属见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 目录 / Layout
 
