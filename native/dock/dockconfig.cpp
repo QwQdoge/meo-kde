@@ -106,7 +106,7 @@ bool DockConfig::shouldShow() const
     const auto shellConfig = KSharedConfig::openConfig(QStringLiteral("meo-shellrc"));
     const KConfigGroup panels(shellConfig, QStringLiteral("Panels"));
     return panels.readEntry("Mode", QStringLiteral("dual")) == QLatin1String("dual")
-        && panels.readEntry("DockImplementation", QStringLiteral("standalone"))
+        && panels.readEntry("DockImplementation", QStringLiteral("native"))
                == QLatin1String("standalone");
 }
 

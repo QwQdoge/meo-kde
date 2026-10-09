@@ -1,13 +1,13 @@
 [General]
 # Used only for narrow, non-destructive migrations of Meo's packaged defaults.
-ProfileVersion=4
+ProfileVersion=5
 
 [Panels]
 # dual: Meo top bar plus a separate bottom dock (default)
 # single: one top panel; no bottom dock
 Mode=dual
-# Match the independent Meo Dock used by the current desktop.
-DockImplementation=standalone
+# KDE owns the centered task strip; Meo supplies launcher/search controls.
+DockImplementation=native
 ShowSystemTray=true
 # Display the active window's native KDE global menu (File, Edit, View, Help)
 # beside the launcher. This is not the task manager or the bottom dock.
@@ -17,7 +17,7 @@ ShowGlobalMenu=true
 ShowTopAppTasks=false
 TopPanelHeight=32
 # Used only if an existing profile selects the native Plasma Dock.
-DockHeight=80
+DockHeight=48
 
 [StatusBar]
 TextScalePercent=100

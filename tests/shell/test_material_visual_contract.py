@@ -110,15 +110,15 @@ class MaterialVisualContractTests(unittest.TestCase):
             "org.kde.plasma.desktop-layout.js"
         )
         for plugin in (
-            "org.kde.plasma.kickoff",
+            "org.meo.systemmenu",
             "org.kde.plasma.appmenu",
             "org.kde.plasma.systemtray",
         ):
             self.assertIn(plugin, layout)
 
-        # The standalone Meo Dock owns task presentation when selected; the
-        # look-and-feel layout must not create a duplicate Plasma task panel.
-        self.assertNotIn('org.kde.plasma.icontasks', layout)
+        # KDE owns tasks; the Meo pair only supplies launcher/search actions.
+        self.assertIn('org.kde.plasma.icontasks', layout)
+        self.assertIn('tasks.writeConfig("fill", false)', layout)
 
         launcher = read("plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml")
         self.assertIn("Kicker.RootModel", launcher)

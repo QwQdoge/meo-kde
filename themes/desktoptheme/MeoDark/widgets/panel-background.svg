@@ -22,14 +22,14 @@
     <path id="north-bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
     <path id="north-bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
     <path id="south-center" d="M32 32h2v2h-2z"/>
-    <path id="south-top" d="M32 0h2v32h-2z"/>
-    <path id="south-bottom" d="M32 34h2v32h-2z"/>
-    <path id="south-left" d="M0 32h32v2H0z"/>
-    <path id="south-right" d="M34 32h32v2h-32z"/>
-    <path id="south-topleft" d="M32 0A32 32 0 0 0 0 32h32z"/>
-    <path id="south-topright" d="M34 0a32 32 0 0 1 32 32H34z"/>
-    <path id="south-bottomleft" d="M0 34a32 32 0 0 0 32 32V34z"/>
-    <path id="south-bottomright" d="M34 66a32 32 0 0 0 32-32H34z"/>
+    <path id="south-top" d="M32 20h2v12h-2z"/>
+    <path id="south-bottom" d="M32 34h2v12h-2z"/>
+    <path id="south-left" d="M20 32h12v2H20z"/>
+    <path id="south-right" d="M34 32h12v2h-12z"/>
+    <path id="south-topleft" d="M32 20A12 12 0 0 0 20 32h12z"/>
+    <path id="south-topright" d="M34 20a12 12 0 0 1 12 12H34z"/>
+    <path id="south-bottomleft" d="M20 34a12 12 0 0 0 12 12V34z"/>
+    <path id="south-bottomright" d="M34 46a12 12 0 0 0 12-12H34z"/>
   </g>
   <rect id="hint-top-margin" x="31" y="18" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>

@@ -27,54 +27,56 @@ the matching Meo desktop theme before trying again.
 
 ```ini
 [Panels]
-# dual: top bar + separate auto-hidden bottom dock
+# dual: transparent top bar + full-width Material shelf
 # single: top bar only
 Mode=dual
-# standalone matches the current Meo Dock; native remains available per profile.
-DockImplementation=standalone
+# native uses KDE tasks with centered Meo launcher/search actions.
+DockImplementation=native
 ShowSystemTray=true
-# The active application name always follows Launcher. This toggles the
-# application-provided KDE Global Menu after it (File, Edit, View, Help).
+# Show the application-provided KDE Global Menu after the system menu.
 ShowGlobalMenu=true
 # Optional second task manager beside the menu; off because application tray
 # icons already appear beside the Meo controls and the bottom Dock owns tasks.
 ShowTopAppTasks=false
 # Compact top bar; Plasma's panel frame supplies the remaining visual margin.
 TopPanelHeight=32
-# 80 dp Dock: 48 dp task targets with a 16 dp vertical glass margin.
-DockHeight=80
+# Low shelf matching the reference desktop; task content stays centered.
+DockHeight=48
 ```
 
 - `Mode` is `dual` or `single`.
-- `DockImplementation` accepts `standalone` or `native`. Fresh profiles use the
-  independent Meo Dock with the existing Material surface. It uses Plasma's
-  task model and persists user launcher choices in `meodockrc`. Its first-run
-  launchers are Meo Settings, OmniStore, and Dolphin, in that order, when the
-  applications are installed. An existing profile may keep the native Plasma
-  Icons-Only Task Manager; the layout helper never changes that choice.
+- `DockImplementation` accepts `standalone` or `native`. Fresh profiles use
+  KDE's native Icons-Only Task Manager in a full-width 48 dp shelf. Expanding
+  spacers center the Meo application/search pair and the task icons together.
+  Window activation, grouping, previews, menus and drag/drop stay KDE-owned.
+  The task manager keeps existing pinned applications during reconciliation.
+  The old independent Dock remains an explicit optional implementation.
 - `ShowSystemTray` is `true` or `false`. The default is `true` so native
   StatusNotifier application icons, input-method state, clipboard and other
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
   audio, power, media and notification applets are filtered to avoid duplicates.
-- The default top-panel order follows the current desktop: **Launcher → Global
+- The default top-panel order follows the current desktop: **System menu → Global
   Menu → spacer → System Tray → Meo quick settings → Meo time/notifications**.
 - `ShowGlobalMenu` is `true` or `false`. It places the active application's
-  native KDE Global Menu immediately after the app name (for example **File**,
+  native KDE Global Menu immediately after the system menu (for example **File**,
   **Edit**, **View**, and **Help**). Those menus remain application/KDE-owned.
   This is separate from the bottom Dock.
 - `ShowTopAppTasks` is `true` or `false`. Its default is `false`; enabling it
   adds a second KDE Icons-Only Task Manager beside the Global Menu. The bottom
   Dock remains the primary task manager for pinned launchers, window actions
-  and autohide behavior.
+  and native task behavior.
 - `TopPanelHeight` accepts `32`–`96` pixels.
 - `DockHeight` accepts `40`–`112` pixels for the native Dock. The standalone
   Dock uses its own MeoUI geometry.
 - Existing `~/.config/meo-shellrc` profiles are intentionally preserved. To
-  opt an existing desktop into the 80 dp default, set `DockHeight=80` in that
+  opt an existing desktop into the 48 dp default, set `DockHeight=48` in that
   file and explicitly run the panel-layout helper above; normal theme updates
   never rebuild a user's live panels.
 
-The top panel uses the generated dynamic `surfaceContainerLow` role while the
+The top panel is transparent on the desktop and black when a visible window
+on its output and current activity/desktop is fullscreen or maximized. Its
+system menu reads actual KDE task roles; no timer guesses application state.
+The bottom shelf uses the generated dynamic `surfaceContainerLow` role while the
 Meo window title bar uses `surfaceContainer`. This produces a subtle tonal
 layer boundary instead of an opaque or wallpaper-sampled bar; both roles come
 from the same wallpaper HCT scheme and remain consistent across native and

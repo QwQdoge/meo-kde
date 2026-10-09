@@ -48,7 +48,9 @@ package() {
       "${pkgdir}/usr/share/plasma/desktoptheme/"
   done
   install -d "${pkgdir}/usr/share/plasma/plasmoids"
-  cp -a "${workspace}/plasmoids/org.meo.topbar" \
+  cp -a "${workspace}/plasmoids/org.meo.systemmenu" \
+    "${workspace}/plasmoids/org.meo.shelf" \
+    "${workspace}/plasmoids/org.meo.topbar" \
     "${workspace}/plasmoids/org.meo.toptasks" \
     "${workspace}/plasmoids/org.meo.time" \
     "${workspace}/plasmoids/org.meo.notifications" \

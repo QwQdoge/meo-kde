@@ -20,7 +20,7 @@ MeoShape {
     // Hover/press feedback belongs to the single shared state layer. Keep the
     // base surface quiet until the trigger owns an open/selected surface.
     property color selectedColor: MeoTheme.primaryContainer
-    property color restingContentColor: MeoTheme.onSurface
+    property color restingContentColor: MeoShellTheme.panelForeground
     property color selectedContentColor: MeoTheme.onPrimaryContainer
 
     readonly property color contentColor: active
@@ -32,6 +32,16 @@ MeoShape {
     color: active ? selectedColor : restingColor
     strokeColor: "transparent"
     strokeWidth: 0
+
+    function triggerAt(x, y) {
+        stateLayer._pointerPressActive = true
+        stateLayer.trigger(x, y)
+    }
+
+    function releaseRipple() {
+        stateLayer._pointerPressActive = false
+        stateLayer.releaseRipple()
+    }
 
     function triggerFromKeyboard() {
         stateLayer.triggerFromKeyboard()

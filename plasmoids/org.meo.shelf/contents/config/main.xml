@@ -23,7 +23,7 @@
     </entry>
     <entry name="launcherDefaultPage" type="String">
       <label>Default launcher page: home or apps.</label>
-      <default>home</default>
+      <default>apps</default>
     </entry>
     <entry name="launcherWidth" type="String">
       <label>Launcher width preset: compact, standard, or wide.</label>

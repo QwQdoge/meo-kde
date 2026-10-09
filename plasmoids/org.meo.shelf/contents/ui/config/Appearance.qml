@@ -6,33 +6,12 @@ import org.kde.kirigami as Kirigami
 import MeoKDE 1.0
 
 KCM.SimpleKCM {
-    property alias cfg_showLauncherButton: showLauncherButton.checked
-    property alias cfg_filterTasksByVirtualDesktop: filterTasksByVirtualDesktop.checked
-    property alias cfg_showRunningIndicators: showRunningIndicators.checked
-    property alias cfg_showTooltips: showTooltips.checked
     property alias cfg_launcherDefaultPage: launcherDefaultPage.currentValue
     property alias cfg_launcherWidth: launcherWidth.currentValue
     property alias cfg_launcherShowFavorites: launcherShowFavorites.checked
     property alias cfg_launcherShowRecents: launcherShowRecents.checked
 
     Kirigami.FormLayout {
-        MeoCheckbox {
-            id: showLauncherButton
-            text: MeoI18n.translator.i18n("Show Launcher button")
-        }
-        MeoCheckbox {
-            id: filterTasksByVirtualDesktop
-            text: MeoI18n.translator.i18n("Only show apps on the current virtual desktop")
-        }
-        MeoCheckbox {
-            id: showRunningIndicators
-            text: MeoI18n.translator.i18n("Show running indicators")
-        }
-        MeoCheckbox {
-            id: showTooltips
-            text: MeoI18n.translator.i18n("Show app tooltips")
-        }
-
         MeoExposedDropdown {
             id: launcherDefaultPage
             Kirigami.FormData.label: MeoI18n.translator.i18n("Launcher opens to:")

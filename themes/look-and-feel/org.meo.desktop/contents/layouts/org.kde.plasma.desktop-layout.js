@@ -1,11 +1,6 @@
 // Meo Desktop Plasma Layout Specification
-//
-// This is the canonical default layout. KDE applets retain launching, task,
-// menu and StatusNotifier behaviour; Meo applets contribute only the two MD3
-// surfaces whose generic controls and tokens are implemented in MeoUI.
-// Top launcher/status panel.  Kickoff keeps Plasma's canonical Meta action and
-// search/provider integrations; the Meo applet owns only the MD3 status and
-// quick-settings surface.
+// KDE owns tasks, global menus and StatusNotifier integrations. MeoUI supplies
+// the system menu, compact status controls and paired launcher/search surface.
 var topPanel = new Panel
 topPanel.location = "top"
 // Keep the initial panel aligned with the compact Meo status controls. Plasma
@@ -18,12 +13,7 @@ topPanel.currentConfigGroup = ["MeoShell"]
 topPanel.writeConfig("Managed", true)
 topPanel.writeConfig("Role", "top")
 
-var launcher = topPanel.addWidget("org.kde.plasma.kickoff")
-launcher.currentConfigGroup = ["General"]
-launcher.writeConfig("icon", "meoarch-logo")
-launcher.currentConfigGroup = ["Shortcuts"]
-launcher.writeConfig("global", "Meta")
-launcher.reloadConfig()
+topPanel.addWidget("org.meo.systemmenu")
 topPanel.addWidget("org.kde.plasma.appmenu")
 topPanel.addWidget("org.kde.plasma.panelspacer")
 // Preserve KDE's native StatusNotifier application icons and auxiliary tray
@@ -55,8 +45,28 @@ timeCenter.writeConfig("showNotifications", true)
 timeCenter.writeConfig("use24HourClock", true)
 timeCenter.reloadConfig()
 
-// The independent Meo Dock starts with the user session. Do not create a
-// second bottom Plasma panel behind it.
+// Full-width Material shelf with centered controls and KDE-owned tasks.
+var shelf = new Panel
+shelf.location = "bottom"
+shelf.height = 48
+shelf.floating = false
+shelf.hiding = "none"
+shelf.lengthMode = "fill"
+shelf.alignment = "center"
+shelf.currentConfigGroup = ["MeoShell"]
+shelf.writeConfig("Managed", true)
+shelf.writeConfig("Role", "dock")
+shelf.addWidget("org.kde.plasma.panelspacer")
+var launcher = shelf.addWidget("org.meo.shelf")
+launcher.currentConfigGroup = ["Shortcuts"]
+launcher.writeConfig("global", "Meta")
+launcher.reloadConfig()
+var tasks = shelf.addWidget("org.kde.plasma.icontasks")
+tasks.currentConfigGroup = ["General"]
+tasks.writeConfig("fill", false)
+tasks.writeConfig("launchers", "applications:org.meo.settings.desktop,applications:omnistore.desktop,applications:org.kde.dolphin.desktop")
+tasks.reloadConfig()
+shelf.addWidget("org.kde.plasma.panelspacer")
 
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())

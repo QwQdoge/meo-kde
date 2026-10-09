@@ -116,8 +116,17 @@ QQC2.AbstractButton {
         active: root.active
     }
 
+    PointHandler {
+        acceptedButtons: Qt.LeftButton
+        onActiveChanged: {
+            if (active) statusBackground.triggerAt(point.position.x, point.position.y)
+            else statusBackground.releaseRipple()
+        }
+    }
+
     contentItem: MeoStatusStrip {
         id: statusContent
+        foregroundColor: MeoShellTheme.panelForeground
         statusModel: root.statusModel
         active: root.active
         iconSize: 18

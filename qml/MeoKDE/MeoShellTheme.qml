@@ -24,6 +24,9 @@ QtObject {
                                               ? systemFont.pixelSize
                                               : Math.max(1, systemFont.pointSize * 96 / 72)
 
+    readonly property color panelForeground: MeoTheme.isDarkMode
+                                              ? MeoTheme.onSurface : MeoTheme.contentOnInverseSurface
+
     function luminance(color) {
         function linear(channel) {
             return channel <= 0.04045 ? channel / 12.92

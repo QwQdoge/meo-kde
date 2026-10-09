@@ -15,13 +15,13 @@ class DesktopLayoutTests(unittest.TestCase):
     def test_top_panel_uses_kde_launcher_menu_tray_and_two_meo_surfaces(self):
         source = LAYOUT.read_text(encoding="utf-8")
 
-        self.assertIn('topPanel.addWidget("org.kde.plasma.kickoff")', source)
-        self.assertIn('launcher.writeConfig("icon", "meoarch-logo")', source)
+        self.assertIn('topPanel.addWidget("org.meo.systemmenu")', source)
+        self.assertIn('shelf.addWidget("org.meo.shelf")', source)
         self.assertIn('launcher.writeConfig("global", "Meta")', source)
         self.assertNotIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
         self.assertNotIn('topPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.kickoff")'),
+        self.assertLess(source.index('topPanel.addWidget("org.meo.systemmenu")'),
                         source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
         self.assertIn('timeCenter = topPanel.addWidget("org.meo.time-notifications")', source)
@@ -179,7 +179,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('plasmoids/org.meo.toptasks', package)
         self.assertIn('plasmoids/org.meo.toptasks/metadata.json', installer)
         self.assertIn(
-            "for meo_panel_applet in org.meo.topbar org.meo.toptasks "
+            "for meo_panel_applet in org.meo.systemmenu org.meo.shelf org.meo.topbar org.meo.toptasks "
             "org.meo.timecenter org.meo.time org.meo.notifications "
             "org.meo.time-notifications; do",
             installer,
@@ -257,12 +257,15 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', setup)
         self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', reset)
 
-    def test_default_dock_uses_the_independent_meo_dock(self):
+    def test_default_shelf_centers_native_tasks_between_expanding_spacers(self):
         source = LAYOUT.read_text(encoding="utf-8")
-
-        self.assertNotIn('bottomPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertNotIn('var bottomPanel = new Panel', source)
-        self.assertNotIn('org.meo.shelf', source)
+        self.assertIn('shelf.addWidget("org.kde.plasma.icontasks")', source)
+        self.assertIn('shelf.height = 48', source)
+        self.assertIn('shelf.floating = false', source)
+        self.assertIn('shelf.lengthMode = "fill"', source)
+        self.assertEqual(source.count('shelf.addWidget("org.kde.plasma.panelspacer")'), 2)
+        self.assertLess(source.index('shelf.addWidget("org.meo.shelf")'),
+                        source.index('shelf.addWidget("org.kde.plasma.icontasks")'))
 
     def test_fresh_dock_pins_settings_store_and_files_in_that_order(self):
         source = (REPO_ROOT / "native/dock/dockconfig.cpp").read_text(encoding="utf-8")
@@ -307,7 +310,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("TopPanelHeight=32", documentation)
         self.assertIn("false success", documentation)
 
-    def test_panel_frame_keeps_a_compact_top_and_large_bottom_dock_variant(self):
+    def test_panel_frame_keeps_a_compact_top_and_low_shelf_variant(self):
         assets = (
             REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
             REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/panel-background.svg",
@@ -318,16 +321,16 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('compact_frame = frame_paths("", 16)', generator)
         self.assertIn('north_frame = frame_paths("north", 16)', generator)
-        self.assertIn('south_frame = frame_paths("south", 32)', generator)
+        self.assertIn('south_frame = frame_paths("south", 12)', generator)
         self.assertIn('surface_opacity="0.68"', generator)
         self.assertIn('surface_opacity="0.58"', generator)
         for asset in assets:
             source = asset.read_text(encoding="utf-8")
             self.assertIn('id="top" d="M32 16h2v16h-2z"', source)
             self.assertIn('id="north-top" d="M32 16h2v16h-2z"', source)
-            self.assertIn('id="south-top" d="M32 0h2v32h-2z"', source)
+            self.assertIn('id="south-top" d="M32 20h2v12h-2z"', source)
             self.assertIn('id="north-bottom" d="M32 34h2v16h-2z"', source)
-            self.assertIn('id="south-bottom" d="M32 34h2v32h-2z"', source)
+            self.assertIn('id="south-bottom" d="M32 34h2v12h-2z"', source)
             self.assertIn('id="north-hint-top-margin"', source)
             self.assertIn('id="south-hint-top-margin"', source)
             expected_opacity = "0.58" if "/translucent/" in str(asset) else "0.68"
@@ -396,56 +399,21 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("available: root.showBluetooth && root.bluetoothConnected", quick_status)
         self.assertIn("visible: root.showNotifications && root.hasNotificationState", time_button)
 
-    def test_experimental_shelf_uses_a_borderless_tonal_surface(self):
-        shelf = (
-            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn("border.width: 0", shelf)
-        self.assertNotIn("border.color: MeoTheme.outlineVariant", shelf)
-        self.assertIn("Layout.preferredWidth: visible ? MeoTheme.space8 : 0", shelf)
-        self.assertIn("permanent visual divider", shelf)
-
-    def test_experimental_shelf_configuration_is_consumed_by_runtime(self):
-        shelf_root = REPO_ROOT / "plasmoids/org.meo.shelf"
-        schema = (shelf_root / "contents/config/main.xml").read_text(encoding="utf-8")
-        shelf = (shelf_root / "contents/ui/main.qml").read_text(encoding="utf-8")
-        launcher = (shelf_root / "contents/ui/LauncherPopup.qml").read_text(encoding="utf-8")
-        item = (shelf_root / "contents/ui/ShelfItem.qml").read_text(encoding="utf-8")
-
-        for key in (
-            "showLauncherButton",
-            "filterTasksByVirtualDesktop",
-            "showRunningIndicators",
-            "showTooltips",
-            "launcherDefaultPage",
-            "launcherWidth",
-            "launcherPlacement",
-            "launcherShowFavorites",
-            "launcherShowRecents",
-        ):
-            self.assertIn(f'name="{key}"', schema)
-            self.assertIn(f"Plasmoid.configuration.{key}", shelf)
-
-        self.assertIn("filterByVirtualDesktop: root.filterTasksByVirtualDesktop", shelf)
-        self.assertIn("showRunningIndicator: root.showRunningIndicators", shelf)
-        self.assertIn("showTooltip: root.showTooltips", shelf)
-        self.assertIn("defaultPage: root.launcherDefaultPage", shelf)
-        self.assertIn("widthPreset: root.launcherWidth", shelf)
-        self.assertIn("showFavoritesSection: root.launcherShowFavorites", shelf)
-        self.assertIn("showRecentSection: root.launcherShowRecents", shelf)
-        self.assertIn('browseMode = defaultPage === "apps" ? 1 : 0', launcher)
-        self.assertIn("configuredWidth", launcher)
-        self.assertIn("launcherPopup.showFavoritesSection", launcher)
-        self.assertIn("launcherPopup.showRecentSection", launcher)
-        self.assertIn("root.showRunningIndicator", item)
-        self.assertIn("root.showTooltip", item)
-
-        self.assertIn("Plasmoid.configuration.launcherPlacement", shelf)
-        self.assertIn('Plasmoid.globalShortcut = "Alt+Space"', shelf)
-        self.assertIn("function onActivated()", shelf)
+    def test_shelf_pairs_launcher_and_search_without_a_second_task_model(self):
+        shelf = (REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml").read_text()
+        self.assertIn("MeoButtonGroup", shelf)
+        self.assertIn('variant: "connected"', shelf)
+        self.assertIn('type: "tonal"', shelf)
+        self.assertIn('icon: "apps"', shelf)
+        self.assertIn('icon: "search"', shelf)
+        self.assertIn("launcherPopup.toggleFullLauncher()", shelf)
         self.assertIn("launcherPopup.openQuickSearch()", shelf)
-        self.assertIn("placementMode: root.launcherPlacement", shelf)
+        self.assertNotIn("TaskManager.TasksModel", shelf)
+        for key in ("launcherDefaultPage", "launcherWidth", "launcherPlacement",
+                    "launcherShowFavorites", "launcherShowRecents"):
+            self.assertIn(f"Plasmoid.configuration.{key}", shelf)
+        launcher = (REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml").read_text()
+        self.assertIn("popupType: QQC2.Popup.Window", launcher)
 
     def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
         launcher = (
@@ -784,16 +752,16 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('"org.kde.plasma.printmanager"', source)
         self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
         self.assertIn('removeWidgets(top, "org.meo.toptasks")', source)
-        self.assertLess(source.index('oneWidget(top, "org.kde.plasma.kickoff")'),
+        self.assertLess(source.index('oneWidget(top, "org.meo.systemmenu")'),
                         source.index('oneWidget(top, "org.kde.plasma.appmenu")'))
 
-    def test_default_profile_selects_standalone_dock(self):
+    def test_default_profile_selects_native_taskbar(self):
         profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
         helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
         metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
 
-        self.assertIn("DockHeight=80", profile)
-        self.assertIn("DockImplementation=standalone", profile)
+        self.assertIn("DockHeight=48", profile)
+        self.assertIn("DockImplementation=native", profile)
         self.assertIn("shelfPanelHeight: 80 * MeoTheme.globalScale", metrics)
         self.assertIn('if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native")', helper)
         self.assertNotIn('writeConfig("maxStripes"', helper)
@@ -951,7 +919,7 @@ class DesktopLayoutTests(unittest.TestCase):
         schema = (TOPBAR.parent / "config/main.xml").read_text(encoding="utf-8")
 
         self.assertIn("Mode=dual", profile)
-        self.assertIn("ProfileVersion=4", profile)
+        self.assertIn("ProfileVersion=5", profile)
         self.assertIn("ShowSystemTray=true", profile)
         self.assertIn("ShowGlobalMenu=true", profile)
         self.assertIn("ShowTopAppTasks=false", profile)

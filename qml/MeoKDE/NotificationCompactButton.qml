@@ -58,7 +58,7 @@ QQC2.AbstractButton {
             icon: root.inhibited ? "do_not_disturb_on"
                                  : (root.activeJobsCount > 0 ? "progress_activity" : "notifications")
             size: 20
-            color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
+            color: root.active ? MeoTheme.onPrimaryContainer : MeoShellTheme.panelForeground
 
             Behavior on color {
                 ColorAnimation {

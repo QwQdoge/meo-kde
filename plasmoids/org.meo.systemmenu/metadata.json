@@ -1,0 +1,1 @@
+{"KPlugin":{"Id":"org.meo.systemmenu","Name":"Meo System Menu","Name[zh_CN]":"Meo 系统菜单","Description":"System information, task manager and KDE session actions","Icon":"meoarch-logo","Authors":[{"Name":"Meo Desktop Team"}],"Category":"System Information","License":"GPL-2.0-or-later","Version":"0.6.0"},"KPackageStructure":"Plasma/Applet","X-Plasma-API-Minimum-Version":"6.0"}

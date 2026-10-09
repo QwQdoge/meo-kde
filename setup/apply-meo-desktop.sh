@@ -222,10 +222,10 @@ prepare_meoui
 # A fresh profile starts the independent Meo Dock. Existing profiles keep
 # their selected implementation, including the native Plasma alternative.
 requested_mode=dual
-requested_dock=standalone
+requested_dock=native
 if [ -f "${config_root}/meo-shellrc" ]; then
   requested_mode="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key Mode --default dual)"
-  requested_dock="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation --default standalone)"
+  requested_dock="$(kreadconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation --default native)"
 fi
 dock_build_enabled=OFF
 if [ "${requested_mode}" = dual ] && [ "${requested_dock}" = standalone ]; then
@@ -400,6 +400,14 @@ if [ "${profile_version}" -lt 4 ] && [ -f "${config_root}/meo-shellrc" ]; then
   run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 4
 fi
 
+if [ "${profile_version}" -lt 5 ] && [ -f "${config_root}/meo-shellrc" ]; then
+  # The requested shell redesign replaces the independent Dock with Plasma's
+  # native taskbar. Installing does not restart Plasma or rebuild live panels.
+  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockImplementation native
+  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockHeight 48
+  run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 5
+fi
+
 # Install Look-and-Feel package
 run rm -rf "${data_root}/plasma/look-and-feel/org.meo.desktop"
 run cp -a "${desktop_root}/themes/look-and-feel/org.meo.desktop" "${data_root}/plasma/look-and-feel/org.meo.desktop"
@@ -420,17 +428,17 @@ run install -Dm644 "${repo_root}/assets/icons/meoarch-logo.svg" \
 
 # Meo owns the quick-settings and time surfaces; KDE owns the native System
 # Tray/StatusNotifier application icons and the bottom task manager.
-for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.systemmenu org.meo.shelf org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   if [ -e "${data_root}/plasma/plasmoids/${meo_panel_applet}" ]; then
     run mkdir -p "${backup_root}/plasmoids"
     run cp -a "${data_root}/plasma/plasmoids/${meo_panel_applet}" \
       "${backup_root}/plasmoids/${meo_panel_applet}"
   fi
 done
-for legacy_plasmoid in org.meo.launcher org.meo.quicksettings org.meo.shelf; do
+for legacy_plasmoid in org.meo.launcher org.meo.quicksettings; do
   run rm -rf "${data_root}/plasma/plasmoids/${legacy_plasmoid}"
 done
-for meo_panel_applet in org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
+for meo_panel_applet in org.meo.systemmenu org.meo.shelf org.meo.topbar org.meo.toptasks org.meo.timecenter org.meo.time org.meo.notifications org.meo.time-notifications; do
   run rm -rf "${data_root}/plasma/plasmoids/${meo_panel_applet}"
   run cp -a "${repo_root}/plasmoids/${meo_panel_applet}" \
     "${data_root}/plasma/plasmoids/${meo_panel_applet}"

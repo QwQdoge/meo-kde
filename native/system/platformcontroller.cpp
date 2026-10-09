@@ -10,6 +10,8 @@
 #include <QDBusReply>
 #include <QDBusVariant>
 #include <QVariantMap>
+#include <QProcess>
+#include <QStandardPaths>
 #include <QtGlobal>
 
 namespace
@@ -172,3 +174,24 @@ void PlatformController::lockScreen()
 
 void PlatformController::clearError() { setError({}); }
 void PlatformController::setError(const QString &error) { if (m_lastError != error) { m_lastError = error; Q_EMIT errorChanged(); } }
+
+// Fixed, unprivileged desktop entry points. No caller-supplied executable or
+// arguments cross the QML boundary.
+bool PlatformController::openSystemAbout()
+{
+    const auto meo = QStandardPaths::findExecutable(QStringLiteral("meo-settings"));
+    const bool started = !meo.isEmpty()
+        ? QProcess::startDetached(meo, {QStringLiteral("--route"), QStringLiteral("about")})
+        : QProcess::startDetached(QStringLiteral("systemsettings"), {QStringLiteral("kcm_about-distro")});
+    if (!started) setError(i18n("Could not open system information."));
+    return started;
+}
+
+bool PlatformController::openTaskManager()
+{
+    const auto meo = QStandardPaths::findExecutable(QStringLiteral("meo-system-monitor"));
+    const bool started = QProcess::startDetached(meo.isEmpty()
+        ? QStringLiteral("plasma-systemmonitor") : meo, QStringList{});
+    if (!started) setError(i18n("Could not open the task manager."));
+    return started;
+}

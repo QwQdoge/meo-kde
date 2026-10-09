@@ -47,7 +47,7 @@ show_system_tray="$(read_value Panels ShowSystemTray true)"
 show_global_menu="$(read_value Panels ShowGlobalMenu true)"
 show_top_app_tasks="$(read_value Panels ShowTopAppTasks false)"
 top_panel_height="$(read_value Panels TopPanelHeight 32)"
-dock_height="$(read_value Panels DockHeight 80)"
+dock_height="$(read_value Panels DockHeight 48)"
 text_scale_percent="$(read_value StatusBar TextScalePercent 100)"
 show_network="$(read_value StatusBar ShowNetwork true)"
 show_bluetooth="$(read_value StatusBar ShowBluetooth true)"
@@ -227,14 +227,9 @@ top.hiding = "none";
 top.floating = false;
 markManaged(top, "top");
 
-var kickoff = oneWidget(top, "org.kde.plasma.kickoff");
-kickoff.currentConfigGroup = ["General"];
-kickoff.writeConfig("icon", "meoarch-logo");
-kickoff.currentConfigGroup = ["Shortcuts"];
-kickoff.writeConfig("global", "Meta");
-kickoff.reloadConfig();
-
-var topOrder = [kickoff.id];
+removeWidgets(top, "org.kde.plasma.kickoff");
+var systemMenu = oneWidget(top, "org.meo.systemmenu");
+var topOrder = [systemMenu.id];
 
 // Match the default top panel: Launcher -> native global menu -> spacer ->
 // native tray -> Meo quick settings -> Meo time and notifications.
@@ -287,16 +282,29 @@ if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
         dock.location = "bottom";
     }
     dock.height = ${dock_height};
-    dock.floating = true;
-    dock.hiding = "autohide";
-    dock.lengthMode = "fit";
+    dock.floating = false;
+    dock.hiding = "none";
+    dock.lengthMode = "fill";
     dock.alignment = "center";
     markManaged(dock, "dock");
     // Plasma owns task identity, grouping, hover feedback, previews, drag and
     // window activation. The Meo desktop theme supplies only the MD surface
     // and task-frame visuals, so there is no second pointer/hover model.
     var dockTasks = oneWidget(dock, "org.kde.plasma.icontasks");
-    dockTasks.index = 0;
+    dockTasks.currentConfigGroup = ["General"];
+    dockTasks.writeConfig("fill", false);
+    dockTasks.reloadConfig();
+    var entries = oneWidget(dock, "org.meo.shelf");
+    entries.currentConfigGroup = ["Shortcuts"];
+    entries.writeConfig("global", "Meta");
+    entries.reloadConfig();
+    // Keep the existing task applet and its pinned launchers intact.
+    var spacers = dock.widgets("org.kde.plasma.panelspacer");
+    while (spacers.length < 2) {
+        spacers.push(dock.addWidget("org.kde.plasma.panelspacer"));
+    }
+    dock.currentConfigGroup = ["General"];
+    dock.writeConfig("AppletOrder", [spacers[0].id, entries.id, dockTasks.id, spacers[1].id].join(";"));
     dock.reloadConfig();
 } else if (dock) {
     dock.currentConfigGroup = ["MeoShell"];

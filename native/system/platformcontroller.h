@@ -43,6 +43,8 @@ public:
 
     Q_INVOKABLE void setBrightness(const QString &displayId, int brightness);
     Q_INVOKABLE void lockScreen();
+    Q_INVOKABLE bool openSystemAbout();
+    Q_INVOKABLE bool openTaskManager();
     Q_INVOKABLE void clearError();
 
 Q_SIGNALS:

@@ -112,6 +112,10 @@ MeoMotionPopup {
     width: Math.min(configuredWidth,
                     Screen.width - 24 * MeoTheme.globalScale)
     height: Math.min(desiredLauncherHeight, availableLauncherHeight)
+    // A panel is only 48dp tall: use a real Qt popup window so launcher
+    // content and pointer input can extend into the desktop.
+    popupType: QQC2.Popup.Window
+    margins: -1
     modal: false
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
@@ -512,7 +516,7 @@ MeoMotionPopup {
                     text: launcherPopup.browseMode === 0
                           ? MeoI18n.translator.i18n("Pinned + activity")
                           : (launcherPopup.activeAppsModel
-                             ? MeoI18n.translator.i18n("%1 apps").arg(
+                             ? MeoI18n.translator.i18n("%1 apps",
                                    launcherPopup.activeAppsModel.count)
                              : MeoI18n.translator.i18n("Loading…"))
                     typeRole: "label"
@@ -1278,7 +1282,9 @@ MeoMotionPopup {
 
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.minimumHeight: 36 * MeoTheme.globalScale
                     Layout.preferredHeight: 36 * MeoTheme.globalScale
+                    Layout.maximumHeight: 36 * MeoTheme.globalScale
                     spacing: MeoTheme.space6
 
                     MeoChip {

@@ -106,7 +106,7 @@ QQC2.AbstractButton {
                 typeSize: "medium"
                 emphasized: true
                 fontScaleOverride: root.textScale
-                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurface
+                color: root.active ? MeoTheme.onPrimaryContainer : MeoShellTheme.panelForeground
             }
 
             MeoText {
@@ -115,7 +115,7 @@ QQC2.AbstractButton {
                 typeRole: "label"
                 typeSize: "small"
                 fontScaleOverride: root.textScale
-                color: root.active ? MeoTheme.onPrimaryContainer : MeoTheme.onSurfaceVariant
+                color: root.active ? MeoTheme.onPrimaryContainer : MeoShellTheme.panelForeground
             }
         }
 

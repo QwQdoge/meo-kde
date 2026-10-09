@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate floating Material Dock backgrounds for the Plasma desktop themes."""
+"""Generate Material panel backgrounds for the Plasma desktop themes."""
 
 from __future__ import annotations
 
@@ -78,15 +78,15 @@ def frame_margin_hints(prefix: str) -> tuple[str, ...]:
 def render(target: ThemeTarget) -> str:
     # Plasma clamps a panel to the unprefixed FrameSvg's minimum drawing size
     # before it resolves its edge prefix.  Keep that fallback at 32 dp so a
-    # compact top panel can be restored. The bottom edge has an explicit 32 dp
-    # variant, preserving the large rounded silhouette used by the floating Dock.
+    # compact top panel can be restored. The bottom edge uses a 12 dp corner
+    # for the low, full-width reference shelf rather than a floating Dock.
     # The north variant avoids falling back to a bottom-oriented frame while the
     # panel changes location. Use KDE's ButtonBackground semantic class because
     # Meo's HCT projection maps it to surfaceContainerLow. This gives the panel
     # a visible wallpaper-derived tonal layer without hard-coding the live seed.
     compact_frame = frame_paths("", 16)
     north_frame = frame_paths("north", 16)
-    south_frame = frame_paths("south", 32)
+    south_frame = frame_paths("south", 12)
     compact_hints = frame_margin_hints("")
     north_hints = frame_margin_hints("north")
     south_hints = frame_margin_hints("south")
