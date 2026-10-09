@@ -14,6 +14,7 @@
 #include <QtWidgets/QStyleOptionButton>
 #include <QtWidgets/QStyleOptionProgressBar>
 #include <QtWidgets/QStyleOptionSlider>
+#include <QtWidgets/QStyleOptionSpinBox>
 #include <QtWidgets/QStyleOptionTab>
 #include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QStyleOptionViewItem>
@@ -225,6 +226,8 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     case PM_ExclusiveIndicatorWidth:
     case PM_ExclusiveIndicatorHeight:
         return qRound(Meo::DesignTokens::iconSizeS());
+    case PM_ScrollBarSliderMin:
+        return qRound(Meo::DesignTokens::space32());
     case PM_ScrollBarExtent:
         return qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space2());
     case PM_SliderLength:
@@ -234,11 +237,24 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     }
 }
 
+int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
+                        QStyleHintReturn *returnData) const
+{
+    if (hint == SH_ScrollBar_Transient) return false;
+    return QProxyStyle::styleHint(hint, option, widget, returnData);
+}
+
 QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
                                   const QSize &contentsSize, const QWidget *widget) const
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_SpinBox: {
+        const auto *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(option);
+        const int buttons = spin && spin->buttonSymbols == QAbstractSpinBox::NoButtons ? 0 : qRound(Meo::DesignTokens::space32());
+        return QSize(contentsSize.width() + buttons + qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space8()),
+                     qMax(qRound(Meo::DesignTokens::controlHeight()), contentsSize.height() + 2 * qRound(Meo::DesignTokens::space4())));
+    }
     case CT_ItemViewItem:
         if (const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option)) return MeoItem::sizeHint(*item);
         return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
@@ -748,6 +764,38 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         return;
     }
 
+    if (control == CC_SpinBox) {
+        if (const auto *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
+            if (spin->frame && spin->subControls.testFlag(SC_SpinBoxFrame)) drawPrimitive(PE_PanelLineEdit, spin, painter, widget);
+            for (const auto part : {SC_SpinBoxUp, SC_SpinBoxDown}) {
+                if (!spin->subControls.testFlag(part)) continue;
+                const QRect rect = subControlRect(control, spin, part, widget);
+                if (rect.isEmpty()) continue;
+                const bool stepEnabled = enabled && spin->stepEnabled.testFlag(part == SC_SpinBoxUp
+                    ? QAbstractSpinBox::StepUpEnabled : QAbstractSpinBox::StepDownEnabled);
+                const bool active = spin->activeSubControls.testFlag(part);
+                const auto buttonGroup = stepEnabled ? group : QPalette::Disabled;
+                if (stepEnabled && active && (hover || pressed)) {
+                    MeoStyleHelper::drawRoundedSurface(painter, rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeExtraSmall(),
+                        MeoStyleHelper::stateLayer(spin->palette, buttonGroup, QPalette::AlternateBase, QPalette::Text, hover, pressed));
+                }
+                const int extent = qMin(rect.height(), qRound(Meo::DesignTokens::iconSizeS()));
+                const QRect glyph(rect.center().x() - extent / 2, rect.center().y() - extent / 2, extent, extent);
+                const QColor foreground = spin->palette.color(buttonGroup, QPalette::Text);
+                if (spin->buttonSymbols == QAbstractSpinBox::PlusMinus) {
+                    painter->save(); painter->setRenderHint(QPainter::Antialiasing);
+                    painter->setPen(QPen(foreground, Meo::DesignTokens::space2(), Qt::SolidLine, Qt::RoundCap));
+                    const QPointF center = QRectF(glyph).center();
+                    const qreal half = Meo::DesignTokens::space4();
+                    painter->drawLine(center + QPointF(-half, 0), center + QPointF(half, 0));
+                    if (part == SC_SpinBoxUp) painter->drawLine(center + QPointF(0, -half), center + QPointF(0, half));
+                    painter->restore();
+                } else MeoStyleHelper::drawChevron(painter, glyph, foreground, part == SC_SpinBoxUp ? Qt::UpArrow : Qt::DownArrow);
+            }
+            return;
+        }
+    }
+
     if (control == CC_ToolButton) {
         const auto *toolButton = qstyleoption_cast<const QStyleOptionToolButton *>(option);
         if (!toolButton) {
@@ -835,7 +883,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
 
         const QRect grooveRect = subControlRect(CC_ScrollBar, scrollBar, SC_ScrollBarGroove, widget);
         const QRect sliderRect = subControlRect(CC_ScrollBar, scrollBar, SC_ScrollBarSlider, widget);
-        if (option->subControls.testFlag(SC_ScrollBarGroove)) {
+        if (option->subControls.testFlag(SC_ScrollBarGroove) && !grooveRect.isEmpty()) {
             const QRectF track = centeredTrack(grooveRect, scrollBar->orientation,
                                                 Meo::DesignTokens::space4());
             MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(),
@@ -876,7 +924,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         drawScrollButton(SC_ScrollBarSubLine);
         drawScrollButton(SC_ScrollBarAddLine);
 
-        if (option->subControls.testFlag(SC_ScrollBarSlider)) {
+        if (option->subControls.testFlag(SC_ScrollBarSlider) && !sliderRect.isEmpty()) {
             const bool sliderActive = option->activeSubControls.testFlag(SC_ScrollBarSlider);
             const QColor thumb = enabled
                 ? (pressed && sliderActive

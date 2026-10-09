@@ -3,9 +3,11 @@
 #include "meostyletab.h"
 
 #include <QtCore/QtGlobal>
+#include <initializer_list>
 #include <QtWidgets/QStyleOptionButton>
 #include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionSlider>
+#include <QtWidgets/QStyleOptionSpinBox>
 #include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QWidget>
 
@@ -123,6 +125,56 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
         return QProxyStyle::subControlRect(control, option, subControl, widget);
     }
 
+    if (control == CC_SpinBox) {
+        if (const auto *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
+            const int width = spin->buttonSymbols == QAbstractSpinBox::NoButtons ? 0
+                : qMin(option->rect.width(), px(Meo::DesignTokens::space32()));
+            const int topHeight = option->rect.height() / 2;
+            switch (subControl) {
+            case SC_SpinBoxFrame: return option->rect;
+            case SC_SpinBoxUp:
+                return width ? meoVisualRect(option, QRect(option->rect.right() - width + 1, option->rect.top(), width, topHeight)) : QRect();
+            case SC_SpinBoxDown:
+                return width ? meoVisualRect(option, QRect(option->rect.right() - width + 1, option->rect.top() + topHeight, width, option->rect.height() - topHeight)) : QRect();
+            case SC_SpinBoxEditField:
+                return meoVisualRect(option, QRect(option->rect.left() + px(Meo::DesignTokens::space12()),
+                    option->rect.top() + px(Meo::DesignTokens::space4()),
+                    qMax(0, option->rect.width() - width - px(Meo::DesignTokens::space12()) - px(Meo::DesignTokens::space8())),
+                    qMax(0, option->rect.height() - 2 * px(Meo::DesignTokens::space4()))));
+            default: return {};
+            }
+        }
+    }
+    if (control == CC_ScrollBar) {
+        if (const auto *bar = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
+            const bool horizontal = bar->orientation == Qt::Horizontal;
+            const int length = qMax(0, horizontal ? bar->rect.width() : bar->rect.height());
+            const int end = qMin(length / 2, pixelMetric(PM_ScrollBarExtent, option, widget));
+            const int track = qMax(0, length - 2 * end);
+            const qint64 range = qMax<qint64>(0, qint64(bar->maximum) - bar->minimum);
+            const qint64 page = qMax(0, bar->pageStep);
+            int thumb = range == 0 ? track
+                : int(page * track / qMax<qint64>(1, range + page));
+            thumb = qBound(0, qMax(pixelMetric(PM_ScrollBarSliderMin, option, widget), thumb), track);
+            const int start = end + sliderPositionFromValue(bar->minimum, bar->maximum, bar->sliderPosition, track - thumb, bar->upsideDown);
+            auto rect = [&](int offset, int extent) {
+                if (extent <= 0) return QRect();
+                const QRect logical = horizontal
+                    ? QRect(bar->rect.left() + offset, bar->rect.top(), extent, bar->rect.height())
+                    : QRect(bar->rect.left(), bar->rect.top() + offset, bar->rect.width(), extent);
+                return meoVisualRect(option, logical);
+            };
+            switch (subControl) {
+            case SC_ScrollBarSubLine: return rect(0, end);
+            case SC_ScrollBarAddLine: return rect(length - end, end);
+            case SC_ScrollBarGroove: return rect(end, track);
+            case SC_ScrollBarSlider: return rect(start, thumb);
+            case SC_ScrollBarSubPage: return rect(end, start - end);
+            case SC_ScrollBarAddPage: return rect(start + thumb, length - end - start - thumb);
+            default: return {};
+            }
+        }
+    }
     if (control == CC_ComboBox) {
         const auto *combo = qstyleoption_cast<const QStyleOptionComboBox *>(option);
         if (!combo) {
@@ -238,4 +290,25 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
     }
 
     return QProxyStyle::subControlRect(control, option, subControl, widget);
+}
+
+QStyle::SubControl MeoStyle::hitTestComplexControl(ComplexControl control, const QStyleOptionComplex *option,
+                                                 const QPoint &position, const QWidget *widget) const
+{
+    if (!option || !option->rect.contains(position)) return SC_None;
+    // Hit-test the actual painted geometry. Qt may pass SC_None while querying
+    // a scroll bar, so subControls is a paint mask rather than a hit-test mask.
+    auto hit = [&](std::initializer_list<SubControl> parts) {
+        for (const auto part : parts) {
+            if (subControlRect(control, option, part, widget).contains(position)) return part;
+        }
+        return SC_None;
+    };
+    switch (control) {
+    case CC_SpinBox: return hit({SC_SpinBoxUp, SC_SpinBoxDown, SC_SpinBoxEditField, SC_SpinBoxFrame});
+    case CC_ScrollBar: return hit({SC_ScrollBarSlider, SC_ScrollBarSubLine, SC_ScrollBarAddLine, SC_ScrollBarSubPage, SC_ScrollBarAddPage});
+    case CC_ComboBox: return hit({SC_ComboBoxArrow, SC_ComboBoxEditField, SC_ComboBoxFrame});
+    case CC_ToolButton: return hit({SC_ToolButtonMenu, SC_ToolButton});
+    default: return QProxyStyle::hitTestComplexControl(control, option, position, widget);
+    }
 }

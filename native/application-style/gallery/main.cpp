@@ -15,6 +15,8 @@
 #include <QtWidgets/QRadioButton>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSlider>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QToolButton>
@@ -110,6 +112,11 @@ int main(int argc, char *argv[])
     editableCombo->setEditable(true);
     editableCombo->addItem(QIcon::fromTheme(QStringLiteral("folder")), QStringLiteral("Files & folders"));
     form->addRow(QStringLiteral("Editable combo"), editableCombo);
+    auto *spin = new QSpinBox; spin->setRange(-100, 100); spin->setValue(25);
+    form->addRow(QStringLiteral("Spin box"), spin);
+    auto *decimal = new QDoubleSpinBox; decimal->setButtonSymbols(QAbstractSpinBox::PlusMinus);
+    decimal->setLayoutDirection(Qt::RightToLeft); decimal->setValue(12.5);
+    form->addRow(QStringLiteral("RTL decimal"), decimal);
     auto *slider = new QSlider(Qt::Horizontal);
     slider->setValue(55);
     form->addRow(QStringLiteral("Slider"), slider);

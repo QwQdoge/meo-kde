@@ -12,6 +12,10 @@ public:
     QPalette standardPalette() const override;
     int pixelMetric(PixelMetric metric, const QStyleOption *option = nullptr,
                     const QWidget *widget = nullptr) const override;
+    int styleHint(StyleHint hint, const QStyleOption *option = nullptr,
+                  const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const override;
+    SubControl hitTestComplexControl(ComplexControl control, const QStyleOptionComplex *option,
+                                    const QPoint &position, const QWidget *widget = nullptr) const override;
     QSize sizeFromContents(ContentsType type, const QStyleOption *option,
                            const QSize &contentsSize, const QWidget *widget) const override;
     QRect subElementRect(SubElement element, const QStyleOption *option,

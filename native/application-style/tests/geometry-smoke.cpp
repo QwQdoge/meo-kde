@@ -7,6 +7,7 @@
 #include <QtWidgets/QStyleOptionFrame>
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionSlider>
+#include <QtWidgets/QStyleOptionSpinBox>
 #include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QStyleOptionTab>
 #include <QtWidgets/QStyleOptionViewItem>
@@ -21,6 +22,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void complexControlsHitTheirOwnGeometry();
     void itemContentsShareCheckIconAndEditorGeometry();
     void tabContentsReserveButtonsInEveryOrientation();
     void pushButtonContentUsesMeoInsets();
@@ -114,6 +116,41 @@ void MeoStyleGeometryTest::itemContentsShareCheckIconAndEditorGeometry()
     const QSize wide = style.sizeFromContents(QStyle::CT_ItemViewItem, &wrapped, QSize(), nullptr);
     QVERIFY(narrow.height() > wide.height());
     QVERIFY(narrow.width() <= 100);
+}
+
+void MeoStyleGeometryTest::complexControlsHitTheirOwnGeometry()
+{
+    MeoStyle style;
+    for (auto direction : {Qt::LeftToRight, Qt::RightToLeft}) {
+        QStyleOptionSpinBox spin;
+        spin.rect = QRect(13, 27, 180, 41); spin.direction = direction;
+        spin.buttonSymbols = QAbstractSpinBox::UpDownArrows;
+        const QRect edit = style.subControlRect(QStyle::CC_SpinBox, &spin, QStyle::SC_SpinBoxEditField);
+        for (auto part : {QStyle::SC_SpinBoxUp, QStyle::SC_SpinBoxDown}) {
+            const QRect button = style.subControlRect(QStyle::CC_SpinBox, &spin, part);
+            QVERIFY(spin.rect.contains(button)); QVERIFY(!edit.intersects(button));
+            QCOMPARE(style.hitTestComplexControl(QStyle::CC_SpinBox, &spin, button.center()), part);
+        }
+        spin.buttonSymbols = QAbstractSpinBox::NoButtons;
+        QVERIFY(style.subControlRect(QStyle::CC_SpinBox, &spin, QStyle::SC_SpinBoxUp).isEmpty());
+        for (auto orientation : {Qt::Horizontal, Qt::Vertical}) {
+            for (bool inverted : {false, true}) {
+                QStyleOptionSlider bar;
+                bar.rect = QRect(13, 27, orientation == Qt::Horizontal ? 240 : 14, orientation == Qt::Horizontal ? 14 : 240);
+                bar.direction = direction; bar.orientation = orientation; bar.upsideDown = inverted;
+                bar.minimum = -100; bar.maximum = 100; bar.pageStep = 5; bar.sliderPosition = 0;
+                for (auto part : {QStyle::SC_ScrollBarSubLine, QStyle::SC_ScrollBarAddLine, QStyle::SC_ScrollBarSlider, QStyle::SC_ScrollBarSubPage, QStyle::SC_ScrollBarAddPage}) {
+                    const QRect rect = style.subControlRect(QStyle::CC_ScrollBar, &bar, part);
+                    QVERIFY(bar.rect.contains(rect));
+                    QCOMPARE(style.hitTestComplexControl(QStyle::CC_ScrollBar, &bar, rect.center()), part);
+                }
+                const QRect thumb = style.subControlRect(QStyle::CC_ScrollBar, &bar, QStyle::SC_ScrollBarSlider);
+                QCOMPARE(orientation == Qt::Horizontal ? thumb.width() : thumb.height(), qRound(Meo::DesignTokens::space32()));
+                bar.minimum = bar.maximum = 0;
+                QCOMPARE(style.subControlRect(QStyle::CC_ScrollBar, &bar, QStyle::SC_ScrollBarSlider), style.subControlRect(QStyle::CC_ScrollBar, &bar, QStyle::SC_ScrollBarGroove));
+            }
+        }
+    }
 }
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()

@@ -208,3 +208,9 @@ Tab content uses `space12` at each end, `space4` vertically and `space8` between
 ### Native item-view contract
 
 Standard styled delegates use Meo-owned text/editor, decoration and check rectangles, `space12` horizontal and `space4` vertical insets, `space8` internal gaps, `iconSizeS` check indicators and a `controlHeight` minimum. Left/right/top/bottom decorations, wrapping, elision and RTL share the same layout for sizing and drawing. Fonts, foreground/background brushes, alternating rows, decoration sizes, alignment and explicit model size hints remain application data. Meo selection/focus painting stays tonal, with readable Text-role content. Qt still owns the models, editing, check-state events and accessibility. Application delegates that bypass QStyle remain a compatibility boundary rather than an invitation to rewrite their models.
+
+### Native spin and scroll contract
+
+Spin boxes share the text-field surface and `controlHeight` minimum, with a `space32` trailing button column split equally between up/down, `space12` leading and `space8` trailing editor insets and `space4` vertical insets. NoButtons removes the column; arrows and plus/minus symbols honor individual step availability. Qt owns numeric/date editing, validation, keyboard and wheel behavior.
+
+Scroll bars use a `space12 + space2` extent, same-sized end buttons and a `space32` minimum thumb clamped to the available groove. Thumb size follows the actual page/range using wide arithmetic, and an empty range fills the groove. Orientation, inversion and RTL use Qt value mapping. Meo uses non-transient geometry so platform-specific transient behavior cannot silently change the painted/hit-tested layout. Spin/scroll/combo/tool hit testing reads the same owned subcontrol rectangles as painting; Qt retains action and drag handling.

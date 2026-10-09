@@ -18,6 +18,8 @@
 #include <QtWidgets/QRadioButton>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSlider>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QStyleOptionSpinBox>
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionButton>
@@ -465,6 +467,24 @@ private slots:
         QCOMPARE(entry->checkState(), Qt::Checked);
         QTest::mouseClick(list.viewport(), Qt::LeftButton, Qt::NoModifier, check.center());
         QCOMPARE(entry->checkState(), Qt::Unchecked);
+    }
+
+    void spinAndScrollButtonsUsePaintedHitRegions()
+    {
+        const auto style = createMeoStyle(); QVERIFY(style);
+        QSpinBox spin; spin.setStyle(style.get()); spin.resize(180, 40); spin.setRange(0, 10); spin.setValue(5);
+        spin.show(); QApplication::processEvents();
+        QStyleOptionSpinBox option; option.rect = spin.rect(); option.buttonSymbols = QAbstractSpinBox::UpDownArrows;
+        const QRect up = style->subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxUp, &spin);
+        QTest::mouseClick(&spin, Qt::LeftButton, Qt::NoModifier, up.center());
+        QCOMPARE(spin.value(), 6);
+        QScrollBar bar(Qt::Horizontal); bar.setStyle(style.get()); bar.resize(240, 14); bar.setRange(0, 100); bar.setValue(50);
+        bar.show(); QApplication::processEvents();
+        QStyleOptionSlider scroll; scroll.rect = bar.rect(); scroll.orientation = Qt::Horizontal;
+        scroll.minimum = 0; scroll.maximum = 100; scroll.pageStep = bar.pageStep(); scroll.sliderPosition = bar.value();
+        const QRect next = style->subControlRect(QStyle::CC_ScrollBar, &scroll, QStyle::SC_ScrollBarAddLine, &bar);
+        QTest::mouseClick(&bar, Qt::LeftButton, Qt::NoModifier, next.center());
+        QCOMPARE(bar.value(), 51);
     }
 
     void preservesApplicationPalette()
