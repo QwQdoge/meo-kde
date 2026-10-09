@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Meo Desktop
+Comment=Meo desktop session powered by KDE Plasma
+Exec=/usr/bin/startmeo-wayland
+TryExec=/usr/bin/startmeo-wayland
+DesktopNames=KDE;Meo
+X-KDE-PluginInfo-Version=1
