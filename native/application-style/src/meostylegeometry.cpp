@@ -7,7 +7,7 @@
 #include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QWidget>
 
-#include <meotokens.h>
+#include <meodesigntokens.h>
 
 namespace {
 

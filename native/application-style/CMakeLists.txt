@@ -8,28 +8,22 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     include(CTest)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Test)
 
-find_path(meoui_tokens_include NAMES meotokens.h PATH_SUFFIXES include/MeoUI)
-find_library(meoui_tokens_library NAMES meoui_tokens PATH_SUFFIXES lib lib64)
-
-if(NOT meoui_tokens_include OR NOT meoui_tokens_library)
-    if(NOT EXISTS "${MEOUI_SOURCE_DIR}/runtime/meotokens.cpp")
+# Widgets and QML renderers share constexpr metrics, not a QML runtime.
+find_path(meoui_design_tokens_include NAMES meodesigntokens.h PATH_SUFFIXES include/MeoUI)
+if(NOT meoui_design_tokens_include)
+    if(NOT EXISTS "${MEOUI_SOURCE_DIR}/runtime/meodesigntokens.h")
         message(FATAL_ERROR
-            "Meo application style requires the installed MeoUI token runtime or "
+            "Meo application style requires installed MeoUI design-token headers or "
             "MEOUI_SOURCE_DIR pointing to a MeoUI checkout.")
     endif()
-    add_library(meoui_style_tokens STATIC
-        "${MEOUI_SOURCE_DIR}/runtime/meotokens.cpp"
-        "${MEOUI_SOURCE_DIR}/runtime/meotokens.h"
-    )
-    set_target_properties(meoui_style_tokens PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    target_link_libraries(meoui_style_tokens PUBLIC Qt6::Core Qt6::Gui Qt6::Qml)
-    target_include_directories(meoui_style_tokens PUBLIC "${MEOUI_SOURCE_DIR}/runtime")
-    set(meoui_tokens_target meoui_style_tokens)
-else()
-    set(meoui_tokens_target "${meoui_tokens_library}")
+    set(meoui_design_tokens_include "${MEOUI_SOURCE_DIR}/runtime")
 endif()
+add_library(meoui_style_tokens INTERFACE)
+target_include_directories(meoui_style_tokens INTERFACE "${meoui_design_tokens_include}")
+target_link_libraries(meoui_style_tokens INTERFACE Qt6::Core)
+set(meoui_tokens_target meoui_style_tokens)
 
 add_library(meostyle MODULE
     src/meostyle.cpp
@@ -44,9 +38,6 @@ add_library(meostyle MODULE
     meostyle.json
 )
 target_link_libraries(meostyle PRIVATE ${meoui_tokens_target} Qt6::Core Qt6::Gui Qt6::Widgets)
-if(meoui_tokens_include)
-    target_include_directories(meostyle PRIVATE "${meoui_tokens_include}")
-endif()
 set_target_properties(meostyle PROPERTIES
     PREFIX ""
     OUTPUT_NAME "meostyle"
@@ -83,9 +74,6 @@ target_link_libraries(meo-style-geometry-smoke PRIVATE
     Qt6::Widgets
     Qt6::Test
 )
-if(meoui_tokens_include)
-    target_include_directories(meo-style-geometry-smoke PRIVATE "${meoui_tokens_include}")
-endif()
 add_test(NAME meo-style-geometry-smoke COMMAND meo-style-geometry-smoke)
 set_tests_properties(meo-style-geometry-smoke PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 

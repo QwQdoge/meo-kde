@@ -9,7 +9,7 @@
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionToolButton>
 
-#include <meotokens.h>
+#include <meodesigntokens.h>
 
 namespace {
 

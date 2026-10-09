@@ -68,3 +68,12 @@ of the loaded style, display platform and device-pixel ratio, then closes its ow
 window. Set `QT_SCALE_FACTOR` to `1`, `1.25` or `1.5` to test one process without
 changing the session's display settings. It never runs under CTest and does not
 prove third-party application interactions or live global theme changes.
+
+## Cross-renderer token dependency
+
+Static metric values are declared once in MeoUI's installed
+`MeoUI/meodesigntokens.h`. This header uses QtCore only. The QML `MeoTokens`
+singleton wraps those same values; MeoStyle includes the header without linking
+MeoUI's QObject/QML registration library or QtQml. A development build may use
+`MEOUI_SOURCE_DIR/runtime` when the pure header is not installed. No metric value
+or QML property changes as part of this dependency split.

@@ -1,6 +1,6 @@
 # Meo Desktop design system
 
-The canonical cross-renderer **metric token** source is the native MeoUI token runtime (`Meo::DesignTokens`). QML consumes the same runtime through the `MeoTokens` singleton, while `MeoTheme.qml` maps those stable metrics together with live semantic color, typography, motion, and application-facing roles for MeoUI components. Native MeoStyle links the same metric runtime directly.
+The canonical cross-renderer **metric token** source is the native MeoUI token runtime (`Meo::DesignTokens`). QML consumes the same runtime through the `MeoTokens` singleton, while `MeoTheme.qml` maps those stable metrics together with live semantic color, typography, motion, and application-facing roles for MeoUI components. Native MeoStyle includes the pure QtCore `meodesigntokens.h` contract directly; it does not link the QML singleton runtime.
 
 This means there is one stable metric contract rather than separate QML and C++ numbers. Component-specific behavior and presentation still belong to their renderer, but a shared metric must not be copied into MeoStyle or individual applications when a named design token exists. The first exact cross-renderer Button/TextField/Menu relationships are recorded in `docs/meostyle-component-contract-v1.md`.
 
