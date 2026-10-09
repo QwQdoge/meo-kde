@@ -3,12 +3,14 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include <QTimer>
+#include <KConfigWatcher>
 
 class InputDevicesController final : public QObject
 {
     Q_OBJECT
     Q_CLASSINFO("QML.Element", "InputDevices")
     Q_CLASSINFO("QML.Singleton", "true")
+    Q_PROPERTY(QVariantMap keyRepeat READ keyRepeat NOTIFY changed)
     Q_PROPERTY(QVariantList keyboardLayouts READ keyboardLayouts NOTIFY changed)
     Q_PROPERTY(QVariantList layoutChoices READ layoutChoices CONSTANT)
     Q_PROPERTY(QVariantList configuredLayouts READ configuredLayouts NOTIFY changed)
@@ -19,6 +21,8 @@ class InputDevicesController final : public QObject
     Q_PROPERTY(QString error READ error NOTIFY changed)
 public:
     explicit InputDevicesController(QObject *parent = nullptr);
+    QVariantMap keyRepeat() const;
+    Q_INVOKABLE void configureKeyRepeat(const QString &mode, int delay, double rate);
     QVariantList keyboardLayouts() const { return m_keyboardLayouts; }
     QVariantList layoutChoices() const { return m_layoutChoices; }
     QVariantList configuredLayouts() const { return m_configuredLayouts; }
@@ -42,6 +46,7 @@ private:
     bool m_available = false, m_busy = false;
     QString m_error;
     QTimer m_refreshTimer;
+    KConfigWatcher::Ptr m_inputWatcher;
     int m_generation = 0;
     int m_keyboardGeneration = 0;
 };

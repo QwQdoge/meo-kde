@@ -10,6 +10,8 @@ class PlatformController final : public QObject
     Q_OBJECT
     Q_CLASSINFO("QML.Element", "Platform")
     Q_CLASSINFO("QML.Singleton", "true")
+    Q_PROPERTY(QVariantMap screenLockPolicy READ screenLockPolicy NOTIFY screenLockPolicyChanged)
+    Q_PROPERTY(bool screenLockPolicyBusy READ screenLockPolicyBusy NOTIFY screenLockPolicyChanged)
     Q_PROPERTY(bool brightnessAvailable READ brightnessAvailable NOTIFY brightnessChanged)
     Q_PROPERTY(QVariantList brightnessDisplays READ brightnessDisplays NOTIFY brightnessChanged)
     Q_PROPERTY(bool nightLightAvailable READ nightLightAvailable NOTIFY nightLightChanged)
@@ -26,6 +28,9 @@ class PlatformController final : public QObject
 
 public:
     explicit PlatformController(QObject *parent = nullptr);
+    QVariantMap screenLockPolicy() const;
+    bool screenLockPolicyBusy() const { return m_screenLockPolicyBusy; }
+    Q_INVOKABLE void configureScreenLock(bool automatic, qreal minutes, bool onResume, bool onStart, int graceSeconds);
 
     bool brightnessAvailable() const;
     QVariantList brightnessDisplays() const;
@@ -54,6 +59,7 @@ public:
 
 Q_SIGNALS:
     void brightnessChanged();
+    void screenLockPolicyChanged();
     void nightLightChanged();
     void powerProfilesChanged();
     void keepAwakeChanged();
@@ -78,4 +84,6 @@ private:
     QObject *m_keepAwakeInhibitor = nullptr;
     QString m_lastError;
     KConfigWatcher::Ptr m_nightLightWatcher;
+    KConfigWatcher::Ptr m_screenLockWatcher;
+    bool m_screenLockPolicyBusy = false;
 };

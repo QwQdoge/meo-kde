@@ -6,6 +6,10 @@
 #include <QFile>
 #include <QStandardPaths>
 #include <QXmlStreamReader>
+#include <QDBusConnectionInterface>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
+#include <QDBusServiceWatcher>
 #include <KSystemInhibitor>
 
 #include <QDBusConnection>
@@ -53,6 +57,13 @@ PlatformController::PlatformController(QObject *parent)
     QDBusConnection::systemBus().connect(powerProfilesService, powerProfilesPath,
                                          "org.freedesktop.DBus.Properties", "PropertiesChanged",
                                          this, SLOT(refreshPowerProfiles()));
+    const auto screenLockConfig = KSharedConfig::openConfig(QStringLiteral("kscreenlockerrc"));
+    m_screenLockWatcher = KConfigWatcher::create(screenLockConfig);
+    connect(m_screenLockWatcher.data(), &KConfigWatcher::configChanged, this,
+        [this](const KConfigGroup &group, const QByteArrayList &) { if (group.name() == QStringLiteral("Daemon")) Q_EMIT screenLockPolicyChanged(); });
+    auto *screenLockOwner = new QDBusServiceWatcher(QStringLiteral("org.kde.screensaver"), sessionBus,
+        QDBusServiceWatcher::WatchForOwnerChange, this);
+    connect(screenLockOwner, &QDBusServiceWatcher::serviceOwnerChanged, this, &PlatformController::screenLockPolicyChanged);
     m_nightLightWatcher = KConfigWatcher::create(KSharedConfig::openConfig(QStringLiteral("kwinrc")));
     connect(m_nightLightWatcher.data(), &KConfigWatcher::configChanged, this,
         [this](const KConfigGroup &group, const QByteArrayList &) {
@@ -246,4 +257,64 @@ bool PlatformController::openTaskManager()
         ? QStringLiteral("plasma-systemmonitor") : meo, QStringList{});
     if (!started) setError(i18n("Could not open the task manager."));
     return started;
+}
+
+QVariantMap PlatformController::screenLockPolicy() const
+{
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kscreenlockerrc")); config->reparseConfiguration();
+    const auto group = config->group(QStringLiteral("Daemon"));
+    bool writable = true;
+    for (const char *key : {"Autolock", "Timeout", "LockOnResume", "LockOnStart", "LockGrace"}) writable &= !group.isEntryImmutable(key);
+    auto *bus = QDBusConnection::sessionBus().interface();
+    return {{"available", bus && bus->isServiceRegistered(QStringLiteral("org.kde.screensaver"))}, {"writable", writable},
+        {"automatic", group.readEntry("Autolock", true)}, {"minutes", group.readEntry("Timeout", 5.0)},
+        {"onResume", group.readEntry("LockOnResume", true)}, {"onStart", group.readEntry("LockOnStart", false)},
+        {"graceSeconds", group.readEntry("LockGrace", 5)}, {"passwordRequired", group.readEntry("RequirePassword", true)},
+        {"lockAfterGrace", group.readEntry("Lock", true)}};
+}
+
+void PlatformController::configureScreenLock(bool automatic, qreal minutes, bool onResume, bool onStart, int graceSeconds)
+{
+    if (m_screenLockPolicyBusy) return;
+    const auto policy = screenLockPolicy();
+    if (!policy.value("available").toBool() || !policy.value("writable").toBool()
+        || !qIsFinite(minutes) || minutes < 0.1 || minutes > 240 || graceSeconds < 0 || graceSeconds > 300) {
+        setError(i18nd("meo-desktop", "Choose an available screen locker, idle time from 0.1 to 240 minutes, and grace time from 0 to 300 seconds.")); return;
+    }
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kscreenlockerrc"));
+    auto group = config->group(QStringLiteral("Daemon"));
+    const QVariantMap values{{"Autolock", automatic}, {"Timeout", double(minutes)},
+        {"LockOnResume", onResume}, {"LockOnStart", onStart}, {"LockGrace", graceSeconds}};
+    QVariantMap previous;
+    for (auto it = values.cbegin(); it != values.cend(); ++it) {
+        if (group.hasKey(it.key())) previous.insert(it.key(), group.readEntry(it.key(), QVariant()));
+    }
+    const auto restore = [config, values, previous] {
+        auto settings = config->group(QStringLiteral("Daemon"));
+        for (auto it = values.cbegin(); it != values.cend(); ++it) {
+            if (previous.contains(it.key())) settings.writeEntry(it.key(), previous.value(it.key()), KConfig::Notify);
+            else settings.deleteEntry(it.key(), KConfig::Notify);
+        }
+        return config->sync();
+    };
+    for (auto it = values.cbegin(); it != values.cend(); ++it) group.writeEntry(it.key(), it.value(), KConfig::Notify);
+    if (!config->sync()) {
+        const bool restored = restore();
+        setError(restored ? i18nd("meo-desktop", "Screen lock preferences could not be saved; the previous configuration was restored.")
+                          : i18nd("meo-desktop", "Screen lock preferences and recovery could not be saved. Check configuration permissions.")); return;
+    }
+    m_screenLockPolicyBusy = true; clearError(); Q_EMIT screenLockPolicyChanged();
+    auto message = QDBusMessage::createMethodCall(QStringLiteral("org.kde.screensaver"), QStringLiteral("/ScreenSaver"),
+        QStringLiteral("org.kde.screensaver"), QStringLiteral("configure"));
+    auto *watcher = new QDBusPendingCallWatcher(QDBusConnection::sessionBus().asyncCall(message, 5000), this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, message, restore](QDBusPendingCallWatcher *finished) {
+        const QDBusPendingReply<> reply = *finished; finished->deleteLater();
+        if (reply.isError()) {
+            const bool restored = restore();
+            if (restored) QDBusConnection::sessionBus().asyncCall(message, 5000);
+            setError(restored ? i18nd("meo-desktop", "The screen locker did not confirm the change. Previous preferences were restored: %1", reply.error().message())
+                              : i18nd("meo-desktop", "Screen lock recovery failed. Check the advanced screen lock settings: %1", reply.error().message()));
+        }
+        m_screenLockPolicyBusy = false; Q_EMIT screenLockPolicyChanged();
+    });
 }

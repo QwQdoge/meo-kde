@@ -20,7 +20,7 @@ const QString manager = QStringLiteral("/org/kde/KWin/InputDevice");
 const QString deviceInterface = QStringLiteral("org.kde.KWin.InputDevice");
 const QString properties = QStringLiteral("org.freedesktop.DBus.Properties");
 const QMap<QString, QString> booleanCapabilities{
-    {"naturalScroll", "supportsNaturalScroll"}, {"leftHanded", "supportsLeftHanded"},
+    {"enabled", "supportsDisableEvents"}, {"naturalScroll", "supportsNaturalScroll"}, {"leftHanded", "supportsLeftHanded"},
     {"disableWhileTyping", "supportsDisableWhileTyping"},
     {"disableEventsOnExternalMouse", "supportsDisableEventsOnExternalMouse"},
     {"middleEmulation", "supportsMiddleEmulation"}, {"scrollTwoFinger", "supportsScrollTwoFinger"},
@@ -40,6 +40,9 @@ QDBusMessage getProperties(const QString &path, const QString &interface)
 
 InputDevicesController::InputDevicesController(QObject *parent) : QObject(parent)
 {
+    m_inputWatcher = KConfigWatcher::create(KSharedConfig::openConfig(QStringLiteral("kcminputrc")));
+    connect(m_inputWatcher.data(), &KConfigWatcher::configChanged, this,
+        [this](const KConfigGroup &group, const QByteArrayList &) { if (group.name() == QStringLiteral("Keyboard")) Q_EMIT changed(); });
     m_refreshTimer.setSingleShot(true); m_refreshTimer.setInterval(75);
     connect(&m_refreshTimer, &QTimer::timeout, this, &InputDevicesController::refresh);
     auto *watcher = new QDBusServiceWatcher(service, QDBusConnection::sessionBus(),
@@ -238,4 +241,34 @@ void InputDevicesController::configureKeyboardLayouts(const QVariantList &ids)
     if (!group.sync()) m_error = tr("Keyboard layouts could not be saved."); else m_error.clear();
     // KWin observes kxkbrc through KConfigWatcher; no session restart/reload.
     refresh();
+}
+
+QVariantMap InputDevicesController::keyRepeat() const
+{
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kcminputrc")); config->reparseConfiguration();
+    const auto group = config->group(QStringLiteral("Keyboard"));
+    const bool accentDefault = qEnvironmentVariable("QT_IM_MODULE") == QStringLiteral("plasmaim");
+    const QString mode = group.readEntry("KeyRepeat", accentDefault ? QStringLiteral("accent") : QStringLiteral("repeat"));
+    return {{"mode", mode}, {"accentAvailable", accentDefault || mode == QStringLiteral("accent")},
+        {"delay", group.readEntry("RepeatDelay", 600)}, {"rate", group.readEntry("RepeatRate", 25.0)},
+        {"available", m_available && qEnvironmentVariable("XDG_SESSION_TYPE") == QStringLiteral("wayland")},
+        {"writable", !group.isEntryImmutable("KeyRepeat") && !group.isEntryImmutable("RepeatDelay") && !group.isEntryImmutable("RepeatRate")}};
+}
+void InputDevicesController::configureKeyRepeat(const QString &mode, int delay, double rate)
+{
+    if (!keyRepeat().value("available").toBool() || !keyRepeat().value("writable").toBool()
+        || !QStringList{QStringLiteral("repeat"), QStringLiteral("none"), QStringLiteral("accent")}.contains(mode)
+        || (mode == QStringLiteral("accent") && !keyRepeat().value("accentAvailable").toBool())
+        || delay < 100 || delay > 5000 || !qIsFinite(rate) || rate < 0.2 || rate > 200) {
+        m_error = tr("Choose a supported key repeat mode, delay from 100 to 5000 ms, and rate from 0.2 to 200 per second."); Q_EMIT changed(); return;
+    }
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kcminputrc"));
+    auto group = config->group(QStringLiteral("Keyboard"));
+    group.writeEntry("KeyRepeat", mode, KConfig::Notify);
+    group.writeEntry("RepeatDelay", delay, KConfig::Notify);
+    group.writeEntry("RepeatRate", rate, KConfig::Notify);
+    if (!config->sync()) m_error = tr("The keyboard repeat preference could not be saved."); else m_error.clear();
+    // KWin observes this exact group and publishes the new repeat information
+    // to Wayland clients. No compositor restart or synthetic key event.
+    Q_EMIT changed();
 }
