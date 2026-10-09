@@ -1,3 +1,4 @@
+#include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostylecontent.h"
 #include "meostyletab.h"
@@ -433,6 +434,61 @@ void drawLeadingLabel(const MeoStyleContent *style, const QStyleOption *option,
 void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *option,
                                   QPainter *painter, const QWidget *widget) const
 {
+    if (element == CE_Header) {
+        if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
+            painter->save(); painter->setClipRect(header->rect, Qt::IntersectClip);
+            drawControl(CE_HeaderSection, header, painter, widget);
+            QStyleOptionHeaderV2 content;
+            static_cast<QStyleOptionHeader &>(content) = *header;
+            // Copy v2 extras without slicing away the application's elide mode.
+            if (const auto *v2 = qstyleoption_cast<const QStyleOptionHeaderV2 *>(header)) content = *v2;
+            else { content.version = QStyleOptionHeaderV2::Version; content.textElideMode = Qt::ElideRight; }
+            content.rect = subElementRect(SE_HeaderLabel, header, widget);
+            drawControl(CE_HeaderLabel, &content, painter, widget);
+            content.rect = subElementRect(SE_HeaderArrow, header, widget);
+            if (!content.rect.isEmpty()) drawPrimitive(PE_IndicatorHeaderArrow, &content, painter, widget);
+            painter->restore();
+            return;
+        }
+    }
+    if (element == CE_HeaderSection || element == CE_HeaderEmptyArea) {
+        painter->save(); painter->setClipRect(option->rect, Qt::IntersectClip);
+        const auto group = optionColorGroup(option);
+        const QColor surface = option->palette.color(group, QPalette::Window);
+        painter->fillRect(option->rect, surface);
+        const bool active = option->state.testFlag(State_MouseOver) || option->state.testFlag(State_Sunken)
+            || option->state.testFlag(State_On);
+        if (element == CE_HeaderSection && active) MeoStyleHelper::drawRoundedSurface(painter,
+            option->rect.adjusted(1, 1, -1, -1), Meo::DesignTokens::shapeSmall(),
+            MeoStyleHelper::stateLayer(option->palette, group, QPalette::AlternateBase, QPalette::Text,
+                option->state.testFlag(State_MouseOver), option->state.testFlag(State_Sunken), option->state.testFlag(State_HasFocus)));
+        if (option->state.testFlag(State_HasFocus)) MeoStyleHelper::drawFocusRing(painter,
+            option->rect.adjusted(1, 1, -1, -1), Meo::DesignTokens::shapeSmall(), primaryColor(option->palette, group));
+        painter->restore();
+        return;
+    }
+    if (element == CE_HeaderLabel) {
+        if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
+            if (header->rect.isEmpty()) return;
+            painter->save(); painter->setClipRect(header->rect, Qt::IntersectClip);
+            QRect text = header->rect;
+            if (!header->icon.isNull()) {
+                const int extent = qMin(MeoHeader::iconExtent(), qMin(text.width(), text.height()));
+                const QRect logical(text.left(), text.center().y() - extent / 2, extent, extent);
+                header->icon.paint(painter, QStyle::visualRect(header->direction, text, logical), header->iconAlignment,
+                    header->state.testFlag(State_Enabled) ? QIcon::Normal : QIcon::Disabled);
+                const int reserve = extent + (header->text.isEmpty() ? 0 : MeoHeader::gap());
+                if (header->direction == Qt::RightToLeft) text.adjust(0, 0, -reserve, 0);
+                else text.adjust(reserve, 0, 0, 0);
+            }
+            const auto *v2 = qstyleoption_cast<const QStyleOptionHeaderV2 *>(header);
+            const QString label = header->fontMetrics.elidedText(header->text, v2 ? v2->textElideMode : Qt::ElideRight, qMax(0, text.width()));
+            QPalette palette = header->palette; palette.setCurrentColorGroup(optionColorGroup(header));
+            drawItemText(painter, text, QStyle::visualAlignment(header->direction, header->textAlignment) | Qt::TextSingleLine,
+                palette, header->state.testFlag(State_Enabled), label, QPalette::Text);
+            painter->restore(); return;
+        }
+    }
     if (element == CE_ItemViewItem) {
         if (const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option)) {
             painter->save();

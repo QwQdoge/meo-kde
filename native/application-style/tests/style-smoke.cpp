@@ -8,6 +8,8 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QHeaderView>
+#include <QtWidgets/QStyleOptionHeader>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QMenu>
@@ -418,7 +420,7 @@ private slots:
             void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                              const QWidget *widget = nullptr) const override {
                 if (element == CE_CheckBox || element == CE_RadioButton || element == CE_CheckBoxLabel
-                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem) ++labelCalls;
+                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem || element == CE_Header || element == CE_HeaderLabel || element == CE_HeaderSection) ++labelCalls;
                 QProxyStyle::drawControl(element, option, painter, widget);
             }
         };
@@ -447,6 +449,10 @@ private slots:
         item.features = QStyleOptionViewItem::HasDisplay | QStyleOptionViewItem::HasCheckIndicator;
         item.state = QStyle::State_Enabled; item.checkState = Qt::PartiallyChecked;
         style->drawControl(QStyle::CE_ItemViewItem, &item, &painter);
+        QStyleOptionHeaderV2 header; header.rect = image.rect(); header.text = QStringLiteral("Long header name");
+        header.state = QStyle::State_Enabled; header.sortIndicator = QStyleOptionHeader::SortUp;
+        header.textElideMode = Qt::ElideMiddle;
+        style->drawControl(QStyle::CE_Header, &header, &painter);
         QCOMPARE(base->labelCalls, 0);
     }
 
@@ -485,6 +491,27 @@ private slots:
         const QRect next = style->subControlRect(QStyle::CC_ScrollBar, &scroll, QStyle::SC_ScrollBarAddLine, &bar);
         QTest::mouseClick(&bar, Qt::LeftButton, Qt::NoModifier, next.center());
         QCOMPARE(bar.value(), 51);
+    }
+
+    void headerSortingAndTreeExpansionKeepQtBehavior()
+    {
+        const auto style = createMeoStyle(); QVERIFY(style);
+        QTableWidget table(2, 1); table.setStyle(style.get());
+        table.setItem(0, 0, new QTableWidgetItem(QStringLiteral("a")));
+        table.setItem(1, 0, new QTableWidgetItem(QStringLiteral("b")));
+        table.setSortingEnabled(true); table.sortItems(0, Qt::AscendingOrder);
+        table.resize(240, 160); table.show(); QApplication::processEvents();
+        auto *header = table.horizontalHeader();
+        QTest::mouseClick(header->viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(header->sectionSize(0) / 2, header->height() / 2));
+        QCOMPARE(header->sortIndicatorOrder(), Qt::DescendingOrder);
+        QCOMPARE(table.item(0, 0)->text(), QStringLiteral("b"));
+        QTreeWidget tree; tree.setStyle(style.get()); tree.resize(240, 160);
+        auto *parent = new QTreeWidgetItem(&tree, {QStringLiteral("Parent")});
+        new QTreeWidgetItem(parent, {QStringLiteral("Child")});
+        tree.show(); QApplication::processEvents();
+        QVERIFY(!parent->isExpanded());
+        QTest::mouseClick(tree.viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(tree.indentation() / 2, tree.visualItemRect(parent).center().y()));
+        QVERIFY(parent->isExpanded());
     }
 
     void preservesApplicationPalette()

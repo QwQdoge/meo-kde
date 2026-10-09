@@ -1,3 +1,4 @@
+#include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostyle.h"
 #include "meostyletab.h"
@@ -66,6 +67,10 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
         return QProxyStyle::subElementRect(element, option, widget);
     }
 
+    if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
+        if (element == SE_HeaderLabel) return MeoHeader::labelRect(*header);
+        if (element == SE_HeaderArrow) return MeoHeader::arrowRect(*header);
+    }
     if (const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option)) {
         const auto layout = MeoTab::layout(*tab);
         if (element == SE_TabBarTabText) return layout.physical(layout.content);

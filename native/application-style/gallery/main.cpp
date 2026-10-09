@@ -142,6 +142,7 @@ int main(int argc, char *argv[])
     table->setItem(1, 0, new QTableWidgetItem(QStringLiteral("Kate")));
     table->setItem(1, 1, new QTableWidgetItem(QStringLiteral("Selected")));
     table->setCurrentCell(1, 0);
+    table->setSortingEnabled(true);
     table->setAlternatingRowColors(true);
     table->item(0, 0)->setIcon(QIcon::fromTheme(QStringLiteral("folder")));
     table->item(0, 0)->setCheckState(Qt::PartiallyChecked);
@@ -154,6 +155,8 @@ int main(int argc, char *argv[])
     tree->setHeaderLabels({QStringLiteral("Tree"), QStringLiteral("Value")});
     auto *treeItem = new QTreeWidgetItem({QStringLiteral("Meo"), QStringLiteral("Style") });
     tree->addTopLevelItem(treeItem);
+    new QTreeWidgetItem(treeItem, {QStringLiteral("Child entry"), QStringLiteral("Expandable")});
+    treeItem->setExpanded(true);
     tree->setCurrentItem(treeItem);
     tabs->addTab(tree, QStringLiteral("Tree"));
     layout->addWidget(tabs);

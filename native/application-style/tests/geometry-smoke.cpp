@@ -5,6 +5,7 @@
 #include <QtWidgets/QStyleOptionButton>
 #include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionFrame>
+#include <QtWidgets/QStyleOptionHeader>
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionSpinBox>
@@ -22,6 +23,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void headerContentReservesSortIndicator();
     void complexControlsHitTheirOwnGeometry();
     void itemContentsShareCheckIconAndEditorGeometry();
     void tabContentsReserveButtonsInEveryOrientation();
@@ -150,6 +152,28 @@ void MeoStyleGeometryTest::complexControlsHitTheirOwnGeometry()
                 QCOMPARE(style.subControlRect(QStyle::CC_ScrollBar, &bar, QStyle::SC_ScrollBarSlider), style.subControlRect(QStyle::CC_ScrollBar, &bar, QStyle::SC_ScrollBarGroove));
             }
         }
+    }
+}
+
+void MeoStyleGeometryTest::headerContentReservesSortIndicator()
+{
+    MeoStyle style;
+    for (auto orientation : {Qt::Horizontal, Qt::Vertical}) {
+        QStyleOptionHeader header;
+        header.rect = QRect(13, 27, 180, 40); header.text = QStringLiteral("Name");
+        header.orientation = orientation; header.sortIndicator = QStyleOptionHeader::SortUp;
+        const QRect label = style.subElementRect(QStyle::SE_HeaderLabel, &header);
+        const QRect arrow = style.subElementRect(QStyle::SE_HeaderArrow, &header);
+        QVERIFY(header.rect.contains(label)); QVERIFY(header.rect.contains(arrow)); QVERIFY(!label.intersects(arrow));
+        header.direction = Qt::RightToLeft;
+        QCOMPARE(style.subElementRect(QStyle::SE_HeaderLabel, &header), QStyle::visualRect(Qt::RightToLeft, header.rect, label));
+        QCOMPARE(style.subElementRect(QStyle::SE_HeaderArrow, &header), QStyle::visualRect(Qt::RightToLeft, header.rect, arrow));
+        const QSize sorted = style.sizeFromContents(QStyle::CT_HeaderSection, &header, QSize(900, 900), nullptr);
+        QCOMPARE(sorted.height(), qRound(Meo::DesignTokens::controlHeight()));
+        header.sortIndicator = QStyleOptionHeader::None;
+        QVERIFY(style.subElementRect(QStyle::SE_HeaderArrow, &header).isEmpty());
+        const QSize plain = style.sizeFromContents(QStyle::CT_HeaderSection, &header, QSize(900, 900), nullptr);
+        QCOMPARE(sorted.width() - plain.width(), qRound(Meo::DesignTokens::iconSizeS() + Meo::DesignTokens::space8()));
     }
 }
 

@@ -1,3 +1,4 @@
+#include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostyle.h"
 #include "meostyletab.h"
@@ -212,6 +213,12 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     case PM_TabBarTabShiftHorizontal:
     case PM_TabBarTabShiftVertical:
         return 0;
+    case PM_HeaderMargin:
+        return qRound(Meo::DesignTokens::space12());
+    case PM_HeaderMarkSize:
+        return qRound(Meo::DesignTokens::iconSizeS());
+    case PM_TreeViewIndentation:
+        return qRound(Meo::DesignTokens::space24());
     case PM_ButtonMargin:
         return qRound(Meo::DesignTokens::space12());
     case PM_MenuHMargin:
@@ -249,6 +256,9 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_HeaderSection:
+        if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) return MeoHeader::sizeHint(*header);
+        return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
     case CT_SpinBox: {
         const auto *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(option);
         const int buttons = spin && spin->buttonSymbols == QAbstractSpinBox::NoButtons ? 0 : qRound(Meo::DesignTokens::space32());
@@ -359,6 +369,26 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
 
+    if (element == PE_IndicatorBranch) {
+        if (!option->state.testFlag(State_Children)) return;
+        const int extent = qMin(qRound(Meo::DesignTokens::iconSizeS()), qMin(option->rect.width(), option->rect.height()));
+        const QRect glyph(option->rect.center().x() - extent / 2, option->rect.center().y() - extent / 2, extent, extent);
+        const QColor foreground = option->palette.color(group, QPalette::Text);
+        if (enabled && hover) MeoStyleHelper::drawRoundedSurface(painter, glyph, Meo::DesignTokens::shapeExtraSmall(),
+            MeoStyleHelper::blend(option->palette.color(group, QPalette::Window), foreground, Meo::DesignTokens::stateOpacityHover()));
+        MeoStyleHelper::drawChevron(painter, glyph, foreground, option->state.testFlag(State_Open) ? Qt::DownArrow
+            : option->direction == Qt::RightToLeft ? Qt::LeftArrow : Qt::RightArrow);
+        return;
+    }
+    if (element == PE_IndicatorHeaderArrow) {
+        if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option);
+            header && header->sortIndicator != QStyleOptionHeader::None) {
+            // Keep Qt's SortUp-to-downward-glyph convention.
+            MeoStyleHelper::drawChevron(painter, option->rect, option->palette.color(group, QPalette::Text),
+                header->sortIndicator == QStyleOptionHeader::SortUp ? Qt::DownArrow : Qt::UpArrow);
+        }
+        return;
+    }
     if (element == PE_IndicatorTabClose) {
         const QColor foreground = option->palette.color(group, QPalette::WindowText);
         if (enabled && (hover || pressed)) {
