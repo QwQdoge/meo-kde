@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Keep Meo Desktop configuration isolated from a user's normal Plasma session.
+# Shared application data remains under the ordinary XDG data/cache roots; only
+# session/application configuration and state are private to the Meo session.
+base_config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+base_state_home="${XDG_STATE_HOME:-${HOME}/.local/state}"
+meo_config_home="${MEO_SESSION_CONFIG_HOME:-${base_config_home}/meo-desktop}"
+meo_state_home="${MEO_SESSION_STATE_HOME:-${base_state_home}/meo-desktop}"
+defaults_root="${MEO_SESSION_DEFAULTS_ROOT:-/usr/share/meo-desktop/session-defaults}"
+
+mkdir -p "${meo_config_home}" "${meo_state_home}"
+chmod 700 "${meo_config_home}" "${meo_state_home}" 2>/dev/null || true
+
+seed_config() {
+  local relative="$1"
+  local source="${defaults_root}/${relative}"
+  local destination="${meo_config_home}/${relative}"
+  [ -f "${source}" ] || return 0
+  [ ! -e "${destination}" ] || return 0
+  mkdir -p "$(dirname -- "${destination}")"
+  cp -- "${source}" "${destination}"
+}
+
+for relative in \
+  kdeglobals \
+  kglobalshortcutsrc \
+  kwinrc \
+  plasmarc \
+  plasma-welcomerc \
+  meo-shellrc \
+  fcitx5/conf/classicui.conf; do
+  seed_config "${relative}"
+done
+
+export XDG_CONFIG_HOME="${meo_config_home}"
+export XDG_STATE_HOME="${meo_state_home}"
+export MEO_DESKTOP_SESSION=1
+
+# Keep Meo-only presentation/input overrides inside this session instead of
+# installing them globally in /etc/environment.d or /etc/xdg.
+export QT_STYLE_OVERRIDE=Meo
+export XMODIFIERS=@im=fcitx
+export SAL_USE_VCLPLUGIN=kf6
+
+exec /usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland
