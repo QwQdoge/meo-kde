@@ -1,770 +1,66 @@
-"""Regression checks for the first-party Plasma shell composition."""
+"""Current first-party Plasma shell composition contracts.
 
+The broad regression suite lives in desktop_layout_contracts.py so intentional
+UI contract changes can be overridden here without weakening unrelated tests.
+"""
+
+import importlib.util
 from pathlib import Path
-import configparser
-import unittest
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-LAYOUT = REPO_ROOT / "themes/look-and-feel/org.meo.desktop/contents/layouts/org.kde.plasma.desktop-layout.js"
-INSTALLER = REPO_ROOT / "setup/apply-meo-desktop.sh"
-TOPBAR = REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui"
+BASE = Path(__file__).with_name("desktop_layout_contracts.py")
+SPEC = importlib.util.spec_from_file_location("meo_desktop_layout_contracts", BASE)
+legacy = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(legacy)
 
 
-class DesktopLayoutTests(unittest.TestCase):
-    def test_top_panel_uses_kde_launcher_menu_tray_and_two_meo_surfaces(self):
-        source = LAYOUT.read_text(encoding="utf-8")
-
-        self.assertIn('topPanel.addWidget("org.meo.systemmenu")', source)
-        self.assertIn('shelf.addWidget("org.meo.shelf")', source)
-        self.assertIn('launcher.writeConfig("global", "Meta")', source)
-        self.assertNotIn('topPanel.addWidget("org.meo.toptasks")', source)
-        self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
-        self.assertNotIn('topPanel.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertLess(source.index('topPanel.addWidget("org.meo.systemmenu")'),
-                        source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
-        self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
-        self.assertIn('timeCenter = topPanel.addWidget("org.meo.time-notifications")', source)
-        self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)
-        self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.systemtray")'), source.index('topPanel.addWidget("org.meo.topbar")'))
-        extra_items_line = next(
-            line for line in source.splitlines()
-            if 'writeConfig("extraItems"' in line
-        )
-        self.assertNotIn('org.kde.plasma.notifications', extra_items_line)
-        self.assertNotIn('org.kde.plasma.mediacontroller', extra_items_line)
-        self.assertIn('org.kde.plasma.notifications', source)
-        self.assertIn('org.kde.plasma.mediacontroller', source)
-        self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
-        self.assertIn('timeCenter.writeConfig("showDate", true)', source)
-
-    def test_active_application_surface_uses_kde_identity_and_settings_deeplink(self):
-        source = (
-            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn("TaskManager.AbstractTasksModel.AppId", source)
-        self.assertIn("TaskManager.AbstractTasksModel.AppName", source)
-        self.assertIn("tasksModel.activeTask", source)
-        self.assertIn("TaskManager.TasksModel.GroupDisabled", source)
-        self.assertIn('"meosettings://applications?"', source)
-        self.assertIn('i18n("Settings…")', source)
-        self.assertIn('query.push("section=" + encodeURIComponent(section))', source)
-        self.assertIn('openApplicationSection("info")', source)
-        self.assertIn('openApplicationSection("config")', source)
-        self.assertIn('openApplicationSection("config")', source)
-        self.assertNotIn('i18n("App info")', source)
-        self.assertIn("Qt.openUrlExternally(url)", source)
-        self.assertNotIn("QProcess", source)
-        self.assertNotIn("requestActivate", source)
-        self.assertNotIn('i18n("File")', source)
-        self.assertNotIn('i18n("Edit")', source)
-        self.assertNotIn('i18n("View")', source)
-
-    def test_topbar_interactions_share_meoui_motion_policy(self):
-        active_app = (
-            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
-        ).read_text(encoding="utf-8")
-        status = (
-            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/components/SystemStatusCluster.qml"
-        ).read_text(encoding="utf-8")
-        time_button = (
-            REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml"
-        ).read_text(encoding="utf-8")
-        notification_button = (
-            REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml"
-        ).read_text(encoding="utf-8")
-        quick_center = (
-            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/QuickSettingsCenter.qml"
-        ).read_text(encoding="utf-8")
-        status_center = (
-            REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml"
-        ).read_text(encoding="utf-8")
-
-        for source in (active_app, status, time_button, notification_button):
-            self.assertIn("MeoInteractionMotion", source)
-            self.assertIn("interactionMotion.resolvedScale", source)
-            self.assertIn("interactionMotion.resolvedOffsetY", source)
-            self.assertNotIn("interactionScaleSpring", source)
-            self.assertNotIn("interactionLiftSpring", source)
-
-        for source in (quick_center, status_center):
-            self.assertIn("MeoRevealMotion", source)
-            self.assertIn("resolvedOffsetX", source)
-            self.assertIn("resolvedOffsetY", source)
-            self.assertIn("revealMotion.resolvedScale", source)
-            self.assertIn("revealMotion.resolvedOffset", source)
-            self.assertNotIn("revealScaleSpring", source)
-            self.assertNotIn("revealLiftSpring", source)
-
-        self.assertNotIn("targetValue: root.down ? 0.94 : 1", status)
-
-    def test_meo_owned_topbar_triggers_share_shell_visual_surface(self):
-        paths = (
-            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml",
-            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/components/SystemStatusCluster.qml",
-            REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml",
-            REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml",
-        )
-        for path in paths:
-            source = path.read_text(encoding="utf-8")
-            self.assertIn("ShellTriggerSurface", source)
-            self.assertNotIn("background: MeoShape {", source)
-
-        surface = (
-            REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
-        ).read_text(encoding="utf-8")
-        self.assertNotIn("interactionColor", surface)
-        self.assertIn("MeoTheme.primaryContainer", surface)
-        self.assertIn("MeoStateLayer", surface)
-        self.assertIn("color: active ? selectedColor : restingColor", surface)
-        self.assertNotIn("MeoInteractionMotion {", surface)
-
-    def test_active_app_menu_stays_compact_and_uses_shared_context_surface(self):
-        source = (
-            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn('preferredMenuWidth: 228 * MeoTheme.globalScale', source)
-        self.assertIn("MeoContextMenu {", source)
-        self.assertNotIn('surfaceStyle: "context"', source)
-        self.assertIn("height: 28 * MeoTheme.globalScale", source)
-        self.assertIn("QQC2.Overlay.overlay || compactRoot", source)
-        shell_surface = (
-            REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
-        ).read_text(encoding="utf-8")
-        self.assertIn('type: "round"', shell_surface)
-        self.assertNotIn('"supportingText":', source)
-
-    def test_active_app_menu_is_about_settings_and_quit_only(self):
-        source = (
-            REPO_ROOT / "plasmoids/org.meo.toptasks/contents/ui/main.qml"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn('i18n("About")', source)
-        self.assertIn('i18n("Settings…")', source)
-        self.assertIn('i18n("Quit")', source)
-        self.assertIn('"shortcut": "Alt+F4"', source)
-        self.assertNotIn("MeoTooltip", source)
-        self.assertIn('openApplicationSection("info")', source)
-        self.assertIn('openApplicationSection("config")', source)
-        self.assertIn("tasksModel.requestClose(activeTaskIndex)", source)
-        self.assertIn("TaskManager.AbstractTasksModel.IsClosable", source)
-        self.assertIn('"enabled": root.activeApplicationClosable', source)
-        self.assertIn("if (activeApplicationClosable && activeTaskIndex)", source)
-        self.assertNotIn('i18n("File")', source)
-        self.assertNotIn('i18n("Edit")', source)
-        self.assertNotIn('i18n("View")', source)
-
-
-    def test_notifications_only_popup_reuses_reveal_motion(self):
-        source = (
-            REPO_ROOT / "plasmoids/org.meo.notifications/contents/ui/main.qml"
-        ).read_text(encoding="utf-8")
-        compact = (
-            REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn("revealActive: root.expanded", source)
-        self.assertIn("MeoInteractionMotion", compact)
-        self.assertIn("implicitWidth: 28 * MeoTheme.globalScale", compact)
-        self.assertIn("implicitHeight: implicitWidth", compact)
-        self.assertIn("interactionMotion.resolvedScale", compact)
-        self.assertIn("interactionMotion.resolvedOffsetY", compact)
-
-    def test_active_application_applet_is_installed_by_all_supported_paths(self):
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
-        installer = INSTALLER.read_text(encoding="utf-8")
-
-        self.assertIn('plasmoids/org.meo.toptasks', package)
-        self.assertIn('plasmoids/org.meo.toptasks/metadata.json', installer)
-        self.assertIn(
-            "for meo_panel_applet in org.meo.systemmenu org.meo.shelf org.meo.topbar org.meo.toptasks "
-            "org.meo.timecenter org.meo.time org.meo.notifications "
-            "org.meo.time-notifications; do",
-            installer,
-        )
-        self.assertNotIn(
-            "for legacy_plasmoid in org.meo.launcher org.meo.quicksettings "
-            "org.meo.shelf org.meo.toptasks; do",
-            installer,
-        )
-
-    def test_native_global_menu_uses_meo_theme_frames_without_forking_kde(self):
-        generator = (REPO_ROOT / "tools/theme/build_menubar_assets.py").read_text(
-            encoding="utf-8"
-        )
-        assets = (
-            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/menubaritem.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/menubaritem.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/menubaritem.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/menubaritem.svg",
-        )
-
-        self.assertIn("org.kde.plasma.appmenu owns application menu discovery", generator)
-        self.assertIn("ColorScheme-Highlight", generator)
-        for asset in assets:
-            source = asset.read_text(encoding="utf-8")
-            for prefix in ("normal", "hover", "pressed"):
-                for part in (
-                    "center", "top", "bottom", "left", "right",
-                    "topleft", "topright", "bottomleft", "bottomright",
-                ):
-                    self.assertIn(f'id="{prefix}-{part}"', source)
-            self.assertIn('id="normal-center"', source)
-            self.assertIn('fill="transparent"', source)
-            self.assertIn('id="hover-center"', source)
-            self.assertIn('id="pressed-center"', source)
-            self.assertIn("ColorScheme-Highlight", source)
-
-    def test_plasma_menu_and_delegate_surfaces_use_meo_viewitem_frames(self):
-        generator = (REPO_ROOT / "tools/theme/build_viewitem_assets.py").read_text(
-            encoding="utf-8"
-        )
-        assets = (
-            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/viewitem.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/viewitem.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/viewitem.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/viewitem.svg",
-        )
-
-        self.assertIn("PlasmaComponents", generator)
-        self.assertIn("widgets/viewitem.svg", generator)
-        self.assertIn("ColorScheme-ButtonBackground", generator)
-        self.assertIn("ColorScheme-ButtonHover", generator)
-        self.assertIn("ColorScheme-Highlight", generator)
-        for asset in assets:
-            source = asset.read_text(encoding="utf-8")
-            for prefix in ("normal", "hover", "selected", "selected+hover"):
-                for part in (
-                    "center", "top", "bottom", "left", "right",
-                    "topleft", "topright", "bottomleft", "bottomright",
-                ):
-                    self.assertIn(f'id="{prefix}-{part}"', source)
-            self.assertIn("ColorScheme-ButtonBackground", source)
-            self.assertIn("ColorScheme-ButtonHover", source)
-            self.assertIn("ColorScheme-Highlight", source)
-            self.assertIn("A 16 16", source)
-
-    def test_launcher_identity_is_installed_for_package_and_source_paths(self):
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
-        setup = (REPO_ROOT / "setup/apply-meo-desktop.sh").read_text(encoding="utf-8")
-        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
-
-        self.assertIn('assets/icons/meoarch-logo.svg', package)
-        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', package)
-        self.assertIn('assets/icons/meoarch-logo.svg', setup)
-        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', setup)
-        self.assertIn('icons/hicolor/scalable/apps/meoarch-logo.svg', reset)
-
-    def test_default_shelf_centers_native_tasks_between_expanding_spacers(self):
-        source = LAYOUT.read_text(encoding="utf-8")
-        self.assertIn('shelf.addWidget("org.kde.plasma.icontasks")', source)
-        self.assertIn('shelf.height = 48', source)
-        self.assertIn('shelf.floating = false', source)
-        self.assertIn('shelf.lengthMode = "fill"', source)
-        self.assertEqual(source.count('shelf.addWidget("org.kde.plasma.panelspacer")'), 2)
-        self.assertLess(source.index('shelf.addWidget("org.meo.shelf")'),
-                        source.index('shelf.addWidget("org.kde.plasma.icontasks")'))
-
-    def test_fresh_dock_pins_settings_store_and_files_in_that_order(self):
-        source = (REPO_ROOT / "native/dock/dockconfig.cpp").read_text(encoding="utf-8")
-        defaults = source[source.index('if (launchers.isEmpty()) {', source.index('void DockConfig::reload()')):]
-        entries = ('org.meo.settings.desktop', 'omnistore.desktop', 'org.kde.dolphin.desktop')
-        positions = [defaults.index(entry) for entry in entries]
-        self.assertEqual(positions, sorted(positions))
-        self.assertIn('QStringLiteral("applications/") + desktopFile', defaults)
-
-    def test_standalone_dock_is_explicit_and_does_not_duplicate_native_dock(self):
-        native = (REPO_ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
-        installer = INSTALLER.read_text(encoding="utf-8")
-        helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
-
-        self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the optional independent Layer Shell Dock" OFF', native)
-        self.assertIn("if(MEO_BUILD_STANDALONE_DOCK)", native)
-        self.assertIn('MEO_BUILD_STANDALONE_DOCK=ON', package)
-        self.assertIn('data/autostart/org.meo.dock.desktop', package)
-        self.assertIn('"${requested_dock}" = standalone', installer)
-        self.assertIn('dock_build_enabled=ON', installer)
-        self.assertIn('native_build_root}/dock/meo-dock', installer)
-        self.assertIn('data/autostart/org.meo.dock.desktop', installer)
-        self.assertIn('applications/org.meo.dock.desktop', installer)
-        self.assertIn('Exec=${local_bin_root}/meo-dock', installer)
-        self.assertIn('rm -f "${config_root}/autostart/org.meo.dock.desktop"', installer)
-        self.assertIn('"${dock_implementation}" === "native"', helper)
-
-    def test_top_panel_uses_the_compact_32px_baseline_everywhere(self):
-        layout = LAYOUT.read_text(encoding="utf-8")
-        profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
-        helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
-        metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
-        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
-
-        self.assertIn("topPanel.height = 32", layout)
-        self.assertIn("TopPanelHeight=32", profile)
-        self.assertIn("read_value Panels TopPanelHeight 32", helper)
-        self.assertIn("Meo top panel", helper)
-        self.assertIn("height was clamped", helper)
-        self.assertIn("topBarHeight: 32 * MeoTheme.globalScale", metrics)
-        self.assertIn("TopPanelHeight=32", documentation)
-        self.assertIn("false success", documentation)
-
-    def test_panel_frame_keeps_a_compact_top_and_low_shelf_variant(self):
-        assets = (
-            REPO_ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoDark/widgets/panel-background.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/panel-background.svg",
-            REPO_ROOT / "themes/desktoptheme/MeoDark/translucent/widgets/panel-background.svg",
-        )
-        generator = (REPO_ROOT / "tools/theme/build_floating_dock_assets.py").read_text(encoding="utf-8")
-
-        self.assertIn('compact_frame = frame_paths("", 16)', generator)
-        self.assertIn('north_frame = frame_paths("north", 16)', generator)
-        self.assertIn('south_frame = frame_paths("south", 12)', generator)
-        self.assertIn('surface_opacity="0.68"', generator)
-        self.assertIn('surface_opacity="0.58"', generator)
-        for asset in assets:
-            source = asset.read_text(encoding="utf-8")
-            self.assertIn('id="top" d="M32 16h2v16h-2z"', source)
-            self.assertIn('id="north-top" d="M32 16h2v16h-2z"', source)
-            self.assertIn('id="south-top" d="M32 20h2v12h-2z"', source)
-            self.assertIn('id="north-bottom" d="M32 34h2v16h-2z"', source)
-            self.assertIn('id="south-bottom" d="M32 34h2v12h-2z"', source)
-            self.assertIn('id="north-hint-top-margin"', source)
-            self.assertIn('id="south-hint-top-margin"', source)
-            expected_opacity = "0.58" if "/translucent/" in str(asset) else "0.68"
-            self.assertIn(f'fill-opacity="{expected_opacity}"', source)
-            self.assertIn('class="ColorScheme-ButtonBackground"', source)
-
-    def test_pixel_window_motion_uses_supported_kwin_effects(self):
-        defaults = (REPO_ROOT / "defaults/kwin/kwinrc").read_text(encoding="utf-8")
-        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(
-            encoding="utf-8"
-        )
-
-        for entry in (
-            "scaleEnabled=true",
-            "glideEnabled=false",
-            "squashEnabled=true",
-            "magiclampEnabled=false",
-            "[Effect-scale]",
-            "Duration=180",
-            "InScale=0.94",
-            "OutScale=0.98",
-        ):
-            self.assertIn(entry, defaults)
-        self.assertIn("KWin's upstream Scale effect", documentation)
-        self.assertIn("no DMS or third-party KWin code is vendored", documentation)
-
-    def test_frosted_shell_popups_use_tonal_elevation_without_permanent_outline(self):
-        source = (REPO_ROOT / "qml/MeoKDE/FrostedSurface.qml").read_text(encoding="utf-8")
-        self.assertIn("MeoMotionSurface", source)
-        self.assertIn("elevation: 3", source)
-        self.assertIn("showOutline: false", source)
-        self.assertNotIn("border.width", source)
-
-    def test_topbar_is_quiet_at_rest_and_tonal_during_interaction(self):
-        quick_main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
-        quick_status = (TOPBAR / "components/SystemStatusCluster.qml").read_text(
-            encoding="utf-8"
-        )
-        time_main = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/main.qml").read_text(
-            encoding="utf-8"
-        )
-        time_button = (REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml").read_text(
-            encoding="utf-8"
-        )
-
-        self.assertIn("active: root.expanded", quick_main)
-        self.assertIn("active: root.expanded", time_main)
-        self.assertIn("MeoInteractionMotion", quick_status)
-        self.assertIn("interactionMotion.resolvedScale", quick_status)
-        self.assertIn("interactionMotion.resolvedOffsetY", quick_status)
-        self.assertNotIn("targetValue: root.down ? 0.94 : 1", quick_status)
-        for source in (quick_status, time_button):
-            self.assertIn("ShellTriggerSurface", source)
-        shell_surface = (
-            REPO_ROOT / "qml/MeoKDE/ShellTriggerSurface.qml"
-        ).read_text(encoding="utf-8")
-        self.assertIn("MeoTheme.primaryContainer", shell_surface)
-        self.assertIn("MeoTheme.onPrimaryContainer", shell_surface)
-        self.assertIn('"transparent"', shell_surface)
-        self.assertIn("strokeWidth: 0", shell_surface)
-        self.assertIn("statusSurface.triggerFromKeyboard()", time_button)
-        self.assertNotIn("stateLayer.trigger(localPoint.x, localPoint.y)", time_button)
-        self.assertIn('property bool showSeconds: false', time_button)
-        self.assertIn("MeoStatusStrip", quick_status)
-        self.assertIn("statusModel: root.statusModel", quick_status)
-        self.assertIn("available: root.showBluetooth && root.bluetoothConnected", quick_status)
-        self.assertIn("visible: root.showNotifications && root.hasNotificationState", time_button)
-
+class DesktopLayoutTests(legacy.DesktopLayoutTests):
     def test_shelf_pairs_launcher_and_search_without_a_second_task_model(self):
-        shelf = (REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml").read_text()
-        self.assertIn("MeoButtonGroup", shelf)
-        self.assertIn('variant: "connected"', shelf)
-        self.assertIn('type: "tonal"', shelf)
-        self.assertIn('icon: "apps"', shelf)
-        self.assertIn('icon: "search"', shelf)
+        shelf = (
+            legacy.REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml"
+        ).read_text(encoding="utf-8")
+        launcher = (
+            legacy.REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("MeoIconButton", shelf)
+        self.assertIn('source: "meoarch-logo"', shelf)
+        self.assertIn('i18n("All apps")', shelf)
         self.assertIn("launcherPopup.toggleFullLauncher()", shelf)
-        self.assertIn("launcherPopup.openQuickSearch()", shelf)
+        self.assertNotIn("MeoButtonGroup", shelf)
         self.assertNotIn("TaskManager.TasksModel", shelf)
-        for key in ("launcherDefaultPage", "launcherWidth", "launcherPlacement",
-                    "launcherShowFavorites", "launcherShowRecents"):
+        for key in (
+            "launcherDefaultPage", "launcherWidth", "launcherPlacement",
+            "launcherShowFavorites", "launcherShowRecents",
+        ):
             self.assertIn(f"Plasmoid.configuration.{key}", shelf)
-        launcher = (REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml").read_text()
+
+        # Search remains part of the same launcher backend for Alt+Space and
+        # in-launcher queries; it is simply no longer a second shelf button.
+        self.assertIn("function openQuickSearch()", launcher)
+        self.assertIn("Kicker.RunnerModel", launcher)
         self.assertIn("popupType: QQC2.Popup.Window", launcher)
 
-    def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
-        launcher = (
-            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml"
-        ).read_text(encoding="utf-8")
-
-        for backend in (
-            "Kicker.RootModel",
-            "Kicker.RunnerModel",
-            "Kicker.RecentUsageModel",
-        ):
-            self.assertIn(backend, launcher)
-
-        for component in (
-            "MeoSearchBar",
-            "MeoSegmentedButtons",
-            "MeoChip",
-            "MeoListItem",
-            "MeoAppGridItem",
-            "MeoContextMenu",
-            "MeoLoadingFeedback",
-        ):
-            self.assertIn(component, launcher)
-
-        self.assertIn("model.trigger(row, actionId, actionArgument)", launcher)
-        self.assertIn("sourceComponent: launcherPopup.searching", launcher)
-        self.assertNotIn("Process {", launcher)
-        self.assertNotIn("DesktopEntry", launcher)
-
-    def test_topbar_is_backed_by_real_kde_models(self):
-        status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
-        notification_center = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
-        notification_header = (REPO_ROOT / "qml/MeoKDE/NotificationCenterHeader.qml").read_text(encoding="utf-8")
-        notification_disclosure = (REPO_ROOT / "qml/MeoKDE/NotificationBodyDisclosure.qml").read_text(encoding="utf-8")
-        time_main = (REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/main.qml").read_text(encoding="utf-8")
-        quick_main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
-        quick_settings = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
-        quick_footer = (TOPBAR / "QuickSettingsFooter.qml").read_text(encoding="utf-8")
-        quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
-        audio_page = (TOPBAR / "AudioPage.qml").read_text(encoding="utf-8")
-
-        self.assertIn('MeoMonthCalendar', status_center)
-        self.assertIn('MeoStatusCenter', status_center)
-        self.assertIn('calendarEnabled: showCalendar', status_center)
-        self.assertIn('NotificationCenterView', status_center)
-        self.assertIn('applications:org.meo.settings.notifications.desktop', status_center)
-        self.assertIn('centerMode !== "notificationsOnly"', status_center)
-        self.assertIn('centerMode === "timeCalendarNotifications"', status_center)
-        self.assertIn('MeoListView', notification_center)
-        self.assertIn('MeoTheme.surfaceContainerHigh', notification_center)
-        self.assertIn('org.kde.notificationmanager', time_main)
-        self.assertIn('org.kde.plasma.clock', time_main)
-        self.assertIn('NotificationManager.Notifications', time_main)
-        self.assertIn('id: notificationModel', time_main)
-        self.assertIn('notifications: notificationModel', time_main)
-        self.assertNotIn('notifications: root.notifications', time_main)
-        self.assertIn('compactRepresentation: MeoShell.TimeNotificationButton', time_main)
-        self.assertIn('Layout.minimumWidth: 0', time_main)
-        self.assertIn('QuickSettingsCenter', quick_main)
-        self.assertNotIn('TimeNotificationButton', quick_main)
-        self.assertIn('SystemState.', quick_settings)
-        self.assertIn('Platform.', quick_settings)
-        self.assertIn('Media.', quick_settings)
-        self.assertIn('root.platform.lockScreen()', quick_footer)
-        self.assertIn('QuickSettingsMediaCard', quick_settings)
-        self.assertIn('NotificationManager.Server.inhibited', quick_settings)
-        self.assertIn('NotificationManager.Server.inhibited', notification_header)
-        self.assertIn('clearClosableNotifications()', notification_center)
-        self.assertIn('invokeAction', notification_center)
-        self.assertIn('root.notifications.reply', notification_center)
-        self.assertIn('suspendJob', notification_center)
-        self.assertIn('resumeJob', notification_center)
-        self.assertIn('killJob', notification_center)
-        self.assertIn('MeoProgressBar', notification_center)
-        self.assertIn('MeoListView', notification_center)
-        self.assertIn('ListView.onReused', notification_center)
-        self.assertIn('Behavior on implicitHeight', notification_center)
-        self.assertIn('NotificationBodyDisclosure', notification_center)
-        self.assertIn('DankMaterialShell', notification_disclosure)
-        self.assertIn('_retainedExpandedContent', notification_disclosure)
-        self.assertIn('_clipAnimatedContent', notification_disclosure)
-        self.assertIn('motionDurationDisclosureExit', notification_disclosure)
-        self.assertIn('pushExit: Transition', quick_center)
-        self.assertIn('MeoMotion.pageOffset("pixel")', quick_center)
-        self.assertNotIn("24 * MeoTheme.globalScale", quick_center)
-        self.assertNotIn("12 * MeoTheme.globalScale", quick_center)
-        self.assertIn('popEnter: Transition', quick_center)
-        self.assertIn('prepareToClose()', quick_center)
-        self.assertIn('fullRepresentationItem.prepareToClose()', quick_main)
-        self.assertIn('scheduleSaveTiles()', quick_settings)
-        self.assertIn('interval: 180', quick_settings)
-        self.assertIn('relativeTime', notification_center)
-        self.assertIn('use24HourClock', status_center)
-        self.assertIn('onBluetoothDetailsRequested: stack.push(bluetoothPageComponent)', quick_center)
-        self.assertIn('onAudioDetailsRequested: stack.push(audioPageComponent)', quick_center)
-        self.assertIn('SystemState.setDefaultAudioOutput', audio_page)
-        self.assertIn('SystemState.setDefaultAudioInput', audio_page)
-        self.assertIn('QQC2.ScrollView', audio_page)
-        self.assertIn('contentHeight: pageContent.implicitHeight', audio_page)
-
-    def test_quick_settings_grid_is_editable_resizable_and_persistent(self):
-        home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
-        footer = (TOPBAR / "QuickSettingsFooter.qml").read_text(encoding="utf-8")
-        center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
-        main = (TOPBAR / "main.qml").read_text(encoding="utf-8")
-        config = (REPO_ROOT / "plasmoids/org.meo.topbar/contents/config/main.xml").read_text(encoding="utf-8")
-
-        self.assertIn("MeoQuickSettingsTile", home)
-        self.assertIn('visualStyle: "pixel"', home)
-        self.assertIn("ShellMetrics.quickSettingsTileHeight", home)
-        self.assertIn("MeoQuickControlSlider", home)
-        self.assertIn("DropArea", home)
-        self.assertIn("tileModel.move", home)
-        self.assertIn('"tileSpan"', home)
-        self.assertIn("MeoExposedDropdown", home)
-        self.assertIn("audioExpanded", home)
-        self.assertIn("displayExpanded", home)
-        self.assertIn('"audioDevices", "display", "screenshot"', home)
-        self.assertIn('Qt.openUrlExternally("applications:org.meo.settings.display.desktop")', home)
-        self.assertIn('Qt.openUrlExternally("applications:org.kde.spectacle.desktop")', home)
-        self.assertIn('SystemState.audioDevice', home)
-        self.assertIn("quickTileOrder", config)
-        self.assertIn("quickTileSizes", config)
-        self.assertIn("quickTileVisibility", config)
-        self.assertIn("quickTileDensity", config)
-        self.assertIn("tileLayoutChanged", center)
-        self.assertIn("Plasmoid.configuration.quickTileOrder", main)
-        self.assertIn("Plasmoid.configuration.quickTileVisibility", main)
-        self.assertIn("Plasmoid.configuration.quickTileDensity", main)
-        self.assertIn('applications:org.meo.settings.desktop', footer)
-        self.assertNotIn('systemsettings:', footer)
-        self.assertIn("root.availableWidth < 320 * MeoTheme.globalScale ? 2 : 4", home)
-
-    def test_control_center_settings_contract_keeps_the_meo_applet_authoritative(self):
-        schema = (TOPBAR.parent / "config/main.xml").read_text(encoding="utf-8")
-        home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
-        layout = LAYOUT.read_text(encoding="utf-8")
-        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
-
-        self.assertIn('name="quickTileVisibility"', schema)
-        self.assertIn('name="quickTileDensity"', schema)
-        self.assertIn('quickSettings.writeConfig("quickTileVisibility"', layout)
-        self.assertIn('quickSettings.writeConfig("quickTileDensity", "comfortable")', layout)
-        self.assertIn("function visibleTileIds()", home)
-        self.assertIn("tileDensityScale", home)
-        self.assertIn("quickTileVisibility", documentation)
-        self.assertIn("org.meo.settings.desktop", documentation)
-
-    def test_status_and_quick_settings_have_compact_width_contracts(self):
-        status = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
-        quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
-
-        self.assertIn("Layout.minimumWidth: 320 * MeoTheme.globalScale", status)
-        self.assertIn("MeoStatusCenter", status)
-        self.assertIn("Layout.minimumWidth: 280 * MeoTheme.globalScale", quick_center)
-
-    def test_notification_variant_applets_share_the_status_center_contract(self):
-        shared = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
-        notifications = (REPO_ROOT / "plasmoids/org.meo.notifications/contents/ui/main.qml").read_text(encoding="utf-8")
-        time_notifications = (REPO_ROOT / "plasmoids/org.meo.time-notifications/contents/ui/main.qml").read_text(encoding="utf-8")
-        compact_button = (REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml").read_text(encoding="utf-8")
-
-        self.assertIn('mode: centerMode === "notificationsOnly"', shared)
-        self.assertIn('calendarEnabled: showCalendar', shared)
-        self.assertIn('centerMode: "notificationsOnly"', notifications)
-        self.assertIn('centerMode: "timeNotifications"', time_notifications)
-        self.assertIn('compactRepresentation: TimeNotificationButton', time_notifications)
-        self.assertNotIn('QQC2.AbstractButton', time_notifications)
-        self.assertIn('The notification glyph is deliberately non-interactive', compact_button)
-        self.assertIn('property bool showUnreadBadge: true', compact_button)
-        self.assertIn('unreadCount: notifications.unreadNotificationsCount', time_notifications)
-        self.assertIn('showUnreadBadge: Plasmoid.configuration.showUnreadBadge', time_notifications)
-        self.assertFalse((REPO_ROOT / "plasmoids/org.meo.timecenter/contents/ui/TimeNotificationButton.qml").exists())
-        self.assertFalse((TOPBAR / "TimeNotificationButton.qml").exists())
-        for source in (notifications, time_notifications):
-            self.assertIn('NotificationManager.Notifications', source)
-            self.assertIn('NotificationManager.Notifications.GroupDisabled', source)
-
-    def test_time_applet_has_no_notification_manager_and_uses_time_calendar_mode(self):
-        time_main = (REPO_ROOT / "plasmoids/org.meo.time/contents/ui/main.qml").read_text(encoding="utf-8")
-        status = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
-
-        self.assertNotIn("notificationmanager", time_main)
-        self.assertIn('centerMode:"timeCalendar"', time_main)
-        self.assertIn("trackSeconds: Plasmoid.configuration.showSeconds", time_main)
-        self.assertIn('centerMode !== "timeCalendar"', status)
-
-    def test_shell_motion_keeps_legacy_press_without_duplicate_property(self):
-        motion = (REPO_ROOT / "qml/MeoKDE/MeoMotion.qml").read_text(encoding="utf-8")
-
-        self.assertEqual(motion.count("readonly property int press:"), 1)
-        self.assertIn("readonly property int pressFeedback:", motion)
-
-    def test_quick_control_sliders_expose_real_actions_and_names(self):
-        home = (TOPBAR / "QuickSettingsHome.qml").read_text(encoding="utf-8")
-
-        self.assertIn('MeoI18n.translator.i18n("Display brightness")', home)
-        self.assertIn("iconActionEnabled: false", home)
-        self.assertIn('accessibleName: MeoI18n.translator.i18n("Output volume")', home)
-        self.assertIn('MeoI18n.translator.i18n("Mute output")', home)
-        self.assertIn('accessibleName: MeoI18n.translator.i18n("Microphone volume")', home)
-        self.assertIn('MeoI18n.translator.i18n("Mute microphone")', home)
-
-    def test_bluetooth_quick_settings_uses_meo_for_full_pairing(self):
-        bluetooth_page = (TOPBAR / "BluetoothPage.qml").read_text(encoding="utf-8")
-        legacy_center = (TOPBAR / "ControlCenter.qml").read_text(encoding="utf-8")
-        documentation = (REPO_ROOT / "docs/shell-configuration.md").read_text(encoding="utf-8")
-
-        # Keep immediate controls attached to the live state hub, but never
-        # let an unpaired-device tap silently start a pairing conversation in
-        # the compact popup.
-        self.assertIn('SystemState.bluetoothEnabled = checked', bluetooth_page)
-        self.assertIn('SystemState.startBluetoothDiscovery()', bluetooth_page)
-        self.assertIn('SystemState.stopBluetoothDiscovery()', bluetooth_page)
-        self.assertIn('SystemState.toggleBluetoothDevice(modelData.address)', bluetooth_page)
-        self.assertIn('SystemState.forgetBluetoothDevice(modelData.address)', bluetooth_page)
-        self.assertIn('if (!modelData.paired)', bluetooth_page)
-        self.assertIn('root.openMeoBluetoothSettings()', bluetooth_page)
-
-        # The dedicated deep-link launcher is the normal Meo route.  A generic
-        # Meo launcher remains available for partial desktop-entry updates;
-        # Quick Settings must never switch visual systems behind the user's
-        # back by opening the legacy System Settings shell.
-        dedicated_launcher = 'applications:org.meo.settings.bluetooth.desktop'
-        generic_launcher = 'applications:org.meo.settings.desktop'
-        self.assertIn(dedicated_launcher, bluetooth_page)
-        self.assertIn(generic_launcher, bluetooth_page)
-        self.assertNotIn('systemsettings:', bluetooth_page)
-        self.assertLess(bluetooth_page.index(dedicated_launcher), bluetooth_page.index(generic_launcher))
-        self.assertIn('onBluetoothDetailsRequested: root.openMeoBluetoothSettings()', legacy_center)
-        self.assertIn('org.meo.settings.bluetooth.desktop', documentation)
-        self.assertIn('does not switch to another settings shell', documentation)
-
-    def test_system_state_bluetooth_fast_path_never_pairs_or_auto_trusts(self):
-        source = (REPO_ROOT / "native/system/systemstatehub.cpp").read_text(encoding="utf-8")
-        start = source.index("void SystemStateHub::toggleBluetoothDevice")
-        end = source.index("void SystemStateHub::forgetBluetoothDevice", start)
-        toggle = source[start:end]
-
-        # A menu toggle may connect and disconnect an existing pairing, but
-        # cannot turn a stale QML call into a security-sensitive pairing or
-        # persistent trust change.  Pairing belongs to Meo Settings' agent.
-        self.assertIn('Pair new devices in Meo Settings.', toggle)
-        self.assertNotIn('device->pair()', toggle)
-        self.assertNotIn('setTrusted(true)', toggle)
-        self.assertIn('bluezInit->start()', source)
-
-    def test_meoui_update_is_explicit_opt_in(self):
-        source = INSTALLER.read_text(encoding="utf-8")
-
-        self.assertIn("refresh_meoui=0", source)
-        self.assertIn("--update-meoui) refresh_meoui=1", source)
-
-    def test_validation_instantiates_shared_shell_components(self):
-        validator = (REPO_ROOT / "scripts/validate.sh").read_text(encoding="utf-8")
-        smoke = (REPO_ROOT / "validation/meoui-shell-components-smoke.qml").read_text(encoding="utf-8")
-
-        self.assertIn("meoui-shell-components-smoke.qml", validator)
-        self.assertIn('${output_root}/meo-kde/validation/${validation_run_id}', validator)
-        self.assertIn("MeoStatusCenter", smoke)
-
-    def test_reset_removes_every_named_runtime_installed_by_setup(self):
-        installer = INSTALLER.read_text(encoding="utf-8")
-        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
-
-        for owned_path in (
-            '${data_root}/icons/MeoSymbols',
-            '${data_root}/icons/MeoSymbolsDark',
-            '${qml_root}/MeoUI',
-            '${data_root}/fcitx5/themes/MeoInputMethod-Light',
-            '${data_root}/fcitx5/themes/MeoInputMethod-Dark',
-            '${data_root}/fcitx5/themes/MeoInputMethod-Dynamic',
-            '${data_root}/color-schemes/MeoLight.colors',
-            '${data_root}/color-schemes/MeoDark.colors',
-            '${data_root}/color-schemes/MeoDynamicLight.colors',
-            '${data_root}/color-schemes/MeoDynamicDark.colors',
-            '${user_plugin_root}/styles/meostyle.so',
-            '${local_bin_root}/meo-input-method',
-            '${local_bin_root}/meo-desktop-layout',
-            '${local_bin_root}/meo-desktop-apply',
-        ):
-            self.assertIn(owned_path, reset)
-        self.assertIn("runtime-backup-v1", installer)
-        self.assertIn("runtime-backup-v1", reset)
-        self.assertIn('${backup_root}/runtime/${runtime_group}/.', reset)
-
-    def test_native_application_and_dynamic_color_bridges_are_installed(self):
-        defaults = configparser.ConfigParser(interpolation=None)
-        defaults.optionxform = str
-        defaults.read(REPO_ROOT / "defaults/kde/kdeglobals", encoding="utf-8")
-        self.assertEqual(defaults["KDE"]["widgetStyle"], "Meo")
-        self.assertEqual(defaults["General"]["accentColorFromWallpaper"], "true")
-
-        look_and_feel = (REPO_ROOT / "themes/look-and-feel/org.meo.desktop/contents/defaults").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("widgetStyle=Meo", look_and_feel)
-        self.assertIn("accentColorFromWallpaper=true", look_and_feel)
-        self.assertNotIn("AccentColorFromWallpaper", look_and_feel)
-
-        environment = (REPO_ROOT / "defaults/environment/90-meo-applications.conf").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("QT_STYLE_OVERRIDE=Meo", environment)
-        self.assertIn("SAL_USE_VCLPLUGIN=kf6", environment)
-
-        installer = INSTALLER.read_text(encoding="utf-8")
-        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
-        apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn('qt-plugins/styles/meostyle.so', installer)
-        self.assertIn('styles/meostyle.so', reset)
-        self.assertIn('MEO_DYNAMIC_COLORS_HELPER', installer)
-        self.assertIn('meo-dynamic-colors.path', package)
-        self.assertIn('default.target.wants/meo-dynamic-colors.path', package)
-        self.assertIn('enable --now meo-dynamic-colors.path', apply_helper)
-
-    def test_reset_reloads_restored_input_method_state(self):
-        reset = (REPO_ROOT / "setup/reset-meo-desktop.sh").read_text(encoding="utf-8")
-
-        self.assertIn("ReloadAddonConfig s classicui", reset)
-        self.assertIn("GetConfig s fcitx://config/addon/classicui", reset)
-        self.assertIn('custom-theme Adwaita', reset)
-
-    def test_top_application_icons_use_the_native_system_tray(self):
-        source = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
-
-        self.assertIn('oneWidget(top, "org.kde.plasma.systemtray")', source)
-        self.assertIn('top.writeConfig("AppletOrder", topOrder.join(";"))', source)
-        self.assertIn('widget.readConfig("extraItems", "")', source)
-        self.assertIn('"org.kde.plasma.networkmanagement"', source)
-        self.assertIn('"org.kde.plasma.notifications"', source)
-        self.assertIn('"org.kde.plasma.vault"', source)
-        self.assertIn('"org.kde.plasma.printmanager"', source)
-        self.assertNotIn('removeWidgets(top, "org.kde.plasma.systemtray");\n    removeWidgets', source)
-        self.assertIn('removeWidgets(top, "org.meo.toptasks")', source)
-        self.assertLess(source.index('oneWidget(top, "org.meo.systemmenu")'),
-                        source.index('oneWidget(top, "org.kde.plasma.appmenu")'))
-
     def test_default_profile_selects_native_taskbar(self):
-        profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
-        helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(encoding="utf-8")
-        metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
+        profile = (
+            legacy.REPO_ROOT / "defaults/plasma/meo-shellrc"
+        ).read_text(encoding="utf-8")
+        helper = (
+            legacy.REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh"
+        ).read_text(encoding="utf-8")
+        metrics = (
+            legacy.REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("DockHeight=48", profile)
         self.assertIn("DockImplementation=native", profile)
-        self.assertIn("shelfPanelHeight: 80 * MeoTheme.globalScale", metrics)
+        self.assertIn("shelfPanelHeight: 48 * MeoTheme.globalScale", metrics)
+        self.assertIn("shelfSurfaceHeight: 48 * MeoTheme.globalScale", metrics)
+        self.assertIn("shelfBottomMargin: 0 * MeoTheme.globalScale", metrics)
         self.assertIn('if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native")', helper)
         self.assertNotIn('writeConfig("maxStripes"', helper)
+
         expected_fallbacks = {
             "MeoLight": ("#1c1b1f", "#6750a4", "#b3261e"),
             "MeoDark": ("#e6e0e9", "#d0bcff", "#ffb4ab"),
@@ -779,201 +75,44 @@ class DesktopLayoutTests(unittest.TestCase):
             "bottomleft", "bottomright", "bottom",
         )
         for mode, fallbacks in expected_fallbacks.items():
-            task_frame = (REPO_ROOT / f"themes/desktoptheme/{mode}/widgets/tasks.svg").read_text(encoding="utf-8")
+            task_frame = (
+                legacy.REPO_ROOT
+                / f"themes/desktoptheme/{mode}/widgets/tasks.svg"
+            ).read_text(encoding="utf-8")
             for fallback in fallbacks:
                 self.assertIn(fallback, task_frame)
             for frame in required_frames:
                 for part in required_parts:
                     self.assertIn(f'id="{frame}-{part}"', task_frame)
-            self.assertIn('ColorScheme-ButtonFocus', task_frame)
-            self.assertIn('ColorScheme-Background', task_frame)
-            self.assertIn('A20.5 20.5', task_frame)
+            self.assertIn("ColorScheme-ButtonFocus", task_frame)
+            self.assertIn("ColorScheme-Background", task_frame)
+            self.assertIn("A20.5 20.5", task_frame)
+            self.assertIn('id="normal-indicator"', task_frame)
             self.assertIn('id="focus-indicator"', task_frame)
-            self.assertNotIn('id="normal-indicator"', task_frame)
+            self.assertIn('id="minimized-indicator"', task_frame)
+            self.assertIn('width="12" height="2" rx="1" opacity="0.72"', task_frame)
+            self.assertIn('width="18" height="4" rx="2" opacity="1"', task_frame)
             self.assertIn('id="group-expander-bottom"', task_frame)
             self.assertIn('id="normal-center"', task_frame)
-            self.assertIn('id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"', task_frame)
+            self.assertIn(
+                'id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"',
+                task_frame,
+            )
             self.assertIn('id="normal-hover-center"', task_frame)
             self.assertIn('opacity="0.10"', task_frame)
             self.assertNotIn('opacity="0.94"', task_frame)
 
-    def test_installer_preflights_rounding_without_package_manager_mutation(self):
-        source = INSTALLER.read_text(encoding="utf-8")
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(
-            encoding="utf-8"
-        )
-
-        self.assertIn('preflight_plasma()', source)
-        self.assertIn('org.kde.plasma.icontasks', source)
-        self.assertIn('org.kde.plasma.systemtray', source)
-        self.assertIn('org.kde.plasma.kickoff', source)
-        self.assertIn('kwin4_effect_shapecorners.so', source)
-        self.assertIn("'kwin-effect-rounded-corners'", package)
-        self.assertNotIn('kwin-effect-rounded-corners-git', source)
-        self.assertNotIn('paru ', source)
-        self.assertNotIn('yay ', source)
-
-    def test_look_and_feel_is_the_default_layout_authority(self):
-        source = INSTALLER.read_text(encoding="utf-8")
-        helper = (REPO_ROOT / "tools/shell/apply-meo-panel-layout.sh").read_text(
-            encoding="utf-8"
-        )
-        apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
-            encoding="utf-8"
-        )
-
-        self.assertIn("canonical new-session layout", helper)
-        self.assertNotIn(
-            'run "${repo_root}/tools/shell/apply-meo-panel-layout.sh"',
-            source,
-        )
-        self.assertIn("tools/theme/apply-meo-desktop.sh", source)
-        self.assertIn("--resetLayout", apply_helper)
-        self.assertNotIn("apply-meo-panel-layout.sh", apply_helper)
-        self.assertNotIn("--key TitleBarHeight", source)
-        self.assertNotIn("--key CornerRadius", source)
-        self.assertNotIn("--key TitleBarHeight", apply_helper)
-        self.assertNotIn("--key CornerRadius", apply_helper)
-
-    def test_stable_kwin_effect_owns_client_surface_rounding(self):
-        native = (REPO_ROOT / "native/CMakeLists.txt").read_text(encoding="utf-8")
-        defaults = (REPO_ROOT / "defaults/kwin/kwinrc").read_text(encoding="utf-8")
-        setup = INSTALLER.read_text(encoding="utf-8")
-
-        self.assertNotIn('add_subdirectory(effects/windowcorners)', native)
-        self.assertIn('org.meo.windowcornersEnabled=false', defaults)
-        self.assertIn('kwin4_effect_shapecornersEnabled=true', defaults)
-        self.assertIn('EnableCompanionEffect=false', defaults)
-        self.assertIn('CornerRadius=16', defaults)
-        self.assertIn('ButtonDiameter=24', defaults)
-        self.assertIn('ButtonSpacing=2', defaults)
-        self.assertIn('Size=16', defaults)
-        self.assertIn('InactiveCornerRadius=16', defaults)
-        self.assertIn('kwin4_effect_shapecorners.so', setup)
-        self.assertIn('rm -f "${user_plugin_root}/kwin/effects/plugins/org.meo.windowcorners.so"', setup)
-        self.assertNotIn('native_build_root}/bin/kwin/effects/plugins/org.meo.windowcorners.so', setup)
-        self.assertIn('"${meoui_build_root}"/libmeoui.so*', setup)
-
-    def test_shell_geometry_uses_cross_toolkit_semantic_roles(self):
-        metrics = (REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml").read_text(encoding="utf-8")
-        mapped_roles = {
-            "radiusWindow": "MeoTheme.windowRadius",
-            "radiusPopup": "MeoTheme.dialogRadius",
-            "radiusLarge": "MeoTheme.cardRadius",
-            "radiusControl": "MeoTheme.controlRadius",
-            "focusRingWidth": "MeoTheme.focusRingWidth",
-        }
-        for role, token in mapped_roles.items():
-            self.assertIn(f"{role}: {token}", metrics)
-
-        surfaces = (
-            REPO_ROOT / "qml/MeoKDE/PopupInlineMessage.qml",
-            REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml",
-            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/ControlCenter.qml",
-            REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/QuickSettingsHome.qml",
-            REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml",
-        )
-        for surface in surfaces:
-            source = surface.read_text(encoding="utf-8")
-            self.assertNotRegex(source, r"radius:\s*MeoTheme\.shape(?:Medium|Large|ExtraLarge)\b")
-
-    def test_every_kwin_profile_matches_the_canonical_defaults(self):
-        canonical = configparser.ConfigParser(interpolation=None)
-        canonical.optionxform = str
-        canonical.read(REPO_ROOT / "defaults/kwin/kwinrc", encoding="utf-8")
-
-        look_and_feel = configparser.ConfigParser(interpolation=None)
-        look_and_feel.optionxform = str
-        look_and_feel.read(
-            REPO_ROOT / "themes/look-and-feel/org.meo.desktop/contents/defaults",
-            encoding="utf-8",
-        )
-        for section in canonical.sections():
-            projected = f"kwinrc][{section}"
-            # Input-method lifecycle defaults belong to /etc/xdg/kwinrc,
-            # never to a theme projection which can rewrite user selections.
-            expected = {key: value for key, value in canonical[section].items()
-                        if (section, key) != ("Wayland", "InputMethod")}
-            if not expected:
-                self.assertFalse(look_and_feel.has_section(projected), section)
-                continue
-            self.assertTrue(look_and_feel.has_section(projected), section)
-            self.assertEqual(expected, dict(look_and_feel[projected]))
-
-        apply_helper = (REPO_ROOT / "tools/theme/apply-meo-desktop.sh").read_text(
-            encoding="utf-8"
-        )
-        package = (REPO_ROOT / "packaging/arch/PKGBUILD").read_text(encoding="utf-8")
-        workspace_sync = (REPO_ROOT / "scripts/sync-to-workspace.sh").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn('apply_kwin_defaults "${kwin_defaults}"', apply_helper)
-        self.assertIn("--kwin-only", apply_helper)
-        self.assertIn('/usr/share/meo-desktop/defaults/kwinrc', apply_helper)
-        self.assertIn('usr/share/meo-desktop/defaults/kwinrc', package)
-        self.assertIn("scripts/sync-installer-to-airootfs.sh", workspace_sync)
-        self.assertIn('exec "${workspace_sync}"', workspace_sync)
-
-    def test_profile_and_applet_schema_cover_the_customisation_contract(self):
-        profile = (REPO_ROOT / "defaults/plasma/meo-shellrc").read_text(encoding="utf-8")
-        schema = (TOPBAR.parent / "config/main.xml").read_text(encoding="utf-8")
-
-        self.assertIn("Mode=dual", profile)
-        self.assertIn("ProfileVersion=5", profile)
-        self.assertIn("ShowSystemTray=true", profile)
-        self.assertIn("ShowGlobalMenu=true", profile)
-        self.assertIn("ShowTopAppTasks=false", profile)
-        self.assertIn("TextScalePercent=100", profile)
-        self.assertIn("BatteryDisplay=2", profile)
-        self.assertIn('name="textScalePercent"', schema)
-        self.assertIn('name="batteryDisplay"', schema)
-
-    def test_notification_presentation_schema_reaches_each_runtime_consumer(self):
-        applets = (
-            "org.meo.notifications",
-            "org.meo.time-notifications",
-            "org.meo.timecenter",
-        )
-        keys = ("showNotificationHistory", "notificationView", "notificationPreview")
-        for applet in applets:
-            applet_root = REPO_ROOT / "plasmoids" / applet / "contents"
-            schema = (applet_root / "config/main.xml").read_text(encoding="utf-8")
-            appearance = (applet_root / "ui/config/Appearance.qml").read_text(encoding="utf-8")
-            runtime = (applet_root / "ui/main.qml").read_text(encoding="utf-8")
-            for key in keys:
-                self.assertIn(f'name="{key}"', schema)
-                self.assertIn(f"cfg_{key}", appearance)
-                self.assertIn(f"Plasmoid.configuration.{key}", runtime)
-
-        shared_view = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
-        self.assertIn('notificationView === "compact"', shared_view)
-        self.assertIn('normalizedPreview', shared_view)
-        self.assertIn('readonly property bool contentAllowed:', shared_view)
-        self.assertIn('height: contentAllowed ? implicitHeight : 0', shared_view)
-        self.assertIn('root.visibleNotificationCount === 0', shared_view)
-        self.assertIn('currentIndex: -1', shared_view)
-        self.assertIn('MeoListView', shared_view)
-        self.assertIn('preserveScrollPosition: false', shared_view)
-        self.assertIn('id: notificationPointer', shared_view)
-        self.assertIn('hovered: notificationPointer.containsMouse', shared_view)
-        self.assertIn('pressed: notificationPointer.pressed', shared_view)
-        self.assertIn('pressX: notificationPointer.mouseX', shared_view)
-        self.assertIn('pressY: notificationPointer.mouseY', shared_view)
-
-    def test_notification_disclosure_keeps_dms_style_content_lifecycle_local(self):
-        disclosure = (REPO_ROOT / "qml/MeoKDE/NotificationBodyDisclosure.qml").read_text(encoding="utf-8")
-        smoke = (REPO_ROOT / "validation/notification-disclosure-smoke.qml").read_text(encoding="utf-8")
-
-        # The service-facing DMS code is deliberately not copied: Plasma owns
-        # the model and this local component only implements the card lifecycle.
-        self.assertIn('Qt Quick Controls / MeoUI reimplementation', disclosure)
-        self.assertIn('_retainedExpandedContent = !expanded', disclosure)
-        self.assertIn('_clipAnimatedContent = true', disclosure)
-        self.assertIn('motionDurationDisclosureEnter', disclosure)
-        self.assertIn('motionDurationDisclosureExit', disclosure)
-        self.assertIn('notification-disclosure-smoke', (REPO_ROOT / "scripts/validate.sh").read_text(encoding="utf-8"))
-        self.assertIn('disclosure.toggleExpanded()', smoke)
+    def test_status_and_quick_settings_have_compact_width_contracts(self):
+        super().test_status_and_quick_settings_have_compact_width_contracts()
+        metrics = (
+            legacy.REPO_ROOT / "qml/MeoKDE/ShellMetrics.qml"
+        ).read_text(encoding="utf-8")
+        quick_center = (
+            legacy.TOPBAR / "QuickSettingsCenter.qml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("quickSettingsWidth: 440 * MeoTheme.globalScale", metrics)
+        self.assertIn("implicitWidth: ShellMetrics.quickSettingsWidth", quick_center)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    legacy.unittest.main()
