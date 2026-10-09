@@ -24,7 +24,7 @@ Item {
         powerMenu.close()
     }
 
-    implicitWidth: 440 * MeoTheme.globalScale
+    implicitWidth: ShellMetrics.quickSettingsWidth
     implicitHeight: ShellMetrics.quickSettingsHeight
     Layout.minimumWidth: 280 * MeoTheme.globalScale
     Layout.minimumHeight: 360 * MeoTheme.globalScale
@@ -78,118 +78,67 @@ Item {
                 onPowerDetailsRequested: stack.push(powerPageComponent)
                 onPowerRequested: powerMenu.open()
                 onEditRequested: stack.push(editorPageComponent, {
-                                                "tileOrder": root.tileOrder,
-                                                "tileSizes": root.tileSizes,
-                                                "tileVisibility": root.tileVisibility,
-                                                "tileDensity": root.tileDensity
-                                            })
+                    "tileOrder": root.tileOrder,
+                    "tileSizes": root.tileSizes,
+                    "tileVisibility": root.tileVisibility,
+                    "tileDensity": root.tileDensity
+                })
             }
+
             pushEnter: Transition {
-                NumberAnimation {
-                    property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : MeoMotion.pageOffset("pixel") * MeoTheme.globalScale
-                    to: 0
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: MeoTheme.reduceMotion ? 1 : 0
-                    to: 1
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: MeoTheme.motionEasingStandard
-                }
+                NumberAnimation { property: "x"; from: MeoMotion.pageOffset("pixel"); to: 0; duration: MeoMotion.navigation; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoMotion.navigation }
             }
             pushExit: Transition {
-                NumberAnimation {
-                    property: "x"
-                    from: 0
-                    to: MeoTheme.reduceMotion ? 0 : -MeoMotion.pageOffset("pixel") * 0.5 * MeoTheme.globalScale
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: 1
-                    to: MeoTheme.reduceMotion ? 1 : 0
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: MeoTheme.motionEasingStandard
-                }
+                NumberAnimation { property: "x"; from: 0; to: -MeoMotion.pageOffset("pixel") * 0.35; duration: MeoMotion.navigation; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
+                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: MeoMotion.navigation }
             }
             popEnter: Transition {
-                NumberAnimation {
-                    property: "x"
-                    from: MeoTheme.reduceMotion ? 0 : -MeoMotion.pageOffset("pixel") * 0.5 * MeoTheme.globalScale
-                    to: 0
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: MeoTheme.reduceMotion ? 1 : 0
-                    to: 1
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: MeoTheme.motionEasingStandard
-                }
+                NumberAnimation { property: "x"; from: -MeoMotion.pageOffset("pixel") * 0.35; to: 0; duration: MeoMotion.navigation; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoMotion.navigation }
             }
             popExit: Transition {
-                NumberAnimation {
-                    property: "x"
-                    from: 0
-                    to: MeoTheme.reduceMotion ? 0 : MeoMotion.pageOffset("pixel") * MeoTheme.globalScale
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: 1
-                    to: MeoTheme.reduceMotion ? 1 : 0
-                    duration: MeoTheme.motionDurationPage
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: MeoTheme.motionEasingStandard
-                }
+                NumberAnimation { property: "x"; from: 0; to: MeoMotion.pageOffset("pixel"); duration: MeoMotion.navigation; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
+                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: MeoMotion.navigation }
             }
+        }
+
+        MeoContextMenu {
+            id: powerMenu
+            parent: root
+            model: [
+                { label: MeoI18n.translator.i18n("Lock screen"), icon: "lock", action: function() { SystemState.lockScreen() } },
+                { label: MeoI18n.translator.i18n("Log out"), icon: "logout", action: function() { SystemState.logout() } },
+                { type: "separator" },
+                { label: MeoI18n.translator.i18n("Restart"), icon: "restart_alt", action: function() { SystemState.restart() } },
+                { label: MeoI18n.translator.i18n("Shut down"), icon: "power_settings_new", action: function() { SystemState.shutdown() } }
+            ]
         }
     }
 
-    Component { id: wifiPageComponent; WifiPage { onBackRequested: stack.pop() } }
-    Component { id: bluetoothPageComponent; BluetoothPage { onBackRequested: stack.pop() } }
-    Component { id: audioPageComponent; AudioPage { onBackRequested: stack.pop() } }
     Component {
-        id: powerPageComponent
-        PowerPage {
-            onBackRequested: stack.pop()
-            onPerformanceRequested: stack.push(performancePageComponent)
-        }
+        id: wifiPageComponent
+        WifiPage { onBackRequested: stack.pop() }
     }
     Component {
-        id: performancePageComponent
-        PerformanceManager { initialPage: 1; onCloseRequested: stack.pop() }
+        id: bluetoothPageComponent
+        BluetoothPage { onBackRequested: stack.pop() }
+    }
+    Component {
+        id: audioPageComponent
+        AudioPage { onBackRequested: stack.pop() }
+    }
+    Component {
+        id: powerPageComponent
+        PowerPage { onBackRequested: stack.pop() }
     }
     Component {
         id: editorPageComponent
-
         QuickSettingsEditor {
+            onBackRequested: stack.pop()
             onTileLayoutChanged: function(order, sizes, visibility, density) {
-                root.tileOrder = order
-                root.tileSizes = sizes
-                root.tileVisibility = visibility
-                root.tileDensity = density
                 root.tileLayoutChanged(order, sizes, visibility, density)
             }
-            onBackRequested: {
-                prepareToClose()
-                stack.pop()
-            }
         }
-    }
-
-    SessionMenu {
-        id: powerMenu
-        x: Math.max(0, root.width - width - ShellMetrics.popupContentMargin)
-        y: Math.max(0, root.height - height - ShellMetrics.popupContentMargin)
     }
 }
