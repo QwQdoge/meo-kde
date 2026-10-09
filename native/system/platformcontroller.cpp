@@ -287,7 +287,7 @@ void PlatformController::configureScreenLock(bool automatic, qreal minutes, bool
         {"LockOnResume", onResume}, {"LockOnStart", onStart}, {"LockGrace", graceSeconds}};
     QVariantMap previous;
     for (auto it = values.cbegin(); it != values.cend(); ++it) {
-        if (group.hasKey(it.key())) previous.insert(it.key(), group.readEntry(it.key(), QVariant()));
+        if (group.hasKey(it.key())) previous.insert(it.key(), group.readEntry(it.key(), QString()));
     }
     const auto restore = [config, values, previous] {
         auto settings = config->group(QStringLiteral("Daemon"));
