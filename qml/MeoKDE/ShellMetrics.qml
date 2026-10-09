@@ -14,7 +14,7 @@ QtObject {
     readonly property real launcherWidth: 420 * MeoTheme.globalScale
     readonly property real launcherMaxHeight: 520 * MeoTheme.globalScale
     readonly property real launcherSearchHeight: 44 * MeoTheme.globalScale
-    readonly property real quickSettingsWidth: 392 * MeoTheme.globalScale
+    readonly property real quickSettingsWidth: 440 * MeoTheme.globalScale
     readonly property real quickSettingsHeight: 680 * MeoTheme.globalScale
     // Pixel quick settings uses one generous touch-first row height.  The
     // tile itself owns its pill radius through MeoTheme, while this metric
@@ -26,9 +26,12 @@ QtObject {
     readonly property real statusCenterWidth: 760 * MeoTheme.globalScale
     readonly property real statusCenterHeight: 520 * MeoTheme.globalScale
 
-    readonly property real shelfPanelHeight: 80 * MeoTheme.globalScale
-    readonly property real shelfSurfaceHeight: 64 * MeoTheme.globalScale
-    readonly property real shelfBottomMargin: 12 * MeoTheme.globalScale
+    // The native Plasma taskbar is the geometry authority. Keep launcher
+    // placement and available-height calculations tied to its real 48 dp
+    // panel rather than the old standalone-dock dimensions.
+    readonly property real shelfPanelHeight: 48 * MeoTheme.globalScale
+    readonly property real shelfSurfaceHeight: 48 * MeoTheme.globalScale
+    readonly property real shelfBottomMargin: 0 * MeoTheme.globalScale
     readonly property real shelfItemSize: 44 * MeoTheme.globalScale
     readonly property real shelfIconSize: 24 * MeoTheme.globalScale
 
