@@ -18,8 +18,8 @@ PlasmoidItem {
     property bool managerOpen: false
     readonly property string clientId: "performance-widget-" + root.toString()
 
-    Layout.minimumWidth: 320 * MeoTheme.globalScale
-    Layout.minimumHeight: 220 * MeoTheme.globalScale
+    Layout.minimumWidth: 280 * MeoTheme.globalScale
+    Layout.minimumHeight: 184 * MeoTheme.globalScale
     Layout.preferredWidth: managerOpen ? 760 * MeoTheme.globalScale : 500 * MeoTheme.globalScale
     Layout.preferredHeight: managerOpen ? 560 * MeoTheme.globalScale : 330 * MeoTheme.globalScale
 
@@ -89,6 +89,10 @@ PlasmoidItem {
         id: summaryComponent
 
         Item {
+            id: summary
+            readonly property bool compactHeight: height < 260 * MeoTheme.globalScale
+            readonly property bool roomyWidth: width >= 620 * MeoTheme.globalScale
+
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: MeoTheme.space12
@@ -104,11 +108,12 @@ PlasmoidItem {
                         MeoText {
                             text: MeoI18n.translator.i18n("Performance")
                             typeRole: "title"
-                            typeSize: "large"
+                            typeSize: summary.compactHeight ? "medium" : "large"
                             emphasized: true
                         }
                         MeoText {
                             Layout.fillWidth: true
+                            visible: !summary.compactHeight
                             text: MeoSystem.Performance.cpuModel
                             typeRole: "body"
                             typeSize: "small"
@@ -118,7 +123,8 @@ PlasmoidItem {
                     }
 
                     MeoButton {
-                        text: MeoI18n.translator.i18n("Details")
+                        text: summary.width >= 390 * MeoTheme.globalScale
+                              ? MeoI18n.translator.i18n("Details") : ""
                         type: "tonal"
                         size: "xs"
                         icon.name: "monitoring"
@@ -129,7 +135,8 @@ PlasmoidItem {
                 GridLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    columns: width >= 430 * MeoTheme.globalScale ? 2 : 1
+                    columns: summary.roomyWidth ? 4
+                             : width >= 360 * MeoTheme.globalScale ? 2 : 1
                     rowSpacing: MeoTheme.space8
                     columnSpacing: MeoTheme.space8
 
@@ -165,6 +172,7 @@ PlasmoidItem {
                     MetricCard {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        visible: !summary.compactHeight || summary.roomyWidth
                         title: MeoI18n.translator.i18n("Network")
                         iconName: "swap_horiz"
                         valueText: "↓ " + root.formatRate(MeoSystem.Performance.networkRxBytesPerSecond)
@@ -179,6 +187,7 @@ PlasmoidItem {
                     MetricCard {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        visible: !summary.compactHeight || summary.roomyWidth
                         title: MeoI18n.translator.i18n("GPU")
                         iconName: "developer_board"
                         valueText: MeoSystem.Performance.gpuUsage >= 0
@@ -195,6 +204,7 @@ PlasmoidItem {
 
                 RowLayout {
                     Layout.fillWidth: true
+                    visible: !summary.compactHeight
                     spacing: MeoTheme.space12
                     MeoText {
                         Layout.fillWidth: true
