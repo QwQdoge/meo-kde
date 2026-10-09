@@ -1,4 +1,5 @@
 #include "meostylecontent.h"
+#include "meostyletab.h"
 
 #include "meostylehelper.h"
 
@@ -431,6 +432,26 @@ void drawLeadingLabel(const MeoStyleContent *style, const QStyleOption *option,
 void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *option,
                                   QPainter *painter, const QWidget *widget) const
 {
+    if (element == CE_TabBarTabLabel) {
+        if (const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option)) {
+            const auto layout = MeoTab::layout(*tab);
+            if (layout.content.isEmpty()) return;
+            painter->save();
+            painter->setTransform(layout.transform, true);
+            painter->setClipRect(layout.content, Qt::IntersectClip);
+            const QSize requested = tab->iconSize.isValid() ? tab->iconSize
+                : QSize(qRound(Meo::DesignTokens::iconSizeS()), qRound(Meo::DesignTokens::iconSizeS()));
+            const QSize icon = tab->icon.isNull() ? QSize(0, 0) : requested.boundedTo(layout.content.size());
+            const int gap = !tab->icon.isNull() && !tab->text.isEmpty() ? qRound(Meo::DesignTokens::space8()) : 0;
+            const int textWidth = tab->fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, tab->text).width();
+            const int width = qMin(layout.content.width(), icon.width() + gap + textWidth);
+            QRect bounds(layout.content.center().x() - width / 2, layout.content.top(), width, layout.content.height());
+            drawLeadingLabel(this, tab, bounds, tab->text, tab->icon, icon,
+                              QPalette::WindowText, true, painter, widget);
+            painter->restore();
+            return;
+        }
+    }
     if (element == CE_CheckBox || element == CE_RadioButton) {
         if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
             const bool radio = element == CE_RadioButton;

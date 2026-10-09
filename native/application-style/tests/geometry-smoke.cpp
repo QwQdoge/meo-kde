@@ -8,6 +8,8 @@
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionToolButton>
+#include <QtWidgets/QStyleOptionTab>
+#include <QtWidgets/QTabBar>
 #include <QtWidgets/QWidget>
 
 #include <meodesigntokens.h>
@@ -18,6 +20,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void tabContentsReserveButtonsInEveryOrientation();
     void pushButtonContentUsesMeoInsets();
     void sizeHintsReserveContentAndMenuInsets();
     void searchFieldGetsWiderContentInset();
@@ -55,6 +58,30 @@ void MeoStyleGeometryTest::commonControlSizesIgnoreBaseGeometry()
     QCOMPARE(style.sizeFromContents(QStyle::CT_MenuItem, &menu, contents, nullptr).width() - plainMenu.width(), qRound(Meo::DesignTokens::iconSizeS() + Meo::DesignTokens::space8()));
     QStyleOptionComboBox combo;
     QCOMPARE(style.sizeFromContents(QStyle::CT_ComboBox, &combo, contents, nullptr).height(), qRound(Meo::DesignTokens::controlHeight()));
+}
+
+void MeoStyleGeometryTest::tabContentsReserveButtonsInEveryOrientation()
+{
+    MeoStyle style;
+    for (const auto shape : {QTabBar::RoundedNorth, QTabBar::RoundedSouth, QTabBar::RoundedWest, QTabBar::RoundedEast}) {
+        for (const auto direction : {Qt::LeftToRight, Qt::RightToLeft}) {
+            QStyleOptionTab tab;
+            tab.shape = shape; tab.direction = direction;
+            tab.text = QStringLiteral("&Files");
+            tab.leftButtonSize = QSize(20, 24); tab.rightButtonSize = QSize(24, 24);
+            const bool vertical = shape == QTabBar::RoundedWest || shape == QTabBar::RoundedEast;
+            const QSize size = style.sizeFromContents(QStyle::CT_TabBarTab, &tab, QSize(900, 900), nullptr);
+            QVERIFY(size.width() < 300); QVERIFY(size.height() < 300);
+            QCOMPARE(vertical ? size.width() : size.height(), qRound(Meo::DesignTokens::controlHeight()));
+            tab.rect = QRect(QPoint(17, 29), vertical ? QSize(40, 220) : QSize(220, 40));
+            const QRect content = style.subElementRect(QStyle::SE_TabBarTabText, &tab);
+            const QRect left = style.subElementRect(QStyle::SE_TabBarTabLeftButton, &tab);
+            const QRect right = style.subElementRect(QStyle::SE_TabBarTabRightButton, &tab);
+            QVERIFY(tab.rect.contains(content)); QVERIFY(tab.rect.contains(left)); QVERIFY(tab.rect.contains(right));
+            QCOMPARE(left.size(), tab.leftButtonSize); QCOMPARE(right.size(), tab.rightButtonSize);
+            QVERIFY(!content.intersects(left)); QVERIFY(!content.intersects(right)); QVERIFY(!left.intersects(right));
+        }
+    }
 }
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()

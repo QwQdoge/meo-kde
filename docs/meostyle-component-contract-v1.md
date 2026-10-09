@@ -200,3 +200,7 @@ For a deliberate contract change:
 ### Content size ownership
 
 Buttons, tool buttons, check/radio controls, combo boxes, text/search fields and menu items compute their size from the shared tokens and application-provided content rather than taking a base-style size as a minimum. Menu rows reserve one aligned leading column when the menu contains checkable actions; default actions use a bold font for both measurement and painting. Push-button menus reserve a trailing Meo chevron in both LTR and RTL. Qt still owns action triggering and popup behavior.
+
+### Native tab contract
+
+Tab content uses `space12` at each end, `space4` vertically and `space8` between icons, text and application-supplied tab buttons, with a `controlHeight` minimum. `CT_TabBarTab` measures the option itself because QTabBar includes frame padding in the supplied content size. Text/icons and button reservations share one coordinate system, rotated for west/east tabs and mirrored for RTL. The Meo renderer owns mnemonic labels and the close glyph; actual tab buttons, switching, dragging, shortcuts and accessibility stay with Qt. No base-style selected-tab shifts or overlap are added. All four tab edges retain the Meo selection indicator and focus treatment.

@@ -1,4 +1,5 @@
 #include "meostyle.h"
+#include "meostyletab.h"
 
 #include "meostylehelper.h"
 
@@ -198,6 +199,17 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     case PM_DefaultFrameWidth:
     case PM_SpinBoxFrameWidth:
         return qRound(Meo::DesignTokens::space2() / 2.0);
+    case PM_TabCloseIndicatorWidth:
+    case PM_TabCloseIndicatorHeight:
+        return qRound(Meo::DesignTokens::space24());
+    case PM_TabBarTabHSpace:
+        return 2 * qRound(Meo::DesignTokens::space12());
+    case PM_TabBarTabVSpace:
+        return 2 * qRound(Meo::DesignTokens::space4());
+    case PM_TabBarTabOverlap:
+    case PM_TabBarTabShiftHorizontal:
+    case PM_TabBarTabShiftVertical:
+        return 0;
     case PM_ButtonMargin:
         return qRound(Meo::DesignTokens::space12());
     case PM_MenuHMargin:
@@ -226,6 +238,29 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_TabBarTab: {
+        const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option);
+        if (!tab) return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
+        // QTabBar already includes PM_TabBarTabH/VSpace and its own 4px
+        // gaps in contentsSize. Measure the option directly to avoid double
+        // padding and make all gaps follow the shared contract.
+        const bool rotated = MeoTab::vertical(tab->shape);
+        QSize icon = tab->icon.isNull() ? QSize(0, 0) : tab->iconSize;
+        if (!icon.isValid()) icon = QSize(qRound(Meo::DesignTokens::iconSizeS()), qRound(Meo::DesignTokens::iconSizeS()));
+        int width = tab->fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, tab->text).width() + icon.width();
+        int height = qMax(tab->fontMetrics.height(), icon.height());
+        const int gap = qRound(Meo::DesignTokens::space8());
+        if (!tab->icon.isNull() && !tab->text.isEmpty()) width += gap;
+        for (QSize button : {tab->leftButtonSize, tab->rightButtonSize}) {
+            if (button.isEmpty()) continue;
+            if (rotated) button.transpose();
+            width += button.width() + gap;
+            height = qMax(height, button.height());
+        }
+        QSize size(width + 2 * qRound(Meo::DesignTokens::space12()),
+                   qMax(qRound(Meo::DesignTokens::controlHeight()), height + 2 * qRound(Meo::DesignTokens::space4())));
+        return rotated ? size.transposed() : size;
+    }
     case CT_PushButton:
         result.setWidth(contentsSize.width() + 2 * qRound(Meo::DesignTokens::space16()));
         if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option);
@@ -304,6 +339,23 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
 
+    if (element == PE_IndicatorTabClose) {
+        const QColor foreground = option->palette.color(group, QPalette::WindowText);
+        if (enabled && (hover || pressed)) {
+            MeoStyleHelper::drawRoundedSurface(painter, option->rect, option->rect.height() / 2.0,
+                MeoStyleHelper::blend(option->palette.color(group, QPalette::Window), foreground,
+                    pressed ? Meo::DesignTokens::stateOpacityPressed() : Meo::DesignTokens::stateOpacityHover()));
+        }
+        const qreal half = Meo::DesignTokens::space4();
+        const QPointF center = QRectF(option->rect).center();
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing);
+        painter->setPen(QPen(foreground, Meo::DesignTokens::space2(), Qt::SolidLine, Qt::RoundCap));
+        painter->drawLine(center + QPointF(-half, -half), center + QPointF(half, half));
+        painter->drawLine(center + QPointF(-half, half), center + QPointF(half, -half));
+        painter->restore();
+        return;
+    }
     if (element == PE_PanelMenu) {
         QColor outline = option->palette.color(group, QPalette::Mid);
         outline.setAlphaF(0.22);
@@ -564,7 +616,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
 
     if (element == CE_TabBarTab) {
         drawControl(CE_TabBarTabShape, option, painter, widget);
-        QProxyStyle::drawControl(CE_TabBarTabLabel, option, painter, widget);
+        drawControl(CE_TabBarTabLabel, option, painter, widget);
         return;
     }
 

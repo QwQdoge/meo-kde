@@ -414,7 +414,7 @@ private slots:
             void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                              const QWidget *widget = nullptr) const override {
                 if (element == CE_CheckBox || element == CE_RadioButton || element == CE_CheckBoxLabel
-                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel) ++labelCalls;
+                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel) ++labelCalls;
                 QProxyStyle::drawControl(element, option, painter, widget);
             }
         };
@@ -432,6 +432,12 @@ private slots:
             style->drawControl(QStyle::CE_CheckBox, &button, &painter);
             style->drawControl(QStyle::CE_RadioButton, &button, &painter);
             style->drawControl(QStyle::CE_ComboBoxLabel, &combo, &painter);
+        }
+        QStyleOptionTab tab; tab.rect = image.rect(); tab.text = QStringLiteral("&Files");
+        tab.state = QStyle::State_Enabled | QStyle::State_Selected;
+        for (const auto shape : {QTabBar::RoundedNorth, QTabBar::RoundedWest, QTabBar::RoundedEast}) {
+            tab.shape = shape;
+            style->drawControl(QStyle::CE_TabBarTab, &tab, &painter);
         }
         QCOMPARE(base->labelCalls, 0);
     }

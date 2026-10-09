@@ -118,7 +118,16 @@ int main(int argc, char *argv[])
     form->addRow(QStringLiteral("Progress"), progress);
     layout->addWidget(controls);
 
+    auto *sideTabs = new QTabWidget;
+    sideTabs->setTabPosition(QTabWidget::West);
+    sideTabs->setTabsClosable(true);
+    sideTabs->addTab(new QWidget, QIcon::fromTheme(QStringLiteral("folder")), QStringLiteral("&Places"));
+    sideTabs->addTab(new QWidget, QStringLiteral("&Details"));
+    sideTabs->setMaximumHeight(110);
+    layout->addWidget(sideTabs);
     auto *tabs = new QTabWidget;
+    tabs->setTabsClosable(true);
+    tabs->setMovable(true);
     auto *table = new QTableWidget(3, 2);
     table->setHorizontalHeaderLabels({QStringLiteral("Name"), QStringLiteral("State")});
     table->setItem(0, 0, new QTableWidgetItem(QStringLiteral("Dolphin")));

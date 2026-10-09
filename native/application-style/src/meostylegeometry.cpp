@@ -1,4 +1,5 @@
 #include "meostyle.h"
+#include "meostyletab.h"
 
 #include <QtCore/QtGlobal>
 #include <QtWidgets/QStyleOptionButton>
@@ -62,6 +63,12 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
         return QProxyStyle::subElementRect(element, option, widget);
     }
 
+    if (const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option)) {
+        const auto layout = MeoTab::layout(*tab);
+        if (element == SE_TabBarTabText) return layout.physical(layout.content);
+        if (element == SE_TabBarTabLeftButton) return layout.physical(layout.leftButton);
+        if (element == SE_TabBarTabRightButton) return layout.physical(layout.rightButton);
+    }
     switch (element) {
     case SE_PushButtonContents: {
         const int horizontal = px(Meo::DesignTokens::space16());
