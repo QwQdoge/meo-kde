@@ -204,3 +204,7 @@ Buttons, tool buttons, check/radio controls, combo boxes, text/search fields and
 ### Native tab contract
 
 Tab content uses `space12` at each end, `space4` vertically and `space8` between icons, text and application-supplied tab buttons, with a `controlHeight` minimum. `CT_TabBarTab` measures the option itself because QTabBar includes frame padding in the supplied content size. Text/icons and button reservations share one coordinate system, rotated for west/east tabs and mirrored for RTL. The Meo renderer owns mnemonic labels and the close glyph; actual tab buttons, switching, dragging, shortcuts and accessibility stay with Qt. No base-style selected-tab shifts or overlap are added. All four tab edges retain the Meo selection indicator and focus treatment.
+
+### Native item-view contract
+
+Standard styled delegates use Meo-owned text/editor, decoration and check rectangles, `space12` horizontal and `space4` vertical insets, `space8` internal gaps, `iconSizeS` check indicators and a `controlHeight` minimum. Left/right/top/bottom decorations, wrapping, elision and RTL share the same layout for sizing and drawing. Fonts, foreground/background brushes, alternating rows, decoration sizes, alignment and explicit model size hints remain application data. Meo selection/focus painting stays tonal, with readable Text-role content. Qt still owns the models, editing, check-state events and accessibility. Application delegates that bypass QStyle remain a compatibility boundary rather than an invitation to rewrite their models.

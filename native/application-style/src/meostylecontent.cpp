@@ -1,3 +1,4 @@
+#include "meostyleitem.h"
 #include "meostylecontent.h"
 #include "meostyletab.h"
 
@@ -432,6 +433,64 @@ void drawLeadingLabel(const MeoStyleContent *style, const QStyleOption *option,
 void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *option,
                                   QPainter *painter, const QWidget *widget) const
 {
+    if (element == CE_ItemViewItem) {
+        if (const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option)) {
+            painter->save();
+            painter->setClipRect(item->rect, Qt::IntersectClip);
+            const auto group = optionColorGroup(item);
+            if (item->backgroundBrush.style() != Qt::NoBrush) {
+                painter->setBrushOrigin(item->rect.topLeft());
+                painter->fillRect(item->rect, item->backgroundBrush);
+            } else if (item->features.testFlag(QStyleOptionViewItem::Alternate)) {
+                painter->fillRect(item->rect, item->palette.brush(group, QPalette::AlternateBase));
+            }
+            drawPrimitive(PE_PanelItemViewItem, item, painter, widget);
+            const auto layout = MeoItem::layout(*item);
+            if (!layout.check.isEmpty()) {
+                QStyleOption indicator;
+                indicator.rect = layout.check; indicator.palette = item->palette; indicator.direction = item->direction;
+                indicator.state = item->state & ~(State_On | State_Off | State_NoChange | State_HasFocus);
+                indicator.state |= item->checkState == Qt::Checked ? State_On
+                    : item->checkState == Qt::PartiallyChecked ? State_NoChange : State_Off;
+                drawPrimitive(PE_IndicatorItemViewItemCheck, &indicator, painter, widget);
+            }
+            if (!layout.decoration.isEmpty() && !item->icon.isNull()) {
+                const QIcon::Mode mode = !item->state.testFlag(State_Enabled) ? QIcon::Disabled
+                    : item->state.testFlag(State_Selected) ? QIcon::Selected : QIcon::Normal;
+                item->icon.paint(painter, layout.decoration, item->decorationAlignment, mode,
+                                 item->state.testFlag(State_Open) ? QIcon::On : QIcon::Off);
+            }
+            if (!layout.text.isEmpty()) {
+                painter->setFont(item->font);
+                painter->setPen(item->palette.color(group, QPalette::Text));
+                painter->setClipRect(layout.text, Qt::IntersectClip);
+                QTextLayout lines(MeoItem::text(*item), item->font);
+                MeoItem::prepareText(lines, *item, layout.text.width());
+                qreal y = layout.text.top();
+                const qreal height = lines.boundingRect().height();
+                if (height < layout.text.height()) {
+                    if (item->displayAlignment.testFlag(Qt::AlignVCenter)) y += (layout.text.height() - height) / 2;
+                    else if (item->displayAlignment.testFlag(Qt::AlignBottom)) y += layout.text.height() - height;
+                }
+                for (int i = 0; i < lines.lineCount(); ++i) {
+                    const QTextLine line = lines.lineAt(i);
+                    if (y + line.y() >= layout.text.bottom() + 1) break;
+                    const bool lastVisible = i + 1 < lines.lineCount()
+                        && y + lines.lineAt(i + 1).y() + lines.lineAt(i + 1).height() > layout.text.bottom() + 1;
+                    if (lastVisible || line.naturalTextWidth() > layout.text.width()) {
+                        QString remaining = lines.text().mid(line.textStart(), lastVisible ? -1 : line.textLength());
+                        remaining.replace(QChar::LineSeparator, QLatin1Char(' '));
+                        const QString elided = item->fontMetrics.elidedText(remaining, item->textElideMode, layout.text.width());
+                        const QRectF rect(layout.text.left(), y + line.y(), layout.text.width(), line.height());
+                        painter->drawText(rect, QStyle::visualAlignment(item->direction, item->displayAlignment) | Qt::TextSingleLine, elided);
+                        if (lastVisible) break;
+                    } else line.draw(painter, QPointF(layout.text.left(), y));
+                }
+            }
+            painter->restore();
+            return;
+        }
+    }
     if (element == CE_TabBarTabLabel) {
         if (const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option)) {
             const auto layout = MeoTab::layout(*tab);

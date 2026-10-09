@@ -8,6 +8,8 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QListWidget>
+#include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QProgressBar>
@@ -414,7 +416,7 @@ private slots:
             void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                              const QWidget *widget = nullptr) const override {
                 if (element == CE_CheckBox || element == CE_RadioButton || element == CE_CheckBoxLabel
-                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel) ++labelCalls;
+                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem) ++labelCalls;
                 QProxyStyle::drawControl(element, option, painter, widget);
             }
         };
@@ -439,7 +441,30 @@ private slots:
             tab.shape = shape;
             style->drawControl(QStyle::CE_TabBarTab, &tab, &painter);
         }
+        QStyleOptionViewItem item; item.rect = image.rect(); item.text = QStringLiteral("File & name");
+        item.features = QStyleOptionViewItem::HasDisplay | QStyleOptionViewItem::HasCheckIndicator;
+        item.state = QStyle::State_Enabled; item.checkState = Qt::PartiallyChecked;
+        style->drawControl(QStyle::CE_ItemViewItem, &item, &painter);
         QCOMPARE(base->labelCalls, 0);
+    }
+
+    void itemCheckUsesThePaintedHitRectangle()
+    {
+        const auto style = createMeoStyle(); QVERIFY(style);
+        QListWidget list; list.setStyle(style.get());
+        auto *entry = new QListWidgetItem(QStringLiteral("Check me"), &list);
+        entry->setFlags(entry->flags() | Qt::ItemIsUserCheckable);
+        entry->setCheckState(Qt::Unchecked);
+        list.resize(240, 120); list.show(); QApplication::processEvents();
+        QStyleOptionViewItem option;
+        option.widget = &list; option.rect = list.visualItemRect(entry);
+        option.features = QStyleOptionViewItem::HasDisplay | QStyleOptionViewItem::HasCheckIndicator;
+        const QRect check = style->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &option, &list);
+        QVERIFY(!check.isEmpty());
+        QTest::mouseClick(list.viewport(), Qt::LeftButton, Qt::NoModifier, check.center());
+        QCOMPARE(entry->checkState(), Qt::Checked);
+        QTest::mouseClick(list.viewport(), Qt::LeftButton, Qt::NoModifier, check.center());
+        QCOMPARE(entry->checkState(), Qt::Unchecked);
     }
 
     void preservesApplicationPalette()

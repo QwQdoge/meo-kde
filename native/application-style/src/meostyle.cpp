@@ -1,3 +1,4 @@
+#include "meostyleitem.h"
 #include "meostyle.h"
 #include "meostyletab.h"
 
@@ -238,6 +239,9 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_ItemViewItem:
+        if (const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option)) return MeoItem::sizeHint(*item);
+        return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
     case CT_TabBarTab: {
         const auto *tab = qstyleoption_cast<const QStyleOptionTab *>(option);
         if (!tab) return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);

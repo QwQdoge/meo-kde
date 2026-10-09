@@ -135,6 +135,13 @@ int main(int argc, char *argv[])
     table->setItem(1, 0, new QTableWidgetItem(QStringLiteral("Kate")));
     table->setItem(1, 1, new QTableWidgetItem(QStringLiteral("Selected")));
     table->setCurrentCell(1, 0);
+    table->setAlternatingRowColors(true);
+    table->item(0, 0)->setIcon(QIcon::fromTheme(QStringLiteral("folder")));
+    table->item(0, 0)->setCheckState(Qt::PartiallyChecked);
+    table->item(1, 0)->setCheckState(Qt::Checked);
+    table->setItem(2, 0, new QTableWidgetItem(QStringLiteral("Long wrapped file name demonstrating native item layout")));
+    table->setWordWrap(true);
+    table->resizeRowsToContents();
     tabs->addTab(table, QStringLiteral("Table"));
     auto *tree = new QTreeWidget;
     tree->setHeaderLabels({QStringLiteral("Tree"), QStringLiteral("Value")});

@@ -9,6 +9,7 @@
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QStyleOptionTab>
+#include <QtWidgets/QStyleOptionViewItem>
 #include <QtWidgets/QTabBar>
 #include <QtWidgets/QWidget>
 
@@ -20,6 +21,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void itemContentsShareCheckIconAndEditorGeometry();
     void tabContentsReserveButtonsInEveryOrientation();
     void pushButtonContentUsesMeoInsets();
     void sizeHintsReserveContentAndMenuInsets();
@@ -82,6 +84,36 @@ void MeoStyleGeometryTest::tabContentsReserveButtonsInEveryOrientation()
             QVERIFY(!content.intersects(left)); QVERIFY(!content.intersects(right)); QVERIFY(!left.intersects(right));
         }
     }
+}
+
+void MeoStyleGeometryTest::itemContentsShareCheckIconAndEditorGeometry()
+{
+    MeoStyle style;
+    for (const auto position : {QStyleOptionViewItem::Left, QStyleOptionViewItem::Right, QStyleOptionViewItem::Top, QStyleOptionViewItem::Bottom}) {
+        QStyleOptionViewItem item;
+        item.rect = QRect(13, 21, 220, 120); item.text = QStringLiteral("File name");
+        item.features = QStyleOptionViewItem::HasDisplay | QStyleOptionViewItem::HasDecoration | QStyleOptionViewItem::HasCheckIndicator;
+        item.decorationPosition = position; item.decorationSize = QSize(24, 24);
+        item.decorationAlignment = Qt::AlignCenter;
+        const QRect text = style.subElementRect(QStyle::SE_ItemViewItemText, &item);
+        const QRect icon = style.subElementRect(QStyle::SE_ItemViewItemDecoration, &item);
+        const QRect check = style.subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &item);
+        QVERIFY(item.rect.contains(text)); QVERIFY(item.rect.contains(icon)); QVERIFY(item.rect.contains(check));
+        QVERIFY(!text.intersects(icon)); QVERIFY(!text.intersects(check)); QVERIFY(!icon.intersects(check));
+        item.direction = Qt::RightToLeft;
+        QCOMPARE(style.subElementRect(QStyle::SE_ItemViewItemText, &item), QStyle::visualRect(Qt::RightToLeft, item.rect, text));
+        QCOMPARE(style.subElementRect(QStyle::SE_ItemViewItemDecoration, &item), QStyle::visualRect(Qt::RightToLeft, item.rect, icon));
+        QCOMPARE(style.subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &item), QStyle::visualRect(Qt::RightToLeft, item.rect, check));
+    }
+    QStyleOptionViewItem wrapped;
+    wrapped.text = QStringLiteral("A long name that should occupy several lines in a narrow column");
+    wrapped.features = QStyleOptionViewItem::HasDisplay | QStyleOptionViewItem::WrapText;
+    wrapped.rect = QRect(0, 0, 100, 200);
+    const QSize narrow = style.sizeFromContents(QStyle::CT_ItemViewItem, &wrapped, QSize(), nullptr);
+    wrapped.rect.setWidth(400);
+    const QSize wide = style.sizeFromContents(QStyle::CT_ItemViewItem, &wrapped, QSize(), nullptr);
+    QVERIFY(narrow.height() > wide.height());
+    QVERIFY(narrow.width() <= 100);
 }
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()

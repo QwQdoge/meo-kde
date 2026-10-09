@@ -1,3 +1,4 @@
+#include "meostyleitem.h"
 #include "meostyle.h"
 #include "meostyletab.h"
 
@@ -68,6 +69,13 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
         if (element == SE_TabBarTabText) return layout.physical(layout.content);
         if (element == SE_TabBarTabLeftButton) return layout.physical(layout.leftButton);
         if (element == SE_TabBarTabRightButton) return layout.physical(layout.rightButton);
+    }
+    if (const auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(option)) {
+        const auto layout = MeoItem::layout(*item);
+        if (element == SE_ItemViewItemText) return layout.text;
+        if (element == SE_ItemViewItemDecoration) return layout.decoration;
+        if (element == SE_ItemViewItemCheckIndicator) return layout.check;
+        if (element == SE_ItemViewItemFocusRect) return item->rect.adjusted(1, 1, -1, -1);
     }
     switch (element) {
     case SE_PushButtonContents: {
