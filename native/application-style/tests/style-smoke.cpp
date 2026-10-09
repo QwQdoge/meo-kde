@@ -18,6 +18,7 @@
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QStyleOptionComboBox>
+#include <QtWidgets/QStyleOptionButton>
 #include <QtWidgets/QStyleOptionFrame>
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionProgressBar>
@@ -402,6 +403,37 @@ private slots:
                      qPrintable(QStringLiteral("Expected Breeze base, got %1")
                                     .arg(proxy->baseStyle()->objectName())));
         }
+    }
+
+    void commonLabelsDoNotDelegateTheirPainting()
+    {
+        class CountingBase final : public QProxyStyle {
+        public:
+            CountingBase() : QProxyStyle(QStyleFactory::create(QStringLiteral("Fusion"))) {}
+            mutable int labelCalls = 0;
+            void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
+                             const QWidget *widget = nullptr) const override {
+                if (element == CE_CheckBox || element == CE_RadioButton || element == CE_CheckBoxLabel
+                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel) ++labelCalls;
+                QProxyStyle::drawControl(element, option, painter, widget);
+            }
+        };
+        auto style = createMeoStyle(); QVERIFY(style);
+        auto *proxy = dynamic_cast<QProxyStyle *>(style.get()); QVERIFY(proxy);
+        auto *base = new CountingBase; proxy->setBaseStyle(base);
+        QImage image(220, 48, QImage::Format_ARGB32_Premultiplied); image.fill(Qt::transparent);
+        QPainter painter(&image);
+        QStyleOptionButton button; button.rect = image.rect(); button.text = QStringLiteral("&Choice\nSecond line");
+        button.state = QStyle::State_Enabled | QStyle::State_HasFocus | QStyle::State_On;
+        QStyleOptionComboBox combo; combo.rect = image.rect(); combo.currentText = QStringLiteral("Files & folders");
+        combo.state = QStyle::State_Enabled;
+        for (const auto direction : {Qt::LeftToRight, Qt::RightToLeft}) {
+            button.direction = direction; combo.direction = direction;
+            style->drawControl(QStyle::CE_CheckBox, &button, &painter);
+            style->drawControl(QStyle::CE_RadioButton, &button, &painter);
+            style->drawControl(QStyle::CE_ComboBoxLabel, &combo, &painter);
+        }
+        QCOMPARE(base->labelCalls, 0);
     }
 
     void preservesApplicationPalette()

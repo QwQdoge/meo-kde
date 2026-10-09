@@ -16,6 +16,7 @@ class MeoStyleGeometryTest final : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void commonControlSizesIgnoreBaseGeometry();
     void pushButtonContentUsesMeoInsets();
     void sizeHintsReserveContentAndMenuInsets();
     void searchFieldGetsWiderContentInset();
@@ -24,6 +25,24 @@ private Q_SLOTS:
     void splitToolButtonOwnsMenuRegion();
     void sliderHandleUsesMeoTokenSize();
 };
+
+void MeoStyleGeometryTest::commonControlSizesIgnoreBaseGeometry()
+{
+    class OversizedBase final : public QProxyStyle {
+    public:
+        QSize sizeFromContents(ContentsType, const QStyleOption *, const QSize &, const QWidget *) const override { return QSize(900, 900); }
+    };
+    MeoStyle style; style.setBaseStyle(new OversizedBase);
+    const QSize contents(80, 16);
+    QStyleOptionButton button;
+    for (const auto type : {QStyle::CT_CheckBox, QStyle::CT_RadioButton}) {
+        const QSize size = style.sizeFromContents(type, &button, contents, nullptr);
+        QCOMPARE(size.height(), qRound(Meo::DesignTokens::controlHeight()));
+        QVERIFY(size.width() < 200);
+    }
+    QStyleOptionComboBox combo;
+    QCOMPARE(style.sizeFromContents(QStyle::CT_ComboBox, &combo, contents, nullptr).height(), qRound(Meo::DesignTokens::controlHeight()));
+}
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()
 {

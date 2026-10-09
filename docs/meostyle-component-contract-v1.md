@@ -12,7 +12,7 @@ This document closes the first MeoStyle v2 source-of-truth ambiguity for the hig
 
 - MeoUI QML reads the same runtime through the `MeoTokens` singleton.
 - `MeoTheme.metricToken(name, fallback)` is a handoff-safe fallback boundary, not a second metric authority.
-- MeoStyle links the token runtime and consumes `Meo::DesignTokens` directly.
+- MeoStyle includes the pure QtCore `meodesigntokens.h` contract and consumes `Meo::DesignTokens` directly.
 - Application-specific patches must not duplicate these values unless the upstream API makes token consumption impossible; such exceptions must be documented.
 
 Canonical v1 values currently used by the contracts below:
@@ -177,7 +177,10 @@ At the time this contract was written:
 - MeoStyle owns outer button, line-edit, menu and several complex-control surfaces.
 - MeoStyle v2 geometry hooks own push-button content, line-edit content, checkbox/radio label+indicator geometry, combo-box edit/arrow regions, split-tool-button regions and slider groove/handle geometry.
 - Geometry regression tests cover the token relationship and RTL mirroring for the new v2 hooks.
-- `CE_PushButtonLabel`, `CE_MenuItem` content columns and parts of tool-button label layout still delegate visible content to the base style and therefore remain unfinished.
+- The installed plugin uses `MeoStyleContent` to own push-button, menu-item and tool-button content. The base class retains compatibility paths for controls not handled by this renderer.
+- Checkbox/radio full-control and label painting now use Meo indicator/content rectangles, including icon placement, multiline mnemonic text and RTL. Their size hints add `space4` on both outer edges, `iconSizeS` for the indicator and `space8` before label content, with a `controlHeight` minimum.
+- Combo labels use the Meo edit-field rectangle, leading icon and literal current text. Editable child line edits retain Qt text editing/IME ownership. Combo height is the larger of `controlHeight` and content height plus `space8`; width reserves `space12 + space8 + controlHeight` for content insets and arrow region. These size hints do not inherit base-style visible geometry.
+- Focus, disabled and checked/indeterminate indicator painting remains with the Meo primitive renderer; Qt owns keyboard interaction and accessibility. This source mapping does not claim real-application visual acceptance or completion of the remaining roadmap.
 
 This mapping is descriptive, not a permanent exception. The roadmap remains authoritative for what still needs implementation and acceptance.
 

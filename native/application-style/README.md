@@ -18,8 +18,10 @@ already-running applications handled a live KDE colour-scheme notification.
 MeoStyle paints the standard Qt Widgets paths for buttons and tool buttons,
 checkboxes and radio buttons, line edits, combo boxes, sliders, progress bars,
 tabs, menus, scroll bars, and item views that use Qt's default
-`QStyledItemDelegate`. It leaves text layout, icons, mnemonics, keyboard
-navigation, popup positioning, and hit testing to the platform base style.
+`QStyledItemDelegate`. The content renderer owns high-impact button/menu/tool-button labels and
+checkbox/radio/combo label geometry, icon placement and text painting. Qt keeps
+mnemonic activation, editing/IME, keyboard navigation, popup positioning and
+accessibility behavior; uncovered controls retain platform fallback.
 
 First-party `QPushButton` instances may opt into Pixel hierarchy with
 `meo.variant=filled`, `tonal`, or `text`. A button marked `filled` uses the

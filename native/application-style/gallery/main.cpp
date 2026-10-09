@@ -69,6 +69,10 @@ int main(int argc, char *argv[])
     auto *checkBox = new QCheckBox(QStringLiteral("Checkbox"));
     checkBox->setCheckState(Qt::Checked);
     form->addRow(checkBox);
+    auto *rtlCheck = new QCheckBox(QStringLiteral("RTL &choice with icon"));
+    rtlCheck->setLayoutDirection(Qt::RightToLeft);
+    rtlCheck->setIcon(QIcon::fromTheme(QStringLiteral("document-open")));
+    form->addRow(rtlCheck);
     auto *partialCheckBox = new QCheckBox(QStringLiteral("Indeterminate checkbox"));
     partialCheckBox->setTristate(true);
     partialCheckBox->setCheckState(Qt::PartiallyChecked);
@@ -99,6 +103,10 @@ int main(int argc, char *argv[])
     auto *combo = new QComboBox;
     combo->addItems({QStringLiteral("Light"), QStringLiteral("Dark"), QStringLiteral("System")});
     form->addRow(QStringLiteral("Combo box"), combo);
+    auto *editableCombo = new QComboBox;
+    editableCombo->setEditable(true);
+    editableCombo->addItem(QIcon::fromTheme(QStringLiteral("folder")), QStringLiteral("Files & folders"));
+    form->addRow(QStringLiteral("Editable combo"), editableCombo);
     auto *slider = new QSlider(Qt::Horizontal);
     slider->setValue(55);
     form->addRow(QStringLiteral("Slider"), slider);

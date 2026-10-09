@@ -241,11 +241,16 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
         result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
         break;
     }
+    case CT_CheckBox:
+    case CT_RadioButton:
+        return QSize(contentsSize.width() + qRound(Meo::DesignTokens::space4() * 2
+                     + Meo::DesignTokens::iconSizeS() + Meo::DesignTokens::space8()),
+                     qMax(qRound(Meo::DesignTokens::controlHeight()), contentsSize.height() + qRound(Meo::DesignTokens::space8())));
     case CT_ComboBox:
-        result.setWidth(qMax(result.width(), contentsSize.width()
+        result.setWidth(contentsSize.width()
             + qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space8()
-                     + Meo::DesignTokens::controlHeight())));
-        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
+                     + Meo::DesignTokens::controlHeight()));
+        result.setHeight(qMax(contentsSize.height() + qRound(Meo::DesignTokens::space8()), qRound(Meo::DesignTokens::controlHeight())));
         break;
     case CT_LineEdit:
     case CT_SpinBox:

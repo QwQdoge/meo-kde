@@ -6,6 +6,7 @@
 #include <QtGui/QPainter>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QStyleOptionButton>
+#include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionToolButton>
 
@@ -383,11 +384,66 @@ void drawToolButtonLabel(const MeoStyleContent *style, const QStyleOptionToolBut
                         button->palette, enabled, button->text, QPalette::ButtonText);
 }
 
+void drawLeadingLabel(const MeoStyleContent *style, const QStyleOption *option,
+                      const QRect &contents, const QString &text, const QIcon &icon,
+                      QSize iconSize, QPalette::ColorRole role, bool mnemonic,
+                      QPainter *painter, const QWidget *widget)
+{
+    painter->save(); painter->setClipRect(contents, Qt::IntersectClip);
+    QRect textRect = contents;
+    if (!icon.isNull()) {
+        if (!iconSize.isValid()) iconSize = QSize(qRound(Meo::DesignTokens::iconSizeS()), qRound(Meo::DesignTokens::iconSizeS()));
+        iconSize = iconSize.boundedTo(contents.size());
+        const QRect logicalIcon(contents.left(), contents.center().y() - iconSize.height() / 2,
+                                iconSize.width(), iconSize.height());
+        const QRect iconRect = QStyle::visualRect(option->direction, contents, logicalIcon);
+        style->drawItemPixmap(painter, iconRect, Qt::AlignCenter, icon.pixmap(iconSize, iconMode(option), iconState(option)));
+        const int gap = text.isEmpty() ? 0 : qRound(Meo::DesignTokens::space8());
+        const QRect logicalText = contents.adjusted(iconSize.width() + gap, 0, 0, 0);
+        textRect = QStyle::visualRect(option->direction, contents, logicalText);
+    }
+    const Qt::Alignment alignment = option->direction == Qt::RightToLeft ? Qt::AlignRight : Qt::AlignLeft;
+    const int flags = mnemonic ? (textFlags(style, option, widget, alignment) & ~Qt::TextSingleLine)
+                               : int(Qt::TextSingleLine | Qt::AlignVCenter | alignment);
+    QPalette palette = option->palette;
+    palette.setCurrentColorGroup(optionColorGroup(option));
+    style->drawItemText(painter, textRect, flags, palette,
+                        option->state.testFlag(QStyle::State_Enabled), text, role);
+    painter->restore();
+}
+
 } // namespace
 
 void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *option,
                                   QPainter *painter, const QWidget *widget) const
 {
+    if (element == CE_CheckBox || element == CE_RadioButton) {
+        if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+            const bool radio = element == CE_RadioButton;
+            QStyleOptionButton indicator(*button);
+            indicator.rect = subElementRect(radio ? SE_RadioButtonIndicator : SE_CheckBoxIndicator, button, widget);
+            drawPrimitive(radio ? PE_IndicatorRadioButton : PE_IndicatorCheckBox, &indicator, painter, widget);
+            drawControl(radio ? CE_RadioButtonLabel : CE_CheckBoxLabel, button, painter, widget);
+            return;
+        }
+    }
+    if (element == CE_CheckBoxLabel || element == CE_RadioButtonLabel) {
+        if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+            const QRect contents = subElementRect(element == CE_RadioButtonLabel ? SE_RadioButtonContents : SE_CheckBoxContents, button, widget);
+            drawLeadingLabel(this, button, contents, button->text, button->icon, button->iconSize,
+                              QPalette::WindowText, true, painter, widget);
+            return;
+        }
+    }
+    if (element == CE_ComboBoxLabel) {
+        if (const auto *combo = qstyleoption_cast<const QStyleOptionComboBox *>(option)) {
+            const QRect contents = subControlRect(CC_ComboBox, combo, SC_ComboBoxEditField, widget);
+            // The editable child's QLineEdit retains selection, cursor and IME.
+            drawLeadingLabel(this, combo, contents, combo->editable ? QString() : combo->currentText,
+                              combo->currentIcon, combo->iconSize, QPalette::Text, false, painter, widget);
+            return;
+        }
+    }
     if (element == CE_PushButtonLabel) {
         if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
             drawButtonLabel(this, button, painter, widget);
