@@ -15,8 +15,11 @@ PlasmoidItem {
     preferredRepresentation: fullRepresentation
     property date currentDateTime: new Date()
 
-    Layout.minimumWidth: 240 * MeoTheme.globalScale
-    Layout.minimumHeight: 176 * MeoTheme.globalScale
+    // Googlebook/Android home widgets are resized in-place. Keep the adapter
+    // genuinely usable down to a compact cell instead of advertising SizeSmall
+    // while enforcing the old 240 x 176 minimum.
+    Layout.minimumWidth: 144 * MeoTheme.globalScale
+    Layout.minimumHeight: 120 * MeoTheme.globalScale
     Layout.preferredWidth: 320 * MeoTheme.globalScale
     Layout.preferredHeight: 224 * MeoTheme.globalScale
 
@@ -32,6 +35,7 @@ PlasmoidItem {
         implicitHeight: 224 * MeoTheme.globalScale
 
         MeoWidget {
+            id: widget
             anchors.fill: parent
             widgetId: "clock"
             preferredSize: MeoWidget.SizeMedium
@@ -43,25 +47,72 @@ PlasmoidItem {
             accessibleName: Plasmoid.title
             accessibleDescription: MeoI18n.translator.i18n("Date, time, and optional cached weather")
 
-            ColumnLayout {
+            Loader {
                 anchors.fill: parent
-                anchors.margins: MeoTheme.space16
-                spacing: MeoTheme.space8
+                sourceComponent: widget.currentColumns <= 1 || widget.currentRows <= 1
+                                 ? compactClock
+                                 : widget.wideLayout ? wideClock : stackedClock
+            }
+        }
+    }
 
-                MeoAmbientClock {
-                    Layout.alignment: Qt.AlignHCenter
-                    dateTime: root.currentDateTime
-                    showDate: true
-                }
-                MeoWeatherStatus {
-                    Layout.alignment: Qt.AlignHCenter
-                    available: MeoSystem.Weather.available
-                    stale: MeoSystem.Weather.stale
-                    temperatureText: MeoSystem.Weather.temperatureText
-                    condition: MeoSystem.Weather.condition
-                    iconName: MeoSystem.Weather.iconName
-                    showLocation: false
-                }
+    Component {
+        id: compactClock
+
+        Item {
+            MeoAmbientClock {
+                anchors.centerIn: parent
+                width: parent.width
+                dateTime: root.currentDateTime
+                showDate: false
+            }
+        }
+    }
+
+    Component {
+        id: wideClock
+
+        RowLayout {
+            spacing: MeoTheme.space16
+
+            MeoAmbientClock {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                dateTime: root.currentDateTime
+                showDate: true
+            }
+            MeoWeatherStatus {
+                Layout.alignment: Qt.AlignVCenter
+                available: MeoSystem.Weather.available
+                stale: MeoSystem.Weather.stale
+                temperatureText: MeoSystem.Weather.temperatureText
+                condition: MeoSystem.Weather.condition
+                iconName: MeoSystem.Weather.iconName
+                showLocation: false
+            }
+        }
+    }
+
+    Component {
+        id: stackedClock
+
+        ColumnLayout {
+            spacing: MeoTheme.space8
+
+            MeoAmbientClock {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignHCenter
+                dateTime: root.currentDateTime
+                showDate: true
+            }
+            MeoWeatherStatus {
+                Layout.alignment: Qt.AlignHCenter
+                available: MeoSystem.Weather.available
+                stale: MeoSystem.Weather.stale
+                temperatureText: MeoSystem.Weather.temperatureText
+                condition: MeoSystem.Weather.condition
+                iconName: MeoSystem.Weather.iconName
+                showLocation: false
             }
         }
     }
