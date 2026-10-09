@@ -1,6 +1,11 @@
 #include "platformcontroller.h"
 
 #include <KLocalizedString>
+#include <KSharedConfig>
+#include <KConfigGroup>
+#include <QFile>
+#include <QStandardPaths>
+#include <QXmlStreamReader>
 #include <KSystemInhibitor>
 
 #include <QDBusConnection>
@@ -48,6 +53,11 @@ PlatformController::PlatformController(QObject *parent)
     QDBusConnection::systemBus().connect(powerProfilesService, powerProfilesPath,
                                          "org.freedesktop.DBus.Properties", "PropertiesChanged",
                                          this, SLOT(refreshPowerProfiles()));
+    m_nightLightWatcher = KConfigWatcher::create(KSharedConfig::openConfig(QStringLiteral("kwinrc")));
+    connect(m_nightLightWatcher.data(), &KConfigWatcher::configChanged, this,
+        [this](const KConfigGroup &group, const QByteArrayList &) {
+            if (group.name() == QStringLiteral("NightColor")) { refreshNightLight(); Q_EMIT nightLightChanged(); }
+        });
     refreshBrightness();
     refreshNightLight();
     refreshPowerProfiles();
@@ -110,10 +120,52 @@ void PlatformController::refreshNightLight()
     }
 }
 
+QVariantMap PlatformController::nightLightSettings() const
+{
+    // KWin 6.7 uses the shared dark/light scheduler. Older versions used a
+    // different Mode enum: never interpret their numeric values as this one.
+    const QString path = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("config.kcfg/nightlightsettings.kcfg"));
+    QFile schema(path); QStringList choices;
+    if (schema.open(QIODevice::ReadOnly)) {
+        QXmlStreamReader xml(&schema);
+        while (!xml.atEnd()) {
+            xml.readNext();
+            if (xml.isStartElement() && xml.name() == QStringLiteral("choice")) choices.append(xml.attributes().value("name").toString());
+        }
+        if (xml.hasError()) choices.clear();
+    }
+    if (choices != QStringList{QStringLiteral("Constant"), QStringLiteral("DarkLight")}) return {};
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kwinrc")); config->reparseConfiguration();
+    const auto group = config->group(QStringLiteral("NightColor"));
+    const QString configuredMode = group.readEntry("Mode", QStringLiteral("DarkLight"));
+    const int mode = configuredMode == QStringLiteral("Constant") || configuredMode == QStringLiteral("0") ? 0 : 1;
+    return {{"mode", mode}, {"dayTemperature", group.readEntry("DayTemperature", 6500)},
+        {"nightTemperature", group.readEntry("NightTemperature", 4500)}};
+}
+
 void PlatformController::setNightLightEnabled(bool enabled)
 {
-    QDBusInterface properties(nightLightService, nightLightPath, "org.freedesktop.DBus.Properties", QDBusConnection::sessionBus());
-    properties.asyncCall("Set", QString::fromLatin1(nightLightInterface), QStringLiteral("enabled"), QVariant::fromValue(QDBusVariant(enabled)));
+    if (!nightLightAvailable()) { setError(i18nd("meo-desktop", "Night Light is unavailable.")); return; }
+    // The DBus enabled property is read-only. KWin watches its KConfig owner.
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kwinrc"));
+    config->group(QStringLiteral("NightColor")).writeEntry("Active", enabled, KConfig::Notify);
+    if (!config->sync()) { setError(i18nd("meo-desktop", "Could not save Night Light.")); return; }
+    clearError();
+}
+
+void PlatformController::configureNightLight(int mode, int dayTemperature, int nightTemperature)
+{
+    if (!nightLightAvailable() || nightLightSettings().isEmpty() || (mode != 0 && mode != 1)
+        || dayTemperature < 1000 || dayTemperature > 6500 || nightTemperature < 1000 || nightTemperature > 6500) {
+        setError(i18nd("meo-desktop", "Choose a supported Night Light mode and temperatures between 1000 and 6500 K.")); return;
+    }
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kwinrc"));
+    auto group = config->group(QStringLiteral("NightColor"));
+    group.writeEntry("Mode", mode == 0 ? QStringLiteral("Constant") : QStringLiteral("DarkLight"), KConfig::Notify);
+    group.writeEntry("DayTemperature", dayTemperature, KConfig::Notify);
+    group.writeEntry("NightTemperature", nightTemperature, KConfig::Notify);
+    if (!config->sync()) { setError(i18nd("meo-desktop", "Could not save Night Light.")); return; }
+    clearError();
 }
 
 void PlatformController::refreshPowerProfiles()

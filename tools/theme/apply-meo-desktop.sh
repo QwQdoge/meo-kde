@@ -13,6 +13,8 @@ quiet=0
 reset_layout=0
 make_backup=1
 kwin_only=0
+appearance_only=0
+restore_latest=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -21,8 +23,10 @@ while [ "$#" -gt 0 ]; do
     --quiet) quiet=1 ;;
     --no-backup) make_backup=0 ;;
     --kwin-only) kwin_only=1 ;;
+    --appearance-only) appearance_only=1 ;;
+    --restore-latest) restore_latest=1 ;;
     *)
-      echo "Usage: meo-desktop-apply [--reset-layout] [--kwin-only] [--dry-run] [--quiet]" >&2
+      echo "Usage: meo-desktop-apply [--appearance-only] [--restore-latest] [--reset-layout] [--kwin-only] [--dry-run] [--quiet]" >&2
       exit 2
       ;;
   esac
@@ -43,6 +47,42 @@ run() {
     "$@"
   fi
 }
+
+appearance_configs=(kdeglobals kwinrc plasmarc kcminputrc ksplashrc kglobalshortcutsrc plasma-org.kde.plasma.desktop-appletsrc)
+appearance_defaults=(kdeglobals kwinrc plasmarc kcminputrc ksplashrc)
+
+restore_appearance() {
+  local snapshot="$1" config
+  for config in "${appearance_configs[@]}"; do
+    if [ -f "${snapshot}/${config}" ] && [ ! -L "${snapshot}/${config}" ]; then
+      run cp -- "${snapshot}/${config}" "${config_root}/${config}"
+    elif [ -f "${snapshot}/absent-${config}" ]; then
+      run rm -f -- "${config_root}/${config}"
+    fi
+  done
+  run mkdir -p "${config_root}/kdedefaults"
+  for config in "${appearance_defaults[@]}"; do
+    if [ -f "${snapshot}/kdedefaults/${config}" ] && [ ! -L "${snapshot}/kdedefaults/${config}" ]; then
+      run cp -- "${snapshot}/kdedefaults/${config}" "${config_root}/kdedefaults/${config}"
+    elif [ -f "${snapshot}/absent-default-${config}" ]; then
+      run rm -f -- "${config_root}/kdedefaults/${config}"
+    fi
+  done
+}
+
+if [ "${restore_latest}" -eq 1 ]; then
+  [ "${reset_layout}" -eq 0 ] && [ "${kwin_only}" -eq 0 ] || { echo "Restore cannot be combined with layout reset or KWin-only application." >&2; exit 2; }
+  backup_root="$(cat "${state_root}/last-backup")"
+  # Only a direct child of our backup root, never an arbitrary path or symlink.
+  backup_name="${backup_root#"${state_root}/backups/"}"
+  [[ "${backup_name}" =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+-theme-apply$ ]] \
+    && [ "${backup_root}" = "${state_root}/backups/${backup_name}" ] \
+    && [ ! -L "${backup_root}" ] && [ -f "${backup_root}/appearance-manifest" ] \
+    || { echo "No recoverable Meo appearance snapshot." >&2; exit 1; }
+  restore_appearance "${backup_root}"
+  info "Previous appearance restored. Sign out and back in to reload all desktop components."
+  exit 0
+fi
 
 required_commands=(kwriteconfig6)
 if [ "${kwin_only}" -eq 0 ]; then
@@ -114,19 +154,38 @@ if [ -z "${input_helper}" ] && [ -x "${script_root}/../input-method/meo-input-me
   input_helper="${script_root}/../input-method/meo-input-method.sh"
 fi
 
+# Check the installed preset before either backup or application.
+if [ "${kwin_only}" -eq 0 ] && [ "${dry_run}" -eq 0 ]; then
+  theme_root="${XDG_DATA_HOME:-${HOME}/.local/share}/plasma/look-and-feel/org.meo.desktop"
+  [ -f "${theme_root}/contents/defaults" ] || theme_root="/usr/share/plasma/look-and-feel/org.meo.desktop"
+  [ -f "${theme_root}/contents/defaults" ] || { echo "Meo desktop preset is not installed." >&2; exit 1; }
+fi
+
 if [ "${make_backup}" -eq 1 ] && [ "${dry_run}" -eq 0 ]; then
   timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-  backup_root="${state_root}/backups/${timestamp}-theme-apply"
-  run mkdir -p "${backup_root}"
+  backup_root="${state_root}/backups/${timestamp}-${BASHPID}-theme-apply"
+  mkdir -p "${state_root}/backups"
+  mkdir -m 700 "${backup_root}"
   backup_configs=(kwinrc)
-  if [ "${kwin_only}" -eq 0 ]; then
-    backup_configs=(kdeglobals kwinrc plasmarc kglobalshortcutsrc plasma-org.kde.plasma.desktop-appletsrc)
-  fi
+  if [ "${kwin_only}" -eq 0 ]; then backup_configs=("${appearance_configs[@]}"); fi
   for config in "${backup_configs[@]}"; do
     if [ -e "${config_root}/${config}" ]; then
-      run cp -a "${config_root}/${config}" "${backup_root}/${config}"
+      cp -L -- "${config_root}/${config}" "${backup_root}/${config}"
+    else
+      : > "${backup_root}/absent-${config}"
     fi
   done
+  if [ "${kwin_only}" -eq 0 ]; then
+    mkdir "${backup_root}/kdedefaults"
+    for config in "${appearance_defaults[@]}"; do
+      if [ -f "${config_root}/kdedefaults/${config}" ]; then
+        cp -L -- "${config_root}/kdedefaults/${config}" "${backup_root}/kdedefaults/${config}"
+      else
+        : > "${backup_root}/absent-default-${config}"
+      fi
+    done
+    printf 'meo-appearance-v1\n' > "${backup_root}/appearance-manifest"
+  fi
   printf '%s\n' "${backup_root}" > "${state_root}/last-backup"
   info "Backup: ${backup_root}"
 fi
@@ -152,7 +211,7 @@ fi
 
 # `meo-desktop-apply` is the user's explicit activation action. Keep subsequent
 # wallpaper/accent changes synchronized without restarting Plasma or KWin.
-if [ "${enable_dynamic_watcher}" = 1 ] && command -v systemctl >/dev/null 2>&1 \
+if [ "${appearance_only}" -eq 0 ] && [ "${enable_dynamic_watcher}" = 1 ] && command -v systemctl >/dev/null 2>&1 \
     && systemctl --user cat meo-dynamic-colors.path >/dev/null 2>&1; then
   run systemctl --user enable --now meo-dynamic-colors.path
 fi
@@ -164,14 +223,14 @@ apply_kwin_defaults "${kwin_defaults}"
 
 # Input frameworks own their candidate-window theming. Apply only to an
 # already running framework, after Look-and-Feel changed KDE color roles.
-if command -v fcitx5-remote >/dev/null 2>&1 \
+if [ "${appearance_only}" -eq 0 ] && command -v fcitx5-remote >/dev/null 2>&1 \
     && fcitx5-remote --check >/dev/null 2>&1; then
   if [ -z "${input_helper}" ]; then
     echo "Fcitx 5 is running but meo-input-method is unavailable." >&2
     exit 1
   fi
   run "${input_helper}" --enable fcitx5 --quiet
-elif command -v pgrep >/dev/null 2>&1 \
+elif [ "${appearance_only}" -eq 0 ] && command -v pgrep >/dev/null 2>&1 \
     && pgrep -x ibus-daemon >/dev/null 2>&1; then
   if [ -z "${input_helper}" ]; then
     echo "IBus is running but meo-input-method is unavailable." >&2

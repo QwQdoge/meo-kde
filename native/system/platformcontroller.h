@@ -2,6 +2,8 @@
 
 #include <QObject>
 #include <QVariantList>
+#include <QVariantMap>
+#include <KConfigWatcher>
 
 class PlatformController final : public QObject
 {
@@ -14,6 +16,7 @@ class PlatformController final : public QObject
     Q_PROPERTY(bool nightLightEnabled READ nightLightEnabled WRITE setNightLightEnabled NOTIFY nightLightChanged)
     Q_PROPERTY(bool nightLightRunning READ nightLightRunning NOTIFY nightLightChanged)
     Q_PROPERTY(int nightLightTemperature READ nightLightTemperature NOTIFY nightLightChanged)
+    Q_PROPERTY(QVariantMap nightLightSettings READ nightLightSettings NOTIFY nightLightChanged)
     Q_PROPERTY(bool powerProfilesAvailable READ powerProfilesAvailable NOTIFY powerProfilesChanged)
     Q_PROPERTY(QStringList powerProfiles READ powerProfiles NOTIFY powerProfilesChanged)
     Q_PROPERTY(QString activePowerProfile READ activePowerProfile WRITE setActivePowerProfile NOTIFY powerProfilesChanged)
@@ -30,6 +33,8 @@ public:
     bool nightLightEnabled() const;
     bool nightLightRunning() const;
     int nightLightTemperature() const;
+    QVariantMap nightLightSettings() const;
+    Q_INVOKABLE void configureNightLight(int mode, int dayTemperature, int nightTemperature);
     bool powerProfilesAvailable() const;
     QStringList powerProfiles() const;
     QString activePowerProfile() const;
@@ -72,4 +77,5 @@ private:
     QString m_powerProfileDegradedReason;
     QObject *m_keepAwakeInhibitor = nullptr;
     QString m_lastError;
+    KConfigWatcher::Ptr m_nightLightWatcher;
 };
