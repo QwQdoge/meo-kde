@@ -8,32 +8,28 @@ import MeoUI 1.0
 import Meo.System 1.0 as MeoSystem
 import MeoKDE 1.0
 
-// A self-contained desktop utility, not a replacement for Plasma Edit Mode.
-// Meo entries use the MeoWidget registry. Plasma entries remain actual Plasma
-// packages, created by the current desktop containment through libplasma.
-// Panels, taskbar, Dock, wallpaper, and containment configuration all stay
-// under Plasma's normal ownership.
+// Desktop widget browser surface. Meo entries use the MeoWidget registry;
+// Plasma entries remain real Plasma packages created by the current desktop
+// containment through libplasma. Panels, taskbar, wallpaper and containment
+// configuration remain under Plasma ownership.
 PlasmoidItem {
     id: root
 
-    Plasmoid.title: MeoI18n.translator.i18n("Meo Widget Explorer")
+    Plasmoid.title: MeoI18n.translator.i18n("Browse widgets")
     toolTipMainText: Plasmoid.title
-    toolTipSubText: MeoI18n.translator.i18n("Add Meo and Plasma desktop widgets")
+    toolTipSubText: MeoI18n.translator.i18n("Add widgets to your Home screen")
     preferredRepresentation: compactRepresentation
 
     property var contextWidget: null
     property alias widgetActionsSurface: widgetActions
     property string feedbackText: ""
     property bool feedbackIsError: false
-    // One ordered catalogue keeps the two implementation sources in the same
-    // user-facing picker.  The native bridge remains the authority for both
-    // discovery and the later real Containment::createApplet() call.
     readonly property var widgetCatalog: MeoSystem.DesktopWidgets.catalog
 
     Layout.minimumWidth: compactRepresentationItem ? compactRepresentationItem.implicitWidth
-                                                   : 56 * MeoTheme.globalScale
+                                                   : 48 * MeoTheme.globalScale
     Layout.minimumHeight: compactRepresentationItem ? compactRepresentationItem.implicitHeight
-                                                    : 56 * MeoTheme.globalScale
+                                                    : 48 * MeoTheme.globalScale
     Layout.preferredWidth: Layout.minimumWidth
     Layout.preferredHeight: Layout.minimumHeight
 
@@ -45,10 +41,8 @@ PlasmoidItem {
     function suggestedGeometry(widget) {
         const width = widget.defaultWidth || 320
         const height = widget.defaultHeight || 220
-        // The bridge clamps geometry and Plasma remains authoritative if this
-        // hint collides with another desktop applet.
-        return Qt.rect(Math.max(16, root.x + root.width + MeoTheme.space16),
-                       Math.max(16, root.y), width, height)
+        return Qt.rect(Math.max(MeoTheme.space16, root.x + root.width + MeoTheme.space16),
+                       Math.max(MeoTheme.space16, root.y), width, height)
     }
 
     function addDesktopWidget(widget) {
@@ -60,7 +54,7 @@ PlasmoidItem {
                 : MeoSystem.DesktopWidgets.addPlasmaWidget(Plasmoid.containment, widget.pluginId,
                                                            suggestedGeometry(widget))
         if (added) {
-            feedbackText = MeoI18n.translator.i18n("Added %1 to the desktop.").arg(widget.title)
+            feedbackText = MeoI18n.translator.i18n("Added %1 to the Home screen.").arg(widget.title)
             feedbackIsError = false
         } else {
             feedbackText = MeoSystem.DesktopWidgets.lastError
@@ -81,7 +75,7 @@ PlasmoidItem {
         const isMeo = widget.host === "meo"
         root.widgetActionsSurface.model = [
             {
-                "label": MeoI18n.translator.i18n("Add to desktop"),
+                "label": MeoI18n.translator.i18n("Add to Home screen"),
                 "icon": "add",
                 "enabled": widget.available,
                 "action": function() { root.addDesktopWidget(root.contextWidget) }
@@ -107,36 +101,35 @@ PlasmoidItem {
 
     compactRepresentation: QQC2.AbstractButton {
         id: compactRepresentationItem
-        implicitWidth: 56 * MeoTheme.globalScale
-        implicitHeight: 56 * MeoTheme.globalScale
+        implicitWidth: 48 * MeoTheme.globalScale
+        implicitHeight: 48 * MeoTheme.globalScale
         hoverEnabled: true
-        Accessible.name: MeoI18n.translator.i18n("Open Meo Widget Explorer")
+        Accessible.name: MeoI18n.translator.i18n("Browse widgets")
         onClicked: root.expanded = !root.expanded
 
         background: MeoShape {
             type: "rect"
-            radius: compactRepresentationItem.hovered || compactRepresentationItem.down
-                    ? MeoTheme.shapeLarge : MeoTheme.shapeExtraLarge
+            radius: width / 2
             color: compactRepresentationItem.hovered || compactRepresentationItem.down || root.expanded
-                   ? MeoTheme.secondaryContainer : MeoTheme.surfaceContainerLow
-            strokeWidth: MeoTheme.strokeWidthThin
-            strokeColor: MeoTheme.outlineVariant
+                   ? MeoTheme.secondaryContainer : "transparent"
+            strokeWidth: 0
         }
         contentItem: MeoIcon {
             anchors.centerIn: parent
             icon: "widgets"
-            size: 28
-            color: MeoTheme.contentOnSecondaryContainer
+            size: 26
+            color: compactRepresentationItem.hovered || compactRepresentationItem.down || root.expanded
+                   ? MeoTheme.contentOnSecondaryContainer : MeoTheme.contentOnSurface
         }
     }
 
     fullRepresentation: Item {
         id: explorerSurface
-        // This follows the ChromeOS-style broad sheet composition. The
-        // eventual shell overlay may add the desktop blur/dim backdrop, but
-        // this applet remains deliberately scoped to its own safe surface.
-        implicitWidth: 1120 * MeoTheme.globalScale
-        implicitHeight: 680 * MeoTheme.globalScale
+        // Googlebook treats widgets as a first-class Home-screen surface. The
+        // shared picker keeps that broad preview-first composition while this
+        // Plasma adapter remains responsible only for safe package creation.
+        implicitWidth: 1080 * MeoTheme.globalScale
+        implicitHeight: 660 * MeoTheme.globalScale
 
         MeoWidgetSheet {
             anchors.fill: parent
@@ -152,7 +145,6 @@ PlasmoidItem {
             onRefreshRequested: MeoSystem.DesktopWidgets.refreshPlasmaCatalog()
             onCloseRequested: root.expanded = false
         }
-
     }
 
     MeoContextMenu {
