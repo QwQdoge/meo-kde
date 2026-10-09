@@ -16,6 +16,9 @@
     <path id="normal-bottomright" d="M24.5 24.5V45A20.5 20.5 0 0 0 45 24.5Z" opacity="0"/>
     <rect id="normal-bottom" x="23.5" y="24.5" width="1" height="20.5" opacity="0"/>
   </g>
+  <g id="normal-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect x="18" y="40" width="12" height="2" rx="1" opacity="0.72"/>
+  </g>
   <g class="ColorScheme-Background" fill="currentColor">
     <rect id="focus-center" x="23.5" y="71.5" width="1" height="1" opacity="0"/>
     <rect id="focus-top" x="23.5" y="51" width="1" height="20.5" opacity="0"/>
@@ -42,7 +45,7 @@
     <rect id="minimized-bottom" x="23.5" y="120.5" width="1" height="20.5" opacity="0"/>
   </g>
   <g id="minimized-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
-    <rect x="21" y="136" width="5" height="2" rx="1" opacity="0.46"/>
+    <rect x="18" y="136" width="12" height="2" rx="1" opacity="0.42"/>
   </g>
   <g class="ColorScheme-NeutralText" fill="currentColor">
     <rect id="attention-center" x="23.5" y="167.5" width="1" height="1" opacity="0.14"/>
@@ -69,6 +72,9 @@
     <path id="progress-bottomright" d="M24.5 216.5V237A20.5 20.5 0 0 0 45 216.5Z" opacity="0.12"/>
     <rect id="progress-bottom" x="23.5" y="216.5" width="1" height="20.5" opacity="0.12"/>
   </g>
+  <g id="progress-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect x="18" y="232" width="12" height="2" rx="1" opacity="0.72"/>
+  </g>
   <g class="ColorScheme-Background" fill="currentColor">
     <rect id="normal-hover-center" x="23.5" y="263.5" width="1" height="1" opacity="0.10"/>
     <rect id="normal-hover-top" x="23.5" y="243" width="1" height="20.5" opacity="0.10"/>
@@ -79,6 +85,9 @@
     <path id="normal-hover-bottomleft" d="M3 264.5A20.5 20.5 0 0 0 23.5 285V264.5Z" opacity="0.10"/>
     <path id="normal-hover-bottomright" d="M24.5 264.5V285A20.5 20.5 0 0 0 45 264.5Z" opacity="0.10"/>
     <rect id="normal-hover-bottom" x="23.5" y="264.5" width="1" height="20.5" opacity="0.10"/>
+  </g>
+  <g id="normal-hover-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
+    <rect x="18" y="280" width="12" height="2" rx="1" opacity="0.88"/>
   </g>
   <g class="ColorScheme-Background" fill="currentColor">
     <rect id="focus-hover-center" x="23.5" y="311.5" width="1" height="1" opacity="0.12"/>
@@ -106,7 +115,7 @@
     <rect id="minimized-hover-bottom" x="23.5" y="360.5" width="1" height="20.5" opacity="0.08"/>
   </g>
   <g id="minimized-hover-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
-    <rect x="21" y="376" width="5" height="2" rx="1" opacity="0.58"/>
+    <rect x="18" y="376" width="12" height="2" rx="1" opacity="0.58"/>
   </g>
   <g class="ColorScheme-NeutralText" fill="currentColor">
     <rect id="attention-hover-center" x="23.5" y="407.5" width="1" height="1" opacity="0.18"/>
