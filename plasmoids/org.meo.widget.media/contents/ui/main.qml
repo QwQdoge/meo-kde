@@ -14,16 +14,17 @@ PlasmoidItem {
     toolTipMainText: Plasmoid.title
     preferredRepresentation: fullRepresentation
 
-    Layout.minimumWidth: 320 * MeoTheme.globalScale
-    Layout.minimumHeight: 148 * MeoTheme.globalScale
-    Layout.preferredWidth: 720 * MeoTheme.globalScale
-    Layout.preferredHeight: 300 * MeoTheme.globalScale
+    Layout.minimumWidth: 280 * MeoTheme.globalScale
+    Layout.minimumHeight: 132 * MeoTheme.globalScale
+    Layout.preferredWidth: 520 * MeoTheme.globalScale
+    Layout.preferredHeight: 232 * MeoTheme.globalScale
 
     fullRepresentation: Item {
-        implicitWidth: 720 * MeoTheme.globalScale
-        implicitHeight: 300 * MeoTheme.globalScale
+        implicitWidth: 520 * MeoTheme.globalScale
+        implicitHeight: 232 * MeoTheme.globalScale
 
         MeoWidget {
+            id: widget
             anchors.fill: parent
             widgetId: "media"
             preferredSize: MeoWidget.SizeLarge
@@ -59,10 +60,13 @@ PlasmoidItem {
                 shuffleEnabled: MeoSystem.Media.shuffle
                 repeatMode: MeoSystem.Media.repeatMode
                 sourceCount: MeoSystem.Media.playerCount
-                showSourceSwitcher: true
+                // Keep small/wide spans glanceable like Android/Googlebook
+                // widgets. Secondary controls progressively appear only when
+                // the user grants the widget more Home-screen space.
+                showSourceSwitcher: widget.currentColumns >= 4
                 canAdjustVolume: false
                 showVolume: false
-                showSecondaryActions: false
+                showSecondaryActions: widget.expandedLayout
                 enabled: MeoSystem.Media.controllable
                 onPlayRequested: MeoSystem.Media.playPause()
                 onPauseRequested: MeoSystem.Media.playPause()
@@ -79,16 +83,16 @@ PlasmoidItem {
                 anchors.fill: parent
                 visible: !MeoSystem.Media.available
                 type: "filled"
-                radius: MeoTheme.dialogRadius
+                radius: MeoTheme.cardRadius
 
                 ColumnLayout {
                     anchors.centerIn: parent
-                    width: parent.width - 2 * MeoTheme.space24
-                    spacing: MeoTheme.space8
+                    width: parent.width - 2 * (widget.compactLayout ? MeoTheme.space12 : MeoTheme.space24)
+                    spacing: widget.compactLayout ? MeoTheme.space4 : MeoTheme.space8
                     Item {
                         Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredWidth: 72 * MeoTheme.globalScale
-                        Layout.preferredHeight: 72 * MeoTheme.globalScale
+                        Layout.preferredWidth: (widget.compactLayout ? 52 : 64) * MeoTheme.globalScale
+                        Layout.preferredHeight: Layout.preferredWidth
 
                         MeoShape {
                             anchors.fill: parent
@@ -98,12 +102,28 @@ PlasmoidItem {
                         MeoIcon {
                             anchors.centerIn: parent
                             icon: "queue_music"
-                            size: 30
+                            size: widget.compactLayout ? 24 : 28
                             color: MeoTheme.contentOnPrimaryContainer
                         }
                     }
-                    MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("No media playing"); typeRole: "title"; typeSize: "small"; emphasized: true; horizontalAlignment: Text.AlignHCenter }
-                    MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("Media controls appear when a current-session player is available."); typeRole: "body"; typeSize: "small"; color: MeoTheme.contentOnSurfaceVariant; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap }
+                    MeoText {
+                        Layout.fillWidth: true
+                        text: MeoI18n.translator.i18n("No media playing")
+                        typeRole: "title"
+                        typeSize: "small"
+                        emphasized: true
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    MeoText {
+                        Layout.fillWidth: true
+                        visible: !widget.compactLayout
+                        text: MeoI18n.translator.i18n("Media controls appear when a current-session player is available.")
+                        typeRole: "body"
+                        typeSize: "small"
+                        color: MeoTheme.contentOnSurfaceVariant
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                    }
                 }
             }
         }
