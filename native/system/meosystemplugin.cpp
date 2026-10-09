@@ -1,4 +1,6 @@
 #include "systemstatehub.h"
+#include "inputdevicescontroller.h"
+#include "inputmethodcontroller.h"
 #include "dynamiccolorprovider.h"
 #include "mediacontroller.h"
 #include "weathercache.h"
@@ -89,6 +91,10 @@ public:
     void registerTypes(const char *uri) override
     {
         Q_ASSERT(QByteArray(uri) == QByteArray("Meo.System"));
+        qmlRegisterSingletonType<InputMethodController>(uri, 1, 0, "InputMethods",
+            [](QQmlEngine *engine, QJSEngine *) -> QObject * { return new InputMethodController(engine); });
+        qmlRegisterSingletonType<InputDevicesController>(uri, 1, 0, "InputDevices",
+            [](QQmlEngine *engine, QJSEngine *) -> QObject * { return new InputDevicesController(engine); });
         qmlRegisterSingletonType<SystemStateHub>(uri, 1, 0, "SystemState", systemStateProvider);
         qmlRegisterSingletonType<PlatformController>(uri, 1, 0, "Platform", platformProvider);
         qmlRegisterSingletonType<PerformanceController>(uri, 1, 0, "Performance", performanceProvider);

@@ -4,7 +4,7 @@
 #include <QtGui/QPainterPath>
 #include <QtGui/QPen>
 
-#include <meotokens.h>
+#include <meodesigntokens.h>
 
 namespace MeoStyleHelper {
 

@@ -1,0 +1,40 @@
+# Maintainer: MeoArch Contributors
+# Small presentation-only patch against KDE Dolphin 26.08.1.
+pkgname=meo-dolphin
+pkgver=26.08.1
+pkgrel=1
+pkgdesc='Dolphin with Meo desktop top-bar and Places presentation'
+arch=(x86_64)
+url='https://apps.kde.org/dolphin/'
+license=(GPL-2.0-or-later LGPL-2.0-or-later)
+depends=(baloo baloo-widgets glibc kbookmarks kcmutils kcodecs kcolorscheme
+         kcompletion kconfig kconfigwidgets kcoreaddons kcrash kdbusaddons
+         kfilemetadata kguiaddons ki18n kiconthemes kio kio-extras kjobwidgets
+         knewstuff knotifications kparts kservice ktextwidgets kuserfeedback
+         kwidgetsaddons kwindowsystem kxmlgui libstdc++ qt6-base qt6-multimedia
+         solid meoui-qml)
+makedepends=(extra-cmake-modules kdoctools qt6-tools)
+optdepends=('dolphin-plugins: upstream plugins' 'konsole: terminal panel'
+            'kio-admin: administrative file browsing' 'ffmpegthumbs: video thumbnails')
+provides=("dolphin=${pkgver}")
+conflicts=(dolphin)
+source=("dolphin-${pkgver}.tar.gz::https://invent.kde.org/system/dolphin/-/archive/v${pkgver}/dolphin-v${pkgver}.tar.gz"
+        '0001-meo-desktop-chrome.patch')
+sha256sums=('fed4cfeeea113cda242fffd2e39172b07a1e36ece990525a04489a843c8c8a0c'
+            'd89b785a8fdf7872aa42a572e86b0683b21acdae57a21f9c3319705ccd4086f3')
+
+prepare() {
+  cd "dolphin-v${pkgver}"
+  patch --forward --strip=1 --input="${srcdir}/0001-meo-desktop-chrome.patch"
+}
+
+build() {
+  cmake -S "dolphin-v${pkgver}" -B build \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBEXECDIR=lib -DBUILD_TESTING=OFF
+  cmake --build build
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install build
+}

@@ -122,8 +122,14 @@ int main(int argc, char *argv[])
     parser.addOption(contrastOption);
     parser.addOption(applyOption);
     parser.addOption(followOption);
+    QCommandLineOption lightOption("light", "Generate/select the light scheme.");
+    parser.addOption(lightOption);
     parser.addOption(darkOption);
     parser.process(app);
+    if (parser.isSet(lightOption) && parser.isSet(darkOption)) {
+        QTextStream(stderr) << "Choose either --light or --dark." << Qt::endl;
+        return 2;
+    }
 
     if (parser.isSet(followOption)
         && !activeColorScheme().startsWith(QStringLiteral("Meo"), Qt::CaseInsensitive)) {
@@ -177,7 +183,7 @@ int main(int argc, char *argv[])
         QTextStream(stderr) << sourceError << Qt::endl;
         return 2;
     }
-    const bool dark = parser.isSet(darkOption) || (!parser.isSet(darkOption) && isDarkScheme());
+    const bool dark = parser.isSet(darkOption) || (!parser.isSet(lightOption) && isDarkScheme());
     const QString name = dark ? QStringLiteral("MeoDynamicDark") : QStringLiteral("MeoDynamicLight");
     const QString outputDir = parser.value(outputOption).isEmpty()
         ? QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/color-schemes")

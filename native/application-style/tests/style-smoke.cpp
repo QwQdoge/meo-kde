@@ -484,6 +484,39 @@ private slots:
         QVERIFY(resting != selected);
     }
 
+    void ownsGeometryAndMirrorsHitRegions()
+    {
+        auto style = createMeoStyle();
+        QVERIFY(style);
+        QStyleOptionComboBox combo;
+        combo.rect = QRect(0, 0, 240, 40);
+        const QRect leftArrow = style->subControlRect(QStyle::CC_ComboBox, &combo, QStyle::SC_ComboBoxArrow);
+        const QRect leftText = style->subControlRect(QStyle::CC_ComboBox, &combo, QStyle::SC_ComboBoxEditField);
+        QVERIFY(!leftArrow.intersects(leftText));
+        QCOMPARE(style->hitTestComplexControl(QStyle::CC_ComboBox, &combo, leftArrow.center()), QStyle::SC_ComboBoxArrow);
+        combo.direction = Qt::RightToLeft;
+        const QRect rightArrow = style->subControlRect(QStyle::CC_ComboBox, &combo, QStyle::SC_ComboBoxArrow);
+        QCOMPARE(rightArrow, QStyle::visualRect(Qt::RightToLeft, combo.rect, leftArrow));
+        QCOMPARE(style->hitTestComplexControl(QStyle::CC_ComboBox, &combo, rightArrow.center()), QStyle::SC_ComboBoxArrow);
+        QStyleOptionSlider scrollbar;
+        scrollbar.rect = QRect(0, 0, 14, 200);
+        scrollbar.orientation = Qt::Vertical;
+        scrollbar.minimum = 0; scrollbar.maximum = 100; scrollbar.pageStep = 25; scrollbar.sliderPosition = 50;
+        const auto handle = style->subControlRect(QStyle::CC_ScrollBar, &scrollbar, QStyle::SC_ScrollBarSlider);
+        QVERIFY(scrollbar.rect.contains(handle));
+        QVERIFY(handle.height() >= 24);
+        QVERIFY(style->subControlRect(QStyle::CC_ScrollBar, &scrollbar, QStyle::SC_ScrollBarAddLine).isEmpty());
+        QCOMPARE(style->hitTestComplexControl(QStyle::CC_ScrollBar, &scrollbar, handle.center()), QStyle::SC_ScrollBarSlider);
+        QStyleOptionButton check;
+        check.rect = QRect(0, 0, 200, 40);
+        const auto indicator = style->subElementRect(QStyle::SE_CheckBoxIndicator, &check);
+        const auto label = style->subElementRect(QStyle::SE_CheckBoxContents, &check);
+        QVERIFY(!indicator.intersects(label));
+        check.direction = Qt::RightToLeft;
+        QCOMPARE(style->subElementRect(QStyle::SE_CheckBoxIndicator, &check),
+                 QStyle::visualRect(Qt::RightToLeft, check.rect, indicator));
+    }
+
     void rendersEveryInteractionState()
     {
         const auto style = createMeoStyle();

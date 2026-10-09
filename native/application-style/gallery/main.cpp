@@ -3,6 +3,9 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFormLayout>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -33,6 +36,11 @@ int main(int argc, char *argv[])
     auto *fileMenu = window.menuBar()->addMenu(QStringLiteral("File"));
     fileMenu->addAction(QStringLiteral("Open"));
     fileMenu->addAction(QStringLiteral("Save"));
+    auto *checkedAction = fileMenu->addAction(QIcon::fromTheme(QStringLiteral("view-list-details")), QStringLiteral("Show details"));
+    checkedAction->setCheckable(true); checkedAction->setChecked(true);
+    checkedAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+D")));
+    fileMenu->addSection(QStringLiteral("View options"));
+    fileMenu->addMenu(QStringLiteral("More actions"))->addAction(QStringLiteral("Nested action"));
     fileMenu->addSeparator();
     auto *disabledAction = fileMenu->addAction(QStringLiteral("Unavailable action"));
     disabledAction->setEnabled(false);
@@ -105,6 +113,18 @@ int main(int argc, char *argv[])
     auto *progress = new QProgressBar;
     progress->setValue(62);
     form->addRow(QStringLiteral("Progress"), progress);
+    auto *spin = new QSpinBox; spin->setRange(-100, 100); spin->setValue(12);
+    form->addRow(QStringLiteral("Spin box"), spin);
+    auto *doubleSpin = new QDoubleSpinBox; doubleSpin->setValue(1.25);
+    form->addRow(QStringLiteral("Decimal spin box"), doubleSpin);
+    auto *busyProgress = new QProgressBar; busyProgress->setRange(0, 0);
+    form->addRow(QStringLiteral("Busy progress"), busyProgress);
+    auto *groupBox = new QGroupBox(QStringLiteral("Optional controls")); groupBox->setCheckable(true);
+    auto *groupLayout = new QVBoxLayout(groupBox);
+    auto *disabledButton = new QPushButton(QStringLiteral("Disabled")); disabledButton->setEnabled(false);
+    groupLayout->addWidget(disabledButton);
+    auto *rtlField = new QLineEdit(QStringLiteral("RTL field")); rtlField->setLayoutDirection(Qt::RightToLeft);
+    groupLayout->addWidget(rtlField); form->addRow(groupBox);
     layout->addWidget(controls);
 
     auto *tabs = new QTabWidget;
@@ -124,7 +144,7 @@ int main(int argc, char *argv[])
     tabs->addTab(tree, QStringLiteral("Tree"));
     layout->addWidget(tabs);
     window.setCentralWidget(central);
-    window.resize(760, 620);
+    window.resize(940, 960);
     window.show();
     return app.exec();
 }

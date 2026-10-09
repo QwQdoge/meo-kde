@@ -30,6 +30,10 @@ endif()
 
 add_library(meosystemplugin MODULE
     meosystemplugin.cpp
+    inputmethodcontroller.cpp
+    inputmethodcontroller.h
+    inputdevicescontroller.cpp
+    inputdevicescontroller.h
     systemstatehub.cpp
     systemstatehub.h
     dynamiccolorprovider.cpp
