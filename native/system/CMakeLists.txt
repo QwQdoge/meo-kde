@@ -16,6 +16,7 @@ find_package(KF6Config REQUIRED)
 find_package(KF6I18n REQUIRED)
 find_package(LibTaskManager REQUIRED)
 find_package(Plasma REQUIRED)
+find_package(X11 REQUIRED COMPONENTS Xcursor)
 
 # `scripts/validate.sh` configures this directory directly.  Bring in the
 # shared generator there as well as from the top-level native build so the QML
@@ -71,6 +72,7 @@ target_link_libraries(meosystemplugin PRIVATE
     KF6::ConfigCore
     KF6::I18n
     Plasma::Plasma
+    X11::Xcursor
 )
 
 add_executable(meo-system-state-smoke

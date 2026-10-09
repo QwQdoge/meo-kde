@@ -13,6 +13,14 @@
 #include <KConfigGroup>
 #include <QtMath>
 #include <memory>
+#include <QDir>
+#include <QImage>
+#include <QBuffer>
+#include <QSet>
+#include <algorithm>
+#include <X11/Xcursor/Xcursor.h>
+#undef Bool
+#undef None
 
 namespace {
 const QString service = QStringLiteral("org.kde.KWin");
@@ -42,7 +50,8 @@ InputDevicesController::InputDevicesController(QObject *parent) : QObject(parent
 {
     m_inputWatcher = KConfigWatcher::create(KSharedConfig::openConfig(QStringLiteral("kcminputrc")));
     connect(m_inputWatcher.data(), &KConfigWatcher::configChanged, this,
-        [this](const KConfigGroup &group, const QByteArrayList &) { if (group.name() == QStringLiteral("Keyboard")) Q_EMIT changed(); });
+        [this](const KConfigGroup &group, const QByteArrayList &) { if (group.name() == QStringLiteral("Keyboard") || group.name() == QStringLiteral("Mouse")) Q_EMIT changed(); });
+    refreshCursorThemes();
     m_refreshTimer.setSingleShot(true); m_refreshTimer.setInterval(75);
     connect(&m_refreshTimer, &QTimer::timeout, this, &InputDevicesController::refresh);
     auto *watcher = new QDBusServiceWatcher(service, QDBusConnection::sessionBus(),
@@ -270,5 +279,93 @@ void InputDevicesController::configureKeyRepeat(const QString &mode, int delay, 
     if (!config->sync()) m_error = tr("The keyboard repeat preference could not be saved."); else m_error.clear();
     // KWin observes this exact group and publishes the new repeat information
     // to Wayland clients. No compositor restart or synthetic key event.
+    Q_EMIT changed();
+}
+
+QVariantMap InputDevicesController::cursorSettings() const
+{
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kcminputrc")); config->reparseConfiguration();
+    const auto group = config->group(QStringLiteral("Mouse"));
+    return {{"theme", group.readEntry("cursorTheme", QString())}, {"size", group.readEntry("cursorSize", -1)},
+        {"available", m_available && qEnvironmentVariable("XDG_SESSION_TYPE") == QStringLiteral("wayland")},
+        {"writable", !group.isEntryImmutable("cursorTheme") && !group.isEntryImmutable("cursorSize")}};
+}
+
+void InputDevicesController::refreshCursorThemes()
+{
+    m_cursorThemes.clear();
+    QSet<QString> seen;
+    const QStringList paths = QString::fromLocal8Bit(XcursorLibraryPath()).split(':', Qt::SkipEmptyParts);
+    for (QString path : paths) {
+        if (path.startsWith(QStringLiteral("~/"))) path.replace(0, 1, QDir::homePath());
+        const QDir base(path);
+        for (const QString &name : base.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
+            if (seen.contains(name)) continue;
+            seen.insert(name); // Xcursor uses the first directory with this name.
+            const QString directory = base.filePath(name);
+            const QString index = directory + QStringLiteral("/index.theme");
+            if (!QFileInfo::exists(index)) continue;
+            const KConfig metadata(index, KConfig::SimpleConfig);
+            const KConfigGroup info = metadata.group(QStringLiteral("Icon Theme"));
+            if (info.readEntry("Hidden", false)) continue;
+            const QByteArray cursorFile = QFile::encodeName(directory + QStringLiteral("/cursors/left_ptr"));
+            XcursorImages *images = XcursorFilenameLoadAllImages(cursorFile.constData());
+            if (!images) continue;
+            QList<int> sizes;
+            QString preview;
+            for (int i = 0; i < images->nimage; ++i) {
+                const XcursorImage *frame = images->images[i];
+                if (frame->size > 0 && frame->size <= 512 && !sizes.contains(int(frame->size))) sizes.append(int(frame->size));
+                if (preview.isEmpty() && frame->width > 0 && frame->height > 0 && frame->width <= 256 && frame->height <= 256) {
+                    // Xcursor pixels are native ARGB32, including premultiplied alpha.
+                    const QImage image(reinterpret_cast<const uchar *>(frame->pixels), frame->width, frame->height, QImage::Format_ARGB32_Premultiplied);
+                    QByteArray png; QBuffer buffer(&png); buffer.open(QIODevice::WriteOnly);
+                    if (image.save(&buffer, "PNG")) preview = QStringLiteral("data:image/png;base64,") + QString::fromLatin1(png.toBase64());
+                }
+            }
+            XcursorImagesDestroy(images);
+            if (sizes.isEmpty()) continue;
+            std::sort(sizes.begin(), sizes.end());
+            QVariantList availableSizes;
+            for (int size : sizes) availableSizes.append(size);
+            m_cursorThemes.append(QVariantMap{{"id", name}, {"label", info.readEntry("Name", name)},
+                {"sizes", availableSizes}, {"preview", preview}});
+        }
+    }
+    Q_EMIT changed();
+}
+
+void InputDevicesController::configureCursor(const QString &theme, int size)
+{
+    const auto settings = cursorSettings();
+    if (!settings.value("available").toBool() || !settings.value("writable").toBool()) {
+        m_error = tr("Cursor settings require a writable KDE Wayland session."); Q_EMIT changed(); return;
+    }
+    refreshCursorThemes();
+    bool installedSize = false;
+    for (const auto &item : m_cursorThemes) {
+        const auto row = item.toMap();
+        if (row.value("id").toString() == theme && row.value("sizes").toList().contains(size)) installedSize = true;
+    }
+    if (!installedSize) { m_error = tr("Choose an installed cursor theme and one of its supported sizes."); Q_EMIT changed(); return; }
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kcminputrc"));
+    auto group = config->group(QStringLiteral("Mouse"));
+    const bool hadTheme = group.hasKey("cursorTheme"), hadSize = group.hasKey("cursorSize");
+    const QString previousTheme = group.readEntry("cursorTheme", QString()), previousSize = group.readEntry("cursorSize", QString());
+    group.writeEntry("cursorTheme", theme, KConfig::Notify);
+    group.writeEntry("cursorSize", size, KConfig::Notify);
+    if (!group.sync()) {
+        if (hadTheme) group.writeEntry("cursorTheme", previousTheme, KConfig::Notify); else group.deleteEntry("cursorTheme", KConfig::Notify);
+        if (hadSize) group.writeEntry("cursorSize", previousSize, KConfig::Notify); else group.deleteEntry("cursorSize", KConfig::Notify);
+        m_error = group.sync() ? tr("Cursor preferences could not be saved; the previous configuration was restored.")
+                              : tr("Cursor preferences and recovery could not be saved. Check configuration permissions.");
+        Q_EMIT changed(); return;
+    }
+    // KWin's CursorChanged handler reparses this configuration and updates its
+    // cursor theme. KDE clients use the same public notification.
+    auto signal = QDBusMessage::createSignal(QStringLiteral("/KGlobalSettings"), QStringLiteral("org.kde.KGlobalSettings"), QStringLiteral("notifyChange"));
+    signal << 5 << 0;
+    if (!QDBusConnection::sessionBus().send(signal)) m_error = tr("Cursor preferences were saved, but the desktop notification could not be sent. A new session may be required.");
+    else m_error.clear();
     Q_EMIT changed();
 }

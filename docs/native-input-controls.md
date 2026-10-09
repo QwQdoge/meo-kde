@@ -52,3 +52,16 @@ notifies the owner via its public `configure` method and restores the previous
 configuration if saving or owner confirmation fails. It never writes PAM,
 `RequirePassword`, or `Lock` authentication policy. Runtime recovery still
 depends on the screen-lock service responding.
+
+`cursorThemes` enumerates installed Xcursor themes in the library's actual search
+order, with sizes and a first-frame preview from each theme's `left_ptr` file.
+`refreshCursorThemes()` rescans the inventory. Inherited-only or vector-only
+packages without a readable Xcursor pointer retain advanced compatibility access.
+`cursorSettings` reports the configured theme/size, immutability and KDE Wayland
+availability. Absent preferences remain unknown/system default.
+`configureCursor(theme, size)` accepts only an installed theme/bitmap size pair,
+preserves unrelated configuration and notifies KWin/KDE with CursorChanged after
+saving. A failed save restores previous entries, including absence. This handles
+same-theme size changes; KDE's current command-line tool skips that case. A sent
+notification proves delivery was requested, not that every client reloaded; some
+applications may need reopening. No display-server or desktop restart occurs.

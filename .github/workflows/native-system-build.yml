@@ -44,7 +44,7 @@ jobs:
             qt6-base qt6-declarative qt6-tools qt6-shadertools \
             kconfig kcoreaddons kguiaddons ki18n kirigami \
             networkmanager-qt bluez-qt solid pulseaudio-qt \
-            libplasma plasma-workspace
+            libplasma plasma-workspace libxcursor
           locale -a | grep -qi '^zh_CN\.utf8$'
 
       - name: Check out MeoKDE

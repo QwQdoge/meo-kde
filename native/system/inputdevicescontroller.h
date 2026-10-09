@@ -10,6 +10,8 @@ class InputDevicesController final : public QObject
     Q_OBJECT
     Q_CLASSINFO("QML.Element", "InputDevices")
     Q_CLASSINFO("QML.Singleton", "true")
+    Q_PROPERTY(QVariantList cursorThemes READ cursorThemes NOTIFY changed)
+    Q_PROPERTY(QVariantMap cursorSettings READ cursorSettings NOTIFY changed)
     Q_PROPERTY(QVariantMap keyRepeat READ keyRepeat NOTIFY changed)
     Q_PROPERTY(QVariantList keyboardLayouts READ keyboardLayouts NOTIFY changed)
     Q_PROPERTY(QVariantList layoutChoices READ layoutChoices CONSTANT)
@@ -21,6 +23,10 @@ class InputDevicesController final : public QObject
     Q_PROPERTY(QString error READ error NOTIFY changed)
 public:
     explicit InputDevicesController(QObject *parent = nullptr);
+    QVariantList cursorThemes() const { return m_cursorThemes; }
+    QVariantMap cursorSettings() const;
+    Q_INVOKABLE void refreshCursorThemes();
+    Q_INVOKABLE void configureCursor(const QString &theme, int size);
     QVariantMap keyRepeat() const;
     Q_INVOKABLE void configureKeyRepeat(const QString &mode, int delay, double rate);
     QVariantList keyboardLayouts() const { return m_keyboardLayouts; }
@@ -47,6 +53,7 @@ private:
     QString m_error;
     QTimer m_refreshTimer;
     KConfigWatcher::Ptr m_inputWatcher;
+    QVariantList m_cursorThemes;
     int m_generation = 0;
     int m_keyboardGeneration = 0;
 };
