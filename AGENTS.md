@@ -4,6 +4,8 @@
 
 MeoKDE owns Plasma/KWin/KDE-native integration. Inspect `git status`, the affected package/native bridge, and its nearest contract/test before editing. Read only the relevant docs; do not scan all packages or historical material by default.
 
+Read `docs/component-status.md` before changing shell composition, applet roles, standalone Dock code, old time/task surfaces, or deciding whether a historical component is still current.
+
 ## Scope control
 
 Product contracts deliberately describe long-term MeoArch coverage. They are not an instruction to implement every missing feature during an unrelated task.
@@ -22,6 +24,7 @@ Repository cleanup, validation, and review tasks must not silently turn into ope
 - Plasma packages, plasmoids, shell/layout defaults, themes, native KDE/Qt bridges, Meo.System, packaging, and KDE-specific policy belong here.
 - Use real KDE/Qt/DBus APIs or a maintained KCM handoff. Do not fake network, Bluetooth, audio, brightness, power, task, display, or session state.
 - Do not copy shared MeoUI components into this repository to avoid a dependency boundary.
+- Code classified as Legacy in `docs/component-status.md` is not a target for new feature work unless the task explicitly revives/migrates it.
 
 ## Runtime system state
 
