@@ -99,6 +99,9 @@ int main(int argc, char *argv[])
     toolMenu->addSeparator();
     toolMenu->addAction(QStringLiteral("Details"));
     toolButton->setMenu(toolMenu);
+    auto *menuButton = new QPushButton(QStringLiteral("More actions"));
+    menuButton->setMenu(toolMenu);
+    form->addRow(QStringLiteral("Menu button"), menuButton);
     form->addRow(QStringLiteral("Tool button"), toolButton);
     auto *combo = new QComboBox;
     combo->addItems({QStringLiteral("Light"), QStringLiteral("Dark"), QStringLiteral("System")});

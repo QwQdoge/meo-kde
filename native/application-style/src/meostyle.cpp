@@ -224,11 +224,15 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
 QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
                                   const QSize &contentsSize, const QWidget *widget) const
 {
-    QSize result = QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
+    QSize result = contentsSize;
     switch (type) {
     case CT_PushButton:
-        result.setWidth(qMax(result.width(), contentsSize.width() + 2 * qRound(Meo::DesignTokens::space16()) + qRound(Meo::DesignTokens::space8())));
-        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
+        result.setWidth(contentsSize.width() + 2 * qRound(Meo::DesignTokens::space16()));
+        if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option);
+            button && button->features.testFlag(QStyleOptionButton::HasMenu)) {
+            result.rwidth() += qRound(Meo::DesignTokens::iconSizeS() + Meo::DesignTokens::space8());
+        }
+        result.setHeight(qMax(contentsSize.height() + 2 * qRound(Meo::DesignTokens::space4()), qRound(Meo::DesignTokens::controlHeight())));
         break;
     case CT_ToolButton: {
         int horizontal = 2 * qRound(Meo::DesignTokens::space8());
@@ -237,8 +241,8 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
             horizontal += qRound(button->features.testFlag(QStyleOptionToolButton::MenuButtonPopup)
                 ? Meo::DesignTokens::space32() : Meo::DesignTokens::iconSizeS());
         }
-        result.setWidth(qMax(result.width(), contentsSize.width() + horizontal));
-        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
+        result.setWidth(contentsSize.width() + horizontal);
+        result.setHeight(qMax(contentsSize.height() + 2 * qRound(Meo::DesignTokens::space4()), qRound(Meo::DesignTokens::controlHeight())));
         break;
     }
     case CT_CheckBox:
@@ -252,27 +256,41 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
                      + Meo::DesignTokens::controlHeight()));
         result.setHeight(qMax(contentsSize.height() + qRound(Meo::DesignTokens::space8()), qRound(Meo::DesignTokens::controlHeight())));
         break;
-    case CT_LineEdit:
-    case CT_SpinBox:
-        result.setHeight(qMax(result.height(), qRound(Meo::DesignTokens::controlHeight())));
-        break;
+    case CT_LineEdit: {
+        const bool search = widget && widget->property("meo.role").toString() == QLatin1String("search");
+        const int inset = qRound(search ? Meo::DesignTokens::space16() : Meo::DesignTokens::space12());
+        return QSize(contentsSize.width() + 2 * inset,
+                     qMax(contentsSize.height() + 2 * qRound(Meo::DesignTokens::space4()), qRound(Meo::DesignTokens::controlHeight())));
+    }
     case CT_MenuItem: {
-        const auto *menuItem = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
-        if (menuItem && menuItem->menuItemType == QStyleOptionMenuItem::Separator
-            && menuItem->text.isEmpty()) {
-            // A separator is breathing room between action-card groups. The
-            // menu item painter intentionally does not draw a rule for it.
-            result.setHeight(qRound(Meo::DesignTokens::space8()));
-        } else {
-            result.setHeight(qMax(result.height(),
-                                  qRound(Meo::DesignTokens::controlHeight()
-                                         + Meo::DesignTokens::space8())));
-            result.rwidth() += qRound(Meo::DesignTokens::space8());
+        const auto *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option);
+        if (!item) return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
+        if (item->menuItemType == QStyleOptionMenuItem::Separator && item->text.isEmpty()) {
+            return QSize(0, qRound(Meo::DesignTokens::space8()));
         }
-        break;
+        QFont font = item->font;
+        if (item->menuItemType == QStyleOptionMenuItem::DefaultItem
+            || item->menuItemType == QStyleOptionMenuItem::Separator) font.setBold(true);
+        const QFontMetrics metrics(font);
+        const QString label = item->text.section(QLatin1Char('\t'), 0, 0);
+        const QString shortcut = item->text.contains(QLatin1Char('\t'))
+            ? item->text.section(QLatin1Char('\t'), 1) : QString();
+        const int gap = qRound(Meo::DesignTokens::space8());
+        const int icon = qRound(Meo::DesignTokens::iconSizeS());
+        int width = metrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, label).width()
+            + 2 * qRound(Meo::DesignTokens::space12());
+        if (item->menuItemType != QStyleOptionMenuItem::Separator) {
+            if (item->menuHasCheckableItems || item->checkType != QStyleOptionMenuItem::NotCheckable
+                || !item->icon.isNull() || item->maxIconWidth > 0) width += qMax(icon, item->maxIconWidth) + gap;
+            if (!shortcut.isEmpty()) width += qMax(item->reservedShortcutWidth, metrics.horizontalAdvance(shortcut)) + gap;
+            if (item->menuItemType == QStyleOptionMenuItem::SubMenu) width += icon + gap;
+        }
+        const int minimum = qRound(item->menuItemType == QStyleOptionMenuItem::Separator
+            ? Meo::DesignTokens::space32() : Meo::DesignTokens::controlHeight() + Meo::DesignTokens::space8());
+        return QSize(width, qMax(minimum, metrics.height() + 2 * qRound(Meo::DesignTokens::space4())));
     }
     default:
-        break;
+        return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
     }
     return result;
 }

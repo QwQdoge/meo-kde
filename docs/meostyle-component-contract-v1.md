@@ -196,3 +196,7 @@ For a deliberate contract change:
 4. update geometry/visual tests;
 5. update this contract when the component relationship changes;
 6. run the relevant QML and native validation paths.
+
+### Content size ownership
+
+Buttons, tool buttons, check/radio controls, combo boxes, text/search fields and menu items compute their size from the shared tokens and application-provided content rather than taking a base-style size as a minimum. Menu rows reserve one aligned leading column when the menu contains checkable actions; default actions use a bold font for both measurement and painting. Push-button menus reserve a trailing Meo chevron in both LTR and RTL. Qt still owns action triggering and popup behavior.

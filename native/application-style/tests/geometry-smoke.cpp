@@ -5,6 +5,7 @@
 #include <QtWidgets/QStyleOptionButton>
 #include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionFrame>
+#include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionToolButton>
 #include <QtWidgets/QWidget>
@@ -35,11 +36,23 @@ void MeoStyleGeometryTest::commonControlSizesIgnoreBaseGeometry()
     MeoStyle style; style.setBaseStyle(new OversizedBase);
     const QSize contents(80, 16);
     QStyleOptionButton button;
-    for (const auto type : {QStyle::CT_CheckBox, QStyle::CT_RadioButton}) {
+    for (const auto type : {QStyle::CT_CheckBox, QStyle::CT_RadioButton, QStyle::CT_PushButton, QStyle::CT_LineEdit}) {
         const QSize size = style.sizeFromContents(type, &button, contents, nullptr);
         QCOMPARE(size.height(), qRound(Meo::DesignTokens::controlHeight()));
         QVERIFY(size.width() < 200);
     }
+    QStyleOptionToolButton tool;
+    QCOMPARE(style.sizeFromContents(QStyle::CT_ToolButton, &tool, contents, nullptr).height(), qRound(Meo::DesignTokens::controlHeight()));
+    QStyleOptionMenuItem menu;
+    menu.text = QStringLiteral("Open\tCtrl+O");
+    menu.menuItemType = QStyleOptionMenuItem::Normal;
+    menu.checkType = QStyleOptionMenuItem::NotCheckable;
+    menu.menuHasCheckableItems = false;
+    menu.maxIconWidth = 0;
+    const QSize plainMenu = style.sizeFromContents(QStyle::CT_MenuItem, &menu, contents, nullptr);
+    QVERIFY(plainMenu.width() < 300);
+    menu.menuHasCheckableItems = true;
+    QCOMPARE(style.sizeFromContents(QStyle::CT_MenuItem, &menu, contents, nullptr).width() - plainMenu.width(), qRound(Meo::DesignTokens::iconSizeS() + Meo::DesignTokens::space8()));
     QStyleOptionComboBox combo;
     QCOMPARE(style.sizeFromContents(QStyle::CT_ComboBox, &combo, contents, nullptr).height(), qRound(Meo::DesignTokens::controlHeight()));
 }

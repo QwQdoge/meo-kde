@@ -105,7 +105,15 @@ void drawButtonLabel(const MeoStyleContent *style, const QStyleOptionButton *but
                                        : palette.color(group, QPalette::Text);
     palette.setColor(group, QPalette::ButtonText, foreground);
 
-    const QRect contents = style->subElementRect(QStyle::SE_PushButtonContents, button, widget);
+    QRect contents = style->subElementRect(QStyle::SE_PushButtonContents, button, widget);
+    if (button->features.testFlag(QStyleOptionButton::HasMenu)) {
+        const int extent = qRound(Meo::DesignTokens::iconSizeS());
+        const int reserve = extent + qRound(Meo::DesignTokens::space8());
+        const QRect logicalArrow(contents.right() - extent + 1, contents.top(), extent, contents.height());
+        MeoStyleHelper::drawChevron(painter, centeredRect(QStyle::visualRect(button->direction, contents, logicalArrow), QSize(extent, extent)), foreground, Qt::DownArrow);
+        if (button->direction == Qt::RightToLeft) contents.adjust(reserve, 0, 0, 0);
+        else contents.adjust(0, 0, -reserve, 0);
+    }
     const bool hasIcon = !button->icon.isNull();
     const bool hasText = !button->text.isEmpty();
     const int gap = hasIcon && hasText ? qRound(Meo::DesignTokens::space8()) : 0;
@@ -168,6 +176,11 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
         return;
     }
 
+    painter->save();
+    QFont font = item->font;
+    if (item->menuItemType == QStyleOptionMenuItem::DefaultItem) font.setBold(true);
+    painter->setFont(font);
+    const QFontMetrics metrics(font);
     const bool enabled = item->state.testFlag(QStyle::State_Enabled);
     const bool hover = item->state.testFlag(QStyle::State_MouseOver)
         || item->state.testFlag(QStyle::State_Selected);
@@ -200,7 +213,7 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
     const QRect content = item->rect.adjusted(inset, qRound(Meo::DesignTokens::space4()),
                                               -inset, -qRound(Meo::DesignTokens::space4()));
     const bool checkable = item->checkType != QStyleOptionMenuItem::NotCheckable;
-    const bool hasLeading = checkable || !item->icon.isNull() || item->maxIconWidth > 0;
+    const bool hasLeading = item->menuHasCheckableItems || checkable || !item->icon.isNull() || item->maxIconWidth > 0;
     const int leadingWidth = hasLeading ? qMax(iconExtent, item->maxIconWidth) : 0;
     const bool hasSubmenu = item->menuItemType == QStyleOptionMenuItem::SubMenu;
     const int arrowWidth = hasSubmenu ? iconExtent : 0;
@@ -211,7 +224,7 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
         : QString();
     const int shortcutWidth = shortcut.isEmpty() ? 0
         : qMax(item->reservedShortcutWidth,
-               item->fontMetrics.horizontalAdvance(shortcut));
+               metrics.horizontalAdvance(shortcut));
 
     int logicalLeft = content.left();
     QRect leadingLogical;
@@ -275,6 +288,7 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
                                      item->palette.color(group, QPalette::Text),
                                      item->direction == Qt::RightToLeft ? Qt::LeftArrow : Qt::RightArrow);
     }
+    painter->restore();
 }
 
 void drawArrowPrimitive(const MeoStyleContent *style, Qt::ArrowType arrowType,
@@ -441,6 +455,13 @@ void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *op
             // The editable child's QLineEdit retains selection, cursor and IME.
             drawLeadingLabel(this, combo, contents, combo->editable ? QString() : combo->currentText,
                               combo->currentIcon, combo->iconSize, QPalette::Text, false, painter, widget);
+            return;
+        }
+    }
+    if (element == CE_PushButton) {
+        if (const auto *button = qstyleoption_cast<const QStyleOptionButton *>(option)) {
+            drawPrimitive(PE_PanelButtonCommand, button, painter, widget);
+            drawButtonLabel(this, button, painter, widget);
             return;
         }
     }
