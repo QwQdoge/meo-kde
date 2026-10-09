@@ -102,6 +102,13 @@ def frame(
 
 
 def render(target: ThemeTarget) -> str:
+    # Keep every running task discoverable, not only the focused window.
+    # GoogleBook-style taskbars show a short marker for an open application and
+    # strengthen it for the active task. Minimized tasks retain the same shape
+    # at lower opacity so state changes do not make the marker jump in width.
+    running = Indicator(12, 2, "0.72", "ColorScheme-ButtonFocus")
+    running_hover = Indicator(12, 2, "0.88", "ColorScheme-ButtonFocus")
+
     # Task.qml uses normal/focus/minimized/attention prefixes for real task
     # states. When hovered, it asks for <base>-hover before the generic hover
     # frame. Keep each semantic state visible in that path: a generic hover
@@ -110,17 +117,16 @@ def render(target: ThemeTarget) -> str:
         # Application artwork owns its selected circle/Pixel/squircle shape.
         # Native Task Manager frames are interaction layers only; opaque task
         # wells would create a second plate behind every generated app icon.
-        ("normal", "ColorScheme-Background", "0", None),
+        ("normal", "ColorScheme-Background", "0", running),
         ("focus", "ColorScheme-Background", "0", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
-        # Minimized apps remain discoverable through their marker without a plate.
-        ("minimized", "ColorScheme-Background", "0", Indicator(5, 2, "0.46", "ColorScheme-ButtonFocus")),
+        ("minimized", "ColorScheme-Background", "0", Indicator(12, 2, "0.42", "ColorScheme-ButtonFocus")),
         ("attention", "ColorScheme-NeutralText", "0.14", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
         # Progress is painted in a clipped overlay by the native task manager.
-        ("progress", "ColorScheme-ButtonFocus", "0.12", None),
+        ("progress", "ColorScheme-ButtonFocus", "0.12", running),
         # Per-state hover frames preserve the corresponding active/running cue.
-        ("normal-hover", "ColorScheme-Background", "0.10", None),
+        ("normal-hover", "ColorScheme-Background", "0.10", running_hover),
         ("focus-hover", "ColorScheme-Background", "0.12", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
-        ("minimized-hover", "ColorScheme-Background", "0.08", Indicator(5, 2, "0.58", "ColorScheme-ButtonFocus")),
+        ("minimized-hover", "ColorScheme-Background", "0.08", Indicator(12, 2, "0.58", "ColorScheme-ButtonFocus")),
         ("attention-hover", "ColorScheme-NeutralText", "0.18", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
         # Pure pinned launchers use an empty base prefix; give only hover feedback.
         ("launcher-hover", "ColorScheme-Background", "0.10", None),
