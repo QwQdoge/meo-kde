@@ -11,6 +11,8 @@
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionSpinBox>
 #include <QtWidgets/QStyleOptionToolButton>
+#include <QtWidgets/QStyleOptionToolBar>
+#include <QtWidgets/QLayout>
 #include <QtWidgets/QWidget>
 
 #include <meodesigntokens.h>
@@ -86,6 +88,22 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
         if (element == SE_ItemViewItemFocusRect) return item->rect.adjusted(1, 1, -1, -1);
     }
     switch (element) {
+    case SE_ToolBarHandle: {
+        if (const auto *bar = qstyleoption_cast<const QStyleOptionToolBar *>(option)) {
+            if (!bar->features.testFlag(QStyleOptionToolBar::Movable)) return {};
+            const int inset = px(Meo::DesignTokens::space4());
+            const QMargins margins = widget && widget->layout() ? widget->layout()->contentsMargins() : QMargins(inset, inset, inset, inset);
+            QRect rect = option->rect.marginsRemoved(margins);
+            const int extent = pixelMetric(PM_ToolBarHandleExtent, option, widget);
+            if (bar->state.testFlag(State_Horizontal)) {
+                rect.setWidth(qMin(extent, qMax(0, rect.width())));
+                return meoVisualRect(option, rect);
+            }
+            rect.setHeight(qMin(extent, qMax(0, rect.height())));
+            return rect;
+        }
+        return {};
+    }
     case SE_GroupBoxLayoutItem: return option->rect;
     case SE_PushButtonContents: {
         const int horizontal = px(Meo::DesignTokens::space16());

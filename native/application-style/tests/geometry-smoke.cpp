@@ -11,6 +11,7 @@
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionSpinBox>
 #include <QtWidgets/QStyleOptionToolButton>
+#include <QtWidgets/QStyleOptionToolBar>
 #include <QtWidgets/QStyleOptionTab>
 #include <QtWidgets/QStyleOptionViewItem>
 #include <QtWidgets/QTabBar>
@@ -24,6 +25,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void toolbarHandleOwnsItsMarginsAndMirrors();
     void groupTitleAndCheckReserveContents();
     void headerContentReservesSortIndicator();
     void complexControlsHitTheirOwnGeometry();
@@ -201,6 +203,29 @@ void MeoStyleGeometryTest::groupTitleAndCheckReserveContents()
     QStyleOptionGroupBox untitled; untitled.rect = QRect(0, 0, 200, 120); untitled.subControls = QStyle::SC_GroupBoxFrame;
     QVERIFY(style.subControlRect(QStyle::CC_GroupBox, &untitled, QStyle::SC_GroupBoxLabel).isEmpty());
     QCOMPARE(style.subControlRect(QStyle::CC_GroupBox, &untitled, QStyle::SC_GroupBoxContents).top(), qRound(Meo::DesignTokens::space16()));
+}
+
+void MeoStyleGeometryTest::toolbarHandleOwnsItsMarginsAndMirrors()
+{
+    MeoStyle style;
+    QStyleOptionToolBar bar; bar.rect = QRect(13, 27, 240, 48); bar.state = QStyle::State_Horizontal;
+    bar.features = QStyleOptionToolBar::Movable;
+    const QRect handle = style.subElementRect(QStyle::SE_ToolBarHandle, &bar);
+    QVERIFY(bar.rect.contains(handle));
+    QCOMPARE(handle.width(), qRound(Meo::DesignTokens::space12()));
+    QCOMPARE(handle.left(), bar.rect.left() + qRound(Meo::DesignTokens::space4()));
+    bar.direction = Qt::RightToLeft;
+    QCOMPARE(style.subElementRect(QStyle::SE_ToolBarHandle, &bar), QStyle::visualRect(Qt::RightToLeft, bar.rect, handle));
+    bar.rect = QRect(13, 27, 48, 240); bar.state = QStyle::State_None;
+    const QRect vertical = style.subElementRect(QStyle::SE_ToolBarHandle, &bar);
+    QVERIFY(bar.rect.contains(vertical));
+    QCOMPARE(vertical.height(), qRound(Meo::DesignTokens::space12()));
+    bar.features = QStyleOptionToolBar::None;
+    QVERIFY(style.subElementRect(QStyle::SE_ToolBarHandle, &bar).isEmpty());
+    QStyleOptionMenuItem menu; menu.text = QStringLiteral("&File");
+    const QSize size = style.sizeFromContents(QStyle::CT_MenuBarItem, &menu, QSize(900, 900), nullptr);
+    QCOMPARE(size.height(), qRound(Meo::DesignTokens::controlHeight()));
+    QCOMPARE(size.width(), menu.fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, menu.text).width() + 2 * qRound(Meo::DesignTokens::space12()));
 }
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()

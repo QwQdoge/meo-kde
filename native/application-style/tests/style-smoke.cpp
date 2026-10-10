@@ -37,6 +37,8 @@
 #include <QtWidgets/QTabBar>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QToolButton>
+#include <QtWidgets/QToolBar>
+#include <QtWidgets/QStyleOptionToolBar>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
 
@@ -422,7 +424,7 @@ private slots:
             void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                              const QWidget *widget = nullptr) const override {
                 if (element == CE_CheckBox || element == CE_RadioButton || element == CE_CheckBoxLabel
-                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem || element == CE_Header || element == CE_HeaderLabel || element == CE_HeaderSection) ++labelCalls;
+                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem || element == CE_Header || element == CE_HeaderLabel || element == CE_HeaderSection || element == CE_MenuBarItem || element == CE_ToolBar || element == CE_MenuBarEmptyArea) ++labelCalls;
                 QProxyStyle::drawControl(element, option, painter, widget);
             }
         };
@@ -455,6 +457,12 @@ private slots:
         header.state = QStyle::State_Enabled; header.sortIndicator = QStyleOptionHeader::SortUp;
         header.textElideMode = Qt::ElideMiddle;
         style->drawControl(QStyle::CE_Header, &header, &painter);
+        QStyleOptionMenuItem menuItem; menuItem.rect = image.rect(); menuItem.text = QStringLiteral("&File");
+        menuItem.state = QStyle::State_Enabled | QStyle::State_Selected;
+        style->drawControl(QStyle::CE_MenuBarItem, &menuItem, &painter);
+        QStyleOptionToolBar toolbar; toolbar.rect = image.rect(); toolbar.state = QStyle::State_Horizontal;
+        style->drawControl(QStyle::CE_ToolBar, &toolbar, &painter);
+        style->drawControl(QStyle::CE_MenuBarEmptyArea, &menuItem, &painter);
         QCOMPARE(base->labelCalls, 0);
     }
 
@@ -530,6 +538,20 @@ private slots:
         QVERIFY(!group.isChecked()); QVERIFY(!field->isEnabled());
         group.setFocus(); QTest::keyClick(&group, Qt::Key_Space);
         QVERIFY(group.isChecked()); QVERIFY(field->isEnabled());
+    }
+
+    void toolbarActionsKeepQtActivation()
+    {
+        const auto style = createMeoStyle(); QVERIFY(style);
+        QToolBar bar; bar.setStyle(style.get());
+        auto *action = bar.addAction(QStringLiteral("&Open"));
+        bar.addSeparator(); bar.addAction(QStringLiteral("Save"));
+        int activated = 0;
+        QObject::connect(action, &QAction::triggered, &bar, [&] { ++activated; });
+        bar.resize(280, 60); bar.show(); QApplication::processEvents();
+        QWidget *button = bar.widgetForAction(action); QVERIFY(button);
+        QTest::mouseClick(button, Qt::LeftButton, Qt::NoModifier, button->rect().center());
+        QCOMPARE(activated, 1);
     }
 
     void preservesApplicationPalette()

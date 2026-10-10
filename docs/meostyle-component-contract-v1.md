@@ -222,3 +222,9 @@ Header sections use the Window surface with Meo hover/press/selection/focus trea
 ### Native group-box contract
 
 Group boxes use `space16` outer content padding, a title row at least `space24` high and `space12` between title and contents. Check indicators use `iconSizeS` with a `space8` title gap. Title alignment and RTL operate on the whole text/check group. Untitled boxes omit the title row and gap; Flat omits the rounded tonal container. The same layout owns content margins, label/check rectangles and hit tests. Qt retains mnemonics, keyboard toggling, child enablement and accessibility, while application title colors remain respected. No base-style external layout-item margin is added.
+
+### Native toolbar and menu-bar contract
+
+Toolbar and menu-bar surfaces use the semantic Window brush without a base-style bevel or separator. Toolbars use `space4` item margins/spacing, `space12` handle/separator extents, `space24` overflow extent and `iconSizeS` default icons. Application-supplied layout margins remain authoritative (including Dolphin's chrome patch); the movable handle mirrors in RTL and uses Meo dots. Separators are a single quiet rule rather than a platform bevel.
+
+Menu-bar items use a `controlHeight` minimum, `space12` horizontal and `space4` vertical insets. Qt's icon-in-place-of-title presentation and mnemonic visibility remain intact; Meo owns text/icon and hover/pressed/selected/focus rendering. Qt retains menu opening, shortcuts, toolbar action ownership, docking, dragging and overflow behavior.

@@ -214,6 +214,22 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     case PM_TabBarTabShiftHorizontal:
     case PM_TabBarTabShiftVertical:
         return 0;
+    case PM_ToolBarFrameWidth:
+    case PM_MenuBarPanelWidth:
+        return 0;
+    case PM_ToolBarItemSpacing:
+    case PM_ToolBarItemMargin:
+    case PM_MenuBarHMargin:
+    case PM_MenuBarVMargin:
+    case PM_MenuBarItemSpacing:
+        return qRound(Meo::DesignTokens::space4());
+    case PM_ToolBarHandleExtent:
+    case PM_ToolBarSeparatorExtent:
+        return qRound(Meo::DesignTokens::space12());
+    case PM_ToolBarExtensionExtent:
+        return qRound(Meo::DesignTokens::space24());
+    case PM_ToolBarIconSize:
+        return qRound(Meo::DesignTokens::iconSizeS());
     case PM_CheckBoxLabelSpacing:
         return qRound(Meo::DesignTokens::space8());
     case PM_HeaderMargin:
@@ -250,6 +266,7 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
 int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
                         QStyleHintReturn *returnData) const
 {
+    if (hint == SH_DrawMenuBarSeparator) return false;
     if (hint == SH_ScrollBar_Transient) return false;
     if (hint == SH_GroupBox_TextLabelColor && option) return int(option->palette.color(colorGroup(option), QPalette::WindowText).rgba());
     return QProxyStyle::styleHint(hint, option, widget, returnData);
@@ -260,6 +277,17 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_MenuBar:
+        return contentsSize; // QMenuBar already includes the owned margins.
+    case CT_MenuBarItem: {
+        if (const auto *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
+            const QSize content = item->icon.isNull() ? item->fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, item->text)
+                : QSize(qRound(Meo::DesignTokens::iconSizeS()), qRound(Meo::DesignTokens::iconSizeS()));
+            return QSize(content.width() + 2 * qRound(Meo::DesignTokens::space12()),
+                qMax(qRound(Meo::DesignTokens::controlHeight()), content.height() + 2 * qRound(Meo::DesignTokens::space4())));
+        }
+        return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
+    }
     case CT_GroupBox:
         if (const auto *group = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) return MeoGroup::sizeHint(*group, contentsSize);
         return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
@@ -376,6 +404,30 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
 
+    if (element == PE_PanelToolBar || element == PE_PanelMenuBar) {
+        painter->fillRect(option->rect, option->palette.brush(group, QPalette::Window));
+        return;
+    }
+    if (element == PE_IndicatorToolBarSeparator || element == PE_IndicatorToolBarHandle) {
+        painter->save(); painter->setClipRect(option->rect, Qt::IntersectClip);
+        QColor color = option->palette.color(group, QPalette::Mid); color.setAlphaF(0.55);
+        painter->setPen(QPen(color, 1.0, Qt::SolidLine, Qt::RoundCap));
+        const QRectF rect = QRectF(option->rect).adjusted(Meo::DesignTokens::space8(), Meo::DesignTokens::space8(),
+            -Meo::DesignTokens::space8(), -Meo::DesignTokens::space8());
+        const QPointF center = QRectF(option->rect).center();
+        const bool horizontal = option->state.testFlag(State_Horizontal);
+        if (element == PE_IndicatorToolBarSeparator) {
+            if (horizontal && rect.height() > 0) painter->drawLine(QPointF(center.x(), rect.top()), QPointF(center.x(), rect.bottom()));
+            else if (!horizontal && rect.width() > 0) painter->drawLine(QPointF(rect.left(), center.y()), QPointF(rect.right(), center.y()));
+        } else {
+            painter->setRenderHint(QPainter::Antialiasing); painter->setPen(Qt::NoPen); painter->setBrush(color);
+            for (int row = -1; row <= 1; ++row) for (int column = -1; column <= 0; ++column) {
+                const QPointF offset(column * Meo::DesignTokens::space4() + Meo::DesignTokens::space2(), row * Meo::DesignTokens::space4());
+                painter->drawEllipse(center + (horizontal ? offset : QPointF(offset.y(), offset.x())), 1.0, 1.0);
+            }
+        }
+        painter->restore(); return;
+    }
     if (element == PE_IndicatorBranch) {
         if (!option->state.testFlag(State_Children)) return;
         const int extent = qMin(qRound(Meo::DesignTokens::iconSizeS()), qMin(option->rect.width(), option->rect.height()));

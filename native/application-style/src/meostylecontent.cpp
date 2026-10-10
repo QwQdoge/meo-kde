@@ -435,6 +435,36 @@ void drawLeadingLabel(const MeoStyleContent *style, const QStyleOption *option,
 void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *option,
                                   QPainter *painter, const QWidget *widget) const
 {
+    if (element == CE_ToolBar || element == CE_MenuBarEmptyArea) {
+        painter->fillRect(option->rect, option->palette.brush(optionColorGroup(option), QPalette::Window));
+        return;
+    }
+    if (element == CE_MenuBarItem) {
+        if (const auto *item = qstyleoption_cast<const QStyleOptionMenuItem *>(option)) {
+            painter->save(); painter->setClipRect(item->rect, Qt::IntersectClip); painter->setFont(item->font);
+            const auto group = optionColorGroup(item);
+            const bool selected = item->state.testFlag(State_Selected);
+            const bool hover = item->state.testFlag(State_MouseOver);
+            const bool pressed = item->state.testFlag(State_Sunken);
+            const bool focus = item->state.testFlag(State_HasFocus);
+            if (selected || hover || pressed || focus) {
+                const QColor fill = MeoStyleHelper::stateLayer(item->palette, group, QPalette::AlternateBase, QPalette::Text, hover || selected, pressed, focus);
+                MeoStyleHelper::drawRoundedSurface(painter, item->rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeSmall(), fill);
+                if (focus) MeoStyleHelper::drawFocusRing(painter, item->rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeSmall(), primaryColor(item->palette, group));
+            }
+            const QRect content = item->rect.adjusted(qRound(Meo::DesignTokens::space12()), qRound(Meo::DesignTokens::space4()),
+                -qRound(Meo::DesignTokens::space12()), -qRound(Meo::DesignTokens::space4()));
+            if (!item->icon.isNull()) {
+                const int extent = qRound(Meo::DesignTokens::iconSizeS());
+                item->icon.paint(painter, centeredRect(content, QSize(extent, extent)), Qt::AlignCenter, iconMode(item));
+            } else {
+                QPalette palette = item->palette; palette.setCurrentColorGroup(group);
+                drawItemText(painter, content, textFlags(this, item, widget, Qt::AlignHCenter), palette,
+                    item->state.testFlag(State_Enabled), item->text, QPalette::WindowText);
+            }
+            painter->restore(); return;
+        }
+    }
     if (element == CE_Header) {
         if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) {
             painter->save(); painter->setClipRect(header->rect, Qt::IntersectClip);

@@ -32,8 +32,9 @@ int main(int argc, char *argv[])
     window.setWindowTitle(QStringLiteral("Meo Application Style Gallery"));
     auto *tools = window.addToolBar(QStringLiteral("Actions"));
     tools->addAction(QStringLiteral("New"));
+    tools->addSeparator();
     tools->addAction(QStringLiteral("Open"));
-    auto *fileMenu = window.menuBar()->addMenu(QStringLiteral("File"));
+    auto *fileMenu = window.menuBar()->addMenu(QStringLiteral("&File"));
     fileMenu->addAction(QStringLiteral("Open"));
     fileMenu->addAction(QStringLiteral("Save"));
     fileMenu->addSeparator();
