@@ -284,7 +284,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('MEO_BUILD_STANDALONE_DOCK "Build the optional independent Layer Shell Dock" OFF', native)
         self.assertIn("if(MEO_BUILD_STANDALONE_DOCK)", native)
         self.assertIn('MEO_BUILD_STANDALONE_DOCK=ON', package)
-        self.assertIn('data/autostart/org.meo.dock.desktop', package)
+        self.assertNotIn('data/autostart/org.meo.dock.desktop', package)
         self.assertIn('"${requested_dock}" = standalone', installer)
         self.assertIn('dock_build_enabled=ON', installer)
         self.assertIn('native_build_root}/dock/meo-dock', installer)
