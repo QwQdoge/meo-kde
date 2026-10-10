@@ -86,3 +86,19 @@ singleton wraps those same values; MeoStyle includes the header without linking
 MeoUI's QObject/QML registration library or QtQml. A development build may use
 `MEOUI_SOURCE_DIR/runtime` when the pure header is not installed. No metric value
 or QML property changes as part of this dependency split.
+
+## Native control motion
+
+The render-driven animation engine uses MeoUI's shared critical effects spring
+and fast spatial spring for button state layers/pressed shape, tool-button
+selection, check/radio selection, text-field focus, slider response and menu
+hover/focus. Retargeting starts at the currently sampled value. Channels are
+bounded per widget; item-view check marks remain immediate because QStyle has
+no stable model identity. No input events are consumed or actions replaced.
+
+Hidden/disabled/unpolished/destroyed widgets stop animating. The timer runs only
+for active transitions or visible busy progress bars. Qt's platform animation
+policy, Qt 6.12+ reduced-motion preference, and the explicit application/widget
+`meo.reducedMotion` property all disable motion. First paint and calls without
+a widget use the final state immediately. Static palettes stay live throughout
+transitions. Real application and desktop acceptance remains separate.

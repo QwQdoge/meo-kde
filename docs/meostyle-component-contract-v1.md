@@ -242,3 +242,20 @@ Qt 6.12+ motion preference, the platform's zero widget-animation duration, and `
 Slider ticks are Meo dots using the same value-to-position mapping as the handle, honoring above/below/both, orientation and upsideDown. Automatic/explicit tick intervals are thinned to at most one tick per `space8` of travel for extreme ranges; endpoints stay represented. Tick math uses wide integers. The control has a `controlHeight` minimum cross-axis size. `SC_SliderGroove` exposes the full drag geometry because Qt subtracts one handle length while mapping positions to values; only painting applies the half-handle end inset.
 
 Toolbar overflow uses a Meo double-chevron icon engine in both orientations, with RTL and disabled modes. The retained icon reads its owning widget's current palette/direction when painted, avoiding a stale light/dark bitmap after theme changes. Qt retains the extension button, action ownership and overflow popup behavior.
+
+## Native state motion
+
+MeoUI's pure design token contract supplies critical effects damping/stiffness
+(1.0/1600), expressive fast spatial damping/stiffness (0.6/800), and a 500 ms
+maximum settling time. The QML values are unchanged. Native state layers and
+focus use the effects spring; button pressed shape, check/radio selection and
+slider response use the spatial spring. Transitions retarget from their sampled
+current value; opacity/selection fractions are clamped to their physical range.
+
+The engine lazily tracks painted widget channels, bounds menu-row state to 256
+channels per widget, and stops its timer when no visible transition or busy
+progress needs it. Hide, disable, unpolish and destruction stop animation.
+Platform animation disable, Qt 6.12+ reduced motion and `meo.reducedMotion`
+on the application/widget make state changes immediate. Item-view checks stay
+immediate because a screen rectangle is not a stable model identity. Input,
+actions, focus ownership and accessibility remain Qt's responsibility.

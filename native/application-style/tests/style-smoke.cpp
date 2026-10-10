@@ -590,6 +590,49 @@ private slots:
         bar.reset(); QVERIFY(!timer->isActive());
     }
 
+    void controlMotionRetargetsAndHonorsLifecycle()
+    {
+        auto style = createMeoStyle(); QVERIFY(style);
+        class AnimationBase : public QProxyStyle {
+        public:
+            int styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget, QStyleHintReturn *data) const override {
+                if (hint == SH_Widget_Animation_Duration) return 200;
+                return QProxyStyle::styleHint(hint, option, widget, data);
+            }
+        };
+        dynamic_cast<QProxyStyle *>(style.get())->setBaseStyle(new AnimationBase);
+        auto widget = std::make_unique<QWidget>(); widget->setStyle(style.get());
+        widget->resize(160, 44); widget->show(); QApplication::processEvents();
+        QStyleOptionButton option; option.rect = widget->rect(); option.palette = style->standardPalette();
+        option.state = QStyle::State_Enabled;
+        auto paint = [&] {
+            QImage image(option.rect.size(), QImage::Format_ARGB32_Premultiplied); image.fill(Qt::transparent);
+            QPainter painter(&image);
+            style->drawPrimitive(QStyle::PE_PanelButtonCommand, &option, &painter, widget.get());
+            return image;
+        };
+        const QImage resting = paint();
+        auto *timer = style->findChild<QTimer *>(QStringLiteral("meo-progress-animation")); QVERIFY(timer);
+        QVERIFY(!timer->isActive());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 12, 0)
+        if (QGuiApplication::styleHints()->accessibility()->motionPreference() == Qt::MotionPreference::ReducedMotion) return;
+#endif
+        option.state |= QStyle::State_MouseOver;
+        QCOMPARE(paint(), resting); QVERIFY(timer->isActive());
+        QTest::qWait(80);
+        const QImage intermediate = paint(); QVERIFY(intermediate != resting);
+        option.state &= ~QStyle::State_MouseOver;
+        QCOMPARE(paint(), intermediate); // Reversal starts at the sampled current value.
+        widget->setProperty("meo.reducedMotion", true);
+        QCOMPARE(paint(), resting); QVERIFY(!timer->isActive());
+        widget->setProperty("meo.reducedMotion", false);
+        option.state |= QStyle::State_Sunken; paint(); QVERIFY(timer->isActive());
+        widget->hide(); QVERIFY(!timer->isActive());
+        widget->show(); QApplication::processEvents(); paint(); QVERIFY(!timer->isActive());
+        option.state &= ~QStyle::State_Sunken; paint(); QVERIFY(timer->isActive());
+        widget.reset(); QVERIFY(!timer->isActive());
+    }
+
     void sliderTicksAndOverflowDoNotUseBasePainting()
     {
         class RejectBase : public QProxyStyle {

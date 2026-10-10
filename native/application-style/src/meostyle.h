@@ -38,6 +38,9 @@ public:
                      QPainter *painter, const QWidget *widget = nullptr) const override;
     void drawComplexControl(ComplexControl control, const QStyleOptionComplex *option,
                             QPainter *painter, const QWidget *widget = nullptr) const override;
+    // Render-driven channels retain no input ownership; nullptr/offscreen
+    // callers receive the target immediately.
+    qreal animatedValue(const QWidget *widget, const QString &channel, qreal target, bool spatial = false) const;
 private:
     std::unique_ptr<MeoStyleAnimationEngine> m_animation;
 };

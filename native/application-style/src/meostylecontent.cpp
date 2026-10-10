@@ -195,9 +195,12 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
     const QColor restingSurface = enabled
         ? tonalContainerColor(item->palette, group)
         : item->palette.color(QPalette::Disabled, QPalette::AlternateBase);
-    const qreal opacity = pressed ? Meo::DesignTokens::stateOpacityPressed()
+    const qreal targetOpacity = pressed ? Meo::DesignTokens::stateOpacityPressed()
                                   : focus ? Meo::DesignTokens::stateOpacityFocus()
                                           : hover ? Meo::DesignTokens::stateOpacityHover() : 0.0;
+    const QString channel = QStringLiteral("menu.%1.%2.").arg(item->rect.x()).arg(item->rect.y());
+    const qreal opacity = style->animatedValue(widget, channel + QStringLiteral("layer"), enabled ? targetOpacity : 0.0);
+    const qreal focusAmount = style->animatedValue(widget, channel + QStringLiteral("focus"), enabled && focus ? 1.0 : 0.0);
     const QColor fill = enabled ? MeoStyleHelper::blend(restingSurface, accent, opacity)
                                 : restingSurface;
     const QRectF background = item->rect.adjusted(Meo::DesignTokens::space2(),
@@ -206,9 +209,11 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
                                                    -Meo::DesignTokens::space2());
     MeoStyleHelper::drawRoundedSurface(painter, background,
                                         Meo::DesignTokens::shapeLarge(), fill);
-    if (focus) {
+    if (focusAmount > 0) {
+        painter->save(); painter->setOpacity(painter->opacity() * focusAmount);
         MeoStyleHelper::drawFocusRing(painter, background,
                                        Meo::DesignTokens::shapeLarge(), accent);
+        painter->restore();
     }
 
     const int inset = qRound(Meo::DesignTokens::space12());
