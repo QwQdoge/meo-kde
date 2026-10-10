@@ -78,10 +78,6 @@ package() {
     "${pkgdir}/usr/share/meo-desktop/defaults/kwinrc"
   install -Dm755 "${workspace}/tools/shell/apply-meo-panel-layout.sh" \
     "${pkgdir}/usr/bin/meo-desktop-layout"
-  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
-    "${pkgdir}/usr/share/applications/org.meo.dock.desktop"
-  install -Dm644 "${workspace}/data/autostart/org.meo.dock.desktop" \
-    "${pkgdir}/etc/xdg/autostart/org.meo.dock.desktop"
   install -Dm644 "${workspace}/defaults/plasma/meo-shellrc" \
     "${pkgdir}/etc/xdg/meo-shellrc"
   # The base image uses Plasma Login Manager.  Legacy SDDM branding is kept
