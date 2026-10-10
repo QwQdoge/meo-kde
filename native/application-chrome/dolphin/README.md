@@ -66,4 +66,12 @@ Prepare the patched source tree without building Dolphin:
 ./setup/prepare-meo-dolphin-source.sh
 ```
 
+The default source directory is under
+`$MEO_OUTPUT_ROOT/meo-kde/build/application-chrome/dolphin/<version>/source`
+(or the sibling `outputs/` workspace directory when the variable is unset).
+Use `--source-dir PATH` for an explicit checkout. Existing trees are never
+reset or cleaned: the pinned tag/HEAD must match, a fully applied series is
+recognized, and other/partial modifications cause a non-destructive refusal.
+`--check-only` validates the whole series without applying it.
+
 A full Dolphin build and real desktop acceptance are deliberately separate checks. Do not mark split view, tabs, drag/drop, keyboard shortcuts, or visual acceptance complete until they have been exercised on the packaged build.
