@@ -32,7 +32,7 @@ build() {
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DMEOUI_SOURCE_DIR="${workspace}/../meo-ui" \
     -DMEO_BUILD_STANDALONE_DOCK=ON
-  cmake --build "${srcdir}/native-build" --parallel
+  cmake --build "${srcdir}/native-build" --parallel "${MEO_BUILD_PARALLEL_LEVEL:-1}"
 }
 
 package() {
