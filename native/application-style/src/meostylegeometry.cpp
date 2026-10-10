@@ -1,3 +1,4 @@
+#include "meostylegroup.h"
 #include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostyle.h"
@@ -85,6 +86,7 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
         if (element == SE_ItemViewItemFocusRect) return item->rect.adjusted(1, 1, -1, -1);
     }
     switch (element) {
+    case SE_GroupBoxLayoutItem: return option->rect;
     case SE_PushButtonContents: {
         const int horizontal = px(Meo::DesignTokens::space16());
         const int vertical = px(Meo::DesignTokens::space4());
@@ -130,6 +132,18 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
         return QProxyStyle::subControlRect(control, option, subControl, widget);
     }
 
+    if (control == CC_GroupBox) {
+        if (const auto *group = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
+            const auto layout = MeoGroup::layout(*group);
+            switch (subControl) {
+            case SC_GroupBoxFrame: return layout.frame;
+            case SC_GroupBoxContents: return layout.contents;
+            case SC_GroupBoxLabel: return layout.label;
+            case SC_GroupBoxCheckBox: return layout.check;
+            default: return {};
+            }
+        }
+    }
     if (control == CC_SpinBox) {
         if (const auto *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(option)) {
             const int width = spin->buttonSymbols == QAbstractSpinBox::NoButtons ? 0
@@ -310,6 +324,7 @@ QStyle::SubControl MeoStyle::hitTestComplexControl(ComplexControl control, const
         return SC_None;
     };
     switch (control) {
+    case CC_GroupBox: return hit({SC_GroupBoxCheckBox, SC_GroupBoxLabel});
     case CC_SpinBox: return hit({SC_SpinBoxUp, SC_SpinBoxDown, SC_SpinBoxEditField, SC_SpinBoxFrame});
     case CC_ScrollBar: return hit({SC_ScrollBarSlider, SC_ScrollBarSubLine, SC_ScrollBarAddLine, SC_ScrollBarSubPage, SC_ScrollBarAddPage});
     case CC_ComboBox: return hit({SC_ComboBoxArrow, SC_ComboBoxEditField, SC_ComboBoxFrame});

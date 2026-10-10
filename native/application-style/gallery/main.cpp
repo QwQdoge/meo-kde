@@ -3,6 +3,7 @@
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFormLayout>
+#include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -125,6 +126,12 @@ int main(int argc, char *argv[])
     form->addRow(QStringLiteral("Progress"), progress);
     layout->addWidget(controls);
 
+    auto *group = new QGroupBox(QStringLiteral("&File options"));
+    group->setCheckable(true);
+    auto *groupLayout = new QHBoxLayout(group);
+    groupLayout->addWidget(new QLineEdit(QStringLiteral("Editable content")));
+    groupLayout->addWidget(new QCheckBox(QStringLiteral("Show hidden")));
+    layout->addWidget(group);
     auto *sideTabs = new QTabWidget;
     sideTabs->setTabPosition(QTabWidget::West);
     sideTabs->setTabsClosable(true);

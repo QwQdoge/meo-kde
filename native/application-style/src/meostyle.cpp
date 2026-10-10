@@ -1,3 +1,4 @@
+#include "meostylegroup.h"
 #include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostyle.h"
@@ -213,6 +214,8 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     case PM_TabBarTabShiftHorizontal:
     case PM_TabBarTabShiftVertical:
         return 0;
+    case PM_CheckBoxLabelSpacing:
+        return qRound(Meo::DesignTokens::space8());
     case PM_HeaderMargin:
         return qRound(Meo::DesignTokens::space12());
     case PM_HeaderMarkSize:
@@ -248,6 +251,7 @@ int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidge
                         QStyleHintReturn *returnData) const
 {
     if (hint == SH_ScrollBar_Transient) return false;
+    if (hint == SH_GroupBox_TextLabelColor && option) return int(option->palette.color(colorGroup(option), QPalette::WindowText).rgba());
     return QProxyStyle::styleHint(hint, option, widget, returnData);
 }
 
@@ -256,6 +260,9 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_GroupBox:
+        if (const auto *group = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) return MeoGroup::sizeHint(*group, contentsSize);
+        return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);
     case CT_HeaderSection:
         if (const auto *header = qstyleoption_cast<const QStyleOptionHeader *>(option)) return MeoHeader::sizeHint(*header);
         return QProxyStyle::sizeFromContents(type, option, contentsSize, widget);

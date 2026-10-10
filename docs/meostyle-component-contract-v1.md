@@ -218,3 +218,7 @@ Scroll bars use a `space12 + space2` extent, same-sized end buttons and a `space
 ### Native headers and tree branches
 
 Header sections use the Window surface with Meo hover/press/selection/focus treatment, a `controlHeight` minimum, `space12` horizontal and `space4` vertical content insets. Leading icons and trailing sort chevrons use `iconSizeS` and `space8` gaps. Sort reservation, size measurement and painting share the same contract; RTL mirrors the layout, and Qt HeaderV2 text elision remains application-controlled. Tree indentation is `space24`; expandable branches use a Meo chevron (down when open, direction-aware when closed), with no inherited dotted connectors or boxed plus glyphs. Qt owns sort actions, column dragging/resizing, and expansion/hit behavior.
+
+### Native group-box contract
+
+Group boxes use `space16` outer content padding, a title row at least `space24` high and `space12` between title and contents. Check indicators use `iconSizeS` with a `space8` title gap. Title alignment and RTL operate on the whole text/check group. Untitled boxes omit the title row and gap; Flat omits the rounded tonal container. The same layout owns content margins, label/check rectangles and hit tests. Qt retains mnemonics, keyboard toggling, child enablement and accessibility, while application title colors remain respected. No base-style external layout-item margin is added.

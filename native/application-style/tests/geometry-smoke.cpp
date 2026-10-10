@@ -6,6 +6,7 @@
 #include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionFrame>
 #include <QtWidgets/QStyleOptionHeader>
+#include <QtWidgets/QStyleOptionGroupBox>
 #include <QtWidgets/QStyleOptionMenuItem>
 #include <QtWidgets/QStyleOptionSlider>
 #include <QtWidgets/QStyleOptionSpinBox>
@@ -23,6 +24,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void groupTitleAndCheckReserveContents();
     void headerContentReservesSortIndicator();
     void complexControlsHitTheirOwnGeometry();
     void itemContentsShareCheckIconAndEditorGeometry();
@@ -175,6 +177,30 @@ void MeoStyleGeometryTest::headerContentReservesSortIndicator()
         const QSize plain = style.sizeFromContents(QStyle::CT_HeaderSection, &header, QSize(900, 900), nullptr);
         QCOMPARE(sorted.width() - plain.width(), qRound(Meo::DesignTokens::iconSizeS() + Meo::DesignTokens::space8()));
     }
+}
+
+void MeoStyleGeometryTest::groupTitleAndCheckReserveContents()
+{
+    MeoStyle style;
+    for (auto alignment : {Qt::AlignLeft, Qt::AlignHCenter, Qt::AlignRight}) {
+        QStyleOptionGroupBox group;
+        group.rect = QRect(13, 27, 280, 180); group.text = QStringLiteral("&Options"); group.textAlignment = alignment;
+        group.subControls = QStyle::SC_GroupBoxFrame | QStyle::SC_GroupBoxLabel | QStyle::SC_GroupBoxCheckBox;
+        const QRect label = style.subControlRect(QStyle::CC_GroupBox, &group, QStyle::SC_GroupBoxLabel);
+        const QRect check = style.subControlRect(QStyle::CC_GroupBox, &group, QStyle::SC_GroupBoxCheckBox);
+        const QRect contents = style.subControlRect(QStyle::CC_GroupBox, &group, QStyle::SC_GroupBoxContents);
+        QVERIFY(group.rect.contains(label)); QVERIFY(group.rect.contains(check)); QVERIFY(group.rect.contains(contents));
+        QVERIFY(!label.intersects(check)); QVERIFY(!contents.intersects(label)); QVERIFY(!contents.intersects(check));
+        QCOMPARE(style.hitTestComplexControl(QStyle::CC_GroupBox, &group, label.center()), QStyle::SC_GroupBoxLabel);
+        QCOMPARE(style.hitTestComplexControl(QStyle::CC_GroupBox, &group, check.center()), QStyle::SC_GroupBoxCheckBox);
+        group.direction = Qt::RightToLeft;
+        QCOMPARE(style.subControlRect(QStyle::CC_GroupBox, &group, QStyle::SC_GroupBoxLabel), QStyle::visualRect(Qt::RightToLeft, group.rect, label));
+        QCOMPARE(style.subControlRect(QStyle::CC_GroupBox, &group, QStyle::SC_GroupBoxCheckBox), QStyle::visualRect(Qt::RightToLeft, group.rect, check));
+        QCOMPARE(style.subControlRect(QStyle::CC_GroupBox, &group, QStyle::SC_GroupBoxContents), contents);
+    }
+    QStyleOptionGroupBox untitled; untitled.rect = QRect(0, 0, 200, 120); untitled.subControls = QStyle::SC_GroupBoxFrame;
+    QVERIFY(style.subControlRect(QStyle::CC_GroupBox, &untitled, QStyle::SC_GroupBoxLabel).isEmpty());
+    QCOMPARE(style.subControlRect(QStyle::CC_GroupBox, &untitled, QStyle::SC_GroupBoxContents).top(), qRound(Meo::DesignTokens::space16()));
 }
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()

@@ -9,6 +9,8 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QHeaderView>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QStyleOptionGroupBox>
 #include <QtWidgets/QStyleOptionHeader>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QStyledItemDelegate>
@@ -512,6 +514,22 @@ private slots:
         QVERIFY(!parent->isExpanded());
         QTest::mouseClick(tree.viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(tree.indentation() / 2, tree.visualItemRect(parent).center().y()));
         QVERIFY(parent->isExpanded());
+    }
+
+    void groupTitleClickAndSpaceKeepQtChildEnablement()
+    {
+        const auto style = createMeoStyle(); QVERIFY(style);
+        QGroupBox group(QStringLiteral("&Options")); group.setStyle(style.get()); group.setCheckable(true);
+        auto *layout = new QVBoxLayout(&group); auto *field = new QLineEdit; layout->addWidget(field);
+        group.resize(260, 150); group.show(); QApplication::processEvents();
+        QStyleOptionGroupBox option; option.rect = group.rect(); option.text = group.title();
+        option.subControls = QStyle::SC_GroupBoxLabel | QStyle::SC_GroupBoxCheckBox | QStyle::SC_GroupBoxFrame;
+        const QRect title = style->subControlRect(QStyle::CC_GroupBox, &option, QStyle::SC_GroupBoxLabel, &group);
+        QVERIFY(group.isChecked()); QVERIFY(field->isEnabled());
+        QTest::mouseClick(&group, Qt::LeftButton, Qt::NoModifier, title.center());
+        QVERIFY(!group.isChecked()); QVERIFY(!field->isEnabled());
+        group.setFocus(); QTest::keyClick(&group, Qt::Key_Space);
+        QVERIFY(group.isChecked()); QVERIFY(field->isEnabled());
     }
 
     void preservesApplicationPalette()

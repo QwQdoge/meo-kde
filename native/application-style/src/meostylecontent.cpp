@@ -1,3 +1,4 @@
+#include "meostylegroup.h"
 #include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostylecontent.h"
@@ -621,6 +622,38 @@ void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *op
 void MeoStyleContent::drawComplexControl(ComplexControl control, const QStyleOptionComplex *option,
                                          QPainter *painter, const QWidget *widget) const
 {
+    if (control == CC_GroupBox) {
+        if (const auto *group = qstyleoption_cast<const QStyleOptionGroupBox *>(option)) {
+            const auto layout = MeoGroup::layout(*group);
+            const auto colorGroup = optionColorGroup(group);
+            const QColor foreground = group->textColor.isValid() ? group->textColor : group->palette.color(colorGroup, QPalette::WindowText);
+            painter->save(); painter->setClipRect(group->rect, Qt::IntersectClip);
+            if (group->subControls.testFlag(SC_GroupBoxFrame) && !group->features.testFlag(QStyleOptionFrame::Flat)) {
+                MeoStyleHelper::drawRoundedSurface(painter, layout.frame.adjusted(1, 1, -1, -1),
+                    Meo::DesignTokens::shapeMedium(), tonalContainerColor(group->palette, colorGroup));
+            }
+            if (group->subControls.testFlag(SC_GroupBoxLabel) && !layout.label.isEmpty()) {
+                QPalette palette = group->palette;
+                palette.setColor(colorGroup, QPalette::WindowText, foreground); palette.setCurrentColorGroup(colorGroup);
+                const auto align = group->direction == Qt::RightToLeft ? Qt::AlignRight : Qt::AlignLeft;
+                drawItemText(painter, layout.label, textFlags(this, group, widget, align), palette,
+                    group->state.testFlag(State_Enabled), group->text, QPalette::WindowText);
+            }
+            if (!layout.check.isEmpty()) {
+                QStyleOption check;
+                check.rect = layout.check; check.palette = group->palette; check.direction = group->direction; check.state = group->state;
+                check.state &= ~State_HasFocus;
+                drawPrimitive(PE_IndicatorCheckBox, &check, painter, widget);
+            }
+            if (group->state.testFlag(State_HasFocus)) {
+                QRect focus = layout.label.isEmpty() ? layout.check : layout.label;
+                if (!layout.check.isEmpty()) focus = focus.united(layout.check);
+                if (!focus.isEmpty()) MeoStyleHelper::drawFocusRing(painter, focus.adjusted(-3, -3, 3, 3),
+                    Meo::DesignTokens::shapeExtraSmall(), primaryColor(group->palette, colorGroup));
+            }
+            painter->restore(); return;
+        }
+    }
     if (control != CC_ToolButton) {
         MeoStyle::drawComplexControl(control, option, painter, widget);
         return;
