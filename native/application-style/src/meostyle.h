@@ -18,6 +18,8 @@ public:
     void unpolish(QWidget *widget) override;
 
     QPalette standardPalette() const override;
+    QIcon standardIcon(StandardPixmap icon, const QStyleOption *option = nullptr,
+                       const QWidget *widget = nullptr) const override;
     int pixelMetric(PixelMetric metric, const QStyleOption *option = nullptr,
                     const QWidget *widget = nullptr) const override;
     int styleHint(StyleHint hint, const QStyleOption *option = nullptr,

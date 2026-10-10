@@ -48,6 +48,7 @@
 #include <QtWidgets/QVBoxLayout>
 
 #include <array>
+#include <limits>
 #include <memory>
 
 namespace {
@@ -587,6 +588,53 @@ private slots:
         bar->setRange(0, 100); QTRY_VERIFY_WITH_TIMEOUT(!timer->isActive(), 200);
         bar->setRange(0, 0); QApplication::processEvents(); QTRY_VERIFY_WITH_TIMEOUT(timer->isActive(), 200);
         bar.reset(); QVERIFY(!timer->isActive());
+    }
+
+    void sliderTicksAndOverflowDoNotUseBasePainting()
+    {
+        class RejectBase : public QProxyStyle {
+        public:
+            mutable int ticks = 0, icons = 0;
+            void drawComplexControl(ComplexControl control, const QStyleOptionComplex *option, QPainter *painter, const QWidget *widget) const override {
+                if (control == CC_Slider && option->subControls.testFlag(SC_SliderTickmarks)) ++ticks;
+                QProxyStyle::drawComplexControl(control, option, painter, widget);
+            }
+            QIcon standardIcon(StandardPixmap icon, const QStyleOption *option, const QWidget *widget) const override {
+                if (icon == SP_ToolBarHorizontalExtensionButton || icon == SP_ToolBarVerticalExtensionButton) ++icons;
+                return QProxyStyle::standardIcon(icon, option, widget);
+            }
+        };
+        auto style = createMeoStyle(); QVERIFY(style);
+        auto *base = new RejectBase; dynamic_cast<QProxyStyle *>(style.get())->setBaseStyle(base);
+        QImage image(220, 40, QImage::Format_ARGB32_Premultiplied); image.fill(Qt::transparent); QPainter painter(&image);
+        QStyleOptionSlider option; option.rect = image.rect(); option.minimum = std::numeric_limits<int>::min();
+        option.maximum = std::numeric_limits<int>::max(); option.sliderPosition = 0; option.tickInterval = 1;
+        option.tickPosition = QSlider::TicksBothSides; option.subControls = QStyle::SC_SliderTickmarks; option.state = QStyle::State_Enabled;
+        style->drawComplexControl(QStyle::CC_Slider, &option, &painter);
+        painter.end(); QCOMPARE(base->ticks, 0);
+        QImage blank(image.size(), image.format()); blank.fill(Qt::transparent); QVERIFY(image != blank);
+        QWidget widget;
+        const QIcon icon = style->standardIcon(QStyle::SP_ToolBarHorizontalExtensionButton, nullptr, &widget);
+        QPalette palette = widget.palette(); palette.setColor(QPalette::WindowText, QColor("#d71a2b")); widget.setPalette(palette);
+        QVERIFY(imageContainsColor(icon.pixmap(18).toImage(), QColor("#d71a2b")));
+        palette.setColor(QPalette::WindowText, QColor("#1a2bd7")); widget.setPalette(palette);
+        QVERIFY(imageContainsColor(icon.pixmap(18).toImage(), QColor("#1a2bd7")));
+        QVERIFY(!style->standardIcon(QStyle::SP_ToolBarVerticalExtensionButton).isNull());
+        QCOMPARE(base->icons, 0);
+    }
+
+    void sliderDragUsesTheWholeRange()
+    {
+        const auto style = createMeoStyle(); QVERIFY(style);
+        QSlider slider(Qt::Horizontal); slider.setStyle(style.get()); slider.setRange(0, 100); slider.setValue(0);
+        slider.resize(220, 40); slider.show(); QApplication::processEvents();
+        QStyleOptionSlider option; option.rect = slider.rect(); option.orientation = Qt::Horizontal;
+        option.minimum = 0; option.maximum = 100; option.sliderPosition = 0;
+        const QRect handle = style->subControlRect(QStyle::CC_Slider, &option, QStyle::SC_SliderHandle, &slider);
+        QTest::mousePress(&slider, Qt::LeftButton, Qt::NoModifier, handle.center());
+        QTest::mouseMove(&slider, QPoint(handle.center().x() + 101, handle.center().y()));
+        QTest::mouseRelease(&slider, Qt::LeftButton, Qt::NoModifier, QPoint(handle.center().x() + 101, handle.center().y()));
+        QCOMPARE(slider.value(), 50);
     }
 
     void preservesApplicationPalette()

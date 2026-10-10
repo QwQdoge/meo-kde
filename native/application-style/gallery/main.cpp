@@ -121,6 +121,8 @@ int main(int argc, char *argv[])
     form->addRow(QStringLiteral("RTL decimal"), decimal);
     auto *slider = new QSlider(Qt::Horizontal);
     slider->setValue(55);
+    slider->setTickPosition(QSlider::TicksBothSides);
+    slider->setTickInterval(10);
     form->addRow(QStringLiteral("Slider"), slider);
     auto *progress = new QProgressBar;
     progress->setValue(62);

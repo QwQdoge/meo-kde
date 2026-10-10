@@ -236,3 +236,9 @@ Meo owns full/groove/content/label rendering and their rectangles. Determinate v
 Busy progress follows MeoUI's 1750ms two-line linear clock: emphasized-accelerate cubic `(0.3,0,0.8,0.15)`, first head/tail delays 0/250ms with 1000ms duration, second delays 650/900ms with 850ms duration. The native animation manager only ticks while a real visible, enabled busy QProgressBar requires repainting. Hidden/disabled/determinate/destroyed/unpolished bars stop ticking. Event filtering never consumes input.
 
 Qt 6.12+ motion preference, the platform's zero widget-animation duration, and `meo.reducedMotion=true` on the application or progress widget suppress motion. Reduced motion uses static phase0.75, matching MeoUI. On older Qt, only the platform style-duration policy and explicit Meo property are available; no system preference is guessed. Direct style painting without a live QProgressBar also uses the static busy representation. This is busy-progress infrastructure; hover/press/focus/check animations remain separate work.
+
+### Slider details and toolbar overflow
+
+Slider ticks are Meo dots using the same value-to-position mapping as the handle, honoring above/below/both, orientation and upsideDown. Automatic/explicit tick intervals are thinned to at most one tick per `space8` of travel for extreme ranges; endpoints stay represented. Tick math uses wide integers. The control has a `controlHeight` minimum cross-axis size. `SC_SliderGroove` exposes the full drag geometry because Qt subtracts one handle length while mapping positions to values; only painting applies the half-handle end inset.
+
+Toolbar overflow uses a Meo double-chevron icon engine in both orientations, with RTL and disabled modes. The retained icon reads its owning widget's current palette/direction when painted, avoiding a stale light/dark bitmap after theme changes. Qt retains the extension button, action ownership and overflow popup behavior.

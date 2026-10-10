@@ -1,3 +1,4 @@
+#include "meostyleoverflowicon.h"
 #include "meostyleprogress.h"
 #include "meostylegroup.h"
 #include "meostyleheader.h"
@@ -10,6 +11,8 @@
 
 #include <QtGui/QPainterPath>
 #include <QtGui/QPainter>
+#include <QtGui/QIcon>
+#include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QStyleOptionComboBox>
 #include <QtWidgets/QStyleOptionComplex>
@@ -213,6 +216,15 @@ QPalette MeoStyle::standardPalette() const
     return QProxyStyle::standardPalette();
 }
 
+QIcon MeoStyle::standardIcon(StandardPixmap icon, const QStyleOption *option, const QWidget *widget) const
+{
+    if (icon != SP_ToolBarHorizontalExtensionButton && icon != SP_ToolBarVerticalExtensionButton)
+        return QProxyStyle::standardIcon(icon, option, widget);
+    const QPalette palette = option ? option->palette : widget ? widget->palette() : standardPalette();
+    const Qt::LayoutDirection direction = option ? option->direction : widget ? widget->layoutDirection() : Qt::LeftToRight;
+    return QIcon(new MeoOverflowIcon(icon == SP_ToolBarVerticalExtensionButton, widget, palette, direction));
+}
+
 int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
 {
     switch (metric) {
@@ -274,11 +286,21 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
         return qRound(Meo::DesignTokens::space32());
     case PM_ScrollBarExtent:
         return qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space2());
+    case PM_SliderThickness:
+    case PM_SliderControlThickness:
+        return qRound(Meo::DesignTokens::iconSizeS());
+    case PM_SliderTickmarkOffset:
+        return qRound(Meo::DesignTokens::iconSizeS() / 2 + Meo::DesignTokens::space4());
+    case PM_SliderSpaceAvailable:
+        if (const auto *slider = qstyleoption_cast<const QStyleOptionSlider *>(option))
+            return qMax(0, (slider->orientation == Qt::Horizontal ? option->rect.width() : option->rect.height()) - qRound(Meo::DesignTokens::iconSizeS()));
+        break;
     case PM_SliderLength:
         return qRound(Meo::DesignTokens::iconSizeS());
     default:
-        return QProxyStyle::pixelMetric(metric, option, widget);
+        break;
     }
+    return QProxyStyle::pixelMetric(metric, option, widget);
 }
 
 int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
@@ -295,6 +317,13 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_Slider: {
+        const auto *slider = qstyleoption_cast<const QStyleOptionSlider *>(option);
+        if (!slider) return contentsSize;
+        QSize size = slider->orientation == Qt::Horizontal ? contentsSize : contentsSize.transposed();
+        size.setHeight(qMax(qRound(Meo::DesignTokens::controlHeight()), size.height()));
+        return slider->orientation == Qt::Horizontal ? size : size.transposed();
+    }
     case CT_ProgressBar: {
         const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option);
         if (!bar) return contentsSize;
@@ -973,15 +1002,43 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             return;
         }
 
-        if (option->subControls.testFlag(SC_SliderTickmarks)) {
-            QStyleOptionSlider tickOption(*slider);
-            tickOption.subControls = SC_SliderTickmarks;
-            QProxyStyle::drawComplexControl(control, &tickOption, painter, widget);
+        if (option->subControls.testFlag(SC_SliderTickmarks) && slider->tickPosition != QSlider::NoTicks) {
+            painter->save(); painter->setClipRect(slider->rect, Qt::IntersectClip); painter->setRenderHint(QPainter::Antialiasing);
+            painter->setPen(Qt::NoPen);
+            const bool horizontal = slider->orientation == Qt::Horizontal;
+            const int handle = qRound(Meo::DesignTokens::iconSizeS());
+            const int span = qMax(0, (horizontal ? slider->rect.width() : slider->rect.height()) - handle);
+            const qint64 range = qMax<qint64>(0, qint64(slider->maximum) - slider->minimum);
+            qint64 interval = slider->tickInterval > 0 ? slider->tickInterval : qMax(1, slider->singleStep);
+            // Do not iterate billions of invisible ticks for a wide integer range.
+            const int maximumTicks = qMax(1, span / qRound(Meo::DesignTokens::space8()));
+            interval = qMax(interval, (range + maximumTicks - 1) / maximumTicks);
+            const qreal offset = handle / 2.0 + Meo::DesignTokens::space4();
+            auto tick = [&](qint64 value) {
+                const int position = sliderPositionFromValue(slider->minimum, slider->maximum, int(value), span, slider->upsideDown);
+                painter->setBrush(slider->palette.color(group, value <= slider->sliderPosition ? QPalette::Link : QPalette::Mid));
+                const qreal axis = (horizontal ? slider->rect.left() : slider->rect.top()) + handle / 2.0 + position;
+                for (int side : {-1, 1}) {
+                    if (!(slider->tickPosition & (side < 0 ? QSlider::TicksAbove : QSlider::TicksBelow))) continue;
+                    const QPointF center = horizontal ? QPointF(axis, slider->rect.center().y() + side * offset)
+                                                      : QPointF(slider->rect.center().x() + side * offset, axis);
+                    painter->drawEllipse(center, Meo::DesignTokens::space2() / 2.0, Meo::DesignTokens::space2() / 2.0);
+                }
+            };
+            for (qint64 value = slider->minimum; value <= slider->maximum; value += interval) {
+                tick(value);
+                if (interval <= 0) break;
+            }
+            if (range > 0 && range % interval != 0) tick(slider->maximum);
+            painter->restore();
         }
 
         const QRect grooveRect = subControlRect(CC_Slider, slider, SC_SliderGroove, widget);
         const QRect handleRect = subControlRect(CC_Slider, slider, SC_SliderHandle, widget);
-        const QRectF track = centeredTrack(grooveRect, slider->orientation, Meo::DesignTokens::space4());
+        const int halfHandle = qRound(Meo::DesignTokens::iconSizeS()) / 2;
+        const QRect visualGroove = slider->orientation == Qt::Horizontal ? grooveRect.adjusted(halfHandle, 0, -halfHandle, 0)
+                                                                        : grooveRect.adjusted(0, halfHandle, 0, -halfHandle);
+        const QRectF track = centeredTrack(visualGroove, slider->orientation, Meo::DesignTokens::space4());
         if (option->subControls.testFlag(SC_SliderGroove)) {
             MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(),
                                                 option->palette.color(group, QPalette::Midlight));

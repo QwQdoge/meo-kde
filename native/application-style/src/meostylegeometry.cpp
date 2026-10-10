@@ -294,13 +294,10 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
         }
 
         const int handleLength = px(Meo::DesignTokens::iconSizeS());
-        const int halfHandle = handleLength / 2;
-
         if (subControl == SC_SliderGroove) {
-            if (slider->orientation == Qt::Horizontal) {
-                return option->rect.adjusted(halfHandle, 0, -halfHandle, 0);
-            }
-            return option->rect.adjusted(0, halfHandle, 0, -halfHandle);
+            // Qt subtracts the handle length when mapping drags to values.
+            // Painting applies the visual half-handle inset separately.
+            return option->rect;
         }
 
         if (subControl == SC_SliderHandle) {

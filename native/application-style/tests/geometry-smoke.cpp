@@ -373,8 +373,9 @@ void MeoStyleGeometryTest::sliderHandleUsesMeoTokenSize()
     const int tokenSize = qRound(Meo::DesignTokens::iconSizeS());
 
     QCOMPARE(handle.size(), QSize(tokenSize, tokenSize));
-    QCOMPARE(groove.left(), option.rect.left() + tokenSize / 2);
-    QCOMPARE(groove.right(), option.rect.right() - tokenSize / 2);
+    QCOMPARE(groove, option.rect);
+    // Qt derives the drag span by subtracting one handle from this rectangle.
+    QCOMPARE(groove.width() - handle.width(), style.pixelMetric(QStyle::PM_SliderSpaceAvailable, &option));
     QCOMPARE(handle.center().x(), option.rect.center().x());
 }
 

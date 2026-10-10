@@ -33,6 +33,7 @@ add_library(meostyle MODULE
     src/meostylecontent.cpp
     src/meostylecontent.h
     src/meostylegeometry.cpp
+    src/meostyleoverflowicon.h
     src/meostyleprogress.h
     src/meostylegroup.h
     src/meostyleheader.h
