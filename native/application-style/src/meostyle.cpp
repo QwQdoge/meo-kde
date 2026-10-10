@@ -1,7 +1,9 @@
+#include "meostyleprogress.h"
 #include "meostylegroup.h"
 #include "meostyleheader.h"
 #include "meostyleitem.h"
 #include "meostyle.h"
+#include "meostyleanimation.h"
 #include "meostyletab.h"
 
 #include "meostylehelper.h"
@@ -181,9 +183,23 @@ void drawItemViewSurface(const QStyleOption *option, QPainter *painter)
 } // namespace
 
 MeoStyle::MeoStyle()
-    : QProxyStyle(createPlatformBaseStyle())
+    : QProxyStyle(createPlatformBaseStyle()), m_animation(std::make_unique<MeoStyleAnimationEngine>(this))
 {
     setObjectName(QStringLiteral("Meo"));
+}
+
+MeoStyle::~MeoStyle() = default;
+
+void MeoStyle::polish(QWidget *widget)
+{
+    QProxyStyle::polish(widget);
+    m_animation->watch(widget);
+}
+
+void MeoStyle::unpolish(QWidget *widget)
+{
+    m_animation->forget(widget);
+    QProxyStyle::unpolish(widget);
 }
 
 QPalette MeoStyle::standardPalette() const
@@ -214,6 +230,8 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
     case PM_TabBarTabShiftHorizontal:
     case PM_TabBarTabShiftVertical:
         return 0;
+    case PM_ProgressBarChunkWidth:
+        return qRound(Meo::DesignTokens::space8());
     case PM_ToolBarFrameWidth:
     case PM_MenuBarPanelWidth:
         return 0;
@@ -277,6 +295,15 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
 {
     QSize result = contentsSize;
     switch (type) {
+    case CT_ProgressBar: {
+        const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option);
+        if (!bar) return contentsSize;
+        QSize size = MeoProgress::horizontal(*bar) ? contentsSize : contentsSize.transposed();
+        const int thickness = bar->textVisible ? qMax(qRound(Meo::DesignTokens::space24()), bar->fontMetrics.height() + qRound(Meo::DesignTokens::space8()))
+                                               : qRound(Meo::DesignTokens::space8());
+        size.setHeight(thickness);
+        return MeoProgress::horizontal(*bar) ? size : size.transposed();
+    }
     case CT_MenuBar:
         return contentsSize; // QMenuBar already includes the owned margins.
     case CT_MenuBarItem: {
@@ -793,22 +820,50 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
         return;
     }
 
-    if (element == CE_ProgressBarGroove) {
-        MeoStyleHelper::drawRoundedSurface(painter, option->rect, option->rect.height() / 2.0,
-                                            option->palette.color(colorGroup(option), QPalette::Midlight));
-        return;
-    }
-    if (element == CE_ProgressBarContents) {
-        const auto *progress = qstyleoption_cast<const QStyleOptionProgressBar *>(option);
-        if (progress && progress->maximum > progress->minimum) {
-            const qreal ratio = qBound<qreal>(0.0,
-                qreal(progress->progress - progress->minimum) / qreal(progress->maximum - progress->minimum), 1.0);
-            QRectF fill = option->rect;
-            fill.setWidth(fill.width() * ratio);
-            MeoStyleHelper::drawRoundedSurface(painter, fill, fill.height() / 2.0,
-                                                primaryColor(option->palette, colorGroup(option)));
+    if (element == CE_ProgressBar || element == CE_ProgressBarGroove
+        || element == CE_ProgressBarContents || element == CE_ProgressBarLabel) {
+        if (const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
+            painter->save(); painter->setClipRect(bar->rect, Qt::IntersectClip);
+            const qreal radius = qMin(bar->rect.width(), bar->rect.height()) / 2.0;
+            const qreal phase = bar->minimum == 0 && bar->maximum == 0 ? m_animation->progressPhase(widget) : 0.0;
+            const auto active = MeoProgress::activeRects(*bar, phase);
+            if (element == CE_ProgressBar || element == CE_ProgressBarGroove) {
+                MeoStyleHelper::drawRoundedSurface(painter, bar->rect, radius, bar->palette.color(group, QPalette::Midlight));
+            }
+            if (element == CE_ProgressBar || element == CE_ProgressBarContents) {
+                QPainterPath track; track.addRoundedRect(bar->rect, radius, radius);
+                painter->save(); painter->setClipPath(track, Qt::IntersectClip);
+                const QColor accent = enabled ? primaryColor(bar->palette, group) : bar->palette.color(QPalette::Disabled, QPalette::Highlight);
+                for (const auto &rect : active) if (!rect.isEmpty()) MeoStyleHelper::drawRoundedSurface(painter, rect,
+                    qMin(rect.width(), rect.height()) / 2.0, accent);
+                painter->restore();
+            }
+            if ((element == CE_ProgressBar || element == CE_ProgressBarLabel) && bar->textVisible && !bar->text.isEmpty()) {
+                auto label = [&](QPalette::ColorRole role) {
+                    painter->save();
+                    QRect textRect = bar->rect;
+                    if (!MeoProgress::horizontal(*bar)) {
+                        if (bar->bottomToTop) {
+                            painter->translate(bar->rect.left(), bar->rect.bottom() + 1); painter->rotate(-90);
+                        } else {
+                            painter->translate(bar->rect.right() + 1, bar->rect.top()); painter->rotate(90);
+                        }
+                        textRect = QRect(QPoint(), bar->rect.size().transposed());
+                    }
+                    QPalette palette = bar->palette; palette.setCurrentColorGroup(group);
+                    drawItemText(painter, textRect, int(bar->textAlignment | Qt::AlignVCenter | Qt::TextSingleLine),
+                        palette, enabled, bar->text, role);
+                    painter->restore();
+                };
+                label(QPalette::Text);
+                QPainterPath filled;
+                for (const auto &rect : active) if (!rect.isEmpty()) filled.addRoundedRect(rect,
+                    qMin(rect.width(), rect.height()) / 2.0, qMin(rect.width(), rect.height()) / 2.0);
+                painter->setClipPath(filled, Qt::IntersectClip);
+                label(QPalette::HighlightedText);
+            }
+            painter->restore(); return;
         }
-        return;
     }
     QProxyStyle::drawControl(element, option, painter, widget);
 }

@@ -88,6 +88,10 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
         if (element == SE_ItemViewItemFocusRect) return item->rect.adjusted(1, 1, -1, -1);
     }
     switch (element) {
+    case SE_ProgressBarGroove:
+    case SE_ProgressBarContents:
+    case SE_ProgressBarLabel:
+        return option->rect;
     case SE_ToolBarHandle: {
         if (const auto *bar = qstyleoption_cast<const QStyleOptionToolBar *>(option)) {
             if (!bar->features.testFlag(QStyleOptionToolBar::Movable)) return {};

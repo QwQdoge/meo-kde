@@ -125,6 +125,10 @@ int main(int argc, char *argv[])
     auto *progress = new QProgressBar;
     progress->setValue(62);
     form->addRow(QStringLiteral("Progress"), progress);
+    auto *busy = new QProgressBar; busy->setRange(0, 0);
+    form->addRow(QStringLiteral("Busy progress"), busy);
+    auto *reverseProgress = new QProgressBar; reverseProgress->setValue(35); reverseProgress->setInvertedAppearance(true);
+    form->addRow(QStringLiteral("Reverse progress"), reverseProgress);
     layout->addWidget(controls);
 
     auto *group = new QGroupBox(QStringLiteral("&File options"));

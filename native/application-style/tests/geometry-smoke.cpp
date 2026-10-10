@@ -1,6 +1,8 @@
 #include "meostyle.h"
+#include "meostyleprogress.h"
 
 #include <QtTest/QTest>
+#include <limits>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QStyleOptionButton>
 #include <QtWidgets/QStyleOptionComboBox>
@@ -25,6 +27,7 @@ class MeoStyleGeometryTest final : public QObject
 
 private Q_SLOTS:
     void commonControlSizesIgnoreBaseGeometry();
+    void progressDirectionAndFullIntegerRange();
     void toolbarHandleOwnsItsMarginsAndMirrors();
     void groupTitleAndCheckReserveContents();
     void headerContentReservesSortIndicator();
@@ -226,6 +229,27 @@ void MeoStyleGeometryTest::toolbarHandleOwnsItsMarginsAndMirrors()
     const QSize size = style.sizeFromContents(QStyle::CT_MenuBarItem, &menu, QSize(900, 900), nullptr);
     QCOMPARE(size.height(), qRound(Meo::DesignTokens::controlHeight()));
     QCOMPARE(size.width(), menu.fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, menu.text).width() + 2 * qRound(Meo::DesignTokens::space12()));
+}
+
+void MeoStyleGeometryTest::progressDirectionAndFullIntegerRange()
+{
+    QStyleOptionProgressBar bar;
+    bar.rect = QRect(13, 27, 100, 20); bar.state = QStyle::State_Horizontal;
+    bar.minimum = 0; bar.maximum = 100; bar.progress = 25;
+    QCOMPARE(MeoProgress::activeRects(bar, 0).first(), QRectF(13, 27, 25, 20));
+    bar.direction = Qt::RightToLeft;
+    QCOMPARE(MeoProgress::activeRects(bar, 0).first(), QRectF(88, 27, 25, 20));
+    bar.invertedAppearance = true;
+    QCOMPARE(MeoProgress::activeRects(bar, 0).first(), QRectF(13, 27, 25, 20));
+    bar.state = QStyle::State_None; bar.rect = QRect(13, 27, 20, 100); bar.invertedAppearance = false;
+    QCOMPARE(MeoProgress::activeRects(bar, 0).first(), QRectF(13, 102, 20, 25));
+    bar.invertedAppearance = true;
+    QCOMPARE(MeoProgress::activeRects(bar, 0).first(), QRectF(13, 27, 20, 25));
+    bar.minimum = std::numeric_limits<int>::min(); bar.maximum = std::numeric_limits<int>::max(); bar.progress = 0;
+    const QRectF half = MeoProgress::activeRects(bar, 0).first();
+    QVERIFY(qAbs(half.height() - 50.0) < 0.001);
+    bar.minimum = bar.maximum = 0;
+    QVERIFY(MeoProgress::activeRects(bar, 0.2) != MeoProgress::activeRects(bar, 0.6));
 }
 
 void MeoStyleGeometryTest::pushButtonContentUsesMeoInsets()

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QtWidgets/QProxyStyle>
+#include <memory>
+
+class MeoStyleAnimationEngine;
 
 class MeoStyle : public QProxyStyle
 {
@@ -8,6 +11,11 @@ class MeoStyle : public QProxyStyle
 
 public:
     MeoStyle();
+    ~MeoStyle() override;
+    using QProxyStyle::polish;
+    using QProxyStyle::unpolish;
+    void polish(QWidget *widget) override;
+    void unpolish(QWidget *widget) override;
 
     QPalette standardPalette() const override;
     int pixelMetric(PixelMetric metric, const QStyleOption *option = nullptr,
@@ -28,4 +36,6 @@ public:
                      QPainter *painter, const QWidget *widget = nullptr) const override;
     void drawComplexControl(ComplexControl control, const QStyleOptionComplex *option,
                             QPainter *painter, const QWidget *widget = nullptr) const override;
+private:
+    std::unique_ptr<MeoStyleAnimationEngine> m_animation;
 };

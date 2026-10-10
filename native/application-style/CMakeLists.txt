@@ -27,10 +27,13 @@ set(meoui_tokens_target meoui_style_tokens)
 
 add_library(meostyle MODULE
     src/meostyle.cpp
+    src/meostyleanimation.cpp
+    src/meostyleanimation.h
     src/meostyle.h
     src/meostylecontent.cpp
     src/meostylecontent.h
     src/meostylegeometry.cpp
+    src/meostyleprogress.h
     src/meostylegroup.h
     src/meostyleheader.h
     src/meostyleitem.h
@@ -65,6 +68,8 @@ set_tests_properties(meo-style-smoke PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=off
 add_executable(meo-style-geometry-smoke
     tests/geometry-smoke.cpp
     src/meostyle.cpp
+    src/meostyleanimation.cpp
+    src/meostyleanimation.h
     src/meostylegeometry.cpp
     src/meostylehelper.cpp
     src/meostylehelper.h

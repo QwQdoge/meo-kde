@@ -10,6 +10,11 @@ when Breeze is available, real widget/menu/default-delegate rendering,
 normal/hover/pressed/focused/disabled states, checked and indeterminate
 indicators, RTL item-view rendering, and repainting across changed light/dark
 and accent semantic palettes.
+Progress rendering includes orientation, inversion, labels and a two-line busy
+indicator. Busy animation only runs for visible enabled progress widgets;
+reduced-motion policy and widget/application `meo.reducedMotion` properties use
+a static busy representation. Lifecycle checks cover hide, range changes and
+destruction without leaving a timer running.
 Those checks do not prove that a desktop session selected the plugin or that
 already-running applications handled a live KDE colour-scheme notification.
 

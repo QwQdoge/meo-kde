@@ -1,6 +1,11 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QLibraryInfo>
 #include <QtCore/QScopeGuard>
+#include <QtCore/QTimer>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 12, 0)
+#include <QtGui/QAccessibilityHints>
+#include <QtGui/QStyleHints>
+#endif
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtTest/QTest>
@@ -277,7 +282,7 @@ QImage renderControl(QStyle *style, ControlKind kind, QStyle::State extraState,
         QStyleOptionProgressBar option;
         option.rect = image.rect().adjusted(8, 16, -8, -16);
         option.palette = palette;
-        option.state = state;
+        option.state = state | QStyle::State_Horizontal;
         option.minimum = 0;
         option.maximum = 100;
         option.progress = 62;
@@ -424,7 +429,7 @@ private slots:
             void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter,
                              const QWidget *widget = nullptr) const override {
                 if (element == CE_CheckBox || element == CE_RadioButton || element == CE_CheckBoxLabel
-                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem || element == CE_Header || element == CE_HeaderLabel || element == CE_HeaderSection || element == CE_MenuBarItem || element == CE_ToolBar || element == CE_MenuBarEmptyArea) ++labelCalls;
+                    || element == CE_RadioButtonLabel || element == CE_ComboBoxLabel || element == CE_TabBarTabLabel || element == CE_ItemViewItem || element == CE_Header || element == CE_HeaderLabel || element == CE_HeaderSection || element == CE_MenuBarItem || element == CE_ToolBar || element == CE_MenuBarEmptyArea || element == CE_ProgressBar || element == CE_ProgressBarLabel || element == CE_ProgressBarContents || element == CE_ProgressBarGroove) ++labelCalls;
                 QProxyStyle::drawControl(element, option, painter, widget);
             }
         };
@@ -463,6 +468,9 @@ private slots:
         QStyleOptionToolBar toolbar; toolbar.rect = image.rect(); toolbar.state = QStyle::State_Horizontal;
         style->drawControl(QStyle::CE_ToolBar, &toolbar, &painter);
         style->drawControl(QStyle::CE_MenuBarEmptyArea, &menuItem, &painter);
+        QStyleOptionProgressBar progress; progress.rect = image.rect(); progress.state = QStyle::State_Enabled | QStyle::State_Horizontal;
+        progress.minimum = 0; progress.maximum = 100; progress.progress = 60; progress.textVisible = true; progress.text = QStringLiteral("60%");
+        style->drawControl(QStyle::CE_ProgressBar, &progress, &painter);
         QCOMPARE(base->labelCalls, 0);
     }
 
@@ -552,6 +560,33 @@ private slots:
         QWidget *button = bar.widgetForAction(action); QVERIFY(button);
         QTest::mouseClick(button, Qt::LeftButton, Qt::NoModifier, button->rect().center());
         QCOMPARE(activated, 1);
+    }
+
+    void busyProgressAnimationStopsWhenNotNeeded()
+    {
+        auto style = createMeoStyle(); QVERIFY(style);
+        class AnimationBase : public QProxyStyle {
+        public:
+            int styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget, QStyleHintReturn *data) const override {
+                if (hint == SH_Widget_Animation_Duration) return 200;
+                return QProxyStyle::styleHint(hint, option, widget, data);
+            }
+        };
+        dynamic_cast<QProxyStyle *>(style.get())->setBaseStyle(new AnimationBase);
+        auto bar = std::make_unique<QProgressBar>(); bar->setStyle(style.get()); bar->setRange(0, 0);
+        bar->setProperty("meo.reducedMotion", true); bar->resize(180, 24); bar->show(); QApplication::processEvents();
+        auto *timer = style->findChild<QTimer *>(QStringLiteral("meo-progress-animation")); QVERIFY(timer);
+        QVERIFY(!timer->isActive());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 12, 0)
+        if (QGuiApplication::styleHints()->accessibility()->motionPreference() == Qt::MotionPreference::ReducedMotion) return;
+#endif
+        bar->setProperty("meo.reducedMotion", false); QApplication::processEvents();
+        QTRY_VERIFY_WITH_TIMEOUT(timer->isActive(), 200);
+        bar->hide(); QVERIFY(!timer->isActive());
+        bar->show(); QApplication::processEvents(); QTRY_VERIFY_WITH_TIMEOUT(timer->isActive(), 200);
+        bar->setRange(0, 100); QTRY_VERIFY_WITH_TIMEOUT(!timer->isActive(), 200);
+        bar->setRange(0, 0); QApplication::processEvents(); QTRY_VERIFY_WITH_TIMEOUT(timer->isActive(), 200);
+        bar.reset(); QVERIFY(!timer->isActive());
     }
 
     void preservesApplicationPalette()

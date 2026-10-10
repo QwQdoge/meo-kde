@@ -228,3 +228,11 @@ Group boxes use `space16` outer content padding, a title row at least `space24` 
 Toolbar and menu-bar surfaces use the semantic Window brush without a base-style bevel or separator. Toolbars use `space4` item margins/spacing, `space12` handle/separator extents, `space24` overflow extent and `iconSizeS` default icons. Application-supplied layout margins remain authoritative (including Dolphin's chrome patch); the movable handle mirrors in RTL and uses Meo dots. Separators are a single quiet rule rather than a platform bevel.
 
 Menu-bar items use a `controlHeight` minimum, `space12` horizontal and `space4` vertical insets. Qt's icon-in-place-of-title presentation and mnemonic visibility remain intact; Meo owns text/icon and hover/pressed/selected/focus rendering. Qt retains menu opening, shortcuts, toolbar action ownership, docking, dragging and overflow behavior.
+
+### Native progress contract
+
+Meo owns full/groove/content/label rendering and their rectangles. Determinate values use wide range arithmetic, horizontal RTL/inversion and bottom-to-top vertical fill by default, with inversion supported. Text follows the supplied format/alignment and vertical text direction; text over the filled region uses HighlightedText and the rest uses Text. Progress without visible text uses `space8` thickness; visible text uses at least `space24` and font height plus `space8`.
+
+Busy progress follows MeoUI's 1750ms two-line linear clock: emphasized-accelerate cubic `(0.3,0,0.8,0.15)`, first head/tail delays 0/250ms with 1000ms duration, second delays 650/900ms with 850ms duration. The native animation manager only ticks while a real visible, enabled busy QProgressBar requires repainting. Hidden/disabled/determinate/destroyed/unpolished bars stop ticking. Event filtering never consumes input.
+
+Qt 6.12+ motion preference, the platform's zero widget-animation duration, and `meo.reducedMotion=true` on the application or progress widget suppress motion. Reduced motion uses static phase0.75, matching MeoUI. On older Qt, only the platform style-duration policy and explicit Meo property are available; no system preference is guessed. Direct style painting without a live QProgressBar also uses the static busy representation. This is busy-progress infrastructure; hover/press/focus/check animations remain separate work.
