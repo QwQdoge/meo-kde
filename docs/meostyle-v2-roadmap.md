@@ -32,23 +32,25 @@ MeoStyle does **not** need to turn Qt Widgets into QML MeoUI components. It is a
 
 ---
 
-## Current state
+## Current implementation — code phase
 
-MeoStyle is already a `QProxyStyle` and prefers Breeze as its platform base. It already paints a number of Meo-like surfaces and states.
+The native renderer now owns the covered standard paths below. This is a
+source/build snapshot, not real-application visual acceptance. Roadmap boxes
+that require real Plasma, KDE applications, scale comparisons or hardware
+remain separate and can be exercised after the code phase.
 
-The main remaining problem is that visible geometry and content layout are still frequently inherited from the base style. Examples include button label layout, menu icon/check/text/submenu geometry, item-view content layout, many pixel metrics, and complex-control subcontrols.
+| Control family | Native implementation |
+| --- | --- |
+| Push/tool buttons, text fields, combo boxes, checks/radios, menus | Meo-owned metrics, content geometry and painting; Qt retains actions, text editing, keyboard and accessibility behavior. |
+| Tabs, toolbars/menu bars, spin boxes, scroll bars, sliders | Meo-owned geometry/content; slider hit geometry matches Qt's drag range. Toolbar overflow glyphs repaint from the live palette. |
+| Headers, group boxes, standard item-view delegates/branches | Meo-owned label/indicator geometry and painting; application models and custom delegates remain upstream. |
+| Progress, tooltips, status surfaces | Determinate/busy progress including wide ranges and directionality; rounded tooltip surface/mask; no status-item bevel. |
+| Interaction motion | Shared MeoUI spring tokens; hover/press/focus/check/selection transitions with reduced-motion and lifecycle cleanup. Item-view checks stay immediate because QStyle lacks model identity. |
 
-This produces the current result:
-
-```text
-Breeze geometry + Meo surface/color overrides
-```
-
-The v2 target is:
-
-```text
-Breeze behavior/fallback + Meo-owned visible geometry + Meo-owned painting
-```
+`native/application-style/tests/` provides the focused offscreen geometry,
+painting, interaction and lifecycle checks. The gallery remains the manual
+comparison surface. Runtime application behavior and Qt Quick/Kirigami
+compatibility evaluation have not been substituted with source assertions.
 
 ## Architecture rule
 

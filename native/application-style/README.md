@@ -102,3 +102,9 @@ policy, Qt 6.12+ reduced-motion preference, and the explicit application/widget
 `meo.reducedMotion` property all disable motion. First paint and calls without
 a widget use the final state immediately. Static palettes stay live throughout
 transitions. Real application and desktop acceptance remains separate.
+
+Tooltips use the semantic ToolTipBase/ToolTipText palette with an 8 dp frame
+inset and rounded 8 dp surface/mask. Qt retains tooltip text, timing and
+placement. Status bars use the Window surface without per-item bevels.
+Dialog button-box ordering remains the platform's convention; its children
+use the same native Meo button geometry and layout spacing.

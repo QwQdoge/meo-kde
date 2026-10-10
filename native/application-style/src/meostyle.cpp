@@ -233,6 +233,8 @@ QIcon MeoStyle::standardIcon(StandardPixmap icon, const QStyleOption *option, co
 int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWidget *widget) const
 {
     switch (metric) {
+    case PM_ToolTipLabelFrameWidth:
+        return qRound(Meo::DesignTokens::space8());
     case PM_DefaultFrameWidth:
     case PM_SpinBoxFrameWidth:
         return qRound(Meo::DesignTokens::space2() / 2.0);
@@ -311,6 +313,16 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
 int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
                         QStyleHintReturn *returnData) const
 {
+    if (hint == SH_ToolTipLabel_Opacity) return 255;
+    if (hint == SH_ToolTip_Mask && option) {
+        if (auto *mask = qstyleoption_cast<QStyleHintReturnMask *>(returnData)) {
+            QPainterPath path;
+            path.addRoundedRect(option->rect, Meo::DesignTokens::shapeSmall(), Meo::DesignTokens::shapeSmall());
+            mask->region = QRegion(path.toFillPolygon().toPolygon());
+            return true;
+        }
+        return false;
+    }
     if (hint == SH_DrawMenuBarSeparator) return false;
     if (hint == SH_ScrollBar_Transient) return false;
     if (hint == SH_GroupBox_TextLabelColor && option) return int(option->palette.color(colorGroup(option), QPalette::WindowText).rgba());
@@ -465,6 +477,17 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     const bool focus = option->state.testFlag(State_HasFocus);
     const QPalette::ColorGroup group = colorGroup(option);
 
+    if (element == PE_PanelTipLabel) {
+        QColor outline = option->palette.color(group, QPalette::ToolTipText); outline.setAlphaF(0.16);
+        MeoStyleHelper::drawRoundedSurface(painter, QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5),
+            Meo::DesignTokens::shapeSmall(), option->palette.color(group, QPalette::ToolTipBase), outline);
+        return;
+    }
+    if (element == PE_FrameStatusBarItem) return; // No per-item platform bevel.
+    if (element == PE_PanelStatusBar) {
+        painter->fillRect(option->rect, option->palette.brush(group, QPalette::Window));
+        return;
+    }
     if (element == PE_PanelToolBar || element == PE_PanelMenuBar) {
         painter->fillRect(option->rect, option->palette.brush(group, QPalette::Window));
         return;

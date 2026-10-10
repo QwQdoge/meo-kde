@@ -259,3 +259,8 @@ Platform animation disable, Qt 6.12+ reduced motion and `meo.reducedMotion`
 on the application/widget make state changes immediate. Item-view checks stay
 immediate because a screen rectangle is not a stable model identity. Input,
 actions, focus ownership and accessibility remain Qt's responsibility.
+
+Tooltip surfaces use ToolTipBase/ToolTipText, `space8` padding and `shapeSmall`
+radius, including the native tooltip mask. Qt retains text/timing/placement.
+Status bars use Window with no per-item bevel. Dialog button-box ordering is
+platform-owned while its child button geometry is Meo-owned.

@@ -590,6 +590,33 @@ private slots:
         bar.reset(); QVERIFY(!timer->isActive());
     }
 
+    void tooltipAndStatusSurfacesOwnTheirPainting()
+    {
+        class RejectBase : public QProxyStyle {
+        public:
+            mutable int surfaces = 0;
+            void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override {
+                if (element == PE_PanelTipLabel || element == PE_PanelStatusBar || element == PE_FrameStatusBarItem) ++surfaces;
+                QProxyStyle::drawPrimitive(element, option, painter, widget);
+            }
+        };
+        auto style = createMeoStyle(); QVERIFY(style);
+        auto *base = new RejectBase; dynamic_cast<QProxyStyle *>(style.get())->setBaseStyle(base);
+        QStyleOption option; option.rect = QRect(0, 0, 140, 40); option.palette = style->standardPalette();
+        option.state = QStyle::State_Enabled;
+        QImage image(option.rect.size(), QImage::Format_ARGB32_Premultiplied); image.fill(Qt::transparent);
+        QPainter painter(&image); style->drawPrimitive(QStyle::PE_PanelTipLabel, &option, &painter);
+        painter.end(); QVERIFY(imageHasContent(image)); QVERIFY(qAlpha(image.pixel(0, 0)) == 0);
+        QCOMPARE(style->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth), 8);
+        QStyleHintReturnMask mask;
+        QVERIFY(style->styleHint(QStyle::SH_ToolTip_Mask, &option, nullptr, &mask));
+        QVERIFY(mask.region.contains(option.rect.center())); QVERIFY(!mask.region.contains(option.rect.topLeft()));
+        painter.begin(&image);
+        style->drawPrimitive(QStyle::PE_PanelStatusBar, &option, &painter);
+        style->drawPrimitive(QStyle::PE_FrameStatusBarItem, &option, &painter);
+        painter.end(); QCOMPARE(base->surfaces, 0);
+    }
+
     void controlMotionRetargetsAndHonorsLifecycle()
     {
         auto style = createMeoStyle(); QVERIFY(style);
