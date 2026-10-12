@@ -28,12 +28,12 @@ PlasmoidItem {
                                        : (Plasmoid.configuration.showSeconds ? "h:mm:ss AP" : "h:mm AP"))
             return Plasmoid.configuration.showDate
                    ? MeoI18n.translator.i18n("%1 · %2").arg(time)
-                       .arg(Qt.formatDate(clock.dateTime, Qt.DefaultLocaleShortDate))
+                       .arg(Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.ShortFormat)))
                    : time
         }
         onClicked: root.expanded = !root.expanded
         background: MeoShape { type: "round"; radius: MeoTheme.shapeSmall; color: parent.hovered || parent.down || root.expanded ? MeoTheme.surfaceContainerHighest : "transparent" }
-        contentItem: RowLayout { id: label; spacing: MeoTheme.space4; MeoText { text: Qt.formatTime(clock.dateTime, root.use24Hour ? (Plasmoid.configuration.showSeconds ? "hh:mm:ss" : "hh:mm") : (Plasmoid.configuration.showSeconds ? "h:mm:ss AP" : "h:mm AP")); typeRole:"label"; typeSize:"medium"; emphasized:true } MeoText { visible: Plasmoid.configuration.showDate; text:Qt.formatDate(clock.dateTime, Qt.DefaultLocaleShortDate); typeRole:"label"; typeSize:"small" } }
+        contentItem: RowLayout { id: label; spacing: MeoTheme.space4; MeoText { text: Qt.formatTime(clock.dateTime, root.use24Hour ? (Plasmoid.configuration.showSeconds ? "hh:mm:ss" : "hh:mm") : (Plasmoid.configuration.showSeconds ? "h:mm:ss AP" : "h:mm AP")); typeRole:"label"; typeSize:"medium"; emphasized:true } MeoText { visible: Plasmoid.configuration.showDate; text:Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.ShortFormat)); typeRole:"label"; typeSize:"small" } }
     }
     fullRepresentation: StatusCenterView { currentDateTime: clock.dateTime; centerMode:"timeCalendar"; clockFormat: Plasmoid.configuration.clockFormat; showSeconds: Plasmoid.configuration.showSeconds; showDate: Plasmoid.configuration.showDate; showWeekNumbers: Plasmoid.configuration.showWeekNumbers; showSecondaryCalendar: Plasmoid.configuration.showSecondaryCalendar }
 }

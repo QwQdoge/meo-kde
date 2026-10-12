@@ -90,7 +90,7 @@ MeoStatusCenter {
     updateTimeAutomatically: false
     timeText: Qt.formatTime(root.currentDateTime, root.timePattern)
     dateText: root.showDate
-              ? Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleLongDate)
+              ? Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.LongFormat))
               : ""
     unreadCount: notifications && typeof notifications.unreadNotificationsCount === "number"
                  ? notifications.unreadNotificationsCount : 0
@@ -121,7 +121,7 @@ MeoStatusCenter {
 
             MeoText {
                 visible: root.showDate
-                text: Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleLongDate)
+                text: Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.LongFormat))
                 typeRole: "body"
                 typeSize: "medium"
                 color: MeoTheme.onSurfaceVariant

@@ -40,7 +40,7 @@ QQC2.AbstractButton {
                                    ? (root.showSeconds ? "hh:mm:ss" : "hh:mm")
                                    : (root.showSeconds ? "h:mm:ss AP" : "h:mm AP"))
         const date = root.showDate
-                   ? Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleShortDate) : ""
+                   ? Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.ShortFormat)) : ""
         const timeAndDate = date === "" ? time
                                          : MeoI18n.translator.i18n("%1 · %2").arg(time).arg(date)
         const notificationState = root.inhibited
@@ -111,7 +111,7 @@ QQC2.AbstractButton {
 
             MeoText {
                 visible: root.showDate
-                text: Qt.formatDate(root.currentDateTime, Qt.DefaultLocaleShortDate)
+                text: Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.ShortFormat))
                 typeRole: "label"
                 typeSize: "small"
                 fontScaleOverride: root.textScale
