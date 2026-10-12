@@ -43,7 +43,7 @@ RowLayout {
         onTriggered: {
             const now = new Date()
             timeText.text = Qt.formatTime(now, Qt.locale().timeFormat(Locale.ShortFormat))
-            dateText.text = Qt.formatDate(now, Qt.DefaultLocaleLongDate)
+            dateText.text = Qt.formatDate(now, Qt.locale().dateFormat(Locale.LongFormat))
         }
     }
 }

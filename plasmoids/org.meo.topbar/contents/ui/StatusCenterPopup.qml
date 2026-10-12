@@ -48,7 +48,7 @@ MeoMotionPopup {
         height: statusCenter.availableHeight
         currentDateTime: clock.dateTime
         timeText: Qt.formatTime(clock.dateTime, Qt.locale().timeFormat(Locale.ShortFormat))
-        dateText: Qt.formatDate(clock.dateTime, Qt.DefaultLocaleLongDate)
+        dateText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
         unreadCount: notificationModel.unreadNotificationsCount
 
         notificationContent: Component {
