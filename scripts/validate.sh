@@ -52,7 +52,7 @@ run python "${meoui_source}/tools/verify-design-system-usage.py" --mode consumer
   "${repo_root}/native/dock/qml" "${repo_root}/native/authentication/qml" \
   "${repo_root}/themes/look-and-feel"
 run cmake -S "${repo_root}/native/system" -B "${system_build}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
-run cmake --build "${system_build}" --parallel
+run cmake --build "${system_build}" --parallel "${MEO_BUILD_PARALLEL_LEVEL:-1}"
 run test -s "${system_import}/Meo/System/plugins.qmltypes"
 run "${system_build}/meo-system-state-smoke"
 run env QML_IMPORT_PATH="${system_import}:${meoui_import}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
@@ -60,7 +60,7 @@ run env QML_IMPORT_PATH="${system_import}:${meoui_import}${QML_IMPORT_PATH:+:${Q
 run cmake -S "${repo_root}/native" -B "${application_style_build}" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMEOUI_SOURCE_DIR="${meoui_source}" \
   -DMEOUI_IMPORT_ROOT_PATH="${meoui_import}" -DMEO_BUILD_STANDALONE_DOCK=OFF
-run cmake --build "${application_style_build}" --parallel
+run cmake --build "${application_style_build}" --parallel "${MEO_BUILD_PARALLEL_LEVEL:-1}"
 run env QML_IMPORT_PATH="${application_style_build}/qml:${system_import}:${meoui_import}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
   ctest --test-dir "${application_style_build}" --output-on-failure
 run env -u QML_IMPORT_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic \
