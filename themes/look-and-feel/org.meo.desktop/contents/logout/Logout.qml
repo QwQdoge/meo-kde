@@ -32,8 +32,6 @@ Item {
         return qsTr("Power and session")
     }
 
-    function holdLabel(label) { return qsTr("Hold to %1").arg(label.toLowerCase()) }
-
     Image {
         anchors.fill: parent
         source: "file:///usr/share/wallpapers/MeoArch/installer_background.png"
@@ -103,50 +101,45 @@ Item {
             columnSpacing: 12 * MeoTheme.globalScale
             rowSpacing: 12 * MeoTheme.globalScale
 
-            MeoHoldToConfirm {
+            MeoButton {
                 Layout.fillWidth: true
                 visible: spdMethods.SuspendState && root.showAllOptions
-                confirmationText: root.holdLabel(qsTr("sleep"))
-                holdingText: qsTr("Keep holding to sleep…")
-                iconName: "bedtime"
-                tone: "neutral"
-                onConfirmed: root.suspendRequested(2)
+                text: qsTr("Sleep")
+                icon.name: "bedtime"
+                type: "tonal"
+                onClicked: root.suspendRequested(2)
             }
-            MeoHoldToConfirm {
+            MeoButton {
                 Layout.fillWidth: true
                 visible: spdMethods.HibernateState && root.showAllOptions
-                confirmationText: root.holdLabel(qsTr("hibernate"))
-                holdingText: qsTr("Keep holding to hibernate…")
-                iconName: "bedtime"
-                tone: "neutral"
-                onConfirmed: root.suspendRequested(4)
+                text: qsTr("Hibernate")
+                icon.name: "bedtime"
+                type: "tonal"
+                onClicked: root.suspendRequested(4)
             }
-            MeoHoldToConfirm {
+            MeoButton {
                 Layout.fillWidth: true
                 visible: maysd && (root.showAllOptions || sdtype === ShutdownType.ShutdownTypeReboot)
-                confirmationText: softwareUpdatePending ? root.holdLabel(qsTr("install updates and restart")) : root.holdLabel(qsTr("restart"))
-                holdingText: qsTr("Keep holding to restart…")
-                iconName: "restart_alt"
-                tone: "primary"
-                onConfirmed: softwareUpdatePending ? root.rebootUpdateRequested() : root.rebootRequested()
+                text: softwareUpdatePending ? qsTr("Install updates and restart") : qsTr("Restart")
+                icon.name: "restart_alt"
+                type: "filled"
+                onClicked: softwareUpdatePending ? root.rebootUpdateRequested() : root.rebootRequested()
             }
-            MeoHoldToConfirm {
+            MeoButton {
                 Layout.fillWidth: true
                 visible: maysd && (root.showAllOptions || sdtype === ShutdownType.ShutdownTypeHalt)
-                confirmationText: softwareUpdatePending ? root.holdLabel(qsTr("install updates and shut down")) : root.holdLabel(qsTr("shut down"))
-                holdingText: qsTr("Keep holding to shut down…")
-                iconName: "power_settings_new"
-                tone: "error"
-                onConfirmed: softwareUpdatePending ? root.haltUpdateRequested() : root.haltRequested()
+                text: softwareUpdatePending ? qsTr("Install updates and shut down") : qsTr("Shut down")
+                icon.name: "power_settings_new"
+                type: "tonal"
+                onClicked: softwareUpdatePending ? root.haltUpdateRequested() : root.haltRequested()
             }
-            MeoHoldToConfirm {
+            MeoButton {
                 Layout.fillWidth: true
                 visible: canLogout && (root.showAllOptions || sdtype === ShutdownType.ShutdownTypeNone)
-                confirmationText: root.holdLabel(qsTr("sign out"))
-                holdingText: qsTr("Keep holding to sign out…")
-                iconName: "logout"
-                tone: "neutral"
-                onConfirmed: root.logoutRequested()
+                text: qsTr("Sign out")
+                icon.name: "logout"
+                type: "tonal"
+                onClicked: root.logoutRequested()
             }
         }
 

@@ -62,6 +62,34 @@ Item {
                                                           * dashboardCenterScale)
     readonly property bool wideAmbientDashboard: dashboardWidth >= 900 * MeoTheme.globalScale
                                                  && dashboardHeight >= 500 * MeoTheme.globalScale
+    property string pendingPowerAction: ""
+
+    function confirmPower(action) {
+        pendingPowerAction = action
+        powerConfirmation.open()
+    }
+
+    MeoDialog {
+        id: powerConfirmation
+        title: lockScreenUi.pendingPowerAction === "sleep" ? qsTr("Sleep")
+             : lockScreenUi.pendingPowerAction === "hibernate" ? qsTr("Hibernate")
+             : lockScreenUi.pendingPowerAction === "reboot" ? qsTr("Restart")
+             : qsTr("Shut down")
+        message: qsTr("Confirm this power action?")
+        confirmText: qsTr("Continue")
+        cancelText: qsTr("Cancel")
+        onConfirmed: {
+            const action = lockScreenUi.pendingPowerAction
+            lockScreenUi.pendingPowerAction = ""
+            root.clearPassword()
+            if (action === "sleep") sessionManagement.suspend()
+            else if (action === "hibernate") sessionManagement.hibernate()
+            else if (action === "reboot") sessionManagement.requestReboot(SessionManagement.Skip)
+            else if (action === "shutdown") sessionManagement.requestShutdown(SessionManagement.Skip)
+        }
+        onCancelled: lockScreenUi.pendingPowerAction = ""
+        onDismissed: lockScreenUi.pendingPowerAction = ""
+    }
 
     // One animated scalar drives the whole ambient -> authentication
     // transition. This keeps the motion coherent like Caelestia while using
@@ -563,22 +591,10 @@ Item {
                         canHibernate: sessionManagement.canHibernate
                         canReboot: sessionManagement.canReboot
                         canShutdown: sessionManagement.canShutdown
-                        onSuspendRequested: {
-                            root.clearPassword()
-                            sessionManagement.suspend()
-                        }
-                        onHibernateRequested: {
-                            root.clearPassword()
-                            sessionManagement.hibernate()
-                        }
-                        onRebootRequested: {
-                            root.clearPassword()
-                            sessionManagement.requestReboot()
-                        }
-                        onShutdownRequested: {
-                            root.clearPassword()
-                            sessionManagement.requestShutdown()
-                        }
+                        onSuspendRequested: lockScreenUi.confirmPower("sleep")
+                        onHibernateRequested: lockScreenUi.confirmPower("hibernate")
+                        onRebootRequested: lockScreenUi.confirmPower("reboot")
+                        onShutdownRequested: lockScreenUi.confirmPower("shutdown")
                     }
 
                     Loader {
@@ -768,8 +784,7 @@ Item {
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Sleep")
                         icon.name: "system-suspend"
                         onClicked: {
-                            root.clearPassword()
-                            sessionManagement.suspend()
+                            lockScreenUi.confirmPower("sleep")
                         }
                         visible: sessionManagement.canSuspend
                     },
@@ -779,8 +794,7 @@ Item {
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Hibernate")
                         icon.name: "system-suspend-hibernate"
                         onClicked: {
-                            root.clearPassword()
-                            sessionManagement.hibernate()
+                            lockScreenUi.confirmPower("hibernate")
                         }
                         visible: sessionManagement.canHibernate
                     },
@@ -801,8 +815,7 @@ Item {
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Restart")
                         icon.name: "system-reboot"
                         onClicked: {
-                            root.clearPassword()
-                            sessionManagement.requestReboot()
+                            lockScreenUi.confirmPower("reboot")
                         }
                         visible: sessionManagement.canReboot
                     },
@@ -812,8 +825,7 @@ Item {
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Shut Down")
                         icon.name: "system-shutdown"
                         onClicked: {
-                            root.clearPassword()
-                            sessionManagement.requestShutdown()
+                            lockScreenUi.confirmPower("shutdown")
                         }
                         visible: sessionManagement.canShutdown
                     }

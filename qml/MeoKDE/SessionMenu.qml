@@ -25,22 +25,22 @@ MeoMenu {
         }
         if (sessionManagement.canReboot) {
             entries.push({
-                "label": MeoI18n.translator.i18n("Restart…"),
+                "label": MeoI18n.translator.i18n("Restart"),
                 "icon": "restart_alt",
                 "action": function() {
                     control.finish(function() {
-                        sessionManagement.requestReboot(Sessions.SessionManagement.ForcePrompt)
+                        sessionManagement.requestReboot(Sessions.SessionManagement.Skip)
                     })
                 }
             })
         }
         if (sessionManagement.canShutdown) {
             entries.push({
-                "label": MeoI18n.translator.i18n("Shut down…"),
+                "label": MeoI18n.translator.i18n("Shut down"),
                 "icon": "power_settings_new",
                 "action": function() {
                     control.finish(function() {
-                        sessionManagement.requestShutdown(Sessions.SessionManagement.ForcePrompt)
+                        sessionManagement.requestShutdown(Sessions.SessionManagement.Skip)
                     })
                 }
             })
@@ -49,11 +49,11 @@ MeoMenu {
             entries.push({ "type": "separator" })
         if (sessionManagement.canLogout) {
             entries.push({
-                "label": MeoI18n.translator.i18n("Sign out…"),
+                "label": MeoI18n.translator.i18n("Sign out"),
                 "icon": "logout",
                 "action": function() {
                     control.finish(function() {
-                        sessionManagement.requestLogout(Sessions.SessionManagement.ForcePrompt)
+                        sessionManagement.requestLogout(Sessions.SessionManagement.Skip)
                     })
                 }
             })

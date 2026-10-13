@@ -399,8 +399,10 @@ class LockScreenThemeTests(unittest.TestCase):
             "canShutdown: sessionManagement.canShutdown",
             "sessionManagement.suspend()",
             "sessionManagement.hibernate()",
-            "sessionManagement.requestReboot()",
-            "sessionManagement.requestShutdown()",
+            "sessionManagement.requestReboot(SessionManagement.Skip)",
+            "sessionManagement.requestShutdown(SessionManagement.Skip)",
+            'onRebootRequested: lockScreenUi.confirmPower("reboot")',
+            'onShutdownRequested: lockScreenUi.confirmPower("shutdown")',
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.ui)
