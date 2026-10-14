@@ -53,6 +53,9 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertFalse((shell / "contents/lockscreen").is_symlink())
         self.assertIn("MeoLock.LockScreen", (shell / "contents/lockscreen/LockScreen.qml").read_text())
         self.assertIn("export PLASMA_DEFAULT_SHELL=org.meo.shell", (REPO_ROOT / "tools/session/startmeo-wayland").read_text())
+        alias = REPO_ROOT / "themes/look-and-feel/org.meo.desktop/contents/layouts/org.meo.shell-layout.js"
+        self.assertEqual(alias.readlink(), Path("org.kde.plasma.desktop-layout.js"))
+        self.assertEqual(alias.read_text(), alias.resolve().read_text())
         self.assertIn("as PlasmaLock", self.main)
         self.assertIn("file:/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen", self.main)
 

@@ -34,6 +34,14 @@ for relative in \
   seed_config "${relative}"
 done
 
+# The Meo Shell adapter has a separate applet-state filename. Migrate only
+# an existing Meo session layout, never the ordinary Plasma configuration.
+old_applets="${meo_config_home}/plasma-org.kde.plasma.desktop-appletsrc"
+meo_applets="${meo_config_home}/plasma-org.meo.shell-appletsrc"
+if [ ! -e "${meo_applets}" ] && [ ! -L "${meo_applets}" ] && [ -f "${old_applets}" ]; then
+  cp -- "${old_applets}" "${meo_applets}"
+fi
+
 export XDG_CONFIG_HOME="${meo_config_home}"
 export XDG_STATE_HOME="${meo_state_home}"
 export MEO_DESKTOP_SESSION=1
