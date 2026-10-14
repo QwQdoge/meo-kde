@@ -32,6 +32,19 @@ The user's Googlebook / Pixel reference images are the visual authority for
 this task. Preserve Meo branding and functionality while following these
 concrete requirements:
 
+- **Order and change scope:** establish real boot/install viability before
+  visual refinement. Compare each relevant image in the user-approved
+  9to5Google Googlebook hands-on article with the corresponding actual Meo
+  surface. Keep established structures such as the Shelf; refine expanded
+  surfaces, borders, corners, components and hierarchy incrementally, with
+  real-session verification after each coherent change.
+- **Lock-screen repair first:** do not redesign the lock-screen UI yet. Restore
+  the existing Meo lock screen if it is not loading. Trace package contents,
+  session selection, the active loader, QML imports/assets, runtime errors and
+  fallback behavior; verify actual lock/unlock while preserving the existing
+  authentication and secure session-lock authorities. Replacing the design
+  does not repair a broken loading path.
+
 - **Bottom taskbar / Shelf:** a full-width surface along the bottom edge, with
   the launcher and application icons centered inside it. Keep generous,
   consistent icon spacing, sizing and active/hover/pressed indicators. These
