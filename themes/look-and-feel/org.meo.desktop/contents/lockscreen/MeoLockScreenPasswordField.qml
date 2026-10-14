@@ -79,7 +79,10 @@ MeoTextField {
     Accessible.name: accessibleLabel
     Accessible.description: qsTr("Enter your password to unlock")
 
-    onAccepted: unlockRequested()
+    onAccepted: {
+        if (hasInput)
+            unlockRequested()
+    }
 
     background: Rectangle {
         radius: height / 2

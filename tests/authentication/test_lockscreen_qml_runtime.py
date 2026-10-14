@@ -12,6 +12,7 @@ import unittest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, QQmlComponent
+from PySide6.QtTest import QSignalSpy
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -75,6 +76,18 @@ class LockScreenQmlRuntimeTests(unittest.TestCase):
         field.setProperty("passwordVisible", True)
         self.application.processEvents()
         self.assertTrue(field.property("passwordVisible"))
+        field.deleteLater()
+        component.deleteLater()
+        engine.deleteLater()
+
+    def test_enter_cannot_submit_an_empty_field(self):
+        engine, component, field = self.create_component("MeoLockScreenPasswordField.qml")
+        requested = QSignalSpy(field.unlockRequested)
+        field.accepted.emit()
+        self.assertEqual(requested.count(), 0)
+        field.setProperty("text", "fixture")
+        field.accepted.emit()
+        self.assertEqual(requested.count(), 1)
         field.deleteLater()
         component.deleteLater()
         engine.deleteLater()
