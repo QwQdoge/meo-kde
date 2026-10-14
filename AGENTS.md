@@ -32,12 +32,24 @@ The user's Googlebook / Pixel reference images are the visual authority for
 this task. Preserve Meo branding and functionality while following these
 concrete requirements:
 
+- **Latest user restriction (2026-10-14):** preserve the existing top-bar
+  structure, placement, order, dimensions and component composition. Revert
+  this pass's top-bar structural rearrangement while retaining color work.
+  Reference-image guidance does not authorize further top-bar rearrangement.
+- **Preview before integration:** test subsequent UI candidates in isolated
+  local preview files and the validation VM, and show the user screenshots.
+  Only after the user reviews and approves may those UI changes enter the
+  authoritative source, commits or an ISO. Store pending candidates under
+  outputs; do not overwrite the production implementation before approval.
+
 - **Order and change scope:** establish real boot/install viability before
   visual refinement. Compare each relevant image in the user-approved
   9to5Google Googlebook hands-on article with the corresponding actual Meo
   surface. Keep established structures such as the Shelf; refine expanded
   surfaces, borders, corners, components and hierarchy incrementally, with
   real-session verification after each coherent change.
+  The user subsequently prioritized desktop UI: leave a functional installer's
+  appearance alone; fix only installer defects that affect functionality.
 - **Lock-screen repair first:** restore the existing Meo lock screen if it is
   not loading. Trace package contents,
   session selection, the active loader, QML imports/assets, runtime errors and
@@ -59,8 +71,9 @@ concrete requirements:
   KDE remains the task/window authority; do not revive the legacy standalone
   Dock for this work.
 - **Top status bar:** transparent background over the wallpaper, rather than
-  an opaque KDE panel. Keep time/day/date at the top left, and system status,
-  Quick Settings and notifications at the top right.
+  an opaque KDE panel. Keep the existing approved component placement;
+  the latest restriction above supersedes earlier reference-driven relocation
+  of the clock, notifications or other top-bar entries.
 - **Wallpaper-aware foreground:** black text and status glyphs over light
   wallpaper regions, white text and glyphs over dark regions. Determine
   contrast from the actual wallpaper region behind the relevant surface;
