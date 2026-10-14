@@ -300,8 +300,14 @@ Item {
             }
         }
         Keys.onPressed: event => {
-            lockScreenUi.requestAuthenticationHere()
-            event.accepted = false
+            if (!uiVisible) {
+                // A wake-up Enter must not become an empty PAM submission.
+                // Consume the ambient gesture; credentials start in the revealed field.
+                lockScreenUi.requestAuthenticationHere()
+                event.accepted = true
+            } else {
+                event.accepted = false
+            }
         }
 
         Timer {

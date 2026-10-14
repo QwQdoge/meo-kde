@@ -56,6 +56,12 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertIn("as PlasmaLock", self.main)
         self.assertIn("file:/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen", self.main)
 
+    def test_ambient_key_is_consumed_before_password_submission(self):
+        handler = self.ui.split("Keys.onPressed: event => {", 1)[1].split("Timer {", 1)[0]
+        self.assertIn("if (!uiVisible)", handler)
+        self.assertIn("event.accepted = true", handler)
+        self.assertIn("event.accepted = false", handler)
+
     def test_root_preserves_kscreenlocker_magic_contract(self):
         for required in (
             "property bool debug",
