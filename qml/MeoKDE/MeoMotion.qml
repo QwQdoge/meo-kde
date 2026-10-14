@@ -17,6 +17,11 @@ QtObject {
     readonly property var defaultSpatial: UI.MeoMotion.defaultSpatial
     readonly property var slowSpatial: UI.MeoMotion.slowSpatial
 
+    // Imports of MeoKDE intentionally keep this compatibility name. Forward
+    // amplitudes too, so it cannot shadow the shared MeoUI motion methods.
+    function popupOffset(profile) { return UI.MeoMotion.popupOffset(profile) }
+    function pageOffset(profile) { return UI.MeoMotion.pageOffset(profile) }
+
     // Shell-facing semantic aliases. Keep the historical `press` duration
     // above so installed plasmoids remain source compatible.
     readonly property int pressFeedback: UI.MeoTheme.motionDurationPanelState
