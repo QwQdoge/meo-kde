@@ -318,7 +318,9 @@ if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
     dock.currentConfigGroup = ["General"];
     dock.writeConfig("AppletOrder", [spacers[0].id, entries.id, dockTasks.id, spacers[1].id].join(";"));
     dock.reloadConfig();
-    orderWidgets(dock, [spacers[0].id, entries.id, dockTasks.id, spacers[1].id]);
+    // Keep the established Shelf stable. Live index changes can reorder its
+    // expanding spacers while Plasma delivers item moves asynchronously.
+    // The persisted order is applied on the next panel load.
 } else if (dock) {
     dock.currentConfigGroup = ["MeoShell"];
     if (dock.readConfig("Managed", false) === true || dock.readConfig("Managed", false) === "true") {
