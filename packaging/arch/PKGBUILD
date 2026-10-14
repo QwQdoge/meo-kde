@@ -42,6 +42,10 @@ package() {
     "${pkgdir}/usr/share/plasma/look-and-feel/"
   install -Dm644 "${workspace}/defaults/sessions/meoarch-wayland.desktop" \
     "${pkgdir}/usr/share/wayland-sessions/meoarch-wayland.desktop"
+  install -d "${pkgdir}/usr/share/plasma/shells"
+  cp -a "${workspace}/themes/shells/org.meo.shell" "${pkgdir}/usr/share/plasma/shells/"
+  install -Dm644 "${workspace}/themes/look-and-feel/org.meo.desktop/contents/lockscreen/config.xml" \
+    "${pkgdir}/usr/share/plasma/shells/org.meo.shell/contents/lockscreen/config.xml"
   install -d "${pkgdir}/usr/share/plasma/desktoptheme"
   for desktop_theme in MeoLight MeoDark; do
     cp -a "${workspace}/themes/desktoptheme/${desktop_theme}" \

@@ -13,6 +13,11 @@ topPanel.currentConfigGroup = ["MeoShell"]
 topPanel.writeConfig("Managed", true)
 topPanel.writeConfig("Role", "top")
 
+var timeCenter = topPanel.addWidget("org.meo.time")
+timeCenter.currentConfigGroup = ["Appearance"]
+timeCenter.writeConfig("showDate", true)
+timeCenter.writeConfig("clockFormat", "24h")
+timeCenter.reloadConfig()
 topPanel.addWidget("org.meo.systemmenu")
 topPanel.addWidget("org.kde.plasma.appmenu")
 topPanel.addWidget("org.kde.plasma.panelspacer")
@@ -37,13 +42,8 @@ quickSettings.writeConfig("use24HourClock", true)
 quickSettings.writeConfig("quickTileVisibility", "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot")
 quickSettings.writeConfig("quickTileDensity", "comfortable")
 quickSettings.reloadConfig()
-var timeCenter = topPanel.addWidget("org.meo.time-notifications")
-timeCenter.currentConfigGroup = ["Appearance"]
-timeCenter.writeConfig("textScalePercent", 100)
-timeCenter.writeConfig("showDate", true)
-timeCenter.writeConfig("showNotifications", true)
-timeCenter.writeConfig("use24HourClock", true)
-timeCenter.reloadConfig()
+// Notifications remain adjacent to Quick Settings; the calendar is on the left.
+topPanel.addWidget("org.meo.notifications")
 
 // Full-width Material shelf with centered controls and KDE-owned tasks.
 var shelf = new Panel
@@ -74,7 +74,7 @@ for (var i = 0; i < existingDesktops.length; ++i) {
     // A compact, desktop-only entry point to the Meo Widget Explorer.  It
     // adds reviewed widgets to this containment but never configures panels,
     // task managers, or the native Dock.
-    existingDesktops[i].addWidget("org.meo.widgetexplorer")
+    existingDesktops[i].addWidget("org.meo.widgetexplorer", 24, 64, 48, 48)
     existingDesktops[i].wallpaperPlugin = "org.kde.image"
     existingDesktops[i].currentConfigGroup = ["/Wallpaper/org.kde.image/General"]
     existingDesktops[i].writeConfig("Image", "file:///usr/share/wallpapers/MeoArch/installer_background.png")

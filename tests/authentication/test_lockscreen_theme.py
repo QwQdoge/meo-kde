@@ -1,5 +1,6 @@
 """P1 lockscreen theme contract: visual ownership only, KDE owns authentication."""
 
+import json
 from pathlib import Path
 import unittest
 
@@ -33,6 +34,28 @@ class LockScreenThemeTests(unittest.TestCase):
         self.coordinator_source = (NATIVE_LOCKSCREEN / "screencoordinator.cpp").read_text(encoding="utf-8")
         self.coordinator_cmake = (NATIVE_LOCKSCREEN / "CMakeLists.txt").read_text(encoding="utf-8")
 
+    def test_default_ambient_view_is_minimal_and_authentication_stays_deferred(self):
+        self.assertIn('configBoolean("showAmbientDashboard", false)', self.ui)
+        self.assertIn('wideAmbientDashboard: showAmbientDashboard &&', self.ui)
+        self.assertIn('active: lockScreenUi.showAmbientDashboard', self.ui)
+        self.assertIn('factor: lockScreenUi.showAmbientDashboard ? 1.0 : lockScreenUi.authenticationReveal', self.ui)
+        self.assertIn('id: ambientUnlockHint', self.ui)
+        self.assertIn('opacity: 1.0 - lockScreenUi.authenticationReveal', self.ui)
+        self.assertIn('showClock: false', self.main)
+        self.assertIn('name="showAmbientDashboard"', self.config)
+
+    def test_plasma_shell_adapter_loads_meo_and_falls_back_to_system_shell(self):
+        shell = REPO_ROOT / "themes/shells/org.meo.shell"
+        metadata = json.loads((shell / "metadata.json").read_text())
+        self.assertEqual(metadata["KPackageStructure"], "Plasma/Shell")
+        self.assertEqual(metadata["X-Plasma-APIVersion"], "2")
+        self.assertEqual(metadata["X-Plasma-FallbackPackage"], "org.kde.plasma.desktop")
+        self.assertFalse((shell / "contents/lockscreen").is_symlink())
+        self.assertIn("MeoLock.LockScreen", (shell / "contents/lockscreen/LockScreen.qml").read_text())
+        self.assertIn("export PLASMA_DEFAULT_SHELL=org.meo.shell", (REPO_ROOT / "tools/session/startmeo-wayland").read_text())
+        self.assertIn("as PlasmaLock", self.main)
+        self.assertIn("file:/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen", self.main)
+
     def test_root_preserves_kscreenlocker_magic_contract(self):
         for required in (
             "property bool debug",
@@ -55,8 +78,8 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertNotIn("KSharedConfig", self.root)
 
     def test_uses_upstream_authenticator_and_single_password_sync_owner(self):
-        self.assertIn("text: PasswordSync.password", self.main)
-        self.assertIn('target: PasswordSync', self.main)
+        self.assertIn("text: PlasmaLock.PasswordSync.password", self.main)
+        self.assertIn('target: PlasmaLock.PasswordSync', self.main)
         self.assertIn('property: "password"', self.main)
         self.assertIn("authenticator.respond(password)", self.ui)
         self.assertIn("authenticator.startAuthenticating()", self.ui)
@@ -350,13 +373,14 @@ class LockScreenThemeTests(unittest.TestCase):
 
         for required in (
             "property real centerScale: 1.0",
-            'Qt.formatDate(dateTime, "dddd • d MMM").toUpperCase()',
+            'displayLocale.toString(dateTime, "ddd, MMM d")',
             "displayLocale.timeFormat(Locale.ShortFormat)",
             "readonly property bool twelveHourClock",
             'Qt.formatTime(dateTime, twelveHourClock ? "h" : "HH")',
-            "122 : 224",
-            "id: amPmPill",
-            "224 * clock.centerScale * MeoTheme.globalScale",
+            'objectName: "lockHours"',
+            'objectName: "lockMinutes"',
+            "Column {",
+            "176 * clock.centerScale * MeoTheme.globalScale",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.clock)

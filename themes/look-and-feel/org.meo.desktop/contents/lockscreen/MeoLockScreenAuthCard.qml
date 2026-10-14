@@ -23,6 +23,7 @@ Item {
     property bool embedded: false
     property real centerScale: 1.0
     property bool showClock: true
+    property bool showAvatar: false
     property url avatarSource: ""
     default property alias content: contentLayout.data
 
@@ -168,6 +169,7 @@ Item {
         // Reuse MeoUI's existing arbitrary-shape avatar/masking path instead
         // of maintaining a lock-screen-only crop implementation.
         MeoAvatar {
+            visible: card.showAvatar
             Layout.alignment: Qt.AlignHCenter
             Layout.topMargin: MeoTheme.space16 * card.centerScale
             Layout.bottomMargin: MeoTheme.space8 * card.centerScale

@@ -89,7 +89,7 @@ if command -v busctl >/dev/null 2>&1 \
   fi
 fi
 
-for config in kdeglobals kwinrc plasmarc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
+for config in kdeglobals kwinrc plasmarc plasmashellrc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
   if [ -f "${backup_root}/${config}" ]; then
     run cp -a "${backup_root}/${config}" "${config_root}/${config}"
   fi
@@ -118,6 +118,7 @@ if [ -f "${input_state_root}/ibus-selected" ] && command -v gsettings >/dev/null
     [ "$(gsettings get org.freedesktop.ibus.panel custom-theme)" = "${ibus_custom_theme}" ]
   fi
 fi
+run rm -rf "${data_root}/plasma/shells/org.meo.shell"
 run rm -rf "${data_root}/plasma/look-and-feel/org.meo.desktop"
 run rm -rf "${data_root}/plasma/desktoptheme/Meo"
 run rm -rf "${data_root}/plasma/desktoptheme/MeoLight"

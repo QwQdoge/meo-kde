@@ -90,7 +90,7 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("MeoWidget.LockScreen", media)
         self.assertIn("supportedSurfaces: [MeoWidget.Desktop]", performance)
         self.assertNotIn("MeoWidget.LockScreen", performance)
-        self.assertIn('existingDesktops[i].addWidget("org.meo.widgetexplorer")', LAYOUT.read_text(encoding="utf-8"))
+        self.assertIn('existingDesktops[i].addWidget("org.meo.widgetexplorer", 24, 64, 48, 48)', LAYOUT.read_text(encoding="utf-8"))
 
     def test_performance_manager_is_shared_and_reachable(self):
         qmldir = (MEO_KDE_QML / "qmldir").read_text(encoding="utf-8")

@@ -42,6 +42,7 @@ Item {
     readonly property int screenMigrationDuration: MeoTheme.reduceMotion
                                                   ? MeoTheme.motionDurationShort2
                                                   : MeoTheme.motionDurationMedium1
+    readonly property bool showAmbientDashboard: configBoolean("showAmbientDashboard", false)
     readonly property bool showMediaControls: configBoolean("showMediaControls", false)
     readonly property bool showAlbumArtwork: configBoolean("showAlbumArtwork", false)
     readonly property bool showAudioControls: configBoolean("showAudioControls", false)
@@ -60,7 +61,7 @@ Item {
     readonly property real dashboardCenterWidth: Math.max(344 * MeoTheme.globalScale,
                                                           600 * MeoTheme.globalScale
                                                           * dashboardCenterScale)
-    readonly property bool wideAmbientDashboard: dashboardWidth >= 900 * MeoTheme.globalScale
+    readonly property bool wideAmbientDashboard: showAmbientDashboard && dashboardWidth >= 900 * MeoTheme.globalScale
                                                  && dashboardHeight >= 500 * MeoTheme.globalScale
     property string pendingPowerAction: ""
 
@@ -122,7 +123,10 @@ Item {
         }
     }
 
-    Component.onCompleted: ScreenCoordinator.registerSurface(org_kde_plasma_screenlocker_greeter_view)
+    Component.onCompleted: {
+        ScreenCoordinator.registerSurface(org_kde_plasma_screenlocker_greeter_view)
+        Qt.callLater(lockScreenRoot.forceActiveFocus)
+    }
     Component.onDestruction: ScreenCoordinator.unregisterSurface(org_kde_plasma_screenlocker_greeter_view)
 
     function requestAuthenticationHere() {
@@ -159,6 +163,7 @@ Item {
             Qt.callLater(focusActiveAuthentication)
         } else {
             fadeoutTimer.stop()
+            Qt.callLater(lockScreenRoot.forceActiveFocus)
         }
     }
 
@@ -244,6 +249,7 @@ Item {
 
     MouseArea {
         id: lockScreenRoot
+        focus: !lockScreenUi.authenticationUiVisible
 
         readonly property bool uiVisible: lockScreenUi.authenticationUiVisible
         // An ambient lock screen must not begin fingerprint/smartcard (or a
@@ -354,7 +360,8 @@ Item {
             // Caelestia keeps the wallpaper softly blurred behind its large
             // lock surface. Keep KDE's proven blur implementation, but proxy
             // every opacity target so it cannot override Meo's motion.
-            state: lockScreenUi.activeAuthenticationSurface ? "on" : "off"
+            state: ""
+            factor: lockScreenUi.showAmbientDashboard ? 1.0 : lockScreenUi.authenticationReveal
             source: wallpaper
             mainStack: wallpaperMainStackProxy
             footer: wallpaperFooterProxy
@@ -402,9 +409,8 @@ Item {
             }
         }
 
-        // Caelestia's defining lock-screen silhouette is one large 16:9,
-        // 70%-screen-height surface over the blurred wallpaper. Meo keeps that
-        // composition but uses its own HCT palette, spacing and motion tokens.
+        // Optional information dashboard. The default ambient view keeps the
+        // wallpaper clear, with only the stacked clock and unlock hint.
         Rectangle {
             id: wideDashboardSurface
             anchors.centerIn: parent
@@ -494,7 +500,7 @@ Item {
                ? wideDashboardSurface.y + MeoTheme.space32
                  - lockScreenUi.authenticationReveal * 20 * MeoTheme.globalScale
                : Math.max(MeoTheme.space32,
-                          parent.height * 0.22 - height / 2
+                          parent.height * 0.48 - height / 2
                           - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
 
             Item {
@@ -622,7 +628,8 @@ Item {
             }
             width: Math.min(parent.width - 2 * MeoTheme.space24,
                             400 * MeoTheme.globalScale)
-            active: lockScreenUi.activeAuthenticationSurface
+            active: lockScreenUi.showAmbientDashboard
+                    && lockScreenUi.activeAuthenticationSurface
                     && !lockScreenRoot.uiVisible
                     && !lockScreenUi.wideAmbientDashboard
             visible: active && status === Loader.Ready
@@ -666,6 +673,28 @@ Item {
                     }
                     onWidthChanged: if (item) item.width = width
                 }
+            }
+        }
+
+        Column {
+            id: ambientUnlockHint
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: Math.max(MeoTheme.space32, parent.height * 0.045)
+            spacing: MeoTheme.space12
+            visible: lockScreenUi.activeAuthenticationSurface && opacity > 0.001
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+            MeoIcon {
+                anchors.horizontalCenter: parent.horizontalCenter
+                icon: "lock"
+                size: 28 * MeoTheme.globalScale
+                color: ambientClock.foregroundColor
+            }
+            MeoText {
+                text: qsTr("Press any key or swipe up to unlock")
+                typeRole: "label"
+                typeSize: "medium"
+                color: ambientClock.foregroundColor
             }
         }
 
@@ -782,7 +811,7 @@ Item {
                         type: "text"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Sleep")
-                        icon.name: "system-suspend"
+                        icon.name: "bedtime"
                         onClicked: {
                             lockScreenUi.confirmPower("sleep")
                         }
@@ -792,7 +821,7 @@ Item {
                         type: "text"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Hibernate")
-                        icon.name: "system-suspend-hibernate"
+                        icon.name: "mode_standby"
                         onClicked: {
                             lockScreenUi.confirmPower("hibernate")
                         }
@@ -802,7 +831,7 @@ Item {
                         type: "text"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Switch User")
-                        icon.name: "system-switch-user"
+                        icon.name: "switch_account"
                         onClicked: {
                             root.clearPassword()
                             sessionManagement.switchUser()
@@ -813,7 +842,7 @@ Item {
                         type: "text"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Restart")
-                        icon.name: "system-reboot"
+                        icon.name: "restart_alt"
                         onClicked: {
                             lockScreenUi.confirmPower("reboot")
                         }
@@ -823,7 +852,7 @@ Item {
                         type: "text"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Shut Down")
-                        icon.name: "system-shutdown"
+                        icon.name: "power_settings_new"
                         onClicked: {
                             lockScreenUi.confirmPower("shutdown")
                         }
@@ -845,7 +874,7 @@ Item {
         Loader {
             z: 2
             active: root.viewVisible
-            source: "LockOsd.qml"
+            source: "file:/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockOsd.qml"
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 bottom: parent.bottom
@@ -882,7 +911,7 @@ Item {
                 size: "s"
                 focusPolicy: Qt.TabFocus
                 text: i18ndc("plasma_shell_org.kde.plasma.desktop", "Button to show/hide virtual keyboard", "Virtual Keyboard")
-                icon.name: inputPanel.keyboardActive ? "input-keyboard-virtual-on" : "input-keyboard-virtual-off"
+                icon.name: inputPanel.keyboardActive ? "keyboard_hide" : "keyboard"
                 onClicked: {
                     mainBlock.mainPasswordBox.forceActiveFocus()
                     inputPanel.showHide()
@@ -899,7 +928,7 @@ Item {
                 size: "s"
                 focusPolicy: Qt.TabFocus
                 Accessible.description: i18ndc("plasma_shell_org.kde.plasma.desktop", "Button to change keyboard layout", "Switch layout")
-                icon.name: "input-keyboard"
+                icon.name: "keyboard"
 
                 PW.KeyboardLayoutSwitcher {
                     id: keyboardLayoutSwitcher

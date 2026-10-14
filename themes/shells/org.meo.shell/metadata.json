@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "Plasma/Shell",
+    "KPlugin": {
+        "Id": "org.meo.shell",
+        "Name": "Meo Desktop",
+        "Description": "Meo lock presentation with the system Plasma shell fallback",
+        "License": "GPL-3.0-or-later"
+    },
+    "X-Plasma-APIVersion": "2",
+    "X-Plasma-FallbackPackage": "org.kde.plasma.desktop"
+}

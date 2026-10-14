@@ -150,6 +150,15 @@ function markManaged(panel, role) {
     panel.writeConfig("Role", role);
 }
 
+function orderWidgets(panel, ids) {
+    // AppletOrder is persistent configuration. The scripting index property
+    // also updates the already-running panel; reloadConfig alone does not.
+    for (var i = 0; i < ids.length; ++i) {
+        var widget = panel.widgetById(ids[i]);
+        if (widget) widget.index = i;
+    }
+}
+
 function configureTopbar(widget) {
     widget.currentConfigGroup = ["Appearance"];
     widget.writeConfig("textScalePercent", ${text_scale_percent});
@@ -168,7 +177,7 @@ function configureTimeCenter(widget) {
     widget.writeConfig("textScalePercent", ${text_scale_percent});
     widget.writeConfig("showDate", ${show_date});
     widget.writeConfig("showNotifications", ${show_notifications});
-    widget.writeConfig("use24HourClock", ${use_24_hour_clock});
+    widget.writeConfig("clockFormat", ${use_24_hour_clock} ? "24h" : "12h");
     widget.reloadConfig();
 }
 
@@ -228,13 +237,16 @@ top.floating = false;
 markManaged(top, "top");
 
 removeWidgets(top, "org.kde.plasma.kickoff");
+var timeCenter = oneWidget(top, "org.meo.time");
+configureTimeCenter(timeCenter);
 var systemMenu = oneWidget(top, "org.meo.systemmenu");
-var topOrder = [systemMenu.id];
+var topOrder = [timeCenter.id, systemMenu.id];
 
-// Match the default top panel: Launcher -> native global menu -> spacer ->
-// native tray -> Meo quick settings -> Meo time and notifications.
+// Match the new-session layout: clock/calendar on the left, status and
+// notifications together on the right. Existing pinned tasks are retained.
 removeWidgets(top, "org.meo.toptasks");
 removeWidgets(top, "org.meo.timecenter");
+removeWidgets(top, "org.meo.time-notifications");
 
 var globalMenu = null;
 if (${show_global_menu}) {
@@ -268,12 +280,12 @@ if (${show_system_tray}) {
 var topbar = oneWidget(top, "org.meo.topbar");
 configureTopbar(topbar);
 topOrder.push(topbar.id);
-var timeCenter = oneWidget(top, "org.meo.time-notifications");
-configureTimeCenter(timeCenter);
-topOrder.push(timeCenter.id);
+var notifications = oneWidget(top, "org.meo.notifications");
+topOrder.push(notifications.id);
 top.currentConfigGroup = ["General"];
 top.writeConfig("AppletOrder", topOrder.join(";"));
 top.reloadConfig();
+orderWidgets(top, topOrder);
 
 var dock = firstPanel("bottom");
 if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
@@ -306,6 +318,7 @@ if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
     dock.currentConfigGroup = ["General"];
     dock.writeConfig("AppletOrder", [spacers[0].id, entries.id, dockTasks.id, spacers[1].id].join(";"));
     dock.reloadConfig();
+    orderWidgets(dock, [spacers[0].id, entries.id, dockTasks.id, spacers[1].id]);
 } else if (dock) {
     dock.currentConfigGroup = ["MeoShell"];
     if (dock.readConfig("Managed", false) === true || dock.readConfig("Managed", false) === "true") {

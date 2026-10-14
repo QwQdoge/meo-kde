@@ -3,7 +3,7 @@
     SPDX-License-Identifier: GPL-2.0-or-later
 
     Presentation adapter over Plasma's SessionManagementScreen. This file does
-    not retain credentials: PasswordSync remains KScreenLocker's only model.
+    not retain credentials: PlasmaLock.PasswordSync remains KScreenLocker's only model.
 */
 
 import QtQuick
@@ -11,6 +11,8 @@ import QtQuick.Layouts
 
 import org.kde.kirigami as Kirigami
 import org.kde.kscreenlocker as ScreenLocker
+// Arch Plasma supplies the one upstream password model. Do not copy it.
+import "file:/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen" as PlasmaLock
 
 import MeoUI 1.0
 
@@ -90,6 +92,7 @@ MeoLockScreenSessionManagement {
         active: sessionManager.activeAuthenticationSurface
         embedded: sessionManager.embeddedDashboard
         centerScale: sessionManager.centerWidthScale
+        showClock: false
         failed: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
         avatarSource: sessionManager.avatarSource
         title: i18ndc("plasma_shell_org.kde.plasma.desktop", "@title", "Welcome back")
@@ -112,7 +115,7 @@ MeoLockScreenSessionManagement {
             smartcardAvailable: sessionManager.smartcardAvailable
             inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData
                               | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
-            text: PasswordSync.password
+            text: PlasmaLock.PasswordSync.password
             focus: true
             enabled: !authenticator.graceLocked
             onUnlockRequested: {
@@ -137,7 +140,7 @@ MeoLockScreenSessionManagement {
                 function onClearPassword() {
                     passwordBox.forceActiveFocus()
                     passwordBox.text = ""
-                    passwordBox.text = Qt.binding(() => PasswordSync.password)
+                    passwordBox.text = Qt.binding(() => PlasmaLock.PasswordSync.password)
                 }
 
                 function onNotificationRepeated() {
@@ -147,7 +150,7 @@ MeoLockScreenSessionManagement {
         }
 
         Binding {
-            target: PasswordSync
+            target: PlasmaLock.PasswordSync
             property: "password"
             value: passwordBox.text
         }

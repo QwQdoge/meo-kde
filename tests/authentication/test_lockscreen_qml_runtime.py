@@ -56,6 +56,18 @@ class LockScreenQmlRuntimeTests(unittest.TestCase):
                 component.deleteLater()
                 engine.deleteLater()
 
+    def test_clock_places_minutes_below_hours_and_date_below_both(self):
+        engine, component, clock = self.create_component("MeoLockScreenClock.qml")
+        hours = clock.findChild(QObject, "lockHours")
+        minutes = clock.findChild(QObject, "lockMinutes")
+        date = clock.findChild(QObject, "lockDate")
+        self.assertGreater(minutes.property("y"), hours.property("y"))
+        self.assertGreater(date.property("y"), minutes.property("y") + minutes.property("height"))
+        self.assertEqual(hours.property("color"), minutes.property("color"))
+        clock.deleteLater()
+        component.deleteLater()
+        engine.deleteLater()
+
     def test_password_pill_exposes_its_qt_textfield_and_submit_target(self):
         engine, component, field = self.create_component("MeoLockScreenPasswordField.qml")
         self.assertFalse(field.property("passwordVisible"))

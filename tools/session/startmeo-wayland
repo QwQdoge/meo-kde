@@ -37,6 +37,8 @@ done
 export XDG_CONFIG_HOME="${meo_config_home}"
 export XDG_STATE_HOME="${meo_state_home}"
 export MEO_DESKTOP_SESSION=1
+# Plasma 6.7 loads the locker from its Shell package, not the global theme.
+export PLASMA_DEFAULT_SHELL=org.meo.shell
 
 # Keep Meo-only presentation/input overrides inside this session instead of
 # installing them globally in /etc/environment.d or /etc/xdg.

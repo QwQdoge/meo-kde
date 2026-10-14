@@ -38,12 +38,18 @@ concrete requirements:
   surface. Keep established structures such as the Shelf; refine expanded
   surfaces, borders, corners, components and hierarchy incrementally, with
   real-session verification after each coherent change.
-- **Lock-screen repair first:** do not redesign the lock-screen UI yet. Restore
-  the existing Meo lock screen if it is not loading. Trace package contents,
+- **Lock-screen repair first:** restore the existing Meo lock screen if it is
+  not loading. Trace package contents,
   session selection, the active loader, QML imports/assets, runtime errors and
   fallback behavior; verify actual lock/unlock while preserving the existing
-  authentication and secure session-lock authorities. Replacing the design
-  does not repair a broken loading path.
+  authentication and secure session-lock authorities. The user subsequently
+  authorized visual refinement after restoring this loading path: emphasize
+  time/date, retain the wallpaper, simplify the unlock area and reduce bulky
+  cards in line with the supplied reference. Use vertically stacked hours and
+  minutes, a small date below, and a bottom lock glyph/unlock hint. Keep the
+  default ambient view free of a large dashboard; reveal authentication on
+  intentional interaction. Replacing the design does not
+  repair a broken loading path; KDE/PAM must continue to own authentication.
 
 - **Bottom taskbar / Shelf:** a full-width surface along the bottom edge, with
   the launcher and application icons centered inside it. Keep generous,
@@ -110,3 +116,10 @@ Do not restart/reload Plasma or KWin, log out, reboot, unload effects, switch di
 Keep maintained code contracts in `docs/`. Project records belong under `$MEO_DOCS_ROOT/Projects/meo-kde/`. Existing workflows may use ephemeral local build trees; retained evidence and deliverables belong under `$MEO_OUTPUT_ROOT/meo-kde/{build,install,validation,packages,tmp}/`. Do not invent machine-specific paths if those roots are unset.
 
 Preserve unrelated dirty work. Never use broad deletion, `git reset`, or `git clean` as routine cleanup.
+
+## Deferred user request: account avatar
+
+TODO: synchronize user avatars globally with Meo Account, including login,
+lock screen, desktop and Settings. The user explicitly deferred implementation
+on 2026-10-14: first repair boot, installation and basic runtime viability.
+Do not expand the current stabilization pass into avatar synchronization.

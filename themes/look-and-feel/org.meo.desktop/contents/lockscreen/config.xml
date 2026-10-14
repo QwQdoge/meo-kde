@@ -5,6 +5,10 @@
       http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
   <group name="General">
+    <entry name="showAmbientDashboard" type="Bool">
+      <label>Show the optional information dashboard instead of the minimal clock view.</label>
+      <default>false</default>
+    </entry>
     <entry name="alwaysShowClock" type="Bool">
       <label>Show a clock.</label>
       <default>true</default>

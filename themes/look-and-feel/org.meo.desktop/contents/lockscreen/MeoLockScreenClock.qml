@@ -1,102 +1,70 @@
-/* KDE-safe visual port of the standalone lock clock. */
+/* Presentation only; KScreenLocker owns authentication and the secure window. */
 import QtQuick
-
 import MeoUI 1.0
 
 Item {
     id: clock
-
     property date dateTime: new Date()
     property real centerScale: 1.0
+    property color foregroundColor: MeoTheme.contentOnSurface
     readonly property var displayLocale: Qt.locale(Qt.uiLanguage)
     readonly property string shortTimeFormat: displayLocale.timeFormat(Locale.ShortFormat)
     readonly property bool twelveHourClock: shortTimeFormat.includes("AP")
                                              || shortTimeFormat.includes("ap")
     readonly property string hours: Qt.formatTime(dateTime, twelveHourClock ? "h" : "HH")
     readonly property string minutes: Qt.formatTime(dateTime, "mm")
-    readonly property string amPm: twelveHourClock ? Qt.formatTime(dateTime, "AP") : ""
-    readonly property string dateLabel: Qt.formatDate(dateTime, "dddd • d MMM").toUpperCase()
-
-    implicitWidth: timeRow.implicitWidth
-    implicitHeight: timeRow.implicitHeight + MeoTheme.space8 + dateLabelItem.implicitHeight
+    readonly property string amPm: twelveHourClock ? displayLocale.toString(dateTime, "AP") : ""
+    readonly property string dateLabel: displayLocale.toString(dateTime, "ddd, MMM d")
+    implicitWidth: Math.max(timeColumn.implicitWidth, dateLabelItem.implicitWidth)
+    implicitHeight: timeColumn.implicitHeight + MeoTheme.space16 + dateLabelItem.implicitHeight
     Accessible.role: Accessible.StaticText
-    Accessible.name: hours + ":" + minutes
-                     + (amPm !== "" ? " " + amPm : "")
-                     + ", " + dateLabel
+    Accessible.name: hours + ":" + minutes + (amPm !== "" ? " " + amPm : "") + ", " + dateLabel
 
     Timer {
         interval: 1000
-        running: true
+        running: clock.visible
         repeat: true
         onTriggered: clock.dateTime = new Date()
     }
 
-    Row {
-        id: timeRow
+    Column {
+        id: timeColumn
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: MeoTheme.space8
-
+        spacing: -MeoTheme.space8 * clock.centerScale
         Text {
-            id: hoursLabel
+            objectName: "lockHours"
             text: clock.hours
-            color: MeoTheme.primary
+            color: clock.foregroundColor
             font.family: MeoTheme.typefacePlain
-            font.pixelSize: 224 * clock.centerScale * MeoTheme.globalScale
-            font.weight: Font.Medium
-            font.letterSpacing: -2.0 * clock.centerScale * MeoTheme.globalScale
+            font.pixelSize: 176 * clock.centerScale * MeoTheme.globalScale
+            font.weight: Font.Normal
+            font.letterSpacing: -4 * clock.centerScale * MeoTheme.globalScale
+            anchors.horizontalCenter: parent.horizontalCenter
+            lineHeight: 0.9
         }
-
-        Item {
-            id: minuteBlock
-            width: minutesLabel.implicitWidth
-            height: hoursLabel.implicitHeight
-
-            Text {
-                id: minutesLabel
-                anchors.top: parent.top
-                anchors.right: parent.right
-                text: clock.minutes
-                color: MeoTheme.secondary
-                font.family: MeoTheme.typefacePlain
-                font.pixelSize: (clock.twelveHourClock ? 122 : 224)
-                                * clock.centerScale * MeoTheme.globalScale
-                font.weight: Font.Medium
-                font.letterSpacing: -2.0 * clock.centerScale * MeoTheme.globalScale
-            }
-
-            Rectangle {
-                id: amPmPill
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                visible: clock.twelveHourClock
-                width: Math.max(minutesLabel.implicitWidth,
-                                86 * clock.centerScale * MeoTheme.globalScale)
-                height: 48 * clock.centerScale * MeoTheme.globalScale
-                radius: height / 2
-                color: MeoTheme.surfaceContainerHigh
-
-                MeoText {
-                    anchors.centerIn: parent
-                    text: clock.amPm
-                    typeRole: "headline"
-                    typeSize: "small"
-                    emphasized: true
-                    color: MeoTheme.contentOnSurface
-                }
-            }
+        Text {
+            objectName: "lockMinutes"
+            text: clock.minutes
+            color: clock.foregroundColor
+            font.family: MeoTheme.typefacePlain
+            font.pixelSize: 176 * clock.centerScale * MeoTheme.globalScale
+            font.weight: Font.Normal
+            font.letterSpacing: -4 * clock.centerScale * MeoTheme.globalScale
+            anchors.horizontalCenter: parent.horizontalCenter
+            lineHeight: 0.9
         }
     }
-
     MeoText {
         id: dateLabelItem
-        anchors.top: timeRow.bottom
-        anchors.topMargin: MeoTheme.space8
+        objectName: "lockDate"
+        anchors.top: timeColumn.bottom
+        anchors.topMargin: MeoTheme.space16
         anchors.horizontalCenter: parent.horizontalCenter
         text: clock.dateLabel
-        typeRole: "title"
-        typeSize: "medium"
+        typeRole: "label"
+        typeSize: "large"
         emphasized: true
-        color: MeoTheme.contentOnSurface
+        color: clock.foregroundColor
         horizontalAlignment: Text.AlignHCenter
     }
 }

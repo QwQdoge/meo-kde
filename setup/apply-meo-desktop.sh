@@ -248,6 +248,7 @@ run mkdir -p "${backup_root}" "${data_root}/applications" "${data_root}/color-sc
 # reset-meo-desktop can then restore an older Meo build instead of leaving a
 # half-uninstalled desktop or deleting a pre-existing same-name asset.
 runtime_backups=(
+  "${data_root}/plasma/shells/org.meo.shell|data/plasma/shells/org.meo.shell"
   "${data_root}/plasma/look-and-feel/org.meo.desktop|data/plasma/look-and-feel/org.meo.desktop"
   "${data_root}/plasma/desktoptheme/Meo|data/plasma/desktoptheme/Meo"
   "${data_root}/plasma/desktoptheme/MeoLight|data/plasma/desktoptheme/MeoLight"
@@ -320,7 +321,7 @@ if [ "${dry_run}" -eq 0 ] && command -v systemctl >/dev/null 2>&1; then
   systemctl --user is-active meo-dynamic-colors.path > "${backup_root}/dynamic-color-path-active" 2>/dev/null || true
 fi
 
-for config in kdeglobals kwinrc plasmarc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
+for config in kdeglobals kwinrc plasmarc plasmashellrc meo-shellrc plasma-org.kde.plasma.desktop-appletsrc; do
   if [ -e "${config_root}/${config}" ]; then
     run cp -a "${config_root}/${config}" "${backup_root}/${config}"
   fi
@@ -407,6 +408,13 @@ if [ "${profile_version}" -lt 5 ] && [ -f "${config_root}/meo-shellrc" ]; then
   run kwriteconfig6 --file "${config_root}/meo-shellrc" --group Panels --key DockHeight 48
   run kwriteconfig6 --file "${config_root}/meo-shellrc" --group General --key ProfileVersion 5
 fi
+
+# Install the Shell adapter as well as the global theme. Plasma 6.7 loads
+# its secure lock presentation from the selected Shell package.
+run mkdir -p "${data_root}/plasma/shells"
+run cp -a "${desktop_root}/themes/shells/org.meo.shell" "${data_root}/plasma/shells/"
+run cp "${desktop_root}/themes/look-and-feel/org.meo.desktop/contents/lockscreen/config.xml" "${data_root}/plasma/shells/org.meo.shell/contents/lockscreen/config.xml"
+run kwriteconfig6 --file "${config_root}/plasmashellrc" --group Shell --key ShellPackage org.meo.shell
 
 # Install Look-and-Feel package
 run rm -rf "${data_root}/plasma/look-and-feel/org.meo.desktop"

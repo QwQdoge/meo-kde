@@ -24,7 +24,11 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertLess(source.index('topPanel.addWidget("org.meo.systemmenu")'),
                         source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
-        self.assertIn('timeCenter = topPanel.addWidget("org.meo.time-notifications")', source)
+        self.assertIn('timeCenter = topPanel.addWidget("org.meo.time")', source)
+        self.assertLess(source.index('topPanel.addWidget("org.meo.time")'),
+                        source.index('topPanel.addWidget("org.meo.systemmenu")'))
+        self.assertLess(source.index('topPanel.addWidget("org.meo.topbar")'),
+                        source.index('topPanel.addWidget("org.meo.notifications")'))
         self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)
         self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.systemtray")'), source.index('topPanel.addWidget("org.meo.topbar")'))
         extra_items_line = next(
@@ -745,6 +749,8 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('oneWidget(top, "org.kde.plasma.systemtray")', source)
         self.assertIn('top.writeConfig("AppletOrder", topOrder.join(";"))', source)
+        self.assertIn('orderWidgets(top, topOrder);', source)
+        self.assertIn('widget.index = i;', source)
         self.assertIn('widget.readConfig("extraItems", "")', source)
         self.assertIn('"org.kde.plasma.networkmanagement"', source)
         self.assertIn('"org.kde.plasma.notifications"', source)
