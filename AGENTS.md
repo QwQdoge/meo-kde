@@ -26,6 +26,43 @@ Repository cleanup, validation, and review tasks must not silently turn into ope
 - Do not copy shared MeoUI components into this repository to avoid a dependency boundary.
 - Code classified as Legacy in `docs/component-status.md` is not a target for new feature work unless the task explicitly revives/migrates it.
 
+## User-approved desktop appearance
+
+The user's Googlebook / Pixel reference images are the visual authority for
+this task. Preserve Meo branding and functionality while following these
+concrete requirements:
+
+- **Bottom taskbar / Shelf:** a full-width surface along the bottom edge, with
+  the launcher and application icons centered inside it. Keep generous,
+  consistent icon spacing, sizing and active/hover/pressed indicators. These
+  reference images do not show a short floating Dock; do not turn the Shelf
+  into a floating capsule merely because earlier wording called it a Dock.
+  KDE remains the task/window authority; do not revive the legacy standalone
+  Dock for this work.
+- **Top status bar:** transparent background over the wallpaper, rather than
+  an opaque KDE panel. Keep time/day/date at the top left, and system status,
+  Quick Settings and notifications at the top right.
+- **Wallpaper-aware foreground:** black text and status glyphs over light
+  wallpaper regions, white text and glyphs over dark regions. Determine
+  contrast from the actual wallpaper region behind the relevant surface;
+  system light/dark mode and the wallpaper's global average are insufficient
+  for wallpapers with mixed brightness. Refresh after wallpaper, output or
+  layout changes. Use cached, bounded sampling rather than continuous screen
+  capture or per-frame analysis.
+- **Coherent presentation:** reuse MeoUI semantic tokens and controls for
+  typography, spacing, shape, surfaces and interaction states. Keep the
+  wallpaper prominent and avoid dense toolbars, unrelated small buttons and
+  inconsistent popup styles.
+- **Runtime acceptance:** compare actual Plasma screenshots and interactions
+  with the supplied references. Include full-width taskbar alignment, fully
+  transparent top-bar background, and foreground legibility on light, dark
+  and mixed wallpapers. Offscreen builds and screenshots prove only their
+  own scope, not Live ISO or installed-system acceptance.
+
+For this ISO validation task, run at most one VM at a time (default 2 vCPU /
+4 GiB) and compile with one job by default. Check memory and free disk before
+heavy work; preserve existing user builds, ISOs, VMs and uncommitted changes.
+
 ## Runtime system state
 
 System-facing UI must derive variable facts and capabilities from the real runtime rather than hard-coded production values.
