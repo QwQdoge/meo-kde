@@ -1,33 +1,49 @@
-"""Exercise the installed QML naming seam rather than inspect its source."""
+"""Exercise the installed QML naming seam in an isolated GUI process."""
 from pathlib import Path
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
-
-from PySide6.QtCore import QUrl
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtQml import QQmlEngine, QQmlComponent
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class MotionBridgeRuntimeTests(unittest.TestCase):
     def test_shell_amplitudes_follow_the_shared_motion_policy(self):
-        app = QGuiApplication.instance() or QGuiApplication(["motion-bridge-test"])
-        with tempfile.TemporaryDirectory() as directory:
-            (Path(directory) / "MeoUI").symlink_to(ROOT.parent / "meo-ui", target_is_directory=True)
-            engine = QQmlEngine()
-            engine.addImportPath(directory)
-            engine.addImportPath(str(ROOT / "qml"))
-            component = QQmlComponent(engine)
-            component.setData(b'''import QtQml
+        result = subprocess.run([sys.executable, __file__, "--probe"],
+                                env=dict(os.environ, QT_QPA_PLATFORM="offscreen"),
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+def probe():
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtQml import QQmlEngine, QQmlComponent
+
+    app = QGuiApplication(["motion-bridge-test"])
+    with tempfile.TemporaryDirectory() as directory:
+        (Path(directory) / "MeoUI").symlink_to(ROOT.parent / "meo-ui", target_is_directory=True)
+        engine = QQmlEngine()
+        engine.addImportPath(directory)
+        engine.addImportPath(str(ROOT / "qml"))
+        component = QQmlComponent(engine)
+        component.setData(b'''import QtQml
 import MeoKDE 1.0 as KDE
 import MeoUI 1.0 as UI
 QtObject {
     property var shellValues: [KDE.MeoMotion.popupOffset("pixel"), KDE.MeoMotion.pageOffset("calm")]
     property var sharedValues: [UI.MeoMotion.popupOffset("pixel"), UI.MeoMotion.pageOffset("calm")]
 }''', QUrl())
-            item = component.create()
-            self.assertIsNotNone(item, "\n".join(error.toString() for error in component.errors()))
-            self.assertEqual(item.property("shellValues").toVariant(), item.property("sharedValues").toVariant())
-            item.deleteLater()
-            app.processEvents()
+        item = component.create()
+        if item is None:
+            raise RuntimeError("\n".join(error.toString() for error in component.errors()))
+        if item.property("shellValues").toVariant() != item.property("sharedValues").toVariant():
+            raise RuntimeError("Shell motion amplitudes do not match MeoUI")
+        item.deleteLater()
+        app.processEvents()
+
+
+if __name__ == "__main__":
+    probe()
