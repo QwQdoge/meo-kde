@@ -54,6 +54,9 @@ run python "${meoui_source}/tools/verify-design-system-usage.py" --mode consumer
 run cmake -S "${repo_root}/native/system" -B "${system_build}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 run cmake --build "${system_build}" --parallel "${MEO_BUILD_PARALLEL_LEVEL:-1}"
 run test -s "${system_import}/Meo/System/plugins.qmltypes"
+run env MEO_RUNTIME_QML_TESTS=1 MEO_SYSTEM_IMPORT_ROOT="${system_import}" \
+  MEOUI_SOURCE_DIR="${meoui_source}" \
+  python -m unittest discover -s "${repo_root}/tests/shell" -p test_motion_bridge_runtime.py -v
 run "${system_build}/meo-system-state-smoke"
 run env QML_IMPORT_PATH="${system_import}:${meoui_import}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
   ctest --test-dir "${system_build}" --output-on-failure

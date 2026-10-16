@@ -8,6 +8,7 @@ on:
       - 'native/third_party/**'
       - 'native/translations/**'
       - 'translations/**'
+      - 'tests/shell/test_motion_bridge_runtime.py'
       - '.github/workflows/native-system-build.yml'
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - 'native/third_party/**'
       - 'native/translations/**'
       - 'translations/**'
+      - 'tests/shell/test_motion_bridge_runtime.py'
       - '.github/workflows/native-system-build.yml'
 
 permissions:
@@ -44,7 +46,7 @@ jobs:
             qt6-base qt6-declarative qt6-tools qt6-shadertools \
             kconfig kcoreaddons kguiaddons ki18n kirigami \
             networkmanager-qt bluez-qt solid pulseaudio-qt \
-            libplasma plasma-workspace libxcursor
+            libplasma plasma-workspace libxcursor pyside6
           locale -a | grep -qi '^zh_CN\.utf8$'
 
       - name: Check out MeoKDE
@@ -94,6 +96,15 @@ jobs:
           export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
           export XDG_DATA_DIRS="/tmp/meo-native-install/share:/usr/local/share:/usr/share"
           ctest --test-dir build/native-system --output-on-failure --timeout 60
+
+      - name: Test the QML motion bridge with the built native module
+        env:
+          QT_QPA_PLATFORM: offscreen
+          MEO_RUNTIME_QML_TESTS: '1'
+          MEO_SYSTEM_IMPORT_ROOT: /tmp/meo-native-install/lib/qt6/qml
+        run: |
+          export MEOUI_SOURCE_DIR="$PWD/deps/MeoUI"
+          python -m unittest discover -s tests/shell -p test_motion_bridge_runtime.py -v
 
       - name: Package validated Plasma runtime
         run: |
