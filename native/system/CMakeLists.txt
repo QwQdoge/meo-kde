@@ -15,7 +15,7 @@ find_package(KF6GuiAddons REQUIRED)
 find_package(KF6Config REQUIRED)
 find_package(KF6I18n REQUIRED)
 find_package(LibTaskManager REQUIRED)
-find_package(Plasma REQUIRED)
+find_package(Plasma 6.8 REQUIRED)
 find_package(X11 REQUIRED COMPONENTS Xcursor)
 
 # `scripts/validate.sh` configures this directory directly.  Bring in the

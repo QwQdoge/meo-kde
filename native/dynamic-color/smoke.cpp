@@ -37,8 +37,7 @@ int main(int argc, char *argv[])
     qputenv("XDG_RUNTIME_DIR", configDirectory.path().toUtf8());
     qputenv("HOME", configDirectory.path().toUtf8());
     qputenv("QT_QPA_PLATFORM", "offscreen");
-    // Never let krdb's X11 or launch-environment compatibility paths contact
-    // the user's actual XWayland or session D-Bus endpoints.
+    // Never let the smoke test contact the user's actual display or session.
     qunsetenv("DISPLAY");
     qunsetenv("WAYLAND_DISPLAY");
     qunsetenv("XAUTHORITY");

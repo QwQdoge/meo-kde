@@ -89,8 +89,7 @@ QString refreshManagedApplicationIcons()
 
 int main(int argc, char *argv[])
 {
-    // Applying a palette exports Qt/GTK compatibility settings through krdb,
-    // which uses GUI primitives even though this is a command-line tool.
+    // Color generation uses Qt GUI color/image primitives without a window.
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("meo-dynamic-colors"));
     QCommandLineParser parser;
@@ -219,8 +218,7 @@ int main(int argc, char *argv[])
         output << " wallpaper=" << resolvedWallpaper;
     }
     output << Qt::endl;
-    // krdb schedules its launch-environment update for the next event-loop
-    // turn. Match plasma-apply-colorscheme so that update is not dropped.
+    // Allow queued palette-change notifications to leave before exiting.
     QTimer::singleShot(0, &app, [&app]() { app.exit(0); });
     return app.exec();
 }

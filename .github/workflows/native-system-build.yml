@@ -65,7 +65,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=/tmp/meo-native-install
 
       - name: Build
-        run: cmake --build build/native-system --parallel 2
+        run: cmake --build build/native-system --parallel 1
 
       - name: Install staged runtime
         run: cmake --install build/native-system
@@ -75,6 +75,16 @@ jobs:
           test -f /tmp/meo-native-install/lib/qt6/qml/Meo/System/qmldir
           test -f /tmp/meo-native-install/lib/qt6/qml/Meo/System/libmeosystemplugin.so
           test -f /tmp/meo-native-install/share/locale/zh_CN/LC_MESSAGES/meo-desktop.mo
+          readelf -d /tmp/meo-native-install/lib/qt6/qml/Meo/System/libmeosystemplugin.so > /tmp/meo-system-elf.txt
+          if grep -q 'Shared library: \[libkrdb.so' /tmp/meo-system-elf.txt; then
+            echo 'Desktop runtime must not link the removed private krdb library.'
+            exit 1
+          fi
+          ldd /tmp/meo-native-install/lib/qt6/qml/Meo/System/libmeosystemplugin.so > /tmp/meo-system-ldd.txt
+          if grep -q 'not found' /tmp/meo-system-ldd.txt; then
+            cat /tmp/meo-system-ldd.txt
+            exit 1
+          fi
 
       - name: Test
         env:
@@ -84,3 +94,19 @@ jobs:
           export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
           export XDG_DATA_DIRS="/tmp/meo-native-install/share:/usr/local/share:/usr/share"
           ctest --test-dir build/native-system --output-on-failure --timeout 60
+
+      - name: Package validated Plasma runtime
+        run: |
+          pacman -Q libplasma plasma-workspace qt6-base > /tmp/meo-plasma-versions.txt
+          tar -C /tmp/meo-native-install -czf /tmp/meo-system-plasma68.tar.gz .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meo-system-plasma68-${{ github.sha }}
+          path: |
+            /tmp/meo-system-plasma68.tar.gz
+            /tmp/meo-plasma-versions.txt
+            /tmp/meo-system-elf.txt
+            /tmp/meo-system-ldd.txt
+          if-no-files-found: error
+          retention-days: 14

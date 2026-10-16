@@ -1,6 +1,5 @@
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui)
 find_package(KF6Config REQUIRED)
-find_package(Krdb REQUIRED)
 
 add_library(meo-dynamic-color-core STATIC
     dynamiccolors.cpp
@@ -15,7 +14,6 @@ target_link_libraries(meo-dynamic-color-core PUBLIC
     Qt6::DBus
     Qt6::Gui
     KF6::ConfigCore
-    PW::krdb
     Meo::MaterialColorUtilities
 )
 target_include_directories(meo-dynamic-color-core PUBLIC

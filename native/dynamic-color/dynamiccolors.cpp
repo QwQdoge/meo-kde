@@ -15,8 +15,6 @@
 #include <QTemporaryFile>
 #include <QtGlobal>
 
-#include <krdb.h>
-
 #include "cpp/cam/hct.h"
 #include "cpp/dynamiccolor/dynamic_scheme.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
@@ -128,15 +126,6 @@ void notifyPaletteChanged()
     // KGlobalSettings/KHintSettings PaletteChanged = 0.
     message.setArguments({0, 0});
     QDBusConnection::sessionBus().send(message);
-}
-
-void exportCompatibilityPalettes()
-{
-    KConfig displayConfig(QStringLiteral("kcmdisplayrc"), KConfig::NoGlobals);
-    const bool exportKdeColors = KConfigGroup(&displayConfig, QStringLiteral("X11"))
-                                     .readEntry(QStringLiteral("exportKDEColors"), true);
-    runRdb(KRdbExportQtColors | KRdbExportGtkTheme
-           | (exportKdeColors ? KRdbExportColors : 0));
 }
 
 void writeColorEntries(KConfigGroup &group, const DynamicColors::ColorScheme &scheme,
@@ -567,7 +556,8 @@ bool DynamicColors::applyScheme(const QString &path, const QString &name,
         return false;
     }
     if (notifySession) {
-        exportCompatibilityPalettes();
+        // Plasma 6.8 removed the private krdb library. Follow its color KCM:
+        // sync notified kdeglobals entries, then announce PaletteChanged.
         notifyPaletteChanged();
     }
     if (changed) {
