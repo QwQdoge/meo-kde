@@ -17,7 +17,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn('topPanel.addWidget("org.meo.systemmenu")', source)
         self.assertIn('shelf.addWidget("org.meo.shelf")', source)
-        self.assertIn('launcher.writeConfig("global", "Meta")', source)
+        self.assertIn('launcher.globalShortcut = ""', source)
         self.assertNotIn('topPanel.addWidget("org.meo.toptasks")', source)
         self.assertIn('topPanel.addWidget("org.kde.plasma.appmenu")', source)
         self.assertNotIn('topPanel.addWidget("org.kde.plasma.icontasks")', source)
@@ -25,8 +25,8 @@ class DesktopLayoutTests(unittest.TestCase):
                         source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
         self.assertIn('timeCenter = topPanel.addWidget("org.meo.time")', source)
-        self.assertLess(source.index('topPanel.addWidget("org.meo.time")'),
-                        source.index('topPanel.addWidget("org.meo.systemmenu")'))
+        self.assertGreater(source.index('topPanel.addWidget("org.meo.time")'),
+                           source.index('topPanel.addWidget("org.meo.notifications")'))
         self.assertLess(source.index('topPanel.addWidget("org.meo.topbar")'),
                         source.index('topPanel.addWidget("org.meo.notifications")'))
         self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)

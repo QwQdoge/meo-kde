@@ -240,10 +240,10 @@ removeWidgets(top, "org.kde.plasma.kickoff");
 var timeCenter = oneWidget(top, "org.meo.time");
 configureTimeCenter(timeCenter);
 var systemMenu = oneWidget(top, "org.meo.systemmenu");
-var topOrder = [timeCenter.id, systemMenu.id];
+var topOrder = [systemMenu.id];
 
-// Match the new-session layout: clock/calendar on the left, status and
-// notifications together on the right. Existing pinned tasks are retained.
+// Match the new-session layout: status and notifications on the right,
+// followed by the clock at the far edge. Existing pinned tasks are retained.
 removeWidgets(top, "org.meo.toptasks");
 removeWidgets(top, "org.meo.timecenter");
 removeWidgets(top, "org.meo.time-notifications");
@@ -279,9 +279,12 @@ if (${show_system_tray}) {
 }
 var topbar = oneWidget(top, "org.meo.topbar");
 configureTopbar(topbar);
+topbar.globalShortcut = "Meta+A";
 topOrder.push(topbar.id);
 var notifications = oneWidget(top, "org.meo.notifications");
+notifications.globalShortcut = "Meta+N";
 topOrder.push(notifications.id);
+topOrder.push(timeCenter.id);
 top.currentConfigGroup = ["General"];
 top.writeConfig("AppletOrder", topOrder.join(";"));
 top.reloadConfig();
@@ -307,9 +310,8 @@ if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native") {
     dockTasks.writeConfig("fill", false);
     dockTasks.reloadConfig();
     var entries = oneWidget(dock, "org.meo.shelf");
-    entries.currentConfigGroup = ["Shortcuts"];
-    entries.writeConfig("global", "Meta");
-    entries.reloadConfig();
+    // The native launcher action owns Meta; clear legacy widget bindings.
+    entries.globalShortcut = "";
     // Keep the existing task applet and its pinned launchers intact.
     var spacers = dock.widgets("org.kde.plasma.panelspacer");
     while (spacers.length < 2) {

@@ -1,4 +1,18 @@
 [ksmserver]
+Lock Session=Meta+L,Meta+L,Lock Session
 # Opens the session manager's standard prompt.  The active Meo Look-and-Feel
 # owns that prompt, while Plasma still performs the actual session action.
 Log Out=Ctrl+Meta+Delete,Ctrl+Meta+Delete,Open Meo session controls
+
+[plasmashell]
+activate application launcher=Meta\tAlt+F1,Meta\tAlt+F1,Activate Application Launcher
+
+[org.kde.dolphin.desktop]
+_launch=Meta+E,Meta+E,Dolphin
+
+[org.meo.settings.desktop]
+_launch=Meta+I,Meta+I,Meo Settings
+
+[kwin]
+# Meta+N belongs to Meo Notifications; Night Color stays available in Settings.
+Toggle Night Color=none,none,Toggle Night Color

@@ -13,11 +13,6 @@ topPanel.currentConfigGroup = ["MeoShell"]
 topPanel.writeConfig("Managed", true)
 topPanel.writeConfig("Role", "top")
 
-var timeCenter = topPanel.addWidget("org.meo.time")
-timeCenter.currentConfigGroup = ["Appearance"]
-timeCenter.writeConfig("showDate", true)
-timeCenter.writeConfig("clockFormat", "24h")
-timeCenter.reloadConfig()
 topPanel.addWidget("org.meo.systemmenu")
 topPanel.addWidget("org.kde.plasma.appmenu")
 topPanel.addWidget("org.kde.plasma.panelspacer")
@@ -41,9 +36,17 @@ quickSettings.writeConfig("showNotifications", true)
 quickSettings.writeConfig("use24HourClock", true)
 quickSettings.writeConfig("quickTileVisibility", "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot")
 quickSettings.writeConfig("quickTileDensity", "comfortable")
+quickSettings.globalShortcut = "Meta+A"
 quickSettings.reloadConfig()
-// Notifications remain adjacent to Quick Settings; the calendar is on the left.
-topPanel.addWidget("org.meo.notifications")
+// Keep notifications beside Quick Settings and the clock at the far right.
+var notifications = topPanel.addWidget("org.meo.notifications")
+notifications.globalShortcut = "Meta+N"
+
+var timeCenter = topPanel.addWidget("org.meo.time")
+timeCenter.currentConfigGroup = ["Appearance"]
+timeCenter.writeConfig("showDate", true)
+timeCenter.writeConfig("clockFormat", "24h")
+timeCenter.reloadConfig()
 
 // Full-width Material shelf with centered controls and KDE-owned tasks.
 var shelf = new Panel
@@ -58,9 +61,9 @@ shelf.writeConfig("Managed", true)
 shelf.writeConfig("Role", "dock")
 shelf.addWidget("org.kde.plasma.panelspacer")
 var launcher = shelf.addWidget("org.meo.shelf")
-launcher.currentConfigGroup = ["Shortcuts"]
-launcher.writeConfig("global", "Meta")
-launcher.reloadConfig()
+// Plasma owns the Meta action and finds this applet through launchermenu.
+// Avoid registering a second competing Meta shortcut on the widget.
+launcher.globalShortcut = ""
 var tasks = shelf.addWidget("org.kde.plasma.icontasks")
 tasks.currentConfigGroup = ["General"]
 tasks.writeConfig("fill", false)

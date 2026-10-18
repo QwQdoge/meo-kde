@@ -12,7 +12,7 @@ These are the default/current Meo Desktop implementation surfaces unless a neare
 - `plasmoids/org.meo.shelf`: current launcher/All Apps entry used by the bottom taskbar.
 - `org.kde.plasma.icontasks`: current task/window model and frontend used by the default bottom taskbar; Meo styles/integrates it rather than replacing the task authority.
 - `plasmoids/org.meo.topbar`: current Meo system-status/Quick Settings surface.
-- `plasmoids/org.meo.time`: current top-left clock/calendar surface.
+- `plasmoids/org.meo.time`: current far-right top-bar clock/calendar surface.
 - `plasmoids/org.meo.notifications`: current top-right notification surface beside Quick Settings.
 - `plasmoids/org.meo.widget.*` and `org.meo.widgetexplorer`: first-party Meo desktop widget adapters/browser.
 - `native/system/`: current Meo.System runtime bridge and system-facing desktop authority.

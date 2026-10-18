@@ -36,6 +36,12 @@ concrete requirements:
   structure, placement, order, dimensions and component composition. Revert
   this pass's top-bar structural rearrangement while retaining color work.
   Reference-image guidance does not authorize further top-bar rearrangement.
+- **User update (2026-10-17):** move the clock from the far left to the
+  far right of the top bar. This narrowly supersedes the clock-placement
+  restriction above; retain the other top-bar structure/dimensions and the
+  full-width Shelf. Default shortcuts: Meta launcher, Meta+E files, Meta+I
+  Settings, Meta+L lock, Meta+A Quick Settings, Meta+N notifications. Fixes
+  must ship through source/package/install defaults, not only a test VM.
 - **Preview before integration:** test subsequent UI candidates in isolated
   local preview files and the validation VM, and show the user screenshots.
   Only after the user reviews and approves may those UI changes enter the
