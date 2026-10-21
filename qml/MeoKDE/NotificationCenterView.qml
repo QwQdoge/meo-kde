@@ -363,6 +363,8 @@ Item {
                                               && root.notifications.invokeDefaultAction)
                                              root.notifications.invokeDefaultAction(sourceIndex)
 
+                    HoverHandler { id: cardHover }
+
                     MouseArea {
                         id: notificationPointer
                         anchors.fill: parent
@@ -445,7 +447,21 @@ Item {
                                                                  : MeoTheme.onSurfaceVariant
                             }
                             MeoIconButton {
+                                id: configureButton
+                                // Per-app configuration is a secondary action:
+                                // reveal it on hover/focus so every card is not
+                                // two icon buttons wide. It keeps its space so
+                                // the time and dismiss controls do not shift.
                                 visible: notificationCard.configurable
+                                opacity: cardHover.hovered || notificationCard.activeFocus
+                                         || configureButton.activeFocus ? 1 : 0
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: MeoTheme.motionEasingStandard
+                                    }
+                                }
                                 type: "standard"
                                 size: "s"
                                 icon.name: "settings"
