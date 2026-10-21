@@ -38,15 +38,14 @@ quickSettings.writeConfig("quickTileVisibility", "wifi,bluetooth,focus,nightLigh
 quickSettings.writeConfig("quickTileDensity", "comfortable")
 quickSettings.globalShortcut = "Meta+A"
 quickSettings.reloadConfig()
-// Keep notifications beside Quick Settings and the clock at the far right.
-var notifications = topPanel.addWidget("org.meo.notifications")
-notifications.globalShortcut = "Meta+N"
-
-var timeCenter = topPanel.addWidget("org.meo.time")
-timeCenter.currentConfigGroup = ["Appearance"]
-timeCenter.writeConfig("showDate", true)
-timeCenter.writeConfig("clockFormat", "24h")
-timeCenter.reloadConfig()
+// Notifications and the clock are one combined applet at the far right of the
+// top bar, so they share a single target and one popup.
+var timeNotifications = topPanel.addWidget("org.meo.time-notifications")
+timeNotifications.currentConfigGroup = ["Appearance"]
+timeNotifications.writeConfig("showDate", true)
+timeNotifications.writeConfig("clockFormat", "24h")
+timeNotifications.reloadConfig()
+timeNotifications.globalShortcut = "Meta+N"
 
 // Full-width Material shelf with centered controls and KDE-owned tasks.
 var shelf = new Panel

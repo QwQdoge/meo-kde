@@ -12,15 +12,15 @@ applies those bindings; it does not rebuild the Shelf's task model.
 | Meta+I | KGlobalAccel launches the package-owned Meo Settings desktop entry. |
 | Meta+L | The existing session-lock action retains session authentication ownership. |
 | Meta+A | Activate the Meo Quick Settings applet. |
-| Meta+N | Activate the Meo Notifications applet. |
+| Meta+N | Activate the combined Meo notifications-and-clock applet. |
 
 The default KWin Night Color shortcut is unset to avoid competing for Meta+N.
 Night Color remains available in Settings. The launcher widget has no separate
 Meta binding because Plasma already owns that action.
 
 The top-panel creation order is system menu, application menu, expanding
-spacer, native tray, Quick Settings, notifications, then clock/calendar at the
-far right. The bottom Shelf remains full width with centered launcher/tasks.
+spacer, native tray, Quick Settings, then the combined notifications-and-clock
+applet at the far right. The bottom Shelf remains full width with centered launcher/tasks.
 
 `meo-settings` installs its Settings desktop entry to `share/kglobalaccel` as
 well as `share/applications`. The authoritative release recipe in `meo-repo`

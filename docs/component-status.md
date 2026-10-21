@@ -12,8 +12,7 @@ These are the default/current Meo Desktop implementation surfaces unless a neare
 - `plasmoids/org.meo.shelf`: current launcher/All Apps entry used by the bottom taskbar.
 - `org.kde.plasma.icontasks`: current task/window model and frontend used by the default bottom taskbar; Meo styles/integrates it rather than replacing the task authority.
 - `plasmoids/org.meo.topbar`: current Meo system-status/Quick Settings surface.
-- `plasmoids/org.meo.time`: current far-right top-bar clock/calendar surface.
-- `plasmoids/org.meo.notifications`: current top-right notification surface beside Quick Settings.
+- `plasmoids/org.meo.time-notifications`: current far-right top-bar surface; one target and one popup for the clock, calendar and notifications.
 - `plasmoids/org.meo.widget.*` and `org.meo.widgetexplorer`: first-party Meo desktop widget adapters/browser.
 - `native/system/`: current Meo.System runtime bridge and system-facing desktop authority.
 - `qml/MeoKDE/`: shared KDE-specific QML used by current shell/application surfaces.
@@ -23,7 +22,7 @@ These are the default/current Meo Desktop implementation surfaces unless a neare
 
 These may remain maintained where they provide a supported alternate composition or compatibility path, but they are not the default layout authority:
 
-- `plasmoids/org.meo.time-notifications`: combined clock/notifications for existing custom layouts.
+- `plasmoids/org.meo.time` and `plasmoids/org.meo.notifications`: the split clock/calendar and notification applets, kept for existing custom layouts and for users who prefer two targets.
 - compatible Plasma third-party widget hosting
 - upstream/third-party compatibility shims under `native/third_party/`
 - package adapters that preserve native Plasma/KDE ownership while adding Meo presentation.

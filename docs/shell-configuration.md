@@ -56,7 +56,7 @@ DockHeight=48
   KDE tray integrations remain available. Meo-owned network, Bluetooth,
   audio, power, media and notification applets are filtered to avoid duplicates.
 - The default top-panel order follows the current desktop: **System menu → Global
-  Menu → spacer → System Tray → Meo quick settings → Meo time/notifications**.
+  Menu → spacer → System Tray → Meo quick settings → Meo notifications-and-clock**.
 - `ShowGlobalMenu` is `true` or `false`. It places the active application's
   native KDE Global Menu immediately after the system menu (for example **File**,
   **Edit**, **View**, and **Help**). Those menus remain application/KDE-owned.
@@ -73,7 +73,7 @@ DockHeight=48
   file and explicitly run the panel-layout helper above; normal theme updates
   never rebuild a user's live panels.
 
-The top panel is transparent on the desktop and black when a visible window
+The top panel is transparent on the desktop and a solid KDE panel color (white in light mode, dark gray in dark mode) when a visible window
 on its output and current activity/desktop is fullscreen or maximized. Its
 system menu reads actual KDE task roles; no timer guesses application state.
 The bottom shelf uses the generated dynamic `surfaceContainerLow` role while the
@@ -103,7 +103,7 @@ the image plugin's fill/preserve-aspect mapping. `MeoKDE.PanelForeground` asks
 again only when the wallpaper, the surface geometry, the output or the panel
 window color changes (coalesced by a 120 ms timer); there is no screen capture
 and no per-frame work. Dark glyphs win above relative luminance 0.25. An opaque
-panel (the black bar shown while a window covers the output) is judged by its
+panel (the solid bar shown while a window covers the output) is judged by its
 own color. When no local image wallpaper is readable, the theme-derived
 foreground is kept rather than guessing.
 

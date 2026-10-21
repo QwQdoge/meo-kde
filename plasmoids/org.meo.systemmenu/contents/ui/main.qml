@@ -56,17 +56,21 @@ PlasmoidItem {
         function onModelReset() { root.revision++ }
     }
     // Leave the desktop visible through the entire panel; the window clear
-    // color supplies the black surface when a window covers this output.
+    // color supplies the solid surface when a window covers this output.
     Binding {
         target: Plasmoid.containment
         property: "backgroundHints"
         value: PlasmaCore.Types.NoBackground
         restoreMode: Binding.RestoreBindingOrValue
     }
+    // While a window covers the output the bar turns into a solid KDE panel
+    // color that follows light/dark: KDE's usual white in light mode, KDE's
+    // dark panel gray in dark mode. Otherwise it stays clear over the wallpaper.
+    readonly property color coveredColor: MeoTheme.isDarkMode ? "#232629" : "#fcfcfc"
     Binding {
         target: root.Window.window
         property: "color"
-        value: root.covered ? "black" : "transparent"
+        value: root.covered ? root.coveredColor : "transparent"
         restoreMode: Binding.RestoreBindingOrValue
     }
     compactRepresentation: MeoIconButton {

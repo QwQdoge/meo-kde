@@ -34,11 +34,11 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertLess(source.index('topPanel.addWidget("org.meo.systemmenu")'),
                         source.index('topPanel.addWidget("org.kde.plasma.appmenu")'))
         self.assertIn('quickSettings = topPanel.addWidget("org.meo.topbar")', source)
-        self.assertIn('timeCenter = topPanel.addWidget("org.meo.time")', source)
-        self.assertGreater(source.index('topPanel.addWidget("org.meo.time")'),
-                           source.index('topPanel.addWidget("org.meo.notifications")'))
-        self.assertLess(source.index('topPanel.addWidget("org.meo.topbar")'),
-                        source.index('topPanel.addWidget("org.meo.notifications")'))
+        self.assertIn('timeNotifications = topPanel.addWidget("org.meo.time-notifications")', source)
+        self.assertNotIn('topPanel.addWidget("org.meo.notifications")', source)
+        self.assertNotIn('topPanel.addWidget("org.meo.time")', source)
+        self.assertGreater(source.index('topPanel.addWidget("org.meo.time-notifications")'),
+                           source.index('topPanel.addWidget("org.meo.topbar")'))
         self.assertIn('topPanel.addWidget("org.kde.plasma.systemtray")', source)
         self.assertLess(source.index('topPanel.addWidget("org.kde.plasma.systemtray")'), source.index('topPanel.addWidget("org.meo.topbar")'))
         extra_items_line = next(
@@ -50,7 +50,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('org.kde.plasma.notifications', source)
         self.assertIn('org.kde.plasma.mediacontroller', source)
         self.assertIn('quickSettings.writeConfig("batteryDisplay", 2)', source)
-        self.assertIn('timeCenter.writeConfig("showDate", true)', source)
+        self.assertIn('timeNotifications.writeConfig("showDate", true)', source)
 
     def test_active_application_surface_uses_kde_identity_and_settings_deeplink(self):
         source = (

@@ -237,16 +237,17 @@ top.floating = false;
 markManaged(top, "top");
 
 removeWidgets(top, "org.kde.plasma.kickoff");
-var timeCenter = oneWidget(top, "org.meo.time");
+var timeCenter = oneWidget(top, "org.meo.time-notifications");
 configureTimeCenter(timeCenter);
 var systemMenu = oneWidget(top, "org.meo.systemmenu");
 var topOrder = [systemMenu.id];
 
-// Match the new-session layout: status and notifications on the right,
-// followed by the clock at the far edge. Existing pinned tasks are retained.
+// Match the new-session layout: quick settings, then the combined
+// notifications-and-clock applet at the far edge. Existing pinned tasks are retained.
 removeWidgets(top, "org.meo.toptasks");
 removeWidgets(top, "org.meo.timecenter");
-removeWidgets(top, "org.meo.time-notifications");
+removeWidgets(top, "org.meo.time");
+removeWidgets(top, "org.meo.notifications");
 
 var globalMenu = null;
 if (${show_global_menu}) {
@@ -281,9 +282,7 @@ var topbar = oneWidget(top, "org.meo.topbar");
 configureTopbar(topbar);
 topbar.globalShortcut = "Meta+A";
 topOrder.push(topbar.id);
-var notifications = oneWidget(top, "org.meo.notifications");
-notifications.globalShortcut = "Meta+N";
-topOrder.push(notifications.id);
+timeCenter.globalShortcut = "Meta+N";
 topOrder.push(timeCenter.id);
 top.currentConfigGroup = ["General"];
 top.writeConfig("AppletOrder", topOrder.join(";"));
