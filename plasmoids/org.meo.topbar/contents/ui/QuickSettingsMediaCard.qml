@@ -17,7 +17,8 @@ Item {
     Layout.fillWidth: true
     clip: true
     opacity: shown ? 1 : 0
-    implicitHeight: shown ? 236 * MeoTheme.globalScale : 0
+    // 120dp compact media row: the panel must stay a popup, not a page.
+    implicitHeight: shown ? 120 * MeoTheme.globalScale : 0
 
     Behavior on opacity {
         NumberAnimation {
@@ -37,7 +38,7 @@ Item {
 
     MeoMediaController {
         anchors.fill: parent
-        presentation: "controlCenter"
+        presentation: "compact"
         title: root.media.title !== "" ? root.media.title : root.media.playerName
         artist: root.media.artist !== "" ? root.media.artist : root.media.playerName
         album: root.media.album

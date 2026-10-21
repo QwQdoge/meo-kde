@@ -2,15 +2,11 @@ import QtQuick
 import QtQuick.Layouts
 import MeoUI 1.0
 import MeoKDE 1.0
-import Meo.System 1.0
-
-// Plasma data adapter for MeoUI's status-center primitive. The center owns
-// its surface, responsive structure, timer lifecycle, and semantic modes;
-// this file supplies only live KDE content and the compatibility string API.
-MeoStatusCenter {
+Item {
     id: root
-
     property var notifications: null
+    property date currentDateTime: new Date()
+    property string centerMode: "timeNotifications"
     property string clockFormat: "system"
     property bool showSeconds: false
     property bool showDate: true
@@ -19,144 +15,69 @@ MeoStatusCenter {
     property string notificationView: "cards"
     property string notificationPreview: "full"
     property string density: "comfortable"
-    // Shell-local surface controls. These are presentation only; the active
-    // Meo HCT palette remains the color authority.
     property string surfaceStyle: "theme"
     property int surfaceOpacityPercent: 100
-    readonly property color configuredSurfaceBase: surfaceStyle === "flat"
-                                                   ? MeoTheme.surface
-                                                   : (surfaceStyle === "tonal"
-                                                      ? MeoTheme.surfaceContainerHigh
-                                                      : MeoTheme.surfaceContainerLow)
-    readonly property real configuredSurfaceOpacity: Math.max(
-        0.70, Math.min(1.0, Number(surfaceOpacityPercent) / 100.0))
     property bool showWeekNumbers: false
     property bool showSecondaryCalendar: true
     property string defaultPage: "notifications"
     property bool revealActive: true
-
-    readonly property bool showTime: centerMode !== "notificationsOnly"
-    readonly property bool showCalendar: centerMode === ""
-                                        || centerMode === "timeCalendar"
-                                        || centerMode === "timeCalendarNotifications"
-    readonly property bool showNotificationPane: centerMode !== "timeCalendar"
-    readonly property bool use24HourClock: clockFormat === "24h"
-                                             || (clockFormat === "system"
-                                                 && Qt.locale().timeFormat(Locale.ShortFormat).indexOf("AP") < 0)
-    readonly property string timePattern: use24HourClock
-                                       ? (showSeconds ? "hh:mm:ss" : "hh:mm")
-                                       : (showSeconds ? "h:mm:ss AP" : "h:mm AP")
-
-    MeoRevealMotion {
-        id: revealMotion
-        active: root.revealActive
-        animateOnCompleted: true
-        motionProfile: "pixel"
-        speed: "default"
-        // A top-right anchored popout starts slightly toward its trigger and
-        // resolves on the shared 2D spring. The primitive, not this shell
-        // surface, owns the actual motion physics.
-        closedOffsetX: MeoMotion.popupOffset(motionProfile) * 0.5 * MeoTheme.globalScale
-        closedOffsetY: -MeoMotion.popupOffset(motionProfile) * MeoTheme.globalScale
-    }
-
-    transform: [
-        Translate {
-            x: revealMotion.resolvedOffsetX
-            y: revealMotion.resolvedOffsetY
-        },
-        Scale {
-            origin.x: root.width
-            origin.y: 0
-            xScale: revealMotion.resolvedScale
-            yScale: revealMotion.resolvedScale
-        }
-    ]
-
-    color: Qt.rgba(configuredSurfaceBase.r,
-                   configuredSurfaceBase.g,
-                   configuredSurfaceBase.b,
-                   surfaceStyle === "translucent" ? configuredSurfaceOpacity : 1.0)
-
-    mode: centerMode === "notificationsOnly"
-          ? MeoStatusCenter.Notifications
-          : (centerMode === "timeCalendar"
-             ? MeoStatusCenter.TimeCalendar
-             : MeoStatusCenter.TimeCalendarNotifications)
-    // `calendarEnabled` preserves legacy timeNotifications without a fourth
-    // visual implementation.
-    calendarEnabled: showCalendar
-    contentActive: visible
-    updateTimeAutomatically: false
-    timeText: Qt.formatTime(root.currentDateTime, root.timePattern)
-    dateText: root.showDate
-              ? Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.LongFormat))
-              : ""
-    unreadCount: notifications && typeof notifications.unreadNotificationsCount === "number"
-                 ? notifications.unreadNotificationsCount : 0
-
-    implicitWidth: ShellMetrics.statusCenterWidth
-    implicitHeight: ShellMetrics.statusCenterHeight
-    Layout.minimumWidth: 320 * MeoTheme.globalScale
-    Layout.minimumHeight: 360 * MeoTheme.globalScale
-
-    headerContent: showTime ? timeHeader : null
-    calendarContent: monthCalendar
-    notificationContent: showNotificationPane ? notificationPane : null
-
-    Component {
-        id: timeHeader
-
-        ColumnLayout {
-            width: parent ? parent.width : implicitWidth
-            spacing: 0
-
-            MeoText {
-                text: Qt.formatTime(root.currentDateTime, root.timePattern)
-                typeRole: "title"
-                typeSize: "large"
-                emphasized: true
-                color: MeoTheme.onSurface
-            }
-
-            MeoText {
-                visible: root.showDate
-                text: Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.LongFormat))
-                typeRole: "body"
-                typeSize: "medium"
-                color: MeoTheme.onSurfaceVariant
-            }
-
-            MeoText {
-                visible: root.showSecondaryCalendar && SystemState.secondaryCalendarText.length > 0
-                text: SystemState.secondaryCalendarText
-                typeRole: "label"
-                typeSize: "small"
-                color: MeoTheme.onSurfaceVariant
-                Accessible.name: MeoI18n.translator.i18n("Secondary calendar: %1", SystemState.secondaryCalendarText)
-            }
+    readonly property bool showCalendar: centerMode === "timeCalendar" || centerMode === "timeCalendarNotifications" || centerMode === ""
+    readonly property bool use24Hour: clockFormat === "24h" || (clockFormat === "system" && Qt.locale().timeFormat(Locale.ShortFormat).indexOf("AP") < 0)
+    implicitWidth: 420 * MeoTheme.globalScale
+    implicitHeight: 580 * MeoTheme.globalScale
+    Layout.minimumWidth: implicitWidth
+    Layout.maximumWidth: implicitWidth
+    Layout.minimumHeight: implicitHeight
+    Layout.maximumHeight: implicitHeight
+    Loader {
+        anchors.fill: parent
+        active: root.showCalendar
+        source: "OriginalStatusCenterView.qml"
+        onLoaded: {
+            for (const key of ["notifications", "currentDateTime", "centerMode", "clockFormat", "showSeconds", "showDate", "showJobs", "showHistory", "showWeekNumbers", "showSecondaryCalendar"])
+                item[key] = Qt.binding(function() { return root[key] })
         }
     }
-
-    Component {
-        id: monthCalendar
-
-        MeoMonthCalendar {
-            anchors.fill: parent
-            selectedDate: root.currentDateTime
-            displayDate: root.currentDateTime
-            showWeekNumbers: root.showWeekNumbers
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: MeoTheme.space12
+        visible: !root.showCalendar
+        MeoMotionSurface {
+            objectName: "fixedTimeCard"
+            visible: root.centerMode !== "notificationsOnly"
+            Layout.fillWidth: true
+            Layout.preferredHeight: 112 * MeoTheme.globalScale
+            radius: MeoTheme.shapeExtraLarge
+            color: MeoTheme.surfaceContainerLow
+            elevation: 0
+            showOutline: false
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: MeoTheme.space24
+                spacing: MeoTheme.space4
+                MeoText {
+                    text: Qt.formatTime(root.currentDateTime, root.use24Hour ? (root.showSeconds ? "hh:mm:ss" : "hh:mm") : "h:mm AP")
+                    typeRole: "title"; typeSize: "large"
+                    font.pixelSize: MeoTheme.displaySmall.size * MeoTheme.globalScale * MeoTheme.fontScale
+                    lineHeight: MeoTheme.displaySmall.lineHeight * MeoTheme.globalScale * MeoTheme.fontScale
+                    lineHeightMode: Text.FixedHeight
+                    color: MeoTheme.contentOnSurface
+                }
+                MeoText {
+                    text: Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.LongFormat))
+                    visible: root.showDate
+                    typeRole: "body"; typeSize: "medium"
+                    color: MeoTheme.contentOnSurfaceVariant
+                }
+            }
         }
-    }
-
-    Component {
-        id: notificationPane
-
         NotificationCenterView {
-            anchors.fill: parent
+            objectName: "scrollableNotifications"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             notifications: root.notifications
             currentDateTime: root.currentDateTime
-            showTitle: false
+            showTitle: true
             showJobs: root.showJobs
             showHistory: root.showHistory
             notificationView: root.notificationView

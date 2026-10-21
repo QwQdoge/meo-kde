@@ -1,4 +1,5 @@
 import QtQuick
+import org.kde.plasma.core as PlasmaCore
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import MeoUI 1.0
@@ -7,8 +8,14 @@ import MeoKDE 1.0
 Item {
     id: root
 
+    // Plasma reserves the dialog frame padding around the applet content and
+    // paints its themed popup background there, which reads as a thin frame
+    // around the rounded Meo panel. The window has no "no background" hint, so
+    // the Meo surface bleeds over exactly that padding instead.
+    readonly property real popupPadding: 0
+
     property string tileOrder: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
-    property string tileSizes: "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
+    property string tileSizes: "wifi:2,bluetooth:2,focus:1,nightLight:1,keepAwake:1,powerMode:1,microphone:1,audioDevices:1,display:1,screenshot:1"
     property string tileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
     property string tileDensity: "comfortable"
     property bool revealActive: true
@@ -28,6 +35,8 @@ Item {
     implicitHeight: ShellMetrics.quickSettingsHeight
     Layout.minimumWidth: 280 * MeoTheme.globalScale
     Layout.minimumHeight: 360 * MeoTheme.globalScale
+    Layout.preferredHeight: implicitHeight
+    Layout.maximumHeight: implicitHeight
 
     MeoRevealMotion {
         id: revealMotion
@@ -57,11 +66,15 @@ Item {
 
     FrostedSurface {
         anchors.fill: parent
+        anchors.margins: 0
         baseColor: MeoTheme.surfaceContainerLow
+        elevation: 0
 
         QQC2.StackView {
             id: stack
             anchors.fill: parent
+            // Compensate for the bleed so the page inset stays exactly
+            // ShellMetrics.popupContentMargin from the item bounds.
             anchors.margins: ShellMetrics.popupContentMargin
             clip: true
             initialItem: QuickSettingsHome {

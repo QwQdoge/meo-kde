@@ -91,7 +91,7 @@ Item {
             textFormat: Text.PlainText
             maximumLineCount: root.collapsedLines
             elide: Text.ElideRight
-            color: root.critical ? MeoTheme.onErrorContainer : MeoTheme.onSurfaceVariant
+            color: root.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.contentOnSurfaceVariant
             Behavior on opacity {
                 NumberAnimation {
                     duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationPanelState
@@ -112,7 +112,7 @@ Item {
             wrapMode: Text.Wrap
             textFormat: Text.PlainText
             maximumLineCount: 1000
-            color: root.critical ? MeoTheme.onErrorContainer : MeoTheme.onSurfaceVariant
+            color: root.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.contentOnSurfaceVariant
             Behavior on opacity {
                 NumberAnimation {
                     duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationPanelState

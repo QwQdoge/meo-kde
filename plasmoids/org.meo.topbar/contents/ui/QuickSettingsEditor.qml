@@ -24,7 +24,7 @@ QQC2.ScrollView {
     signal tileLayoutChanged(string order, string sizes, string visibility, string density)
     signal backRequested()
 
-    readonly property var validTileIds: ["wifi", "bluetooth", "focus", "nightLight", "keepAwake", "powerMode", "microphone", "audioDevices", "display", "screenshot"]
+    readonly property var validTileIds: ["wifi", "bluetooth", "focus", "nightLight", "keepAwake", "powerMode", "microphone", "audioDevices", "display", "screenshot", "darkTheme"]
     readonly property int visibleTileCount: {
         tileRevision
         let count = 0
@@ -45,6 +45,7 @@ QQC2.ScrollView {
                 "id": tile.tileId,
                 "sourceIndex": index,
                 "title": root.tileTitle(tile.tileId),
+                "category": root.tileCategory(tile.tileId),
                 "iconName": root.tileIcon(tile.tileId),
                 "span": tile.tileSpan,
                 "removable": true,
@@ -64,6 +65,7 @@ QQC2.ScrollView {
                 "id": tile.tileId,
                 "sourceIndex": index,
                 "title": root.tileTitle(tile.tileId),
+                "category": root.tileCategory(tile.tileId),
                 "iconName": root.tileIcon(tile.tileId),
                 "span": tile.tileSpan,
                 "resizable": true
@@ -76,8 +78,22 @@ QQC2.ScrollView {
     contentHeight: editor.implicitHeight
     clip: true
     QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AsNeeded
+    // Binding contentWidth to the viewport otherwise forms an implicitWidth
+    // cycle with the editor, which Qt reports as a binding loop while the page
+    // is being pushed. The page width is owned by the shell popup, not by the
+    // editor's implicit size.
+    implicitWidth: ShellMetrics.quickSettingsWidth
+
+    function tileCategory(id) {
+        if (id === "wifi" || id === "bluetooth") return MeoI18n.translator.i18n("Connectivity")
+        if (id === "nightLight" || id === "display" || id === "darkTheme") return MeoI18n.translator.i18n("Display")
+        if (id === "microphone") return MeoI18n.translator.i18n("Privacy")
+        if (id === "audioDevices") return MeoI18n.translator.i18n("Sound")
+        return MeoI18n.translator.i18n("Utilities")
+    }
 
     function tileTitle(id) {
+        if (id === "darkTheme") return MeoI18n.translator.i18n("Dark theme")
         if (id === "wifi") return MeoI18n.translator.i18n("Wi-Fi")
         if (id === "bluetooth") return MeoI18n.translator.i18n("Bluetooth")
         if (id === "focus") return MeoI18n.translator.i18n("Modes")
@@ -91,6 +107,7 @@ QQC2.ScrollView {
     }
 
     function tileIcon(id) {
+        if (id === "darkTheme") return "contrast"
         if (id === "wifi") return "wifi"
         if (id === "bluetooth") return "bluetooth"
         if (id === "focus") return "do_not_disturb_on"
@@ -216,6 +233,7 @@ QQC2.ScrollView {
         tiles: root.editorTiles
         availableTiles: root.availableTiles
         columns: 4
+        rowHeight: ShellMetrics.quickSettingsTileHeight
         undoEnabled: root.undoOrder !== ""
         onBackRequested: {
             root.prepareToClose()

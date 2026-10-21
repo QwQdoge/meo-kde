@@ -1,6 +1,7 @@
 #include "systemstatehub.h"
 #include "dynamiccolorprovider.h"
 #include "wallpapercontrast.h"
+#include "colorschemeactions.h"
 #include "mediacontroller.h"
 #include "weathercache.h"
 #include "platformcontroller.h"
@@ -69,6 +70,13 @@ QObject *wallpaperContrastProvider(QQmlEngine *, QJSEngine *)
     return contrast;
 }
 
+QObject *colorSchemeActionsProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *actions = new ColorSchemeActions;
+    QQmlEngine::setObjectOwnership(actions, QQmlEngine::CppOwnership);
+    return actions;
+}
+
 QObject *weatherProvider(QQmlEngine *, QJSEngine *)
 {
     auto *cache = new WeatherCache;
@@ -117,6 +125,7 @@ public:
         qmlRegisterSingletonType<TaskManagerController>(uri, 1, 0, "Tasks", tasksProvider);
         qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
         qmlRegisterSingletonType<WeatherCache>(uri, 1, 0, "Weather", weatherProvider);
+        qmlRegisterSingletonType<ColorSchemeActions>(uri, 1, 0, "ColorSchemeActions", colorSchemeActionsProvider);
         qmlRegisterSingletonType<WallpaperContrast>(uri, 1, 0, "WallpaperContrast", wallpaperContrastProvider);
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);
         qmlRegisterSingletonType<SessionActionClient>(uri, 1, 0, "SessionActions", sessionActionProvider);

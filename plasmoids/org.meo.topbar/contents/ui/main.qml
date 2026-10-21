@@ -47,9 +47,7 @@ PlasmoidItem {
         else if (Plasmoid.configuration.density !== Plasmoid.configuration.quickTileDensity)
             Plasmoid.configuration.quickTileDensity = Plasmoid.configuration.density
     }
-    onExpandedChanged: if (!root.expanded && root.fullRepresentationItem
-                           && root.fullRepresentationItem.prepareToClose)
-                           root.fullRepresentationItem.prepareToClose()
+    onExpandedChanged: if (root.expanded) { root.expanded = false; popup.visible = true }
 
     compactRepresentation: Item {
         id: compactRoot
@@ -59,18 +57,36 @@ PlasmoidItem {
         SystemStatusCluster {
             id: systemStatus
             anchors.centerIn: parent
-            active: root.expanded
+            active: popup.visible
             textScale: root.localTextScale
             showNetwork: Plasmoid.configuration.showNetwork
             showBluetooth: Plasmoid.configuration.showBluetooth
             showVolume: Plasmoid.configuration.showVolume
             batteryDisplay: Plasmoid.configuration.batteryDisplay
-            onQuickSettingsRequested: root.expanded = !root.expanded
+            onQuickSettingsRequested: popup.visible = !popup.visible
         }
     }
 
-    fullRepresentation: QuickSettingsCenter {
-        revealActive: root.expanded
+    fullRepresentation: Item { implicitWidth: 1; implicitHeight: 1 }
+    PlasmaCore.Dialog {
+        id: popup
+        type: PlasmaCore.Dialog.PopupMenu
+        flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+        location: PlasmaCore.Types.TopEdge
+        visualParent: root.compactRepresentationItem
+        backgroundHints: PlasmaCore.Dialog.NoBackground
+        hideOnWindowDeactivate: true
+        onVisibleChanged: {
+            if (visible) {
+                Qt.callLater(function() { popup.requestActivate(); popup.mainItem.forceActiveFocus() })
+            } else if (mainItem && mainItem.prepareToClose) {
+                // Persist a pending tile-editor change when the popup closes.
+                mainItem.prepareToClose()
+            }
+        }
+        mainItem: QuickSettingsCenter {
+        Keys.onEscapePressed: popup.visible = false
+        revealActive: popup.visible
         tileOrder: Plasmoid.configuration.quickTileOrder
         tileSizes: Plasmoid.configuration.quickTileSizes
         tileVisibility: Plasmoid.configuration.quickTileVisibility
@@ -82,5 +98,6 @@ PlasmoidItem {
             Plasmoid.configuration.quickTileDensity = density
             Plasmoid.configuration.density = density
         }
+    }
     }
 }

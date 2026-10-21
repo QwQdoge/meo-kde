@@ -33,22 +33,20 @@ ColumnLayout {
             Layout.fillWidth: true
             spacing: 0
             MeoText {
-                text: root.unreadCount > 0
-                      ? MeoI18n.translator.i18n("Notifications · %1 unread", root.unreadCount)
-                      : MeoI18n.translator.i18n("Notifications")
-                typeRole: "title"; typeSize: "medium"; emphasized: true; color: MeoTheme.onSurface
+                text: MeoI18n.translator.i18n("Notifications")
+                typeRole: "title"; typeSize: "small"; emphasized: true; color: MeoTheme.contentOnSurface
             }
             MeoText {
                 visible: root.activeJobsCount > 0
                 text: root.activeJobsCount === 1 ? MeoI18n.translator.i18n("1 background task") : MeoI18n.translator.i18n("%1 background tasks", root.activeJobsCount)
-                typeRole: "label"; typeSize: "small"; color: MeoTheme.onSurfaceVariant
+                typeRole: "label"; typeSize: "small"; color: MeoTheme.contentOnSurfaceVariant
             }
             MeoText {
                 visible: root.activeJobsCount === 0 && (root.liveNotificationCount > 0 || root.historyNotificationCount > 0)
                 text: root.liveNotificationCount > 0 && root.historyNotificationCount > 0
                       ? MeoI18n.translator.i18n("%1 live · %2 in history", root.liveNotificationCount, root.historyNotificationCount)
                       : (root.liveNotificationCount > 0 ? MeoI18n.translator.i18n("%1 live notification", root.liveNotificationCount) : MeoI18n.translator.i18n("%1 in history", root.historyNotificationCount))
-                typeRole: "label"; typeSize: "small"; color: MeoTheme.onSurfaceVariant
+                typeRole: "label"; typeSize: "small"; color: MeoTheme.contentOnSurfaceVariant
             }
         }
         Item { visible: !root.showTitle; Layout.fillWidth: true }
@@ -77,41 +75,4 @@ ColumnLayout {
         MeoIconButton { visible: root.showSettingsAction; type: "standard"; size: "s"; icon.name: "settings"; Accessible.name: MeoI18n.translator.i18n("Notification settings"); onClicked: root.settingsRequested() }
     }
 
-    MeoMotionSurface {
-        visible: implicitHeight > 0 || opacity > 0
-        enabled: NotificationManager.Server.inhibited
-        opacity: NotificationManager.Server.inhibited ? 1 : 0
-        Layout.fillWidth: true
-        implicitHeight: NotificationManager.Server.inhibited
-                        ? dndMessage.implicitHeight + 2 * MeoTheme.space8 : 0
-        Layout.preferredHeight: implicitHeight
-        color: MeoTheme.secondaryContainer
-        radius: MeoTheme.shapeMedium
-        elevation: 0
-        clip: true
-        Behavior on implicitHeight {
-            NumberAnimation {
-                duration: MeoTheme.reduceMotion ? 0 : (NotificationManager.Server.inhibited
-                          ? MeoTheme.motionDurationDisclosureEnter
-                          : MeoTheme.motionDurationDisclosureExit)
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: NotificationManager.Server.inhibited ? MeoTheme.motionEasingEmphasizedDecelerate : MeoTheme.motionEasingEmphasizedAccelerate
-            }
-        }
-        Behavior on opacity {
-            NumberAnimation {
-                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationPanelState
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: MeoTheme.motionEasingStandard
-            }
-        }
-        RowLayout {
-            id: dndMessage
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space8
-            spacing: MeoTheme.space8
-            MeoIcon { icon: "do_not_disturb_on"; size: 20; color: MeoTheme.onSecondaryContainer; Accessible.ignored: true }
-            MeoText { Layout.fillWidth: true; text: MeoI18n.translator.i18n("Do Not Disturb is on. New notifications are collected quietly."); typeRole: "label"; typeSize: "small"; wrapMode: Text.Wrap; color: MeoTheme.onSecondaryContainer }
-        }
-    }
 }

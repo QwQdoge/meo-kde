@@ -15,11 +15,11 @@ QtObject {
     readonly property real launcherMaxHeight: 520 * MeoTheme.globalScale
     readonly property real launcherSearchHeight: 44 * MeoTheme.globalScale
     readonly property real quickSettingsWidth: 440 * MeoTheme.globalScale
-    readonly property real quickSettingsHeight: 680 * MeoTheme.globalScale
+    readonly property real quickSettingsHeight: 576 * MeoTheme.globalScale
     // Pixel quick settings uses one generous touch-first row height.  The
     // tile itself owns its pill radius through MeoTheme, while this metric
     // keeps every KDE grid consumer in lockstep with that geometry.
-    readonly property real quickSettingsTileHeight: 80 * MeoTheme.globalScale
+    readonly property real quickSettingsTileHeight: 64 * MeoTheme.globalScale
     // Keep the time and notification surface compact by default. The
     // responsive view still supports wider hosts, but the panel popup should
     // not reopen as a desktop-sized two-column surface after a shell refresh.

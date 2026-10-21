@@ -17,7 +17,7 @@ QQC2.ScrollView {
     signal tileLayoutChanged(string order, string sizes, string visibility, string density)
 
     property string tileOrder: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
-    property string tileSizes: "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
+    property string tileSizes: "wifi:2,bluetooth:2,focus:1,nightLight:1,keepAwake:1,powerMode:1,microphone:1,audioDevices:1,display:1,screenshot:1"
     property string tileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
     property string tileDensity: "comfortable"
     property bool editMode: false
@@ -32,7 +32,7 @@ QQC2.ScrollView {
     clip: true
     QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AsNeeded
 
-    readonly property var validTileIds: ["wifi", "bluetooth", "focus", "nightLight", "keepAwake", "powerMode", "microphone", "audioDevices", "display", "screenshot"]
+    readonly property var validTileIds: ["wifi", "bluetooth", "focus", "nightLight", "keepAwake", "powerMode", "microphone", "audioDevices", "display", "screenshot", "darkTheme"]
     readonly property string defaultTileVisibility: "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
     readonly property real tileDensityScale: tileDensity === "compact" ? 0.86
                                                    : (tileDensity === "spacious" ? 1.14 : 1.0)
@@ -128,6 +128,7 @@ QQC2.ScrollView {
     }
 
     function tileTitle(id) {
+        if (id === "darkTheme") return MeoI18n.translator.i18n("Dark theme")
         if (id === "wifi") return MeoI18n.translator.i18n("Wi-Fi")
         if (id === "bluetooth") return MeoI18n.translator.i18n("Bluetooth")
         if (id === "focus") return MeoI18n.translator.i18n("Focus")
@@ -141,6 +142,7 @@ QQC2.ScrollView {
     }
 
     function tileSubtitle(id) {
+        if (id === "darkTheme") return MeoShellTheme.darkMode ? MeoI18n.translator.i18n("On") : MeoI18n.translator.i18n("Off")
         if (id === "wifi") return SystemState.networkName !== "" ? SystemState.networkName : SystemState.networkStatus
         if (id === "bluetooth") return bluetoothSubtitle()
         if (id === "focus") return NotificationManager.Server.inhibited ? MeoI18n.translator.i18n("Do Not Disturb") : MeoI18n.translator.i18n("Notifications on")
@@ -154,6 +156,7 @@ QQC2.ScrollView {
     }
 
     function tileIcon(id) {
+        if (id === "darkTheme") return "contrast"
         if (id === "wifi") return SystemState.wirelessEnabled ? (SystemState.networkConnected ? "wifi" : "wifi_find") : "wifi_off"
         if (id === "bluetooth") return "bluetooth"
         if (id === "focus") return NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications"
@@ -167,6 +170,7 @@ QQC2.ScrollView {
     }
 
     function tileActive(id) {
+        if (id === "darkTheme") return MeoShellTheme.darkMode
         if (id === "wifi") return SystemState.wirelessEnabled
         if (id === "bluetooth") return SystemState.bluetoothEnabled
         if (id === "focus") return NotificationManager.Server.valid && NotificationManager.Server.inhibited
@@ -179,6 +183,7 @@ QQC2.ScrollView {
     }
 
     function tileEnabled(id) {
+        if (id === "darkTheme") return !ColorSchemeActions.busy
         if (id === "wifi") return SystemState.networkAvailable
         if (id === "bluetooth") return SystemState.bluetoothAvailable
         if (id === "focus") return NotificationManager.Server.valid
@@ -191,6 +196,7 @@ QQC2.ScrollView {
     }
 
     function triggerTile(id) {
+        if (id === "darkTheme") { ColorSchemeActions.setDarkMode(!MeoShellTheme.darkMode); return }
         if (id === "wifi") SystemState.wirelessEnabled = !SystemState.wirelessEnabled
         else if (id === "bluetooth") SystemState.bluetoothEnabled = !SystemState.bluetoothEnabled
         else if (id === "focus") NotificationManager.Server.inhibited = !NotificationManager.Server.inhibited
@@ -220,6 +226,23 @@ QQC2.ScrollView {
         rebuildTiles()
     }
 
+    // The quick control is one persistent slider, independent of list resets.
+    // Settings retains the native per-display controls.
+    readonly property real combinedBrightness: {
+        const displays = Platform.brightnessDisplays
+        if (displays.length === 0) return 0
+        let total = 0
+        for (const display of displays)
+            total += 100 * display.brightness / Math.max(1, display.maximum)
+        return total / displays.length
+    }
+    function setAllBrightness(percent) {
+        const displays = Platform.brightnessDisplays
+        const ratio = Math.max(0, Math.min(100, percent)) / 100
+        for (const display of displays)
+            Platform.setBrightness(display.id, Math.round(ratio * display.maximum))
+    }
+
     ListModel { id: tileModel }
 
     Timer {
@@ -231,41 +254,63 @@ QQC2.ScrollView {
     ColumnLayout {
         id: contentColumn
         width: root.availableWidth
-        spacing: MeoTheme.space12
+        // One section rhythm for the whole panel instead of ad-hoc gaps.
+        spacing: ShellMetrics.popupSectionSpacing
 
         QuickSettingsHeader {
             editMode: root.editMode
             systemState: SystemState
-        }
-
-        Repeater {
-            model: Platform.brightnessDisplays
-            delegate: MeoQuickControlSlider {
-                required property int index
-                required property var modelData
-                Layout.fillWidth: true
-                visible: index === 0 || root.displayExpanded
-                iconName: "light_mode"
-                label: root.displayExpanded && Platform.brightnessDisplays.length > 1 ? modelData.label : ""
-                accessibleName: modelData.label
-                    ? MeoI18n.translator.i18n("%1 brightness", modelData.label)
-                    : MeoI18n.translator.i18n("Display brightness")
-                iconAccessibleName: ""
-                iconActionEnabled: false
-                from: 0
-                to: modelData.maximum
-                value: modelData.brightness
-                detailsAvailable: index === 0 && Platform.brightnessDisplays.length > 1
-                expanded: root.displayExpanded
-                onMoved: function(value) { Platform.setBrightness(modelData.id, Math.round(value)) }
-                onDetailsToggled: function(expanded) { root.displayExpanded = expanded }
+            platform: Platform
+            onResetRequested: {
+                root.tileOrder = "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
+                root.tileSizes = "wifi:2,bluetooth:2,focus:1,nightLight:1,keepAwake:1,powerMode:1,microphone:1,audioDevices:1,display:1,screenshot:1"
+                root.tileVisibility = root.defaultTileVisibility
+                root.tileDensity = "comfortable"
+                root.rebuildTiles()
+                root.scheduleSaveTiles()
             }
+            onPowerRequested: root.powerRequested()
+            onEditRequested: root.editRequested()
         }
 
         MeoQuickControlSlider {
+            id: combinedBrightnessSlider
+            objectName: "combinedBrightnessSlider"
+            controlled: true
+            Layout.fillWidth: true
+            visible: Platform.brightnessAvailable
+                iconName: "light_mode"
+                trailingIcon: "settings"
+                extraActionIcon: "dark_mode"
+                extraActionEnabled: Platform.nightLightAvailable
+                extraActionActive: Platform.nightLightEnabled
+                extraActionAccessibleName: MeoI18n.translator.i18n("Night Light")
+                onExtraActionTriggered: Platform.nightLightEnabled = !Platform.nightLightEnabled
+                onTrailingTriggered: Qt.openUrlExternally("applications:org.meo.settings.display.desktop")
+            label: ""
+            accessibleName: Platform.brightnessDisplays.length > 1
+                            ? MeoI18n.translator.i18n("Brightness of all displays")
+                            : MeoI18n.translator.i18n("Display brightness")
+            iconAccessibleName: ""
+            iconActionEnabled: false
+            from: 0
+            to: 100
+            value: root.combinedBrightness
+            detailsAvailable: false
+            onMoved: function(value) { root.setAllBrightness(value) }
+        }
+
+        MeoQuickControlSlider {
+                controlled: true
             Layout.fillWidth: true
             visible: SystemState.audioAvailable
             iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
+            trailingIcon: "music_note"
+            extraActionIcon: "tune"
+            extraActionActive: root.audioExpanded
+            extraActionAccessibleName: MeoI18n.translator.i18n("Audio controls")
+            onExtraActionTriggered: root.audioDetailsRequested()
+            onTrailingTriggered: root.audioExpanded = !root.audioExpanded
             label: ""
             accessibleName: MeoI18n.translator.i18n("Output volume")
             iconAccessibleName: SystemState.audioMuted ? MeoI18n.translator.i18n("Unmute output") : MeoI18n.translator.i18n("Mute output")
@@ -309,6 +354,7 @@ QQC2.ScrollView {
                     onSelected: function(index, value) { SystemState.setDefaultAudioOutput(SystemState.audioOutputDevices[index].id) }
                 }
                 MeoQuickControlSlider {
+                controlled: true
                     Layout.fillWidth: true
                     visible: SystemState.microphoneAvailable
                     iconName: SystemState.microphoneMuted ? "mic_off" : "mic"
@@ -403,24 +449,17 @@ QQC2.ScrollView {
 
         PopupInlineMessage {
             Layout.fillWidth: true
+            text: ColorSchemeActions.error
+            dismissible: false
+        }
+
+        PopupInlineMessage {
+            Layout.fillWidth: true
             text: SystemState.operationError !== "" ? SystemState.operationError : (Platform.lastError !== "" ? Platform.lastError : Media.lastError)
             dismissible: true
             onDismissed: { SystemState.clearOperationError(); Platform.clearError(); Media.clearError() }
         }
 
-        QuickSettingsFooter {
-            editMode: root.editMode
-            platform: Platform
-            onResetRequested: {
-                root.tileOrder = "wifi,bluetooth,focus,nightLight,keepAwake,powerMode,microphone,audioDevices,display,screenshot"
-                root.tileSizes = "wifi:2,bluetooth:2,focus:2,nightLight:2,keepAwake:2,powerMode:2,microphone:2,audioDevices:2,display:2,screenshot:2"
-                root.tileVisibility = root.defaultTileVisibility
-                root.tileDensity = "comfortable"
-                root.rebuildTiles()
-                root.scheduleSaveTiles()
-            }
-            onPowerRequested: root.powerRequested()
-            onEditRequested: root.editRequested()
-        }
+
     }
 }

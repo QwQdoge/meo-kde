@@ -7,6 +7,16 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+def status_center_source():
+    """StatusCenterView wraps OriginalStatusCenterView (calendar variant)."""
+    base = REPO_ROOT / "qml/MeoKDE"
+    return "\n".join(
+        (base / name).read_text(encoding="utf-8")
+        for name in ("StatusCenterView.qml", "OriginalStatusCenterView.qml")
+    )
+
+
+
 
 def read(relative: str) -> str:
     return (REPO_ROOT / relative).read_text(encoding="utf-8")
@@ -28,7 +38,7 @@ class MaterialVisualContractTests(unittest.TestCase):
         trigger = read("qml/MeoKDE/ShellTriggerSurface.qml")
         quick_center = read("plasmoids/org.meo.topbar/contents/ui/QuickSettingsCenter.qml")
         quick_home = read("plasmoids/org.meo.topbar/contents/ui/QuickSettingsHome.qml")
-        status = read("qml/MeoKDE/StatusCenterView.qml")
+        status = status_center_source()
         notifications = read("qml/MeoKDE/NotificationCenterView.qml")
         launcher = read("plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml")
 

@@ -13,6 +13,20 @@ Item {
     property var notifications: null
     property date currentDateTime: new Date()
     property bool showTitle: true
+    property bool showHeader: true
+    property bool showEmptyState: true
+    property int modelRevision: 0
+    Connections {
+        target: root.notifications
+        ignoreUnknownSignals: true
+        function changed() { Qt.callLater(function() { root.modelRevision++ }) }
+        function onRowsInserted() { changed() }
+        function onRowsRemoved() { changed() }
+        function onDataChanged() { changed() }
+        function onModelReset() { changed() }
+        function onCountChanged() { changed() }
+    }
+    readonly property real renderedHeight: notificationList.contentHeight
     property bool showSettingsAction: true
     property bool showJobs: true
     // Presentation choices are normalized once at the shared notification
@@ -30,8 +44,10 @@ Item {
     readonly property real cardPadding: (compactView || compactDensity)
                                       ? MeoTheme.space8 : MeoTheme.space12
 
-    readonly property int notificationCount: notifications && typeof notifications.count === "number"
-                                             ? notifications.count : 0
+    readonly property int notificationCount: {
+        root.modelRevision
+        return notifications && typeof notifications.count === "number" ? notifications.count : 0
+    }
     readonly property int unreadCount: notifications && typeof notifications.unreadNotificationsCount === "number"
                                        ? notifications.unreadNotificationsCount : 0
     readonly property int activeJobsCount: showJobs && notifications && typeof notifications.activeJobsCount === "number"
@@ -41,6 +57,7 @@ Item {
     readonly property int historyNotificationCount: notifications && typeof notifications.expiredNotificationsCount === "number"
                                                     ? notifications.expiredNotificationsCount : 0
     readonly property int visibleNotificationCount: {
+        root.modelRevision
         root.notificationCount
         root.showHistory
         root.showJobs
@@ -52,6 +69,7 @@ Item {
         return visibleCount
     }
     readonly property int closableCount: {
+        root.modelRevision
         root.notificationCount
         let count = 0
         for (let row = 0; row < root.notificationCount; ++row) {
@@ -194,6 +212,7 @@ Item {
         spacing: MeoTheme.space8
 
         NotificationCenterHeader {
+            visible: root.showHeader
             showTitle: root.showTitle
             showSettingsAction: root.showSettingsAction
             notificationCount: root.notificationCount
@@ -222,7 +241,10 @@ Item {
                          ? MeoTheme.space4 : MeoTheme.space8
                 boundsBehavior: Flickable.StopAtBounds
                 reuseItems: true
-                preserveScrollPosition: false
+                preserveScrollPosition: true
+                add: Transition {
+                    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoTheme.motionDurationListInsert; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate }
+                }
                 // The center has no single selected row. Leaving ListView's
                 // implicit current item enabled can auto-position a growing
                 // model to that delegate while the opening transition runs.
@@ -328,6 +350,7 @@ Item {
                     // the surrounding status surface.
                     radius: root.compactView ? ShellMetrics.radiusMedium : ShellMetrics.radiusLarge
                     elevation: 0
+                    showOutline: false
                     // The disclosure controls the card's real height.  This
                     // mirrors DMS's retained-content collapse rather than
                     // deleting long text before the contraction completes.
@@ -389,7 +412,7 @@ Item {
                         pressY: notificationPointer.mouseY
                         radius: notificationCard.radius
                         focusColor: notificationCard.critical
-                                    ? MeoTheme.onErrorContainer : MeoTheme.primary
+                                    ? MeoTheme.contentOnErrorContainer : MeoTheme.primary
                     }
 
                     ColumnLayout {
@@ -406,8 +429,8 @@ Item {
                                 source: notificationCard.displayIcon
                                 Layout.preferredWidth: 20 * MeoTheme.globalScale
                                 Layout.preferredHeight: Layout.preferredWidth
-                                color: notificationCard.critical ? MeoTheme.onErrorContainer
-                                                                 : MeoTheme.onSurfaceVariant
+                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
+                                                                 : MeoTheme.contentOnSurfaceVariant
                             }
                             MeoText {
                                 Layout.fillWidth: true
@@ -418,8 +441,8 @@ Item {
                                 typeSize: "small"
                                 emphasized: true
                                 elide: Text.ElideRight
-                                color: notificationCard.critical ? MeoTheme.onErrorContainer
-                                                                 : MeoTheme.onSurfaceVariant
+                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
+                                                                 : MeoTheme.contentOnSurfaceVariant
                             }
                             MeoText {
                                 visible: notificationCard.critical
@@ -427,7 +450,7 @@ Item {
                                 typeRole: "label"
                                 typeSize: "small"
                                 emphasized: true
-                                color: MeoTheme.onErrorContainer
+                                color: MeoTheme.contentOnErrorContainer
                                 Accessible.name: MeoI18n.translator.i18n("Critical notification")
                             }
                             MeoText {
@@ -436,15 +459,15 @@ Item {
                                 typeRole: "label"
                                 typeSize: "small"
                                 emphasized: true
-                                color: MeoTheme.onSurfaceVariant
+                                color: MeoTheme.contentOnSurfaceVariant
                                 Accessible.name: MeoI18n.translator.i18n("Notification history")
                             }
                             MeoText {
                                 text: root.relativeTime(notificationCard.effectiveTime)
                                 typeRole: "label"
                                 typeSize: "small"
-                                color: notificationCard.critical ? MeoTheme.onErrorContainer
-                                                                 : MeoTheme.onSurfaceVariant
+                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
+                                                                 : MeoTheme.contentOnSurfaceVariant
                             }
                             MeoIconButton {
                                 id: configureButton
@@ -490,7 +513,7 @@ Item {
                             typeSize: notificationCard.compact ? "medium" : "large"
                             emphasized: true
                             wrapMode: Text.Wrap
-                            color: notificationCard.critical ? MeoTheme.onErrorContainer : MeoTheme.onSurface
+                            color: notificationCard.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.contentOnSurface
                         }
 
                         NotificationBodyDisclosure {
@@ -518,7 +541,7 @@ Item {
                                 text: MeoI18n.translator.i18n("%1%", Math.max(0, notificationCard.percentage))
                                 typeRole: "label"
                                 typeSize: "small"
-                                color: MeoTheme.onSurfaceVariant
+                                color: MeoTheme.contentOnSurfaceVariant
                             }
                         }
 
@@ -616,11 +639,20 @@ Item {
                 QQC2.ScrollBar.vertical: MeoScrollBar {}
             }
 
-            PopupEmptyState {
-                anchors.fill: parent
+            MeoMotionSurface {
+                anchors.top: parent.top
+                width: parent.width
+                height: 184 * MeoTheme.globalScale
+                color: MeoTheme.surfaceContainerHigh
+                radius: ShellMetrics.radiusLarge
+                elevation: 0
+                showOutline: false
                 visible: opacity > 0
                 enabled: root.visibleNotificationCount === 0
-                opacity: root.visibleNotificationCount === 0 ? 1 : 0
+                opacity: root.showEmptyState && root.visibleNotificationCount === 0 ? 1 : 0
+                PopupEmptyState {
+                anchors.fill: parent
+                anchors.margins: MeoTheme.space16
                 iconName: NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications_none"
                 title: NotificationManager.Server.inhibited
                        ? MeoI18n.translator.i18n("Do Not Disturb is on")
@@ -631,8 +663,9 @@ Item {
                              : (root.notificationCount > 0
                                 ? MeoI18n.translator.i18n("Older notifications or background jobs are hidden by this view’s preferences.")
                                 : MeoI18n.translator.i18n("New notifications and background jobs will appear here."))
-                actionText: root.showSettingsAction ? MeoI18n.translator.i18n("Notification settings") : ""
+                actionText: ""
                 onActionRequested: root.settingsRequested()
+                }
                 Behavior on opacity {
                     NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
                 }

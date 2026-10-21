@@ -37,6 +37,8 @@ add_library(meosystemplugin MODULE
     dynamiccolorprovider.h
     wallpapercontrast.cpp
     wallpapercontrast.h
+    colorschemeactions.cpp
+    colorschemeactions.h
     platformcontroller.cpp
     platformcontroller.h
     performancecontroller.cpp

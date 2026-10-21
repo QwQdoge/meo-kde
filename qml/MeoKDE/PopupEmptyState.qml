@@ -24,7 +24,7 @@ Item {
             visible: root.iconName !== ""
             icon: root.iconName
             size: 36
-            color: MeoTheme.onSurfaceVariant
+            color: MeoTheme.contentOnSurfaceVariant
         }
 
         MeoText {
@@ -34,7 +34,7 @@ Item {
             typeSize: "small"
             emphasized: true
             horizontalAlignment: Text.AlignHCenter
-            color: MeoTheme.onSurface
+            color: MeoTheme.contentOnSurface
             wrapMode: Text.WordWrap
         }
 
@@ -45,7 +45,7 @@ Item {
             typeRole: "body"
             typeSize: "small"
             horizontalAlignment: Text.AlignHCenter
-            color: MeoTheme.onSurfaceVariant
+            color: MeoTheme.contentOnSurfaceVariant
             wrapMode: Text.WordWrap
         }
 

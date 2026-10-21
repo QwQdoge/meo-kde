@@ -6,6 +6,16 @@ import unittest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+def status_center_source():
+    """StatusCenterView wraps OriginalStatusCenterView (calendar variant)."""
+    base = REPO_ROOT / "qml/MeoKDE"
+    return "\n".join(
+        (base / name).read_text(encoding="utf-8")
+        for name in ("StatusCenterView.qml", "OriginalStatusCenterView.qml")
+    )
+
+
 LAYOUT = REPO_ROOT / "themes/look-and-feel/org.meo.desktop/contents/layouts/org.kde.plasma.desktop-layout.js"
 INSTALLER = REPO_ROOT / "setup/apply-meo-desktop.sh"
 TOPBAR = REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui"
@@ -81,9 +91,7 @@ class DesktopLayoutTests(unittest.TestCase):
         quick_center = (
             REPO_ROOT / "plasmoids/org.meo.topbar/contents/ui/QuickSettingsCenter.qml"
         ).read_text(encoding="utf-8")
-        status_center = (
-            REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml"
-        ).read_text(encoding="utf-8")
+        status_center = status_center_source()
 
         for source in (active_app, status, time_button, notification_button):
             self.assertIn("MeoInteractionMotion", source)
@@ -169,7 +177,7 @@ class DesktopLayoutTests(unittest.TestCase):
             REPO_ROOT / "qml/MeoKDE/NotificationCompactButton.qml"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("revealActive: root.expanded", source)
+        self.assertIn("revealActive: popup.visible", source)
         self.assertIn("MeoInteractionMotion", compact)
         self.assertIn("implicitWidth: 28 * MeoTheme.globalScale", compact)
         self.assertIn("implicitHeight: implicitWidth", compact)
@@ -380,7 +388,7 @@ class DesktopLayoutTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("active: root.expanded", quick_main)
+        self.assertIn("active: popup.visible", quick_main)
         self.assertIn("active: root.expanded", time_main)
         self.assertIn("MeoInteractionMotion", quick_status)
         self.assertIn("interactionMotion.resolvedScale", quick_status)
@@ -448,7 +456,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn("DesktopEntry", launcher)
 
     def test_topbar_is_backed_by_real_kde_models(self):
-        status_center = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
+        status_center = status_center_source()
         notification_center = (REPO_ROOT / "qml/MeoKDE/NotificationCenterView.qml").read_text(encoding="utf-8")
         notification_header = (REPO_ROOT / "qml/MeoKDE/NotificationCenterHeader.qml").read_text(encoding="utf-8")
         notification_disclosure = (REPO_ROOT / "qml/MeoKDE/NotificationBodyDisclosure.qml").read_text(encoding="utf-8")
@@ -506,7 +514,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertNotIn("12 * MeoTheme.globalScale", quick_center)
         self.assertIn('popEnter: Transition', quick_center)
         self.assertIn('prepareToClose()', quick_center)
-        self.assertIn('fullRepresentationItem.prepareToClose()', quick_main)
+        self.assertIn('mainItem.prepareToClose()', quick_main)
         self.assertIn('scheduleSaveTiles()', quick_settings)
         self.assertIn('interval: 180', quick_settings)
         self.assertIn('relativeTime', notification_center)
@@ -567,7 +575,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("org.meo.settings.desktop", documentation)
 
     def test_status_and_quick_settings_have_compact_width_contracts(self):
-        status = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
+        status = status_center_source()
         quick_center = (TOPBAR / "QuickSettingsCenter.qml").read_text(encoding="utf-8")
 
         self.assertIn("Layout.minimumWidth: 320 * MeoTheme.globalScale", status)
@@ -575,7 +583,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn("Layout.minimumWidth: 280 * MeoTheme.globalScale", quick_center)
 
     def test_notification_variant_applets_share_the_status_center_contract(self):
-        shared = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
+        shared = status_center_source()
         notifications = (REPO_ROOT / "plasmoids/org.meo.notifications/contents/ui/main.qml").read_text(encoding="utf-8")
         time_notifications = (REPO_ROOT / "plasmoids/org.meo.time-notifications/contents/ui/main.qml").read_text(encoding="utf-8")
         compact_button = (REPO_ROOT / "qml/MeoKDE/TimeNotificationButton.qml").read_text(encoding="utf-8")
@@ -598,10 +606,10 @@ class DesktopLayoutTests(unittest.TestCase):
 
     def test_time_applet_has_no_notification_manager_and_uses_time_calendar_mode(self):
         time_main = (REPO_ROOT / "plasmoids/org.meo.time/contents/ui/main.qml").read_text(encoding="utf-8")
-        status = (REPO_ROOT / "qml/MeoKDE/StatusCenterView.qml").read_text(encoding="utf-8")
+        status = status_center_source()
 
         self.assertNotIn("notificationmanager", time_main)
-        self.assertIn('centerMode:"timeCalendar"', time_main)
+        self.assertIn('centerMode: "timeCalendar"', time_main)
         self.assertIn("trackSeconds: Plasmoid.configuration.showSeconds", time_main)
         self.assertIn('centerMode !== "timeCalendar"', status)
 
@@ -959,7 +967,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('root.visibleNotificationCount === 0', shared_view)
         self.assertIn('currentIndex: -1', shared_view)
         self.assertIn('MeoListView', shared_view)
-        self.assertIn('preserveScrollPosition: false', shared_view)
+        self.assertIn('preserveScrollPosition: true', shared_view)
         self.assertIn('id: notificationPointer', shared_view)
         self.assertIn('hovered: notificationPointer.containsMouse', shared_view)
         self.assertIn('pressed: notificationPointer.pressed', shared_view)

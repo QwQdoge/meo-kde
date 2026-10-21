@@ -45,7 +45,7 @@ Item {
                 typeRole: "title"
                 typeSize: "medium"
                 emphasized: true
-                color: MeoTheme.onSurface
+                color: MeoTheme.contentOnSurface
                 elide: Text.ElideRight
             }
 
@@ -55,7 +55,7 @@ Item {
                 text: root.subtitle
                 typeRole: "body"
                 typeSize: "small"
-                color: MeoTheme.onSurfaceVariant
+                color: MeoTheme.contentOnSurfaceVariant
                 elide: Text.ElideRight
             }
         }
