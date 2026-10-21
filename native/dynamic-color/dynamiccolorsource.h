@@ -28,6 +28,8 @@ public:
     /// containment.  Non-local wallpaper plugins and slideshow descriptors are
     /// intentionally not treated as image files.
     static QString configuredWallpaperPath(QString *error = nullptr);
+    /// Applet configuration files that can hold the wallpaper, active shell first.
+    static QStringList plasmaAppletConfigNames();
     /// Samples a bounded image representation and returns one stable seed.
     static QColor seedFromWallpaper(const QString &path, QString *error = nullptr);
 

@@ -206,7 +206,15 @@ fi
 # complete Material HCT scheme immediately so native KDE controls, the Dock,
 # window decoration and MeoUI start from the same accent source.
 if [ -n "${dynamic_color_helper}" ]; then
-  run "${dynamic_color_helper}" --apply
+  if [ -f "${XDG_CONFIG_HOME:-${HOME}/.config}/meo-dynamic-colorsrc" ]; then
+    # Keep the user's remembered source (accent, wallpaper or manual).
+    run "${dynamic_color_helper}" --apply
+  else
+    # A fresh Meo desktop follows its wallpaper; fall back to the KDE accent
+    # when no local image wallpaper is configured yet.
+    run "${dynamic_color_helper}" --source wallpaper --apply --remember-source \
+      || run "${dynamic_color_helper}" --apply
+  fi
 fi
 
 # `meo-desktop-apply` is the user's explicit activation action. Keep subsequent

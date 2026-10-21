@@ -111,42 +111,68 @@ bool DynamicColorSource::persist(const QString &mode, const QColor &manualColor,
     return true;
 }
 
+QStringList DynamicColorSource::plasmaAppletConfigNames()
+{
+    // Plasma keeps a separate applet configuration per shell package, so the
+    // active Meo shell's file holds the wallpaper the user actually changed.
+    QStringList names;
+    const auto shellrc = KSharedConfig::openConfig(QStringLiteral("plasmashellrc"));
+    const QString package = KConfigGroup(shellrc, QStringLiteral("Shell")).readEntry("ShellPackage", QString());
+    if (!package.isEmpty() && package != QLatin1String("org.kde.plasma.desktop")) {
+        names << QStringLiteral("plasma-%1-appletsrc").arg(package);
+    }
+    names << QStringLiteral("plasma-org.kde.plasma.desktop-appletsrc");
+    return names;
+}
+
 QString DynamicColorSource::configuredWallpaperPath(QString *error)
 {
     if (error) {
         error->clear();
     }
-    const auto config = KSharedConfig::openConfig(QStringLiteral("plasma-org.kde.plasma.desktop-appletsrc"));
-    const KConfigGroup containments(config, QStringLiteral("Containments"));
-    QStringList containmentIds = containments.groupList();
-    std::sort(containmentIds.begin(), containmentIds.end());
+    QString firstError;
+    for (const QString &name : plasmaAppletConfigNames()) {
+        const auto config = KSharedConfig::openConfig(name);
+        const KConfigGroup containments(config, QStringLiteral("Containments"));
+        QStringList containmentIds = containments.groupList();
+        std::sort(containmentIds.begin(), containmentIds.end());
 
-    for (const QString &id : containmentIds) {
-        const KConfigGroup containment(&containments, id);
-        if (containment.readEntry("wallpaperplugin", QString()) != QLatin1String("org.kde.image")) {
-            continue;
-        }
-        // Plasma's KConfig group is intentionally absolute beneath a
-        // containment (`[/Wallpaper/org.kde.image/General]`); omitting the
-        // leading slash would read a different, non-Plasma group.
-        const KConfigGroup wallpaperGroup(&containment,
-                                           QStringLiteral("/Wallpaper/org.kde.image/General"));
-        const QString image = wallpaperGroup.readEntry("Image", QString());
-        QString pathError;
-        const QString path = localPath(image, &pathError);
-        if (!path.isEmpty()) {
-            if (QFileInfo(path).isFile()) {
-                return path;
+        for (const QString &id : containmentIds) {
+            const KConfigGroup containment(&containments, id);
+            if (containment.readEntry("wallpaperplugin", QString()) != QLatin1String("org.kde.image")) {
+                continue;
             }
-            pathError = QStringLiteral("The configured wallpaper image no longer exists.");
-        }
-        if (error && error->isEmpty() && !pathError.isEmpty()) {
-            *error = pathError;
+            // The image the user picked lives in [Wallpaper][org.kde.image][General].
+            // The layout scripts write [/Wallpaper/org.kde.image/General] for
+            // the default; it is only consulted when the first is absent.
+            const KConfigGroup wallpaper(&containment, QStringLiteral("Wallpaper"));
+            const KConfigGroup plugin(&wallpaper, QStringLiteral("org.kde.image"));
+            const KConfigGroup chosen(&plugin, QStringLiteral("General"));
+            const KConfigGroup layoutDefault(&containment, QStringLiteral("/Wallpaper/org.kde.image/General"));
+            for (const KConfigGroup &group : {chosen, layoutDefault}) {
+                const QString image = group.readEntry("Image", QString());
+                if (image.isEmpty()) {
+                    continue;
+                }
+                QString pathError;
+                const QString path = localPath(image, &pathError);
+                if (!path.isEmpty()) {
+                    if (QFileInfo(path).isFile()) {
+                        return path;
+                    }
+                    pathError = QStringLiteral("The configured wallpaper image no longer exists.");
+                }
+                if (firstError.isEmpty() && !pathError.isEmpty()) {
+                    firstError = pathError;
+                }
+            }
         }
     }
 
-    if (error && error->isEmpty()) {
-        *error = QStringLiteral("No local image wallpaper is configured for this Plasma desktop.");
+    if (error) {
+        *error = firstError.isEmpty()
+            ? QStringLiteral("No local image wallpaper is configured for this Plasma desktop.")
+            : firstError;
     }
     return {};
 }

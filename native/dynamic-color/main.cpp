@@ -189,6 +189,16 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Remember the source before applying: applying rewrites kdeglobals, which
+    // wakes the follow-meo watcher, and it must already read the new choice.
+    if (parser.isSet(rememberSourceOption)
+        && !DynamicColorSource::persist(resolvedSource,
+                                        resolvedSource == QLatin1String("manual") ? accent : QColor(),
+                                        &error)) {
+        QTextStream(stderr) << error << Qt::endl;
+        return 1;
+    }
+
     QString applicationIconStatus;
     if (parser.isSet(applyOption)) {
         if (!DynamicColors::applyScheme(schemePath, name, accent, true, nullptr, &error,
@@ -199,13 +209,6 @@ int main(int argc, char *argv[])
         // Icons are private hicolor assets. A refresh failure must never
         // affect a desktop color scheme that has already been applied.
         applicationIconStatus = refreshManagedApplicationIcons();
-    }
-    if (parser.isSet(rememberSourceOption)
-        && !DynamicColorSource::persist(resolvedSource,
-                                        resolvedSource == QLatin1String("manual") ? accent : QColor(),
-                                        &error)) {
-        QTextStream(stderr) << error << Qt::endl;
-        return 1;
     }
     QTextStream output(stdout);
     output << "MEO_DYNAMIC_COLORS source=" << resolvedSource

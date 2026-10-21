@@ -36,7 +36,7 @@ QString localImagePath(const QString &configured)
 WallpaperContrast::WallpaperContrast(QObject *parent)
     : QObject(parent)
     , m_desktopWatcher(KConfigWatcher::create(
-          KSharedConfig::openConfig(QStringLiteral("plasma-org.kde.plasma.desktop-appletsrc"))))
+          KSharedConfig::openConfig(DynamicColorSource::plasmaAppletConfigNames().first())))
     , m_lockWatcher(KConfigWatcher::create(
           KSharedConfig::openConfig(QStringLiteral("kscreenlockerrc"))))
 {

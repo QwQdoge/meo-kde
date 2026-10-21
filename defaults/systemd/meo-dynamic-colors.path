@@ -3,6 +3,9 @@ Description=Watch Meo dynamic color source configuration
 
 [Path]
 PathChanged=%h/.config/plasma-org.kde.plasma.desktop-appletsrc
+# The Meo shell package keeps its own applet configuration, which holds the
+# wallpaper the user actually picked.
+PathChanged=%h/.config/plasma-org.meo.shell-appletsrc
 # KDE accent is the default source and can be changed outside Meo Settings.
 PathChanged=%h/.config/kdeglobals
 # This file changes only after an explicit Meo source selection. Watching it

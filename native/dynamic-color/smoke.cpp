@@ -94,6 +94,44 @@ int main(int argc, char *argv[])
         QTextStream(stderr) << "Dynamic color source storage/resolution failed: " << sourceError << Qt::endl;
         return 1;
     }
+    // The active shell package's applet file holds the wallpaper the user picked,
+    // in [Wallpaper][org.kde.image][General]; it wins over the layout default.
+    {
+        const QString pickedPath = configDirectory.filePath(QStringLiteral("picked.png"));
+        QImage picked(16, 16, QImage::Format_RGBA8888);
+        picked.fill(QColor(QStringLiteral("#34a853")));
+        if (!picked.save(pickedPath)) {
+            return 1;
+        }
+        {
+            KConfig shellrc(configDirectory.filePath(QStringLiteral("plasmashellrc")), KConfig::SimpleConfig);
+            KConfigGroup(&shellrc, QStringLiteral("Shell")).writeEntry("ShellPackage", QStringLiteral("org.meo.shell"));
+            if (!shellrc.sync()) {
+                return 1;
+            }
+            KConfig shell(configDirectory.filePath(QStringLiteral("plasma-org.meo.shell-appletsrc")), KConfig::SimpleConfig);
+            KConfigGroup containments(&shell, QStringLiteral("Containments"));
+            KConfigGroup containment(&containments, QStringLiteral("1"));
+            containment.writeEntry("wallpaperplugin", QStringLiteral("org.kde.image"));
+            KConfigGroup layoutDefault(&containment, QStringLiteral("/Wallpaper/org.kde.image/General"));
+            layoutDefault.writeEntry("Image", QStringLiteral("file:///nonexistent/default.jpg"));
+            KConfigGroup wallpaper(&containment, QStringLiteral("Wallpaper"));
+            KConfigGroup plugin(&wallpaper, QStringLiteral("org.kde.image"));
+            KConfigGroup chosen(&plugin, QStringLiteral("General"));
+            chosen.writeEntry("Image", QUrl::fromLocalFile(pickedPath).toString());
+            if (!shell.sync()) {
+                return 1;
+            }
+        }
+        if (DynamicColorSource::configuredWallpaperPath(&sourceError) != pickedPath) {
+            QTextStream(stderr) << "The active shell's chosen wallpaper was not used: " << sourceError << Qt::endl;
+            return 1;
+        }
+        // Back to the desktop-package file for the remaining checks.
+        QFile::remove(configDirectory.filePath(QStringLiteral("plasmashellrc")));
+        QFile::remove(configDirectory.filePath(QStringLiteral("plasma-org.meo.shell-appletsrc")));
+        KSharedConfig::openConfig(QStringLiteral("plasmashellrc"))->reparseConfiguration();
+    }
     QColor resolvedSeed;
     QString resolvedSource;
     QString resolvedWallpaper;
