@@ -4,6 +4,10 @@ import MeoUI 1.0
 
 QQC2.AbstractButton {
     id: root
+    PanelForeground {
+        id: panelForeground
+        target: root
+    }
     property int unreadCount: 0
     property int activeJobsCount: 0
     property bool inhibited: false
@@ -58,7 +62,7 @@ QQC2.AbstractButton {
             icon: root.inhibited ? "do_not_disturb_on"
                                  : (root.activeJobsCount > 0 ? "progress_activity" : "notifications")
             size: 20
-            color: root.active ? MeoTheme.onPrimaryContainer : MeoShellTheme.panelForeground
+            color: root.active ? MeoTheme.onPrimaryContainer : panelForeground.color
 
             Behavior on color {
                 ColorAnimation {

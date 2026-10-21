@@ -3,6 +3,7 @@ singleton MeoI18n 1.0 MeoI18n.qml
 singleton MeoShellTheme 1.0 MeoShellTheme.qml
 singleton ShellMetrics 1.0 ShellMetrics.qml
 singleton MeoMotion 1.0 MeoMotion.qml
+PanelForeground 1.0 PanelForeground.qml
 FrostedSurface 1.0 FrostedSurface.qml
 ShellTriggerSurface 1.0 ShellTriggerSurface.qml
 PopupPageHeader 1.0 PopupPageHeader.qml

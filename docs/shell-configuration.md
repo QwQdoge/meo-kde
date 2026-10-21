@@ -92,6 +92,26 @@ transition that makes the panel opaque at a window join is not yet a runtime
 signal; it must be added through a KWin state bridge and must ignore fullscreen,
 dialogs, popups, non-active windows, and windows on other outputs.
 
+## Wallpaper-aware foreground
+
+Top-bar text and status glyphs choose black or white from the wallpaper pixels
+directly behind each surface, not from the light/dark theme or the wallpaper's
+global average. `Meo.System.WallpaperContrast` reads only the configured local
+`org.kde.image` wallpaper, keeps a small cached thumbnail plus a per-region
+cache, and answers with the WCAG relative luminance of the cropped region using
+the image plugin's fill/preserve-aspect mapping. `MeoKDE.PanelForeground` asks
+again only when the wallpaper, the surface geometry, the output or the panel
+window color changes (coalesced by a 120 ms timer); there is no screen capture
+and no per-frame work. Dark glyphs win above relative luminance 0.25. An opaque
+panel (the black bar shown while a window covers the output) is judged by its
+own color. When no local image wallpaper is readable, the theme-derived
+foreground is kept rather than guessing.
+
+Source/offscreen tests cover the sampling math and the QML wiring; legibility on
+light, dark and mixed wallpapers in a real Plasma session, and the panel
+window's reported position under Wayland layer-shell, still need runtime
+acceptance.
+
 ## Window motion
 
 MeoArch uses KWin's upstream Scale effect for open/close motion and its upstream

@@ -125,14 +125,13 @@ class MaterialVisualContractTests(unittest.TestCase):
         self.assertIn("Kicker.RunnerModel", launcher)
         self.assertIn("MeoContextMenu", launcher)
 
-    def test_lock_screen_keeps_caelestia_lineage_but_meo_visual_identity(self):
+    def test_lock_screen_uses_kscreenlocker_with_meo_visual_identity(self):
         documentation = read("docs/LOCKSCREEN.md")
 
-        self.assertIn("caelestia-dots/shell", documentation)
-        self.assertIn("Material 3 roles as MeoUI", documentation)
-        self.assertIn("Comfortaa", documentation)
-        self.assertIn("Roboto", documentation)
-        self.assertIn("Material Symbols Rounded", documentation)
+        self.assertIn("KScreenLocker", documentation)
+        self.assertIn("MeoUI", documentation)
+        self.assertIn("second lock", documentation.replace("\n", " "))
+        self.assertNotIn("caelestia-dots/shell", documentation)
 
     def test_material_shell_contract_documents_reference_boundaries(self):
         documentation = read("docs/design/MATERIAL_SHELL_CONTRACT.md")

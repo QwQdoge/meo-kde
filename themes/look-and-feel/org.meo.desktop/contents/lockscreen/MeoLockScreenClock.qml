@@ -6,6 +6,8 @@ Item {
     id: clock
     property date dateTime: new Date()
     property real centerScale: 1.0
+    // Glyph size; the lock screen scales this with the screen height.
+    property real pixelSize: 176 * clock.centerScale * MeoTheme.globalScale
     property color foregroundColor: MeoTheme.contentOnSurface
     readonly property var displayLocale: Qt.locale(Qt.uiLanguage)
     readonly property string shortTimeFormat: displayLocale.timeFormat(Locale.ShortFormat)
@@ -30,15 +32,15 @@ Item {
     Column {
         id: timeColumn
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: -MeoTheme.space8 * clock.centerScale
+        spacing: -clock.pixelSize * 0.16
         Text {
             objectName: "lockHours"
             text: clock.hours
             color: clock.foregroundColor
             font.family: MeoTheme.typefacePlain
-            font.pixelSize: 176 * clock.centerScale * MeoTheme.globalScale
-            font.weight: Font.Normal
-            font.letterSpacing: -4 * clock.centerScale * MeoTheme.globalScale
+            font.pixelSize: clock.pixelSize
+            font.weight: Font.Light
+            font.letterSpacing: -clock.pixelSize * 0.02
             anchors.horizontalCenter: parent.horizontalCenter
             lineHeight: 0.9
         }
@@ -47,9 +49,9 @@ Item {
             text: clock.minutes
             color: clock.foregroundColor
             font.family: MeoTheme.typefacePlain
-            font.pixelSize: 176 * clock.centerScale * MeoTheme.globalScale
-            font.weight: Font.Normal
-            font.letterSpacing: -4 * clock.centerScale * MeoTheme.globalScale
+            font.pixelSize: clock.pixelSize
+            font.weight: Font.Light
+            font.letterSpacing: -clock.pixelSize * 0.02
             anchors.horizontalCenter: parent.horizontalCenter
             lineHeight: 0.9
         }
@@ -62,7 +64,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         text: clock.dateLabel
         typeRole: "label"
-        typeSize: "large"
+        typeSize: "medium"
         emphasized: true
         color: clock.foregroundColor
         horizontalAlignment: Text.AlignHCenter

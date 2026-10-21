@@ -4,7 +4,7 @@
 
 This document defines the version-one **presentation and configuration contract** shared by the logged-in Meo Session Lock and the separate Meo Login surface. It does not make those two security boundaries interchangeable.
 
-The authoritative normal lock path is the Meo-owned resident `meo-lockscreen` process documented in `LOCKSCREEN.md`. It acquires the compositor's Wayland session lock and delegates authentication to the maintained PAM-backed authentication integration. KScreenLocker-based Meo presentation work is historical/compatibility material and is not a second normal lock owner.
+The authoritative normal lock path is Plasma's KScreenLocker with the Meo lock-screen presentation documented in `LOCKSCREEN.md`. It holds the Wayland session lock and delegates authentication to the maintained PAM-backed authentication integration. There is no second normal lock owner.
 
 The login surface is owned by the Meo Login Manager fork and preserves its reviewed upstream authentication, daemon, service, D-Bus, and session-start boundaries. Login and unlock may share MeoUI presentation primitives and the schema below, but they never share transient credential state or assume that a login session and an unlock operation are the same lifecycle.
 

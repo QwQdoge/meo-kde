@@ -10,7 +10,8 @@ introduced by Meo Desktop.
 | `assets/icons/text logo.svg` | MeoArch symbol and word mark, 1116 x 174 view box | Yes | Wide branding placements |
 | `assets/icons/text logo.png` | MeoArch symbol and word mark, 3347 x 520 | No | Raster fallback |
 | `assets/icons/Meo.kra` | Krita source artwork | N/A | Editable source; never shipped as a runtime icon |
-| `assets/wallpapers/installer_background.png` | Background, 1672 x 941 | No | Installer and initial Meo Desktop wallpaper |
+| `assets/wallpapers/installer_background.png` | Background, 1672 x 941 | No | Installer background only |
+| `assets/wallpapers/meoarch_default.jpg` | Photograph, 1672 x 940 | No | Default Meo Desktop, lock-screen, logout and splash wallpaper |
 
 Packaging installs the wallpaper from its existing top-level location rather
 than maintaining another editable copy. The SVG symbol is preferred whenever

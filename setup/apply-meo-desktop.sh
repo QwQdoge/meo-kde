@@ -209,7 +209,8 @@ for required in \
   "${repo_root}/plasmoids/org.meo.widget.clock/metadata.json" \
   "${repo_root}/plasmoids/org.meo.widget.media/metadata.json" \
   "${repo_root}/plasmoids/org.meo.widget.performance/metadata.json" \
-  "${repo_root}/assets/wallpapers/installer_background.png"; do
+  "${repo_root}/assets/wallpapers/installer_background.png" \
+  "${repo_root}/assets/wallpapers/meoarch_default.jpg"; do
   if [ ! -f "${required}" ]; then
     echo "Required Meo Desktop asset is missing: ${required}" >&2
     exit 1
@@ -551,6 +552,7 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 run cp -a "${repo_root}/assets/wallpapers/installer_background.png" "${data_root}/wallpapers/MeoArch/installer_background.png"
+run cp -a "${repo_root}/assets/wallpapers/meoarch_default.jpg" "${data_root}/wallpapers/MeoArch/meoarch_default.jpg"
 if command -v fc-cache >/dev/null 2>&1; then
   run fc-cache -f "${data_root}/fonts/meo"
 fi

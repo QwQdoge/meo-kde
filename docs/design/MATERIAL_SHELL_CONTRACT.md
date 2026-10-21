@@ -17,9 +17,7 @@ service already exists.
 
 Reference shells are inspiration, not a second design system.  New Meo
 components must not copy their private service/model code or introduce a
-Caelestia/end-4-specific token.  The one deliberate source-reuse exception is
-the separately documented GPL session-lock implementation in
-`docs/LOCKSCREEN.md`.
+Caelestia/end-4-specific token.
 
 ## Required visual rules
 
@@ -58,7 +56,7 @@ the separately documented GPL session-lock implementation in
 | Launcher / search | MeoMotionPopup, MeoSearchBar, MeoAppGridItem, MeoContextMenu, loading feedback | Caelestia compact launcher + end-4 expressive search |
 | Context / app menus | Shared MeoContextMenu plus native Qt QMenu Meo QStyle | Rounded segmented action surfaces |
 | Dock / tasks | Native Plasma task model with Meo task frames and semantic state colors | Compact floating-shell treatment without replacing task behavior |
-| Session lock | Meo Material roles/typography over documented pinned GPL lock implementation | Caelestia motion/layout lineage, Meo visual identity |
+| Session lock | KScreenLocker with Meo Material roles/typography; stacked clock over wallpaper | Googlebook lock screen |
 | Qt Widgets apps | Meo QStyle consumes shared DesignTokens and live QPalette roles | Same Material language outside QML |
 | Plasma-owned delegates | Meo Plasma Style view/menu/task SVG states | Avoids visual fallback to Breeze while preserving Plasma behavior |
 

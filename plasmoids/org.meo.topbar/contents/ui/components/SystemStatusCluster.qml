@@ -7,6 +7,11 @@ import Meo.System 1.0
 QQC2.AbstractButton {
     id: root
 
+    PanelForeground {
+        id: statusForeground
+        target: root
+    }
+
     signal quickSettingsRequested()
     property bool active: false
     property real textScale: 1.0
@@ -126,7 +131,7 @@ QQC2.AbstractButton {
 
     contentItem: MeoStatusStrip {
         id: statusContent
-        foregroundColor: MeoShellTheme.panelForeground
+        foregroundColor: statusForeground.color
         statusModel: root.statusModel
         active: root.active
         iconSize: 18

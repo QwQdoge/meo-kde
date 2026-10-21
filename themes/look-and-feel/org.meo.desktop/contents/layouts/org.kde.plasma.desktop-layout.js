@@ -80,6 +80,6 @@ for (var i = 0; i < existingDesktops.length; ++i) {
     existingDesktops[i].addWidget("org.meo.widgetexplorer", 24, 64, 48, 48)
     existingDesktops[i].wallpaperPlugin = "org.kde.image"
     existingDesktops[i].currentConfigGroup = ["/Wallpaper/org.kde.image/General"]
-    existingDesktops[i].writeConfig("Image", "file:///usr/share/wallpapers/MeoArch/installer_background.png")
+    existingDesktops[i].writeConfig("Image", "file:///usr/share/wallpapers/MeoArch/meoarch_default.jpg")
     existingDesktops[i].writeConfig("FillMode", "2")
 }

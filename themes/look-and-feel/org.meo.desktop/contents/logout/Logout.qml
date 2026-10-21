@@ -34,7 +34,7 @@ Item {
 
     Image {
         anchors.fill: parent
-        source: "file:///usr/share/wallpapers/MeoArch/installer_background.png"
+        source: "file:///usr/share/wallpapers/MeoArch/meoarch_default.jpg"
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
     }

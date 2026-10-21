@@ -16,7 +16,10 @@ Theme=MeoSymbols
 name=MeoLight
 
 [Wallpaper]
-Image=/usr/share/wallpapers/MeoArch/installer_background.png
+Image=/usr/share/wallpapers/MeoArch/meoarch_default.jpg
+
+[kscreenlockerrc][Greeter][Wallpaper][org.kde.image][General]
+Image=/usr/share/wallpapers/MeoArch/meoarch_default.jpg
 
 [kcminputrc][Mouse]
 cursorTheme=breeze_cursors

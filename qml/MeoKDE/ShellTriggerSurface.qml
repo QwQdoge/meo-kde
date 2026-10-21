@@ -20,7 +20,12 @@ MeoShape {
     // Hover/press feedback belongs to the single shared state layer. Keep the
     // base surface quiet until the trigger owns an open/selected surface.
     property color selectedColor: MeoTheme.primaryContainer
-    property color restingContentColor: MeoShellTheme.panelForeground
+    property color restingContentColor: panelForeground.color
+
+    PanelForeground {
+        id: panelForeground
+        target: root
+    }
     property color selectedContentColor: MeoTheme.onPrimaryContainer
 
     readonly property color contentColor: active

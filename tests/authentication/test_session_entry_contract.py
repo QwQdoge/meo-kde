@@ -91,10 +91,10 @@ class SessionEntryContractTests(unittest.TestCase):
     def test_contract_has_one_authoritative_lock_path_and_separate_login_boundary(self):
         for required in (
             "authoritative normal lock path",
-            "`meo-lockscreen`",
+            "kscreenlocker",
             "wayland session lock",
             "pam-backed authentication",
-            "not a second normal lock owner",
+            "no second normal lock owner",
             "not make those two security boundaries interchangeable",
             "same lifecycle",
         ):

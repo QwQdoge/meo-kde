@@ -70,6 +70,8 @@ package() {
     "${pkgdir}/usr/share/color-schemes/"
   install -Dm644 "${workspace}/assets/wallpapers/installer_background.png" \
     "${pkgdir}/usr/share/wallpapers/MeoArch/installer_background.png"
+  install -Dm644 "${workspace}/assets/wallpapers/meoarch_default.jpg" \
+    "${pkgdir}/usr/share/wallpapers/MeoArch/meoarch_default.jpg"
   install -Dm644 "${workspace}/assets/icons/meoarch-logo.svg" \
     "${pkgdir}/usr/share/pixmaps/meoarch-logo.svg"
   install -Dm644 "${workspace}/assets/icons/meoarch-logo.svg" \

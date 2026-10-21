@@ -35,6 +35,8 @@ add_library(meosystemplugin MODULE
     systemstatehub.h
     dynamiccolorprovider.cpp
     dynamiccolorprovider.h
+    wallpapercontrast.cpp
+    wallpapercontrast.h
     platformcontroller.cpp
     platformcontroller.h
     performancecontroller.cpp
@@ -121,6 +123,16 @@ if(BUILD_TESTING)
     set_tests_properties(meo-weather-cache PROPERTIES
         ENVIRONMENT "LANG=zh_CN.UTF-8;LC_ALL=zh_CN.UTF-8;LANGUAGE=zh_CN"
     )
+
+    add_executable(meo-wallpaper-contrast-test
+        tests/wallpapercontrast-test.cpp
+        wallpapercontrast.cpp
+        wallpapercontrast.h
+    )
+    target_include_directories(meo-wallpaper-contrast-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-wallpaper-contrast-test PRIVATE
+        Qt6::Core Qt6::Gui Qt6::Test KF6::ConfigCore Meo::DynamicColorCore)
+    add_test(NAME meo-wallpaper-contrast COMMAND meo-wallpaper-contrast-test)
 
     add_executable(meo-performance-controller-test
         tests/performancecontroller-test.cpp

@@ -65,6 +65,30 @@ Item {
                                                  && dashboardHeight >= 500 * MeoTheme.globalScale
     property string pendingPowerAction: ""
 
+    // Black or white content color from the wallpaper pixels behind the clock
+    // and unlock hint. The native sampler reads the lock-screen wallpaper
+    // (falling back to the desktop one) once, caches it, and answers again
+    // only when the wallpaper or the screen size changes. Unknown wallpaper
+    // keeps the theme-derived color.
+    property int wallpaperContrastRevision: 0
+    readonly property var wallpaperContrast: typeof WallpaperContrast === "undefined"
+                                             ? null : WallpaperContrast
+    readonly property bool darkForeground: {
+        wallpaperContrastRevision
+        if (!wallpaperContrast || width <= 0 || height <= 0)
+            return !MeoTheme.isDarkMode
+        return wallpaperContrast.prefersDarkForeground(
+                    width * 0.30, height * 0.10, width * 0.40, height * 0.82,
+                    width, height, !MeoTheme.isDarkMode,
+                    wallpaperContrast.lockScreenWallpaperPath())
+    }
+    readonly property color ambientForeground: darkForeground ? Qt.rgba(0, 0, 0, 0.88) : "white"
+    Connections {
+        target: lockScreenUi.wallpaperContrast
+        ignoreUnknownSignals: true
+        function onChanged() { lockScreenUi.wallpaperContrastRevision++ }
+    }
+
     function confirmPower(action) {
         pendingPowerAction = action
         powerConfirmation.open()
@@ -506,7 +530,7 @@ Item {
                ? wideDashboardSurface.y + MeoTheme.space32
                  - lockScreenUi.authenticationReveal * 20 * MeoTheme.globalScale
                : Math.max(MeoTheme.space32,
-                          parent.height * 0.48 - height / 2
+                          parent.height * 0.13
                           - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
 
             Item {
@@ -521,6 +545,10 @@ Item {
                 id: ambientClock
                 anchors.centerIn: parent
                 centerScale: lockScreenUi.dashboardCenterScale
+                // Stacked hours/minutes sized from the screen like the
+                // Googlebook lock screen; foreground follows the wallpaper.
+                pixelSize: lockScreenUi.height * 0.20
+                foregroundColor: lockScreenUi.ambientForeground
             }
         }
 
@@ -697,11 +725,29 @@ Item {
                 color: ambientClock.foregroundColor
             }
             MeoText {
-                text: qsTr("Press any key or swipe up to unlock")
+                text: qsTr("Press any key to unlock")
                 typeRole: "label"
                 typeSize: "medium"
                 color: ambientClock.foregroundColor
             }
+        }
+
+        // Small status line in the top-left corner, as on the reference
+        // lock screen. It exposes only the time and date.
+        MeoText {
+            id: ambientTopLeft
+            anchors {
+                left: parent.left
+                top: parent.top
+                leftMargin: MeoTheme.space24
+                topMargin: MeoTheme.space16
+            }
+            visible: lockScreenUi.activeAuthenticationSurface && opacity > 0.001
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+            text: Qt.formatTime(ambientClock.dateTime, "h:mm") + "  " + ambientClock.dateLabel
+            typeRole: "label"
+            typeSize: "medium"
+            color: lockScreenUi.ambientForeground
         }
 
         // Non-active screens still remain full KScreenLocker surfaces. This

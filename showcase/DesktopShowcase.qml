@@ -57,7 +57,7 @@ Window {
 
     Image {
         anchors.fill: parent
-        source: Qt.resolvedUrl("../assets/wallpapers/installer_background.png")
+        source: Qt.resolvedUrl("../assets/wallpapers/meoarch_default.jpg")
         fillMode: Image.PreserveAspectCrop
     }
 
