@@ -424,6 +424,13 @@ for desktop_theme in MeoLight MeoDark; do
   run rm -rf "${data_root}/plasma/desktoptheme/${desktop_theme}"
   run cp -a "${desktop_root}/themes/desktoptheme/${desktop_theme}" "${data_root}/plasma/desktoptheme/${desktop_theme}"
 done
+# `cp -a` keeps the source mtime, and Plasma trusts its theme cache whenever it
+# is newer than the theme files. Refresh the timestamps and drop the stale
+# caches so the new panel/dialog frames are actually loaded.
+for desktop_theme in MeoLight MeoDark; do
+  run find "${data_root}/plasma/desktoptheme/${desktop_theme}" -type f -exec touch {} +
+  run rm -f "${HOME}/.cache/plasma_theme_${desktop_theme}.kcache"
+done
 # Meo was an early duplicate desktop theme. Keep the two explicit light/dark
 # variants so System Settings presents a single, unambiguous Meo choice.
 run rm -rf "${data_root}/plasma/desktoptheme/Meo"
