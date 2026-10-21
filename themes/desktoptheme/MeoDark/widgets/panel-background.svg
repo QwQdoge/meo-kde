@@ -2,7 +2,7 @@
   <style id="current-color-scheme" type="text/css">
     .ColorScheme-ButtonBackground { color: #141218; }
   </style>
-  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0.68">
+  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="1">
     <path id="center" d="M32 32h2v2h-2z"/>
     <path id="top" d="M32 16h2v16h-2z"/>
     <path id="bottom" d="M32 34h2v16h-2z"/>

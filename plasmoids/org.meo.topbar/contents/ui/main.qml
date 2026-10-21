@@ -100,4 +100,6 @@ PlasmoidItem {
         }
     }
     }
+
+    DialogBlur { dialog: popup }
 }

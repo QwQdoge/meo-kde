@@ -5,6 +5,7 @@ singleton ShellMetrics 1.0 ShellMetrics.qml
 singleton MeoMotion 1.0 MeoMotion.qml
 PanelForeground 1.0 PanelForeground.qml
 FrostedSurface 1.0 FrostedSurface.qml
+DialogBlur 1.0 DialogBlur.qml
 ShellTriggerSurface 1.0 ShellTriggerSurface.qml
 PopupPageHeader 1.0 PopupPageHeader.qml
 PopupInlineMessage 1.0 PopupInlineMessage.qml

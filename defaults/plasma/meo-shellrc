@@ -29,3 +29,10 @@ BatteryDisplay=2
 ShowDate=true
 ShowNotifications=true
 Use24HourClock=true
+
+[Appearance]
+# Popups and the Shelf are solid by default. SurfaceTransparency lets popups
+# show a little of what is below; SurfaceBlur (needs transparency) asks KWin to
+# blur it, which gives the frosted-glass look.
+SurfaceTransparency=false
+SurfaceBlur=false

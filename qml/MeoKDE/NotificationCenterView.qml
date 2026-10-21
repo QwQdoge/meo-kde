@@ -6,6 +6,7 @@ import QtQuick.Layouts
 import org.kde.notificationmanager as NotificationManager
 import org.kde.kirigami as Kirigami
 import MeoUI 1.0
+import Meo.System 1.0 as MeoSystem
 
 Item {
     id: root
@@ -442,7 +443,11 @@ Item {
                     height: contentAllowed ? implicitHeight : 0
                     opacity: contentAllowed ? 1 : 0
                     implicitHeight: cardContent.implicitHeight + 2 * root.cardPadding
-                    color: critical ? MeoTheme.errorContainer : MeoTheme.surfaceContainerHigh
+                    // Solid unless the user enabled SurfaceTransparency in meo-shellrc.
+                    readonly property color baseColor: critical ? MeoTheme.errorContainer
+                                                                : MeoTheme.surfaceContainerHigh
+                    color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b,
+                                   MeoSystem.ShellAppearance.transparency ? 0.9 : 1.0)
                     // Notification cards share the popup's expressive corner
                     // token, so they morph with the same MeoUI shape scale as
                     // the surrounding status surface.

@@ -95,11 +95,11 @@ class DesktopLayoutTests(legacy.DesktopLayoutTests):
             self.assertIn('id="group-expander-bottom"', task_frame)
             self.assertIn('id="normal-center"', task_frame)
             self.assertIn(
-                'id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"',
+                'id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0.07"',
                 task_frame,
             )
             self.assertIn('id="normal-hover-center"', task_frame)
-            self.assertIn('opacity="0.10"', task_frame)
+            self.assertIn('opacity="0.13"', task_frame)
             self.assertNotIn('opacity="0.94"', task_frame)
 
     def test_status_and_quick_settings_have_compact_width_contracts(self):

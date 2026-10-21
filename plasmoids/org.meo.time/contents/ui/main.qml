@@ -71,4 +71,6 @@ PlasmoidItem {
             showSecondaryCalendar: Plasmoid.configuration.showSecondaryCalendar
         }
     }
+
+    DialogBlur { dialog: popup }
 }

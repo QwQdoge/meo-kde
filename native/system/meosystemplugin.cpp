@@ -2,6 +2,8 @@
 #include "dynamiccolorprovider.h"
 #include "wallpapercontrast.h"
 #include "colorschemeactions.h"
+#include "shellappearance.h"
+#include "windowblur.h"
 #include "mediacontroller.h"
 #include "weathercache.h"
 #include "platformcontroller.h"
@@ -77,6 +79,13 @@ QObject *colorSchemeActionsProvider(QQmlEngine *, QJSEngine *)
     return actions;
 }
 
+QObject *shellAppearanceProvider(QQmlEngine *, QJSEngine *)
+{
+    auto *appearance = new ShellAppearance;
+    QQmlEngine::setObjectOwnership(appearance, QQmlEngine::CppOwnership);
+    return appearance;
+}
+
 QObject *weatherProvider(QQmlEngine *, QJSEngine *)
 {
     auto *cache = new WeatherCache;
@@ -125,6 +134,8 @@ public:
         qmlRegisterSingletonType<TaskManagerController>(uri, 1, 0, "Tasks", tasksProvider);
         qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
         qmlRegisterSingletonType<WeatherCache>(uri, 1, 0, "Weather", weatherProvider);
+        qmlRegisterSingletonType<ShellAppearance>(uri, 1, 0, "ShellAppearance", shellAppearanceProvider);
+        qmlRegisterType<WindowBlur>(uri, 1, 0, "WindowBlur");
         qmlRegisterSingletonType<ColorSchemeActions>(uri, 1, 0, "ColorSchemeActions", colorSchemeActionsProvider);
         qmlRegisterSingletonType<WallpaperContrast>(uri, 1, 0, "WallpaperContrast", wallpaperContrastProvider);
         qmlRegisterSingletonType<DynamicColorProvider>(uri, 1, 0, "MaterialColors", materialColorsProvider);

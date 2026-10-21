@@ -12,6 +12,7 @@ find_package(KF6BluezQt REQUIRED)
 find_package(KF6Solid REQUIRED)
 find_package(KF6PulseAudioQt REQUIRED)
 find_package(KF6GuiAddons REQUIRED)
+find_package(KF6WindowSystem REQUIRED)
 find_package(KF6Config REQUIRED)
 find_package(KF6I18n REQUIRED)
 find_package(LibTaskManager REQUIRED)
@@ -39,6 +40,10 @@ add_library(meosystemplugin MODULE
     wallpapercontrast.h
     colorschemeactions.cpp
     colorschemeactions.h
+    shellappearance.cpp
+    shellappearance.h
+    windowblur.cpp
+    windowblur.h
     platformcontroller.cpp
     platformcontroller.h
     performancecontroller.cpp
@@ -73,6 +78,7 @@ target_link_libraries(meosystemplugin PRIVATE
     KF6::Solid
     KF6::PulseAudioQt
     KF6::GuiAddons
+    KF6::WindowSystem
     KF6::ConfigCore
     KF6::I18n
     Plasma::Plasma
@@ -135,6 +141,18 @@ if(BUILD_TESTING)
     target_link_libraries(meo-wallpaper-contrast-test PRIVATE
         Qt6::Core Qt6::Gui Qt6::Test KF6::ConfigCore Meo::DynamicColorCore)
     add_test(NAME meo-wallpaper-contrast COMMAND meo-wallpaper-contrast-test)
+
+    add_executable(meo-shell-appearance-test
+        tests/shellappearance-test.cpp
+        shellappearance.cpp
+        shellappearance.h
+        windowblur.cpp
+        windowblur.h
+    )
+    target_include_directories(meo-shell-appearance-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(meo-shell-appearance-test PRIVATE
+        Qt6::Core Qt6::Gui Qt6::Test KF6::ConfigCore KF6::WindowSystem)
+    add_test(NAME meo-shell-appearance COMMAND meo-shell-appearance-test)
 
     add_executable(meo-performance-controller-test
         tests/performancecontroller-test.cpp

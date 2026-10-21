@@ -92,6 +92,22 @@ transition that makes the panel opaque at a window join is not yet a runtime
 signal; it must be added through a KWin state bridge and must ignore fullscreen,
 dialogs, popups, non-active windows, and windows on other outputs.
 
+## Surface transparency and blur
+
+```ini
+[Appearance]
+SurfaceTransparency=false
+SurfaceBlur=false
+```
+
+Quick Settings and the other popups are solid by default, and so is the bottom
+Shelf. `SurfaceTransparency=true` lets popups and notification cards show a
+little of what is below (88% / 86% opacity in light / dark). `SurfaceBlur=true`
+(only effective together with transparency) asks KWin's Blur effect, through
+`KWindowEffects`, to blur the area behind the rounded popup, giving a frosted
+look. Neither captures the screen; `Meo.System.ShellAppearance` reads the keys
+and follows changes. The top bar is always clear over the wallpaper.
+
 ## Wallpaper-aware foreground
 
 Top-bar text and status glyphs choose black or white from the wallpaper pixels

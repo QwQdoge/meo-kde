@@ -44,7 +44,7 @@ class MaterialVisualContractTests(unittest.TestCase):
 
         for token in (
             "MeoMotionSurface", "MeoTheme.surfaceContainer",
-            "MeoTheme.transparencyEnabled", "elevation: 3", "showOutline: false",
+            "MeoSystem.ShellAppearance.transparency", "elevation: 3", "showOutline: false",
         ):
             self.assertIn(token, frosted)
 
