@@ -334,7 +334,7 @@ class DesktopLayoutTests(unittest.TestCase):
         self.assertIn('compact_frame = frame_paths("", 16)', generator)
         self.assertIn('north_frame = frame_paths("north", 16)', generator)
         self.assertIn('south_frame = frame_paths("south", 12)', generator)
-        self.assertIn('surface_opacity="1"', generator)
+        self.assertIn('surface_opacity="0.68"', generator)
         self.assertIn('surface_opacity="0.58"', generator)
         for asset in assets:
             source = asset.read_text(encoding="utf-8")
@@ -345,7 +345,7 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn('id="south-bottom" d="M32 34h2v12h-2z"', source)
             self.assertIn('id="north-hint-top-margin"', source)
             self.assertIn('id="south-hint-top-margin"', source)
-            expected_opacity = "0.58" if "/translucent/" in str(asset) else "1"
+            expected_opacity = "0.58" if "/translucent/" in str(asset) else "0.68"
             self.assertIn(f'fill-opacity="{expected_opacity}"', source)
             self.assertIn('class="ColorScheme-ButtonBackground"', source)
 
@@ -806,9 +806,9 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertNotIn('id="normal-indicator"', task_frame)
             self.assertIn('id="group-expander-bottom"', task_frame)
             self.assertIn('id="normal-center"', task_frame)
-            self.assertIn('id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0.07"', task_frame)
+            self.assertIn('id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"', task_frame)
             self.assertIn('id="normal-hover-center"', task_frame)
-            self.assertIn('opacity="0.13"', task_frame)
+            self.assertIn('opacity="0.10"', task_frame)
             self.assertNotIn('opacity="0.94"', task_frame)
 
     def test_installer_preflights_rounding_without_package_manager_mutation(self):

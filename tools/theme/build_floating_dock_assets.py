@@ -22,14 +22,14 @@ TARGETS = (
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoLight/widgets/panel-background.svg",
         background="#fffbfe",
-        # The Shelf is solid by default; transparency is an opt-in (see
-        # meo-shellrc [Appearance]). The top edge frame stays clear.
-        surface_opacity="1",
+        # The normal frame is also used by a top panel. Keep it visibly
+        # translucent instead of turning the floating Dock opaque.
+        surface_opacity="0.68",
     ),
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoDark/widgets/panel-background.svg",
         background="#141218",
-        surface_opacity="1",
+        surface_opacity="0.68",
     ),
     ThemeTarget(
         ROOT / "themes/desktoptheme/MeoLight/translucent/widgets/panel-background.svg",

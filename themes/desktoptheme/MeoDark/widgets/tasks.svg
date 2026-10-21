@@ -1,48 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="576" viewBox="0 0 96 576">
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="528" viewBox="0 0 96 528">
   <style id="current-color-scheme" type="text/css">
     .ColorScheme-Text { color: #e6e0e9; }
     .ColorScheme-Background { color: #141218; }
     .ColorScheme-ButtonFocus { color: #d0bcff; }
     .ColorScheme-NeutralText { color: #ffb4ab; }
   </style>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0.07"/>
-    <rect id="normal-top" x="23.5" y="3" width="1" height="20.5" opacity="0.07"/>
-    <rect id="normal-left" x="3" y="23.5" width="20.5" height="1" opacity="0.07"/>
-    <rect id="normal-right" x="24.5" y="23.5" width="20.5" height="1" opacity="0.07"/>
-    <path id="normal-topleft" d="M23.5 3A20.5 20.5 0 0 0 3 23.5H23.5Z" opacity="0.07"/>
-    <path id="normal-topright" d="M24.5 3A20.5 20.5 0 0 1 45 23.5H24.5Z" opacity="0.07"/>
-    <path id="normal-bottomleft" d="M3 24.5A20.5 20.5 0 0 0 23.5 45V24.5Z" opacity="0.07"/>
-    <path id="normal-bottomright" d="M24.5 24.5V45A20.5 20.5 0 0 0 45 24.5Z" opacity="0.07"/>
-    <rect id="normal-bottom" x="23.5" y="24.5" width="1" height="20.5" opacity="0.07"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"/>
+    <rect id="normal-top" x="23.5" y="3" width="1" height="20.5" opacity="0"/>
+    <rect id="normal-left" x="3" y="23.5" width="20.5" height="1" opacity="0"/>
+    <rect id="normal-right" x="24.5" y="23.5" width="20.5" height="1" opacity="0"/>
+    <path id="normal-topleft" d="M23.5 3A20.5 20.5 0 0 0 3 23.5H23.5Z" opacity="0"/>
+    <path id="normal-topright" d="M24.5 3A20.5 20.5 0 0 1 45 23.5H24.5Z" opacity="0"/>
+    <path id="normal-bottomleft" d="M3 24.5A20.5 20.5 0 0 0 23.5 45V24.5Z" opacity="0"/>
+    <path id="normal-bottomright" d="M24.5 24.5V45A20.5 20.5 0 0 0 45 24.5Z" opacity="0"/>
+    <rect id="normal-bottom" x="23.5" y="24.5" width="1" height="20.5" opacity="0"/>
   </g>
   <g id="normal-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="18" y="40" width="12" height="2" rx="1" opacity="0.72"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="focus-center" x="23.5" y="71.5" width="1" height="1" opacity="0.15"/>
-    <rect id="focus-top" x="23.5" y="51" width="1" height="20.5" opacity="0.15"/>
-    <rect id="focus-left" x="3" y="71.5" width="20.5" height="1" opacity="0.15"/>
-    <rect id="focus-right" x="24.5" y="71.5" width="20.5" height="1" opacity="0.15"/>
-    <path id="focus-topleft" d="M23.5 51A20.5 20.5 0 0 0 3 71.5H23.5Z" opacity="0.15"/>
-    <path id="focus-topright" d="M24.5 51A20.5 20.5 0 0 1 45 71.5H24.5Z" opacity="0.15"/>
-    <path id="focus-bottomleft" d="M3 72.5A20.5 20.5 0 0 0 23.5 93V72.5Z" opacity="0.15"/>
-    <path id="focus-bottomright" d="M24.5 72.5V93A20.5 20.5 0 0 0 45 72.5Z" opacity="0.15"/>
-    <rect id="focus-bottom" x="23.5" y="72.5" width="1" height="20.5" opacity="0.15"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="focus-center" x="23.5" y="71.5" width="1" height="1" opacity="0"/>
+    <rect id="focus-top" x="23.5" y="51" width="1" height="20.5" opacity="0"/>
+    <rect id="focus-left" x="3" y="71.5" width="20.5" height="1" opacity="0"/>
+    <rect id="focus-right" x="24.5" y="71.5" width="20.5" height="1" opacity="0"/>
+    <path id="focus-topleft" d="M23.5 51A20.5 20.5 0 0 0 3 71.5H23.5Z" opacity="0"/>
+    <path id="focus-topright" d="M24.5 51A20.5 20.5 0 0 1 45 71.5H24.5Z" opacity="0"/>
+    <path id="focus-bottomleft" d="M3 72.5A20.5 20.5 0 0 0 23.5 93V72.5Z" opacity="0"/>
+    <path id="focus-bottomright" d="M24.5 72.5V93A20.5 20.5 0 0 0 45 72.5Z" opacity="0"/>
+    <rect id="focus-bottom" x="23.5" y="72.5" width="1" height="20.5" opacity="0"/>
   </g>
   <g id="focus-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="15" y="86" width="18" height="4" rx="2" opacity="1"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="minimized-center" x="23.5" y="119.5" width="1" height="1" opacity="0.04"/>
-    <rect id="minimized-top" x="23.5" y="99" width="1" height="20.5" opacity="0.04"/>
-    <rect id="minimized-left" x="3" y="119.5" width="20.5" height="1" opacity="0.04"/>
-    <rect id="minimized-right" x="24.5" y="119.5" width="20.5" height="1" opacity="0.04"/>
-    <path id="minimized-topleft" d="M23.5 99A20.5 20.5 0 0 0 3 119.5H23.5Z" opacity="0.04"/>
-    <path id="minimized-topright" d="M24.5 99A20.5 20.5 0 0 1 45 119.5H24.5Z" opacity="0.04"/>
-    <path id="minimized-bottomleft" d="M3 120.5A20.5 20.5 0 0 0 23.5 141V120.5Z" opacity="0.04"/>
-    <path id="minimized-bottomright" d="M24.5 120.5V141A20.5 20.5 0 0 0 45 120.5Z" opacity="0.04"/>
-    <rect id="minimized-bottom" x="23.5" y="120.5" width="1" height="20.5" opacity="0.04"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="minimized-center" x="23.5" y="119.5" width="1" height="1" opacity="0"/>
+    <rect id="minimized-top" x="23.5" y="99" width="1" height="20.5" opacity="0"/>
+    <rect id="minimized-left" x="3" y="119.5" width="20.5" height="1" opacity="0"/>
+    <rect id="minimized-right" x="24.5" y="119.5" width="20.5" height="1" opacity="0"/>
+    <path id="minimized-topleft" d="M23.5 99A20.5 20.5 0 0 0 3 119.5H23.5Z" opacity="0"/>
+    <path id="minimized-topright" d="M24.5 99A20.5 20.5 0 0 1 45 119.5H24.5Z" opacity="0"/>
+    <path id="minimized-bottomleft" d="M3 120.5A20.5 20.5 0 0 0 23.5 141V120.5Z" opacity="0"/>
+    <path id="minimized-bottomright" d="M24.5 120.5V141A20.5 20.5 0 0 0 45 120.5Z" opacity="0"/>
+    <rect id="minimized-bottom" x="23.5" y="120.5" width="1" height="20.5" opacity="0"/>
   </g>
   <g id="minimized-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="18" y="136" width="12" height="2" rx="1" opacity="0.42"/>
@@ -75,44 +75,44 @@
   <g id="progress-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="18" y="232" width="12" height="2" rx="1" opacity="0.72"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="normal-hover-center" x="23.5" y="263.5" width="1" height="1" opacity="0.13"/>
-    <rect id="normal-hover-top" x="23.5" y="243" width="1" height="20.5" opacity="0.13"/>
-    <rect id="normal-hover-left" x="3" y="263.5" width="20.5" height="1" opacity="0.13"/>
-    <rect id="normal-hover-right" x="24.5" y="263.5" width="20.5" height="1" opacity="0.13"/>
-    <path id="normal-hover-topleft" d="M23.5 243A20.5 20.5 0 0 0 3 263.5H23.5Z" opacity="0.13"/>
-    <path id="normal-hover-topright" d="M24.5 243A20.5 20.5 0 0 1 45 263.5H24.5Z" opacity="0.13"/>
-    <path id="normal-hover-bottomleft" d="M3 264.5A20.5 20.5 0 0 0 23.5 285V264.5Z" opacity="0.13"/>
-    <path id="normal-hover-bottomright" d="M24.5 264.5V285A20.5 20.5 0 0 0 45 264.5Z" opacity="0.13"/>
-    <rect id="normal-hover-bottom" x="23.5" y="264.5" width="1" height="20.5" opacity="0.13"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="normal-hover-center" x="23.5" y="263.5" width="1" height="1" opacity="0.10"/>
+    <rect id="normal-hover-top" x="23.5" y="243" width="1" height="20.5" opacity="0.10"/>
+    <rect id="normal-hover-left" x="3" y="263.5" width="20.5" height="1" opacity="0.10"/>
+    <rect id="normal-hover-right" x="24.5" y="263.5" width="20.5" height="1" opacity="0.10"/>
+    <path id="normal-hover-topleft" d="M23.5 243A20.5 20.5 0 0 0 3 263.5H23.5Z" opacity="0.10"/>
+    <path id="normal-hover-topright" d="M24.5 243A20.5 20.5 0 0 1 45 263.5H24.5Z" opacity="0.10"/>
+    <path id="normal-hover-bottomleft" d="M3 264.5A20.5 20.5 0 0 0 23.5 285V264.5Z" opacity="0.10"/>
+    <path id="normal-hover-bottomright" d="M24.5 264.5V285A20.5 20.5 0 0 0 45 264.5Z" opacity="0.10"/>
+    <rect id="normal-hover-bottom" x="23.5" y="264.5" width="1" height="20.5" opacity="0.10"/>
   </g>
   <g id="normal-hover-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="18" y="280" width="12" height="2" rx="1" opacity="0.88"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="focus-hover-center" x="23.5" y="311.5" width="1" height="1" opacity="0.19"/>
-    <rect id="focus-hover-top" x="23.5" y="291" width="1" height="20.5" opacity="0.19"/>
-    <rect id="focus-hover-left" x="3" y="311.5" width="20.5" height="1" opacity="0.19"/>
-    <rect id="focus-hover-right" x="24.5" y="311.5" width="20.5" height="1" opacity="0.19"/>
-    <path id="focus-hover-topleft" d="M23.5 291A20.5 20.5 0 0 0 3 311.5H23.5Z" opacity="0.19"/>
-    <path id="focus-hover-topright" d="M24.5 291A20.5 20.5 0 0 1 45 311.5H24.5Z" opacity="0.19"/>
-    <path id="focus-hover-bottomleft" d="M3 312.5A20.5 20.5 0 0 0 23.5 333V312.5Z" opacity="0.19"/>
-    <path id="focus-hover-bottomright" d="M24.5 312.5V333A20.5 20.5 0 0 0 45 312.5Z" opacity="0.19"/>
-    <rect id="focus-hover-bottom" x="23.5" y="312.5" width="1" height="20.5" opacity="0.19"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="focus-hover-center" x="23.5" y="311.5" width="1" height="1" opacity="0.12"/>
+    <rect id="focus-hover-top" x="23.5" y="291" width="1" height="20.5" opacity="0.12"/>
+    <rect id="focus-hover-left" x="3" y="311.5" width="20.5" height="1" opacity="0.12"/>
+    <rect id="focus-hover-right" x="24.5" y="311.5" width="20.5" height="1" opacity="0.12"/>
+    <path id="focus-hover-topleft" d="M23.5 291A20.5 20.5 0 0 0 3 311.5H23.5Z" opacity="0.12"/>
+    <path id="focus-hover-topright" d="M24.5 291A20.5 20.5 0 0 1 45 311.5H24.5Z" opacity="0.12"/>
+    <path id="focus-hover-bottomleft" d="M3 312.5A20.5 20.5 0 0 0 23.5 333V312.5Z" opacity="0.12"/>
+    <path id="focus-hover-bottomright" d="M24.5 312.5V333A20.5 20.5 0 0 0 45 312.5Z" opacity="0.12"/>
+    <rect id="focus-hover-bottom" x="23.5" y="312.5" width="1" height="20.5" opacity="0.12"/>
   </g>
   <g id="focus-hover-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="15" y="326" width="18" height="4" rx="2" opacity="1"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="minimized-hover-center" x="23.5" y="359.5" width="1" height="1" opacity="0.09"/>
-    <rect id="minimized-hover-top" x="23.5" y="339" width="1" height="20.5" opacity="0.09"/>
-    <rect id="minimized-hover-left" x="3" y="359.5" width="20.5" height="1" opacity="0.09"/>
-    <rect id="minimized-hover-right" x="24.5" y="359.5" width="20.5" height="1" opacity="0.09"/>
-    <path id="minimized-hover-topleft" d="M23.5 339A20.5 20.5 0 0 0 3 359.5H23.5Z" opacity="0.09"/>
-    <path id="minimized-hover-topright" d="M24.5 339A20.5 20.5 0 0 1 45 359.5H24.5Z" opacity="0.09"/>
-    <path id="minimized-hover-bottomleft" d="M3 360.5A20.5 20.5 0 0 0 23.5 381V360.5Z" opacity="0.09"/>
-    <path id="minimized-hover-bottomright" d="M24.5 360.5V381A20.5 20.5 0 0 0 45 360.5Z" opacity="0.09"/>
-    <rect id="minimized-hover-bottom" x="23.5" y="360.5" width="1" height="20.5" opacity="0.09"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="minimized-hover-center" x="23.5" y="359.5" width="1" height="1" opacity="0.08"/>
+    <rect id="minimized-hover-top" x="23.5" y="339" width="1" height="20.5" opacity="0.08"/>
+    <rect id="minimized-hover-left" x="3" y="359.5" width="20.5" height="1" opacity="0.08"/>
+    <rect id="minimized-hover-right" x="24.5" y="359.5" width="20.5" height="1" opacity="0.08"/>
+    <path id="minimized-hover-topleft" d="M23.5 339A20.5 20.5 0 0 0 3 359.5H23.5Z" opacity="0.08"/>
+    <path id="minimized-hover-topright" d="M24.5 339A20.5 20.5 0 0 1 45 359.5H24.5Z" opacity="0.08"/>
+    <path id="minimized-hover-bottomleft" d="M3 360.5A20.5 20.5 0 0 0 23.5 381V360.5Z" opacity="0.08"/>
+    <path id="minimized-hover-bottomright" d="M24.5 360.5V381A20.5 20.5 0 0 0 45 360.5Z" opacity="0.08"/>
+    <rect id="minimized-hover-bottom" x="23.5" y="360.5" width="1" height="20.5" opacity="0.08"/>
   </g>
   <g id="minimized-hover-indicator" class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect x="18" y="376" width="12" height="2" rx="1" opacity="0.58"/>
@@ -131,38 +131,27 @@
   <g id="attention-hover-indicator" class="ColorScheme-NeutralText" fill="currentColor">
     <rect x="15" y="422" width="18" height="4" rx="2" opacity="1"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="center" x="23.5" y="455.5" width="1" height="1" opacity="0.07"/>
-    <rect id="top" x="23.5" y="435" width="1" height="20.5" opacity="0.07"/>
-    <rect id="left" x="3" y="455.5" width="20.5" height="1" opacity="0.07"/>
-    <rect id="right" x="24.5" y="455.5" width="20.5" height="1" opacity="0.07"/>
-    <path id="topleft" d="M23.5 435A20.5 20.5 0 0 0 3 455.5H23.5Z" opacity="0.07"/>
-    <path id="topright" d="M24.5 435A20.5 20.5 0 0 1 45 455.5H24.5Z" opacity="0.07"/>
-    <path id="bottomleft" d="M3 456.5A20.5 20.5 0 0 0 23.5 477V456.5Z" opacity="0.07"/>
-    <path id="bottomright" d="M24.5 456.5V477A20.5 20.5 0 0 0 45 456.5Z" opacity="0.07"/>
-    <rect id="bottom" x="23.5" y="456.5" width="1" height="20.5" opacity="0.07"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="launcher-hover-center" x="23.5" y="455.5" width="1" height="1" opacity="0.10"/>
+    <rect id="launcher-hover-top" x="23.5" y="435" width="1" height="20.5" opacity="0.10"/>
+    <rect id="launcher-hover-left" x="3" y="455.5" width="20.5" height="1" opacity="0.10"/>
+    <rect id="launcher-hover-right" x="24.5" y="455.5" width="20.5" height="1" opacity="0.10"/>
+    <path id="launcher-hover-topleft" d="M23.5 435A20.5 20.5 0 0 0 3 455.5H23.5Z" opacity="0.10"/>
+    <path id="launcher-hover-topright" d="M24.5 435A20.5 20.5 0 0 1 45 455.5H24.5Z" opacity="0.10"/>
+    <path id="launcher-hover-bottomleft" d="M3 456.5A20.5 20.5 0 0 0 23.5 477V456.5Z" opacity="0.10"/>
+    <path id="launcher-hover-bottomright" d="M24.5 456.5V477A20.5 20.5 0 0 0 45 456.5Z" opacity="0.10"/>
+    <rect id="launcher-hover-bottom" x="23.5" y="456.5" width="1" height="20.5" opacity="0.10"/>
   </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="launcher-hover-center" x="23.5" y="503.5" width="1" height="1" opacity="0.13"/>
-    <rect id="launcher-hover-top" x="23.5" y="483" width="1" height="20.5" opacity="0.13"/>
-    <rect id="launcher-hover-left" x="3" y="503.5" width="20.5" height="1" opacity="0.13"/>
-    <rect id="launcher-hover-right" x="24.5" y="503.5" width="20.5" height="1" opacity="0.13"/>
-    <path id="launcher-hover-topleft" d="M23.5 483A20.5 20.5 0 0 0 3 503.5H23.5Z" opacity="0.13"/>
-    <path id="launcher-hover-topright" d="M24.5 483A20.5 20.5 0 0 1 45 503.5H24.5Z" opacity="0.13"/>
-    <path id="launcher-hover-bottomleft" d="M3 504.5A20.5 20.5 0 0 0 23.5 525V504.5Z" opacity="0.13"/>
-    <path id="launcher-hover-bottomright" d="M24.5 504.5V525A20.5 20.5 0 0 0 45 504.5Z" opacity="0.13"/>
-    <rect id="launcher-hover-bottom" x="23.5" y="504.5" width="1" height="20.5" opacity="0.13"/>
-  </g>
-  <g class="ColorScheme-Text" fill="currentColor">
-    <rect id="hover-center" x="23.5" y="551.5" width="1" height="1" opacity="0.13"/>
-    <rect id="hover-top" x="23.5" y="531" width="1" height="20.5" opacity="0.13"/>
-    <rect id="hover-left" x="3" y="551.5" width="20.5" height="1" opacity="0.13"/>
-    <rect id="hover-right" x="24.5" y="551.5" width="20.5" height="1" opacity="0.13"/>
-    <path id="hover-topleft" d="M23.5 531A20.5 20.5 0 0 0 3 551.5H23.5Z" opacity="0.13"/>
-    <path id="hover-topright" d="M24.5 531A20.5 20.5 0 0 1 45 551.5H24.5Z" opacity="0.13"/>
-    <path id="hover-bottomleft" d="M3 552.5A20.5 20.5 0 0 0 23.5 573V552.5Z" opacity="0.13"/>
-    <path id="hover-bottomright" d="M24.5 552.5V573A20.5 20.5 0 0 0 45 552.5Z" opacity="0.13"/>
-    <rect id="hover-bottom" x="23.5" y="552.5" width="1" height="20.5" opacity="0.13"/>
+  <g class="ColorScheme-Background" fill="currentColor">
+    <rect id="hover-center" x="23.5" y="503.5" width="1" height="1" opacity="0.10"/>
+    <rect id="hover-top" x="23.5" y="483" width="1" height="20.5" opacity="0.10"/>
+    <rect id="hover-left" x="3" y="503.5" width="20.5" height="1" opacity="0.10"/>
+    <rect id="hover-right" x="24.5" y="503.5" width="20.5" height="1" opacity="0.10"/>
+    <path id="hover-topleft" d="M23.5 483A20.5 20.5 0 0 0 3 503.5H23.5Z" opacity="0.10"/>
+    <path id="hover-topright" d="M24.5 483A20.5 20.5 0 0 1 45 503.5H24.5Z" opacity="0.10"/>
+    <path id="hover-bottomleft" d="M3 504.5A20.5 20.5 0 0 0 23.5 525V504.5Z" opacity="0.10"/>
+    <path id="hover-bottomright" d="M24.5 504.5V525A20.5 20.5 0 0 0 45 504.5Z" opacity="0.10"/>
+    <rect id="hover-bottom" x="23.5" y="504.5" width="1" height="20.5" opacity="0.10"/>
   </g>
   <g class="ColorScheme-ButtonFocus" fill="currentColor">
     <rect id="group-expander-left" x="58" y="8" width="3" height="8" rx="1.5" opacity="0.72"/>

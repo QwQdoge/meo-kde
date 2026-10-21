@@ -71,22 +71,21 @@ def frame(
     bottom_y = center_y + CENTER
     well_right = left_x + WELL_SIZE
     well_bottom = top_y + WELL_SIZE
-    ident = f"{name}-" if name else ""
     lines = [f'  <g class="{color_class}" fill="currentColor">']
     lines.extend(
         (
-            f'    <rect id="{ident}center" x="{center_x}" y="{center_y}" width="{CENTER}" height="{CENTER}" opacity="{opacity}"/>',
-            f'    <rect id="{ident}top" x="{center_x}" y="{top_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>',
-            f'    <rect id="{ident}left" x="{left_x}" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
-            f'    <rect id="{ident}right" x="{right_x}" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
-            f'    <path id="{ident}topleft" d="M{center_x} {top_y}A{CORNER} {CORNER} 0 0 0 {left_x} {center_y}H{center_x}Z" opacity="{opacity}"/>',
-            f'    <path id="{ident}topright" d="M{right_x} {top_y}A{CORNER} {CORNER} 0 0 1 {well_right} {center_y}H{right_x}Z" opacity="{opacity}"/>',
-            f'    <path id="{ident}bottomleft" d="M{left_x} {bottom_y}A{CORNER} {CORNER} 0 0 0 {center_x} {well_bottom}V{bottom_y}Z" opacity="{opacity}"/>',
-            f'    <path id="{ident}bottomright" d="M{right_x} {bottom_y}V{well_bottom}A{CORNER} {CORNER} 0 0 0 {well_right} {bottom_y}Z" opacity="{opacity}"/>',
+            f'    <rect id="{name}-center" x="{center_x}" y="{center_y}" width="{CENTER}" height="{CENTER}" opacity="{opacity}"/>',
+            f'    <rect id="{name}-top" x="{center_x}" y="{top_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>',
+            f'    <rect id="{name}-left" x="{left_x}" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
+            f'    <rect id="{name}-right" x="{right_x}" y="{center_y}" width="{CORNER}" height="{CENTER}" opacity="{opacity}"/>',
+            f'    <path id="{name}-topleft" d="M{center_x} {top_y}A{CORNER} {CORNER} 0 0 0 {left_x} {center_y}H{center_x}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-topright" d="M{right_x} {top_y}A{CORNER} {CORNER} 0 0 1 {well_right} {center_y}H{right_x}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-bottomleft" d="M{left_x} {bottom_y}A{CORNER} {CORNER} 0 0 0 {center_x} {well_bottom}V{bottom_y}Z" opacity="{opacity}"/>',
+            f'    <path id="{name}-bottomright" d="M{right_x} {bottom_y}V{well_bottom}A{CORNER} {CORNER} 0 0 0 {well_right} {bottom_y}Z" opacity="{opacity}"/>',
         )
     )
     lines.append(
-        f'    <rect id="{ident}bottom" x="{center_x}" y="{bottom_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>'
+        f'    <rect id="{name}-bottom" x="{center_x}" y="{bottom_y}" width="{CENTER}" height="{CORNER}" opacity="{opacity}"/>'
     )
     lines.append("  </g>")
     if indicator:
@@ -94,7 +93,7 @@ def frame(
         indicator_y = y + WELL_INSET + WELL_SIZE - indicator.height - 3
         lines.extend(
             (
-                f'  <g id="{ident}indicator" class="{indicator.color_class}" fill="currentColor">',
+                f'  <g id="{name}-indicator" class="{indicator.color_class}" fill="currentColor">',
                 f'    <rect x="{indicator_x}" y="{indicator_y}" width="{indicator.width}" height="{indicator.height}" rx="{indicator.height / 2:g}" opacity="{indicator.opacity}"/>',
                 "  </g>",
             )
@@ -115,28 +114,24 @@ def render(target: ThemeTarget) -> str:
     # frame. Keep each semantic state visible in that path: a generic hover
     # frame alone would erase the active or running indicator.
     states = (
-        # Every task sits in a quiet rounded capsule on the Shelf, like the
-        # Googlebook reference; the active window's capsule is stronger. The
-        # capsule is a faint tint of the text color, so it reads on both the
-        # light and the dark Shelf and never hides the application artwork.
-        ("normal", "ColorScheme-Text", "0.07", running),
-        ("focus", "ColorScheme-Text", "0.15", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
-        ("minimized", "ColorScheme-Text", "0.04", Indicator(12, 2, "0.42", "ColorScheme-ButtonFocus")),
+        # Application artwork owns its selected circle/Pixel/squircle shape.
+        # Native Task Manager frames are interaction layers only; opaque task
+        # wells would create a second plate behind every generated app icon.
+        ("normal", "ColorScheme-Background", "0", running),
+        ("focus", "ColorScheme-Background", "0", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
+        ("minimized", "ColorScheme-Background", "0", Indicator(12, 2, "0.42", "ColorScheme-ButtonFocus")),
         ("attention", "ColorScheme-NeutralText", "0.14", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
         # Progress is painted in a clipped overlay by the native task manager.
         ("progress", "ColorScheme-ButtonFocus", "0.12", running),
         # Per-state hover frames preserve the corresponding active/running cue.
-        ("normal-hover", "ColorScheme-Text", "0.13", running_hover),
-        ("focus-hover", "ColorScheme-Text", "0.19", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
-        ("minimized-hover", "ColorScheme-Text", "0.09", Indicator(12, 2, "0.58", "ColorScheme-ButtonFocus")),
+        ("normal-hover", "ColorScheme-Background", "0.10", running_hover),
+        ("focus-hover", "ColorScheme-Background", "0.12", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
+        ("minimized-hover", "ColorScheme-Background", "0.08", Indicator(12, 2, "0.58", "ColorScheme-ButtonFocus")),
         ("attention-hover", "ColorScheme-NeutralText", "0.18", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
         # Pure pinned launchers use an empty base prefix; give only hover feedback.
-        # Pinned launchers (no running window) use the empty prefix; give them
-        # the same quiet capsule as running tasks.
-        ("", "ColorScheme-Text", "0.07", None),
-        ("launcher-hover", "ColorScheme-Text", "0.13", None),
+        ("launcher-hover", "ColorScheme-Background", "0.10", None),
         # Safe fallback for future/native task states that do not have a variant.
-        ("hover", "ColorScheme-Text", "0.13", None),
+        ("hover", "ColorScheme-Background", "0.10", None),
     )
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="96" height="{SIZE * len(states)}" viewBox="0 0 96 {SIZE * len(states)}">',
