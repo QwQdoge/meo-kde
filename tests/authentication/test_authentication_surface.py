@@ -121,7 +121,7 @@ class AuthenticationAgentTests(unittest.TestCase):
         self.assertIn("NotificationBodyDisclosure", qml)
         self.assertIn('MeoI18n.translator.i18n("Critical")', qml)
         self.assertIn('MeoI18n.translator.i18n("Earlier")', qml)
-        self.assertIn("invokeDefaultAction(sourceIndex)", qml)
+        self.assertIn("invokeDefaultAction(notificationCard.sourceIndex)", qml)
         self.assertIn("expiredNotificationsCount", qml)
         self.assertIn("MeoButton", qml)
         self.assertIn("MeoIconButton", qml)
