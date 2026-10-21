@@ -208,9 +208,7 @@ PlasmoidItem {
                     spacing: MeoTheme.space12
                     MeoText {
                         Layout.fillWidth: true
-                        text: MeoI18n.translator.i18n("Disk R %1 · W %2")
-                              .arg(root.formatRate(MeoSystem.Performance.diskReadBytesPerSecond))
-                              .arg(root.formatRate(MeoSystem.Performance.diskWriteBytesPerSecond))
+                        text: MeoI18n.translator.i18n("Disk R %1 · W %2", root.formatRate(MeoSystem.Performance.diskReadBytesPerSecond), root.formatRate(MeoSystem.Performance.diskWriteBytesPerSecond))
                         typeRole: "label"
                         typeSize: "small"
                         color: MeoTheme.contentOnSurfaceVariant

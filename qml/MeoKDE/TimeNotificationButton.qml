@@ -47,16 +47,15 @@ QQC2.AbstractButton {
         const date = root.showDate
                    ? Qt.formatDate(root.currentDateTime, Qt.locale().dateFormat(Locale.ShortFormat)) : ""
         const timeAndDate = date === "" ? time
-                                         : MeoI18n.translator.i18n("%1 · %2").arg(time).arg(date)
+                                         : MeoI18n.translator.i18n("%1 · %2", time, date)
         const notificationState = root.inhibited
                                 ? MeoI18n.translator.i18n("Do Not Disturb is on")
                                 : (root.unreadCount > 0
-                                   ? MeoI18n.translator.i18n("%1 unread notifications").arg(root.unreadCount)
+                                   ? MeoI18n.translator.i18n("%1 unread notifications", root.unreadCount)
                                    : (root.activeJobsCount > 0
-                                      ? MeoI18n.translator.i18n("%1 background tasks, %2 percent complete")
-                                          .arg(root.activeJobsCount).arg(root.jobsPercentage)
+                                      ? MeoI18n.translator.i18n("%1 background tasks, %2 percent complete", root.activeJobsCount, root.jobsPercentage)
                                       : MeoI18n.translator.i18n("No unread notifications")))
-        return MeoI18n.translator.i18n("%1 · %2").arg(timeAndDate).arg(notificationState)
+        return MeoI18n.translator.i18n("%1 · %2", timeAndDate, notificationState)
     }
     onClicked: statusCenterRequested()
 

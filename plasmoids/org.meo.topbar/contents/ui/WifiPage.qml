@@ -102,7 +102,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 enabled: !SystemState.networkBusy
-                                Accessible.name: MeoI18n.translator.i18n("Forget %1").arg(modelData.ssid)
+                                Accessible.name: MeoI18n.translator.i18n("Forget %1", modelData.ssid)
                                 onClicked: {
                                     SystemState.clearOperationError()
                                     forgetDialog.ssid = modelData.ssid
@@ -188,7 +188,7 @@ Item {
             }
             MeoText {
                 Layout.fillWidth: true
-                text: MeoI18n.translator.i18n("NetworkManager will remove the saved profile and credentials for %1.").arg(forgetDialog.ssid)
+                text: MeoI18n.translator.i18n("NetworkManager will remove the saved profile and credentials for %1.", forgetDialog.ssid)
                 typeRole: "body"
                 typeSize: "small"
                 color: MeoTheme.onSurfaceVariant

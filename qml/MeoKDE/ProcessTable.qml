@@ -161,7 +161,7 @@ Item {
             const displayName = grouped
                               ? (process.appName || process.name || "")
                                 + (Number(process.processCount || 0) > 1
-                                   ? "  ·  " + MeoI18n.translator.i18n("%1 processes").arg(process.processCount)
+                                   ? "  ·  " + MeoI18n.translator.i18n("%1 processes", process.processCount)
                                    : "")
                               : indentedName(process)
             rows.push({
@@ -287,7 +287,7 @@ Item {
 
                 MeoText {
                     Layout.fillWidth: true
-                    text: MeoI18n.translator.i18n("Processes for %1").arg(root.userFilter)
+                    text: MeoI18n.translator.i18n("Processes for %1", root.userFilter)
                     typeRole: "label"
                     typeSize: "large"
                     emphasized: true
@@ -317,8 +317,7 @@ Item {
             }
 
             MeoChip {
-                label: MeoI18n.translator.i18n("Memory %1%")
-                       .arg(MeoSystem.Performance.memoryUsage.toFixed(0))
+                label: MeoI18n.translator.i18n("Memory %1%", MeoSystem.Performance.memoryUsage.toFixed(0))
                 leadingIcon: "memory_alt"
                 type: "assist"
                 shape: "pill"
@@ -326,9 +325,7 @@ Item {
             }
 
             MeoChip {
-                label: MeoI18n.translator.i18n("Disk R %1 · W %2")
-                       .arg(root.formatRate(MeoSystem.Performance.diskReadBytesPerSecond))
-                       .arg(root.formatRate(MeoSystem.Performance.diskWriteBytesPerSecond))
+                label: MeoI18n.translator.i18n("Disk R %1 · W %2", root.formatRate(MeoSystem.Performance.diskReadBytesPerSecond), root.formatRate(MeoSystem.Performance.diskWriteBytesPerSecond))
                 leadingIcon: "hard_drive"
                 type: "assist"
                 shape: "pill"
@@ -346,7 +343,7 @@ Item {
 
             MeoChip {
                 visible: root.stoppedCount > 0
-                label: MeoI18n.translator.i18n("%1 stopped").arg(root.stoppedCount)
+                label: MeoI18n.translator.i18n("%1 stopped", root.stoppedCount)
                 leadingIcon: "pause_circle"
                 type: "assist"
                 shape: "pill"
@@ -355,7 +352,7 @@ Item {
 
             MeoChip {
                 visible: root.zombieCount > 0
-                label: MeoI18n.translator.i18n("%1 zombie").arg(root.zombieCount)
+                label: MeoI18n.translator.i18n("%1 zombie", root.zombieCount)
                 leadingIcon: "warning"
                 type: "assist"
                 shape: "pill"
@@ -393,7 +390,7 @@ Item {
                     Layout.fillWidth: true
                     text: root.drilldownLabel
                           + " · "
-                          + MeoI18n.translator.i18n("%1 processes").arg(root.processRows.length)
+                          + MeoI18n.translator.i18n("%1 processes", root.processRows.length)
                     typeRole: "label"
                     typeSize: "large"
                     emphasized: true
@@ -427,7 +424,7 @@ Item {
 
             MeoText {
                 visible: root.width >= 600 * root.scaleFactor
-                text: MeoI18n.translator.i18n("%1 shown").arg(root.processRows.length)
+                text: MeoI18n.translator.i18n("%1 shown", root.processRows.length)
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.contentOnSurfaceVariant
@@ -499,8 +496,7 @@ Item {
             }
 
             MeoChip {
-                label: MeoI18n.translator.i18n("Update %1s")
-                       .arg((MeoSystem.Tasks.refreshInterval / 1000).toFixed(
+                label: MeoI18n.translator.i18n("Update %1s", (MeoSystem.Tasks.refreshInterval / 1000).toFixed(
                                 MeoSystem.Tasks.refreshInterval < 1000 ? 1 : 0))
                 leadingIcon: "update"
                 type: "assist"
@@ -604,7 +600,7 @@ Item {
                                   ? "PID " + root.selectedProcess.pid
                                     + " · " + root.selectedProcess.user
                                     + " · " + root.stateLabel(root.selectedProcess.state)
-                                    + " · " + MeoI18n.translator.i18n("%1 threads").arg(root.selectedProcess.threads)
+                                    + " · " + MeoI18n.translator.i18n("%1 threads", root.selectedProcess.threads)
                                   : ""
                             typeRole: "body"
                             typeSize: "small"
@@ -724,7 +720,7 @@ Item {
     MeoDialog {
         id: endGroupDialog
         parent: root
-        title: MeoI18n.translator.i18n("End %1?").arg(root.drilldownLabel || MeoI18n.translator.i18n("application"))
+        title: MeoI18n.translator.i18n("End %1?", root.drilldownLabel || MeoI18n.translator.i18n("application"))
         message: MeoI18n.translator.i18n("All currently running processes in this application group will be asked to exit. Unsaved work can be lost.")
         icon: "warning"
         confirmText: MeoI18n.translator.i18n("End app")
@@ -735,8 +731,7 @@ Item {
     MeoDialog {
         id: endDialog
         parent: root
-        title: MeoI18n.translator.i18n("End %1?")
-               .arg(root.selectedProcess ? (root.selectedProcess.appName || root.selectedProcess.name) : "")
+        title: MeoI18n.translator.i18n("End %1?", root.selectedProcess ? (root.selectedProcess.appName || root.selectedProcess.name) : "")
         message: MeoI18n.translator.i18n("The process will be asked to exit. Unsaved work can be lost.")
         icon: "warning"
         confirmText: MeoI18n.translator.i18n("End task")
@@ -748,8 +743,7 @@ Item {
     MeoDialog {
         id: forceDialog
         parent: root
-        title: MeoI18n.translator.i18n("Force stop %1?")
-               .arg(root.selectedProcess ? (root.selectedProcess.appName || root.selectedProcess.name) : "")
+        title: MeoI18n.translator.i18n("Force stop %1?", root.selectedProcess ? (root.selectedProcess.appName || root.selectedProcess.name) : "")
         message: MeoI18n.translator.i18n("The process will be stopped immediately. Unsaved work can be lost.")
         icon: "warning"
         confirmText: MeoI18n.translator.i18n("Force stop")

@@ -65,7 +65,7 @@ MeoMotionPopup {
 
                 MeoText {
                     Layout.fillWidth: true
-                    text: MeoI18n.translator.i18n("Connect to %1").arg(root.ssid)
+                    text: MeoI18n.translator.i18n("Connect to %1", root.ssid)
                     textFormat: Text.PlainText
                     typeRole: "title"
                     typeSize: "medium"

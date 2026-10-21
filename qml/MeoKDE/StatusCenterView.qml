@@ -133,7 +133,7 @@ MeoStatusCenter {
                 typeRole: "label"
                 typeSize: "small"
                 color: MeoTheme.onSurfaceVariant
-                Accessible.name: MeoI18n.translator.i18n("Secondary calendar: %1").arg(SystemState.secondaryCalendarText)
+                Accessible.name: MeoI18n.translator.i18n("Secondary calendar: %1", SystemState.secondaryCalendarText)
             }
         }
     }

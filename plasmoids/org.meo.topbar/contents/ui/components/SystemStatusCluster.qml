@@ -65,22 +65,22 @@ QQC2.AbstractButton {
             attention: false,
             accessibleName: SystemState.audioMuted
                             ? MeoI18n.translator.i18n("Volume muted")
-                            : MeoI18n.translator.i18n("Volume %1 percent").arg(SystemState.volumePercent)
+                            : MeoI18n.translator.i18n("Volume %1 percent", SystemState.volumePercent)
         },
         {
             id: "battery",
             iconName: SystemState.batteryCharging ? "battery_charging_full" : "battery_full",
             text: root.batteryDisplay >= 2
                   ? (root.batteryDisplay === 3 && SystemState.batteryCharging
-                     ? MeoI18n.translator.i18n("Charging · %1%").arg(SystemState.batteryPercent)
+                     ? MeoI18n.translator.i18n("Charging · %1%", SystemState.batteryPercent)
                      : SystemState.batteryPercent + "%")
                   : "",
             available: root.batteryDisplay > 0 && SystemState.batteryAvailable,
             active: SystemState.batteryCharging,
             attention: false,
             accessibleName: SystemState.batteryCharging
-                            ? MeoI18n.translator.i18n("Charging, %1 percent").arg(SystemState.batteryPercent)
-                            : MeoI18n.translator.i18n("Battery %1 percent").arg(SystemState.batteryPercent)
+                            ? MeoI18n.translator.i18n("Charging, %1 percent", SystemState.batteryPercent)
+                            : MeoI18n.translator.i18n("Battery %1 percent", SystemState.batteryPercent)
         }
     ]
 

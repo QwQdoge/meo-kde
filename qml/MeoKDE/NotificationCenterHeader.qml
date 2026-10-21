@@ -34,20 +34,20 @@ ColumnLayout {
             spacing: 0
             MeoText {
                 text: root.unreadCount > 0
-                      ? MeoI18n.translator.i18n("Notifications · %1 unread").arg(root.unreadCount)
+                      ? MeoI18n.translator.i18n("Notifications · %1 unread", root.unreadCount)
                       : MeoI18n.translator.i18n("Notifications")
                 typeRole: "title"; typeSize: "medium"; emphasized: true; color: MeoTheme.onSurface
             }
             MeoText {
                 visible: root.activeJobsCount > 0
-                text: root.activeJobsCount === 1 ? MeoI18n.translator.i18n("1 background task") : MeoI18n.translator.i18n("%1 background tasks").arg(root.activeJobsCount)
+                text: root.activeJobsCount === 1 ? MeoI18n.translator.i18n("1 background task") : MeoI18n.translator.i18n("%1 background tasks", root.activeJobsCount)
                 typeRole: "label"; typeSize: "small"; color: MeoTheme.onSurfaceVariant
             }
             MeoText {
                 visible: root.activeJobsCount === 0 && (root.liveNotificationCount > 0 || root.historyNotificationCount > 0)
                 text: root.liveNotificationCount > 0 && root.historyNotificationCount > 0
-                      ? MeoI18n.translator.i18n("%1 live · %2 in history").arg(root.liveNotificationCount).arg(root.historyNotificationCount)
-                      : (root.liveNotificationCount > 0 ? MeoI18n.translator.i18n("%1 live notification").arg(root.liveNotificationCount) : MeoI18n.translator.i18n("%1 in history").arg(root.historyNotificationCount))
+                      ? MeoI18n.translator.i18n("%1 live · %2 in history", root.liveNotificationCount, root.historyNotificationCount)
+                      : (root.liveNotificationCount > 0 ? MeoI18n.translator.i18n("%1 live notification", root.liveNotificationCount) : MeoI18n.translator.i18n("%1 in history", root.historyNotificationCount))
                 typeRole: "label"; typeSize: "small"; color: MeoTheme.onSurfaceVariant
             }
         }
@@ -71,7 +71,7 @@ ColumnLayout {
             text: MeoI18n.translator.i18n("Clear all")
             loading: root.clearPending
             enabled: !root.clearPending
-            Accessible.name: MeoI18n.translator.i18n("Clear %1 dismissible notifications").arg(root.closableCount)
+            Accessible.name: MeoI18n.translator.i18n("Clear %1 dismissible notifications", root.closableCount)
             onClicked: root.clearRequested()
         }
         MeoIconButton { visible: root.showSettingsAction; type: "standard"; size: "s"; icon.name: "settings"; Accessible.name: MeoI18n.translator.i18n("Notification settings"); onClicked: root.settingsRequested() }

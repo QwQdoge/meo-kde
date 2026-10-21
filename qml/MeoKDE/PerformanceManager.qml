@@ -43,15 +43,15 @@ Item {
 
     function currentSubtitle() {
         if (currentPage === 0)
-            return MeoI18n.translator.i18n("%1 processes").arg(MeoSystem.Tasks.processes.length)
+            return MeoI18n.translator.i18n("%1 processes", MeoSystem.Tasks.processes.length)
         if (currentPage === 1)
             return MeoSystem.Performance.systemSummary
         if (currentPage === 2)
-            return MeoI18n.translator.i18n("%1 startup entries").arg(MeoSystem.Tasks.startupApps.length)
+            return MeoI18n.translator.i18n("%1 startup entries", MeoSystem.Tasks.startupApps.length)
         if (currentPage === 3)
-            return MeoI18n.translator.i18n("%1 user services").arg(MeoSystem.Tasks.services.length)
+            return MeoI18n.translator.i18n("%1 user services", MeoSystem.Tasks.services.length)
         if (currentPage === 4)
-            return MeoI18n.translator.i18n("%1 users with running processes").arg(MeoSystem.Tasks.userSummaries.length)
+            return MeoI18n.translator.i18n("%1 users with running processes", MeoSystem.Tasks.userSummaries.length)
         const process = MeoSystem.Tasks.selectedProcessDetails
         return process && process.pid
                ? (process.appName || process.name || ("PID " + process.pid))

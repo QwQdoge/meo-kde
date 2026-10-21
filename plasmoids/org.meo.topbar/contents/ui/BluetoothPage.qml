@@ -104,7 +104,7 @@ Item {
                     headline: modelData.name
                     supportingText: modelData.connected
                                     ? (modelData.batteryAvailable
-                                       ? MeoI18n.translator.i18n("Connected · %1%").arg(modelData.batteryPercent) : MeoI18n.translator.i18n("Connected"))
+                                       ? MeoI18n.translator.i18n("Connected · %1%", modelData.batteryPercent) : MeoI18n.translator.i18n("Connected"))
                                     : (modelData.paired ? MeoI18n.translator.i18n("Paired")
                                                         : MeoI18n.translator.i18n("Available · Set up in Meo Settings"))
                     leadingIcon: modelData.icon
@@ -119,7 +119,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 icon.name: "delete"
-                                Accessible.name: MeoI18n.translator.i18n("Forget %1").arg(modelData.name)
+                                Accessible.name: MeoI18n.translator.i18n("Forget %1", modelData.name)
                                 onClicked: SystemState.forgetBluetoothDevice(modelData.address)
                             }
                         }

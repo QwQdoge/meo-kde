@@ -27,8 +27,7 @@ PlasmoidItem {
                                        ? (Plasmoid.configuration.showSeconds ? "hh:mm:ss" : "hh:mm")
                                        : (Plasmoid.configuration.showSeconds ? "h:mm:ss AP" : "h:mm AP"))
             return Plasmoid.configuration.showDate
-                   ? MeoI18n.translator.i18n("%1 · %2").arg(time)
-                       .arg(Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.ShortFormat)))
+                   ? MeoI18n.translator.i18n("%1 · %2", time, Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.ShortFormat)))
                    : time
         }
         onClicked: root.expanded = !root.expanded

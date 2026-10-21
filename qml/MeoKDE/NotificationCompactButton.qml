@@ -19,7 +19,7 @@ QQC2.AbstractButton {
     hoverEnabled: true
     activeFocusOnTab: true
     Accessible.name: MeoI18n.translator.i18n("Notifications")
-    Accessible.description: root.unreadCount > 0 ? MeoI18n.translator.i18n("%1 unread notifications").arg(root.unreadCount) : MeoI18n.translator.i18n("No unread notifications")
+    Accessible.description: root.unreadCount > 0 ? MeoI18n.translator.i18n("%1 unread notifications", root.unreadCount) : MeoI18n.translator.i18n("No unread notifications")
     onClicked: statusCenterRequested()
 
     MeoInteractionMotion {

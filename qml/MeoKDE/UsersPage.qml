@@ -85,7 +85,7 @@ Item {
                         }
 
                         MeoText {
-                            text: MeoI18n.translator.i18n("%1 accounts with running processes").arg(root.users.length)
+                            text: MeoI18n.translator.i18n("%1 accounts with running processes", root.users.length)
                             typeRole: "body"
                             typeSize: "small"
                             color: MeoTheme.contentOnSurfaceVariant
@@ -204,9 +204,7 @@ Item {
 
                             MeoText {
                                 Layout.fillWidth: true
-                                text: MeoI18n.translator.i18n("Disk R %1 · W %2")
-                                      .arg(root.formatRate(modelData.diskReadBytesPerSecond))
-                                      .arg(root.formatRate(modelData.diskWriteBytesPerSecond))
+                                text: MeoI18n.translator.i18n("Disk R %1 · W %2", root.formatRate(modelData.diskReadBytesPerSecond), root.formatRate(modelData.diskWriteBytesPerSecond))
                                 typeRole: "label"
                                 typeSize: "small"
                                 color: MeoTheme.contentOnSurfaceVariant

@@ -149,7 +149,7 @@ QQC2.ScrollView {
         if (id === "powerMode") return Platform.activePowerProfile
         if (id === "microphone") return SystemState.microphoneMuted ? MeoI18n.translator.i18n("Muted") : SystemState.microphoneDevice
         if (id === "audioDevices") return SystemState.audioMuted ? MeoI18n.translator.i18n("Muted") : SystemState.audioDevice
-        if (id === "display") return MeoI18n.translator.i18n("%1 connected").arg(Platform.brightnessDisplays.length)
+        if (id === "display") return MeoI18n.translator.i18n("%1 connected", Platform.brightnessDisplays.length)
         return MeoI18n.translator.i18n("Capture screen")
     }
 
@@ -248,7 +248,7 @@ QQC2.ScrollView {
                 iconName: "light_mode"
                 label: root.displayExpanded && Platform.brightnessDisplays.length > 1 ? modelData.label : ""
                 accessibleName: modelData.label
-                    ? MeoI18n.translator.i18n("%1 brightness").arg(modelData.label)
+                    ? MeoI18n.translator.i18n("%1 brightness", modelData.label)
                     : MeoI18n.translator.i18n("Display brightness")
                 iconAccessibleName: ""
                 iconActionEnabled: false

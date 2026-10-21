@@ -29,7 +29,7 @@ Item {
     Accessible.description: root.isLauncher
                             ? MeoI18n.translator.i18n("Open applications")
                             : (root.winCount > 1
-                               ? MeoI18n.translator.i18n("%1 open windows").arg(root.winCount)
+                               ? MeoI18n.translator.i18n("%1 open windows", root.winCount)
                                : MeoI18n.translator.i18n("Open application"))
     Accessible.focusable: title !== ""
     Accessible.onPressAction: root.activate()
@@ -122,7 +122,7 @@ Item {
         visible: root.showTooltip && mouseArea.containsMouse && root.title !== ""
         delay: MeoTheme.motionDurationLong1
         text: root.winCount > 1
-              ? root.title + "\n" + MeoI18n.translator.i18n("%1 windows").arg(root.winCount)
+              ? root.title + "\n" + MeoI18n.translator.i18n("%1 windows", root.winCount)
               : root.title
     }
 }

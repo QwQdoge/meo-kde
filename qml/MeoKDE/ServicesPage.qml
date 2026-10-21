@@ -406,8 +406,7 @@ Item {
                             MeoText {
                                 Layout.fillWidth: true
                                 visible: (root.serviceDetails.controlGroup || "") !== ""
-                                text: MeoI18n.translator.i18n("CGroup: %1")
-                                      .arg(root.serviceDetails.controlGroup || "")
+                                text: MeoI18n.translator.i18n("CGroup: %1", root.serviceDetails.controlGroup || "")
                                 typeRole: "label"
                                 typeSize: "small"
                                 color: MeoTheme.contentOnSurfaceVariant
@@ -417,8 +416,7 @@ Item {
                             MeoText {
                                 Layout.fillWidth: true
                                 visible: (root.serviceDetails.fragmentPath || "") !== ""
-                                text: MeoI18n.translator.i18n("Unit file: %1")
-                                      .arg(root.serviceDetails.fragmentPath || "")
+                                text: MeoI18n.translator.i18n("Unit file: %1", root.serviceDetails.fragmentPath || "")
                                 typeRole: "label"
                                 typeSize: "small"
                                 color: MeoTheme.contentOnSurfaceVariant

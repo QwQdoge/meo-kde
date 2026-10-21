@@ -24,7 +24,7 @@ PlasmoidItem {
     Plasmoid.title: MeoI18n.translator.i18n("Meo Time and Notifications")
     toolTipMainText: MeoI18n.translator.i18n("Meo Time and Notifications")
     toolTipSubText: notificationModel.unreadNotificationsCount > 0
-                    ? MeoI18n.translator.i18n("%1 unread notifications").arg(notificationModel.unreadNotificationsCount)
+                    ? MeoI18n.translator.i18n("%1 unread notifications", notificationModel.unreadNotificationsCount)
                     : MeoI18n.translator.i18n("Calendar and notifications")
     preferredRepresentation: compactRepresentation
     switchWidth: 0

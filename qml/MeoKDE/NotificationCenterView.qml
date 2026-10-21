@@ -132,10 +132,10 @@ Item {
             return MeoI18n.translator.i18n("Now")
         const minutes = Math.floor(seconds / 60)
         if (minutes < 60)
-            return MeoI18n.translator.i18n("%1 min").arg(minutes)
+            return MeoI18n.translator.i18n("%1 min", minutes)
         const hours = Math.floor(minutes / 60)
         if (hours < 24)
-            return MeoI18n.translator.i18n("%1 h").arg(hours)
+            return MeoI18n.translator.i18n("%1 h", hours)
         if (hours < 48)
             return MeoI18n.translator.i18n("Yesterday")
         return Qt.formatDate(timestamp, Qt.locale().dateFormat(Locale.ShortFormat))
@@ -175,7 +175,7 @@ Item {
         if (projectedBody !== "")
             return projectedBody
         if (type === NotificationManager.Notifications.JobType && percentage >= 0)
-            return MeoI18n.translator.i18n("Progress: %1%").arg(percentage)
+            return MeoI18n.translator.i18n("Progress: %1%", percentage)
         return ""
     }
 
@@ -264,7 +264,7 @@ Item {
                     readonly property var sourceIndex: root.modelIndex(index)
                     readonly property string displayIcon: root.safeIconName(iconName, applicationIconName)
                     readonly property string displaySource: root.plainText(originName) !== ""
-                                                            ? MeoI18n.translator.i18n("%1 · %2").arg(root.plainText(applicationName)).arg(root.plainText(originName))
+                                                            ? MeoI18n.translator.i18n("%1 · %2", root.plainText(applicationName), root.plainText(originName))
                                                             : root.plainText(applicationName)
                     readonly property int notificationType: Number(model.type)
                     readonly property bool isJob: notificationType === NotificationManager.Notifications.JobType
@@ -449,8 +449,7 @@ Item {
                                 type: "standard"
                                 size: "s"
                                 icon.name: "settings"
-                                Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1")
-                                                 .arg(root.plainText(notificationCard.applicationName))
+                                Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1", root.plainText(notificationCard.applicationName))
                                 onClicked: if (root.notifications && root.notifications.configure)
                                                root.notifications.configure(notificationCard.sourceIndex)
                             }
@@ -500,7 +499,7 @@ Item {
                                 isThick: true
                             }
                             MeoText {
-                                text: MeoI18n.translator.i18n("%1%").arg(Math.max(0, notificationCard.percentage))
+                                text: MeoI18n.translator.i18n("%1%", Math.max(0, notificationCard.percentage))
                                 typeRole: "label"
                                 typeSize: "small"
                                 color: MeoTheme.onSurfaceVariant

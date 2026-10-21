@@ -103,7 +103,7 @@ Item {
 
                     MeoText {
                         Layout.fillWidth: true
-                        text: MeoI18n.translator.i18n("%1 entries · XDG autostart").arg(root.apps.length)
+                        text: MeoI18n.translator.i18n("%1 entries · XDG autostart", root.apps.length)
                         typeRole: "body"
                         typeSize: "small"
                         color: MeoTheme.contentOnSurfaceVariant
@@ -175,7 +175,7 @@ Item {
                                     anchors.verticalCenter: parent.verticalCenter
                                     size: "s"
                                     checked: !!modelData.enabled
-                                    Accessible.name: MeoI18n.translator.i18n("Run %1 at sign in").arg(modelData.name || modelData.id)
+                                    Accessible.name: MeoI18n.translator.i18n("Run %1 at sign in", modelData.name || modelData.id)
                                     onToggled: function(checked) {
                                         if (checked !== !!modelData.enabled)
                                             MeoSystem.Tasks.setStartupEnabled(modelData.id, checked)

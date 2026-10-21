@@ -54,7 +54,7 @@ PlasmoidItem {
                 : MeoSystem.DesktopWidgets.addPlasmaWidget(Plasmoid.containment, widget.pluginId,
                                                            suggestedGeometry(widget))
         if (added) {
-            feedbackText = MeoI18n.translator.i18n("Added %1 to the Home screen.").arg(widget.title)
+            feedbackText = MeoI18n.translator.i18n("Added %1 to the Home screen.", widget.title)
             feedbackIsError = false
         } else {
             feedbackText = MeoSystem.DesktopWidgets.lastError

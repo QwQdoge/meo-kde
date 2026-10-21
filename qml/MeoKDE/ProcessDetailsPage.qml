@@ -83,7 +83,7 @@ Item {
             return MeoI18n.translator.i18n("All CPUs")
         return cpus.length <= 8
                ? cpus.join(", ")
-               : MeoI18n.translator.i18n("%1 CPUs").arg(cpus.length)
+               : MeoI18n.translator.i18n("%1 CPUs", cpus.length)
     }
 
     function stateLabel(state) {
@@ -218,7 +218,7 @@ Item {
                 }
 
                 MeoChip {
-                    label: MeoI18n.translator.i18n("%1 processes").arg(root.detailsRows.length)
+                    label: MeoI18n.translator.i18n("%1 processes", root.detailsRows.length)
                     leadingIcon: "list_alt"
                     type: "assist"
                     shape: "pill"
@@ -359,9 +359,7 @@ Item {
                     title: "CPU"
                     iconName: "memory"
                     valueText: Number(root.process.cpu || 0).toFixed(1) + "%"
-                    supportingText: MeoI18n.translator.i18n("%1 threads · CPU time %2")
-                                    .arg(root.process.threads || 0)
-                                    .arg(root.formatDuration(root.process.cpuTimeSeconds))
+                    supportingText: MeoI18n.translator.i18n("%1 threads · CPU time %2", root.process.threads || 0, root.formatDuration(root.process.cpuTimeSeconds))
                     progress: Math.min(100, Number(root.process.cpu || 0))
                 }
 
@@ -379,9 +377,7 @@ Item {
                     valueText: "R " + root.formatRate(root.process.diskReadBytesPerSecond)
                     supportingText: "W " + root.formatRate(root.process.diskWriteBytesPerSecond)
                                     + " · "
-                                    + MeoI18n.translator.i18n("Total %1 / %2")
-                                        .arg(root.formatBytes(root.process.diskReadBytesTotal))
-                                        .arg(root.formatBytes(root.process.diskWriteBytesTotal))
+                                    + MeoI18n.translator.i18n("Total %1 / %2", root.formatBytes(root.process.diskReadBytesTotal), root.formatBytes(root.process.diskWriteBytesTotal))
                     progress: -1
                 }
 
@@ -391,9 +387,7 @@ Item {
                     valueText: root.process.gpuAvailable && Number(root.process.gpuUsage) >= 0
                                ? Number(root.process.gpuUsage).toFixed(1) + "%" : "—"
                     supportingText: root.process.gpuAvailable
-                                    ? MeoI18n.translator.i18n("Graphics memory %1%2")
-                                        .arg(root.formatBytes(root.process.gpuMemoryBytes))
-                                        .arg(root.process.gpuEngine
+                                    ? MeoI18n.translator.i18n("Graphics memory %1%2", root.formatBytes(root.process.gpuMemoryBytes), root.process.gpuEngine
                                              ? " · " + root.process.gpuEngine : "")
                                     : MeoI18n.translator.i18n("No DRM fdinfo telemetry for this process")
                     progress: root.process.gpuAvailable && Number(root.process.gpuUsage) >= 0
@@ -403,35 +397,29 @@ Item {
                 ResourceTile {
                     title: MeoI18n.translator.i18n("Network")
                     iconName: "lan"
-                    valueText: MeoI18n.translator.i18n("%1 sockets").arg(root.process.socketCount || 0)
-                    supportingText: MeoI18n.translator.i18n("TCP %1 · Established %2 · Listen %3 · UDP %4")
-                                    .arg(root.process.tcpSocketCount || 0)
-                                    .arg(root.process.tcpEstablishedCount || 0)
-                                    .arg(root.process.tcpListenCount || 0)
-                                    .arg(root.process.udpSocketCount || 0)
+                    valueText: MeoI18n.translator.i18n("%1 sockets", root.process.socketCount || 0)
+                    supportingText: MeoI18n.translator.i18n("TCP %1 · Established %2 · Listen %3 · UDP %4", root.process.tcpSocketCount || 0, root.process.tcpEstablishedCount || 0, root.process.tcpListenCount || 0, root.process.udpSocketCount || 0)
                     progress: -1
                 }
 
                 ResourceTile {
                     title: MeoI18n.translator.i18n("Process")
                     iconName: "account_tree"
-                    valueText: MeoI18n.translator.i18n("Parent %1").arg(root.process.parentPid || 0)
+                    valueText: MeoI18n.translator.i18n("Parent %1", root.process.parentPid || 0)
                     supportingText: (root.process.category === "app"
                                      ? MeoI18n.translator.i18n("Application")
                                      : root.process.category === "system"
                                        ? MeoI18n.translator.i18n("System process")
                                        : MeoI18n.translator.i18n("Background process"))
                                     + " · "
-                                    + MeoI18n.translator.i18n("Running %1")
-                                        .arg(root.formatDuration(root.process.elapsedSeconds))
+                                    + MeoI18n.translator.i18n("Running %1", root.formatDuration(root.process.elapsedSeconds))
                     progress: -1
                 }
 
                 ResourceTile {
                     title: MeoI18n.translator.i18n("Files")
                     iconName: "folder_open"
-                    valueText: MeoI18n.translator.i18n("%1 open FDs")
-                               .arg(root.process.openFileDescriptorCount || 0)
+                    valueText: MeoI18n.translator.i18n("%1 open FDs", root.process.openFileDescriptorCount || 0)
                     supportingText: root.process.workingDirectory || MeoI18n.translator.i18n("Working directory unavailable")
                     progress: -1
                 }
@@ -440,8 +428,7 @@ Item {
                     title: MeoI18n.translator.i18n("CPU affinity")
                     iconName: "select_all"
                     valueText: root.affinityText()
-                    supportingText: MeoI18n.translator.i18n("%1 logical CPUs available")
-                                    .arg(root.process.logicalCpuCount || 0)
+                    supportingText: MeoI18n.translator.i18n("%1 logical CPUs available", root.process.logicalCpuCount || 0)
                     progress: -1
                 }
             }
@@ -476,8 +463,7 @@ Item {
 
                         MeoChip {
                             visible: Number(root.process.swapMemoryBytes || 0) > 0
-                            label: MeoI18n.translator.i18n("Swap %1")
-                                   .arg(root.formatBytes(root.process.swapMemoryBytes))
+                            label: MeoI18n.translator.i18n("Swap %1", root.formatBytes(root.process.swapMemoryBytes))
                             leadingIcon: "swap_vert"
                             type: "assist"
                             shape: "pill"
@@ -523,7 +509,7 @@ Item {
 
                         MeoChip {
                             visible: Number(root.process.oomScore) >= 0
-                            label: MeoI18n.translator.i18n("OOM score %1").arg(root.process.oomScore)
+                            label: MeoI18n.translator.i18n("OOM score %1", root.process.oomScore)
                             leadingIcon: "memory"
                             type: "assist"
                             shape: "pill"
@@ -638,7 +624,7 @@ Item {
 
                         MeoButton {
                             visible: root.process && Number(root.process.parentPid || 0) > 0
-                            text: MeoI18n.translator.i18n("Parent %1").arg(root.process.parentPid || 0)
+                            text: MeoI18n.translator.i18n("Parent %1", root.process.parentPid || 0)
                             type: "text"
                             size: "s"
                             icon.name: "subdirectory_arrow_left"
@@ -835,7 +821,7 @@ Item {
     MeoDialog {
         id: endDialog
         parent: root
-        title: MeoI18n.translator.i18n("End %1?").arg(root.process ? (root.process.appName || root.process.name) : "")
+        title: MeoI18n.translator.i18n("End %1?", root.process ? (root.process.appName || root.process.name) : "")
         message: MeoI18n.translator.i18n("The process will be asked to exit. Unsaved work can be lost.")
         icon: "warning"
         confirmText: MeoI18n.translator.i18n("End task")
@@ -858,7 +844,7 @@ Item {
     MeoDialog {
         id: forceDialog
         parent: root
-        title: MeoI18n.translator.i18n("Force stop %1?").arg(root.process ? (root.process.appName || root.process.name) : "")
+        title: MeoI18n.translator.i18n("Force stop %1?", root.process ? (root.process.appName || root.process.name) : "")
         message: MeoI18n.translator.i18n("The process will be stopped immediately. Unsaved work can be lost.")
         icon: "warning"
         confirmText: MeoI18n.translator.i18n("Force stop")

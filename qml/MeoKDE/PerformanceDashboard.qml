@@ -31,10 +31,10 @@ Item {
         const hours = Math.floor((total % 86400) / 3600)
         const minutes = Math.floor((total % 3600) / 60)
         if (days > 0)
-            return MeoI18n.translator.i18n("%1d %2h").arg(days).arg(hours)
+            return MeoI18n.translator.i18n("%1d %2h", days, hours)
         if (hours > 0)
-            return MeoI18n.translator.i18n("%1h %2m").arg(hours).arg(minutes)
-        return MeoI18n.translator.i18n("%1m").arg(minutes)
+            return MeoI18n.translator.i18n("%1h %2m", hours, minutes)
+        return MeoI18n.translator.i18n("%1m", minutes)
     }
 
     function profileLabel(profile) {
@@ -56,9 +56,7 @@ Item {
         if (MeoSystem.Performance.gpuTemperature > 0)
             parts.push(Math.round(MeoSystem.Performance.gpuTemperature) + "°C")
         if (MeoSystem.Performance.gpuMemoryTotalBytes > 0) {
-            parts.push(MeoI18n.translator.i18n("VRAM %1 / %2")
-                       .arg(formatBytes(MeoSystem.Performance.gpuMemoryUsedBytes))
-                       .arg(formatBytes(MeoSystem.Performance.gpuMemoryTotalBytes)))
+            parts.push(MeoI18n.translator.i18n("VRAM %1 / %2", formatBytes(MeoSystem.Performance.gpuMemoryUsedBytes), formatBytes(MeoSystem.Performance.gpuMemoryTotalBytes)))
         }
         return parts.join(" · ")
     }
@@ -127,8 +125,7 @@ Item {
                         MeoText {
                             Layout.fillWidth: true
                             text: MeoSystem.Performance.systemSummary
-                                  + " · " + MeoI18n.translator.i18n("Uptime %1")
-                                      .arg(root.formatUptime(MeoSystem.Performance.uptimeSeconds))
+                                  + " · " + MeoI18n.translator.i18n("Uptime %1", root.formatUptime(MeoSystem.Performance.uptimeSeconds))
                             typeRole: "body"
                             typeSize: "small"
                             color: MeoTheme.contentOnSurfaceVariant
@@ -244,7 +241,7 @@ Item {
                     subtitle: root.formatBytes(MeoSystem.Performance.memoryUsedBytes)
                               + " / " + root.formatBytes(MeoSystem.Performance.memoryTotalBytes)
                     detail: MeoSystem.Performance.swapTotalBytes > 0
-                            ? MeoI18n.translator.i18n("Swap %1").arg(root.formatBytes(MeoSystem.Performance.swapUsedBytes))
+                            ? MeoI18n.translator.i18n("Swap %1", root.formatBytes(MeoSystem.Performance.swapUsedBytes))
                             : ""
                     progressValue: MeoSystem.Performance.memoryUsage
                     history: MeoSystem.Performance.memoryHistory
@@ -433,9 +430,7 @@ Item {
 
                         MeoChip {
                             visible: MeoSystem.Performance.swapTotalBytes > 0
-                            label: MeoI18n.translator.i18n("Swap %1 / %2")
-                                   .arg(root.formatBytes(MeoSystem.Performance.swapUsedBytes))
-                                   .arg(root.formatBytes(MeoSystem.Performance.swapTotalBytes))
+                            label: MeoI18n.translator.i18n("Swap %1 / %2", root.formatBytes(MeoSystem.Performance.swapUsedBytes), root.formatBytes(MeoSystem.Performance.swapTotalBytes))
                             leadingIcon: "swap_vert"
                             type: "assist"
                             shape: "pill"
@@ -525,8 +520,7 @@ Item {
                         spacing: MeoTheme.space8
 
                         MeoChip {
-                            label: MeoI18n.translator.i18n("CPU waiting %1%")
-                                   .arg(Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0).toFixed(1))
+                            label: MeoI18n.translator.i18n("CPU waiting %1%", Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0).toFixed(1))
                             leadingIcon: "memory"
                             type: "assist"
                             shape: "pill"
@@ -535,8 +529,7 @@ Item {
                         }
 
                         MeoChip {
-                            label: MeoI18n.translator.i18n("Memory waiting %1%")
-                                   .arg(Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0).toFixed(1))
+                            label: MeoI18n.translator.i18n("Memory waiting %1%", Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0).toFixed(1))
                             leadingIcon: "memory_alt"
                             type: "assist"
                             shape: "pill"
@@ -545,8 +538,7 @@ Item {
                         }
 
                         MeoChip {
-                            label: MeoI18n.translator.i18n("Memory fully stalled %1%")
-                                   .arg(Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0).toFixed(1))
+                            label: MeoI18n.translator.i18n("Memory fully stalled %1%", Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0).toFixed(1))
                             leadingIcon: "warning"
                             type: "assist"
                             shape: "pill"
@@ -555,8 +547,7 @@ Item {
                         }
 
                         MeoChip {
-                            label: MeoI18n.translator.i18n("I/O waiting %1%")
-                                   .arg(Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0).toFixed(1))
+                            label: MeoI18n.translator.i18n("I/O waiting %1%", Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0).toFixed(1))
                             leadingIcon: "hard_drive"
                             type: "assist"
                             shape: "pill"
@@ -565,8 +556,7 @@ Item {
                         }
 
                         MeoChip {
-                            label: MeoI18n.translator.i18n("I/O fully stalled %1%")
-                                   .arg(Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0).toFixed(1))
+                            label: MeoI18n.translator.i18n("I/O fully stalled %1%", Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0).toFixed(1))
                             leadingIcon: "hourglass_top"
                             type: "assist"
                             shape: "pill"
@@ -721,9 +711,7 @@ Item {
                         }
 
                         MeoText {
-                            text: MeoI18n.translator.i18n("%1 processes · %2 logical CPUs")
-                                  .arg(MeoSystem.Performance.processCount)
-                                  .arg(MeoSystem.Performance.logicalCores)
+                            text: MeoI18n.translator.i18n("%1 processes · %2 logical CPUs", MeoSystem.Performance.processCount, MeoSystem.Performance.logicalCores)
                             typeRole: "body"
                             typeSize: "small"
                             color: MeoTheme.contentOnSurfaceVariant
@@ -937,8 +925,7 @@ Item {
                 spacing: MeoTheme.space8
 
                 MeoChip {
-                    label: MeoI18n.translator.i18n("R %1 IOPS")
-                           .arg(Number(diskTile.disk.readIops || 0).toFixed(0))
+                    label: MeoI18n.translator.i18n("R %1 IOPS", Number(diskTile.disk.readIops || 0).toFixed(0))
                     leadingIcon: "south"
                     type: "assist"
                     shape: "pill"
@@ -946,8 +933,7 @@ Item {
                 }
 
                 MeoChip {
-                    label: MeoI18n.translator.i18n("W %1 IOPS")
-                           .arg(Number(diskTile.disk.writeIops || 0).toFixed(0))
+                    label: MeoI18n.translator.i18n("W %1 IOPS", Number(diskTile.disk.writeIops || 0).toFixed(0))
                     leadingIcon: "north"
                     type: "assist"
                     shape: "pill"
@@ -964,7 +950,7 @@ Item {
 
                 MeoChip {
                     visible: Number(diskTile.disk.inFlight || 0) > 0
-                    label: MeoI18n.translator.i18n("Queue %1").arg(diskTile.disk.inFlight)
+                    label: MeoI18n.translator.i18n("Queue %1", diskTile.disk.inFlight)
                     leadingIcon: "format_list_numbered"
                     type: "assist"
                     shape: "pill"
@@ -1025,8 +1011,7 @@ Item {
                     MeoText {
                         text: networkTile.network.up
                               ? (Number(networkTile.network.speedMbps || 0) > 0
-                                 ? MeoI18n.translator.i18n("Connected · %1 Mbps")
-                                     .arg(networkTile.network.speedMbps)
+                                 ? MeoI18n.translator.i18n("Connected · %1 Mbps", networkTile.network.speedMbps)
                                  : MeoI18n.translator.i18n("Connected"))
                               : MeoI18n.translator.i18n("Inactive")
                         typeRole: "label"
@@ -1104,9 +1089,7 @@ Item {
                 MeoChip {
                     visible: Number(networkTile.network.rxErrors || 0)
                              + Number(networkTile.network.txErrors || 0) > 0
-                    label: MeoI18n.translator.i18n("Errors ↓%1 · ↑%2")
-                           .arg(networkTile.network.rxErrors || 0)
-                           .arg(networkTile.network.txErrors || 0)
+                    label: MeoI18n.translator.i18n("Errors ↓%1 · ↑%2", networkTile.network.rxErrors || 0, networkTile.network.txErrors || 0)
                     leadingIcon: "error"
                     type: "assist"
                     shape: "pill"
@@ -1116,9 +1099,7 @@ Item {
                 MeoChip {
                     visible: Number(networkTile.network.rxDropped || 0)
                              + Number(networkTile.network.txDropped || 0) > 0
-                    label: MeoI18n.translator.i18n("Dropped ↓%1 · ↑%2")
-                           .arg(networkTile.network.rxDropped || 0)
-                           .arg(networkTile.network.txDropped || 0)
+                    label: MeoI18n.translator.i18n("Dropped ↓%1 · ↑%2", networkTile.network.rxDropped || 0, networkTile.network.txDropped || 0)
                     leadingIcon: "warning"
                     type: "assist"
                     shape: "pill"
@@ -1212,9 +1193,7 @@ Item {
             MeoText {
                 Layout.fillWidth: true
                 text: Number(gpuTile.gpu.memoryTotalBytes || 0) > 0
-                      ? MeoI18n.translator.i18n("VRAM %1 / %2")
-                          .arg(root.formatBytes(gpuTile.gpu.memoryUsedBytes))
-                          .arg(root.formatBytes(gpuTile.gpu.memoryTotalBytes))
+                      ? MeoI18n.translator.i18n("VRAM %1 / %2", root.formatBytes(gpuTile.gpu.memoryUsedBytes), root.formatBytes(gpuTile.gpu.memoryTotalBytes))
                       : MeoI18n.translator.i18n("VRAM telemetry unavailable")
                 typeRole: "body"
                 typeSize: "small"
@@ -1246,8 +1225,7 @@ Item {
 
                 MeoChip {
                     visible: Number(gpuTile.gpu.memoryClockMHz || 0) > 0
-                    label: MeoI18n.translator.i18n("Memory %1 MHz")
-                           .arg(Math.round(Number(gpuTile.gpu.memoryClockMHz || 0)))
+                    label: MeoI18n.translator.i18n("Memory %1 MHz", Math.round(Number(gpuTile.gpu.memoryClockMHz || 0)))
                     leadingIcon: "memory_alt"
                     type: "assist"
                     shape: "pill"
