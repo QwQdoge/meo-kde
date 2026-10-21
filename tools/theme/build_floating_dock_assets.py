@@ -98,8 +98,14 @@ def render(target: ThemeTarget) -> str:
             '  </style>',
             f'  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="{target.surface_opacity}">',
             *compact_frame,
-            *north_frame,
             *south_frame,
+            '  </g>',
+            # A panel on the top edge resolves the north-* elements. Keep them
+            # fully clear so the wallpaper shows through the status bar (it is
+            # black only while a window covers the output); the bottom Shelf
+            # keeps its tinted surface.
+            '  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0">',
+            *north_frame,
             '  </g>',
             *compact_hints,
             *north_hints,

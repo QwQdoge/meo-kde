@@ -12,15 +12,6 @@
     <path id="topright" d="M34 16a16 16 0 0 1 16 16H34z"/>
     <path id="bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
     <path id="bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
-    <path id="north-center" d="M32 32h2v2h-2z"/>
-    <path id="north-top" d="M32 16h2v16h-2z"/>
-    <path id="north-bottom" d="M32 34h2v16h-2z"/>
-    <path id="north-left" d="M16 32h16v2H16z"/>
-    <path id="north-right" d="M34 32h16v2h-16z"/>
-    <path id="north-topleft" d="M32 16A16 16 0 0 0 16 32h16z"/>
-    <path id="north-topright" d="M34 16a16 16 0 0 1 16 16H34z"/>
-    <path id="north-bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
-    <path id="north-bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
     <path id="south-center" d="M32 32h2v2h-2z"/>
     <path id="south-top" d="M32 20h2v12h-2z"/>
     <path id="south-bottom" d="M32 34h2v12h-2z"/>
@@ -30,6 +21,17 @@
     <path id="south-topright" d="M34 20a12 12 0 0 1 12 12H34z"/>
     <path id="south-bottomleft" d="M20 34a12 12 0 0 0 12 12V34z"/>
     <path id="south-bottomright" d="M34 46a12 12 0 0 0 12-12H34z"/>
+  </g>
+  <g class="ColorScheme-ButtonBackground" fill="currentColor" fill-opacity="0">
+    <path id="north-center" d="M32 32h2v2h-2z"/>
+    <path id="north-top" d="M32 16h2v16h-2z"/>
+    <path id="north-bottom" d="M32 34h2v16h-2z"/>
+    <path id="north-left" d="M16 32h16v2H16z"/>
+    <path id="north-right" d="M34 32h16v2h-16z"/>
+    <path id="north-topleft" d="M32 16A16 16 0 0 0 16 32h16z"/>
+    <path id="north-topright" d="M34 16a16 16 0 0 1 16 16H34z"/>
+    <path id="north-bottomleft" d="M16 34a16 16 0 0 0 16 16V34z"/>
+    <path id="north-bottomright" d="M34 50a16 16 0 0 0 16-16H34z"/>
   </g>
   <rect id="hint-top-margin" x="31" y="18" width="4" height="4" fill="#ff00ff"/>
   <rect id="hint-bottom-margin" x="31" y="44" width="4" height="4" fill="#ff00ff"/>
