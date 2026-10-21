@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
@@ -25,17 +26,32 @@ PlasmoidItem {
     // Googlebook exposes one primary launcher/search entry in the Taskbar.
     // Search stays inside LauncherPopup (and Alt+Space remains available), so
     // the shelf does not need a second permanent search button.
-    compactRepresentation: MeoIconButton {
+    compactRepresentation: QQC2.AbstractButton {
+        id: launcherButton
         visible: Plasmoid.configuration.showLauncherButton
-        type: "tonal"
-        size: "xs"
-        contentItem: Kirigami.Icon {
-            source: "meoarch-logo"
-            implicitWidth: 24 * MeoTheme.globalScale
-            implicitHeight: implicitWidth
-        }
+        implicitWidth: 60 * MeoTheme.globalScale
+        implicitHeight: 36 * MeoTheme.globalScale
+        hoverEnabled: true
         Accessible.name: MeoI18n.translator.i18n("All apps")
         onClicked: launcherPopup.toggleFullLauncher()
+
+        // The Meo entry sits in a small pill, a little darker than the Shelf,
+        // like the launcher group in the Googlebook taskbar.
+        background: ShellTriggerSurface {
+            hovered: launcherButton.hovered
+            pressed: launcherButton.down
+            focused: launcherButton.visualFocus
+            restingColor: Qt.rgba(MeoTheme.onSurface.r, MeoTheme.onSurface.g,
+                                  MeoTheme.onSurface.b, 0.10)
+        }
+        contentItem: Item {
+            Kirigami.Icon {
+                anchors.centerIn: parent
+                source: "meoarch-logo"
+                width: 24 * MeoTheme.globalScale
+                height: width
+            }
+        }
     }
 
     // Plasma requires both representation slots even for a compact-only

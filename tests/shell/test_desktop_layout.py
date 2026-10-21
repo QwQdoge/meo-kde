@@ -24,7 +24,7 @@ class DesktopLayoutTests(legacy.DesktopLayoutTests):
             legacy.REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("MeoIconButton", shelf)
+        self.assertIn("ShellTriggerSurface", shelf)
         self.assertIn('source: "meoarch-logo"', shelf)
         self.assertIn('i18n("All apps")', shelf)
         self.assertIn("launcherPopup.toggleFullLauncher()", shelf)
@@ -87,17 +87,15 @@ class DesktopLayoutTests(legacy.DesktopLayoutTests):
             self.assertIn("ColorScheme-ButtonFocus", task_frame)
             self.assertIn("ColorScheme-Background", task_frame)
             self.assertIn("A20.5 20.5", task_frame)
-            self.assertIn('id="normal-indicator"', task_frame)
-            self.assertIn('id="focus-indicator"', task_frame)
-            self.assertIn('id="minimized-indicator"', task_frame)
-            self.assertIn('width="12" height="2" rx="1" opacity="0.72"', task_frame)
-            self.assertIn('width="18" height="4" rx="2" opacity="1"', task_frame)
+            # Running tasks show a short accent-colored bar: shorter for an open
+            # window, longer and solid for the active one.
+            self.assertIn('<g id="normal-bottom">', task_frame)
+            self.assertIn('<g id="focus-bottom">', task_frame)
+            self.assertIn('<g id="minimized-bottom">', task_frame)
+            self.assertIn('width="10" height="3" rx="1.5" opacity="0.6"', task_frame)
+            self.assertIn('width="18" height="3" rx="1.5" opacity="1"', task_frame)
             self.assertIn('id="group-expander-bottom"', task_frame)
             self.assertIn('id="normal-center"', task_frame)
-            self.assertIn(
-                'id="normal-center" x="23.5" y="23.5" width="1" height="1" opacity="0"',
-                task_frame,
-            )
             self.assertIn('id="normal-hover-center"', task_frame)
             self.assertIn('opacity="0.10"', task_frame)
             self.assertNotIn('opacity="0.94"', task_frame)

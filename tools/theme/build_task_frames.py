@@ -101,6 +101,51 @@ def frame(
     return lines
 
 
+def bar_frame(name: str, y: int, color_class: str, lead: int, opacity: str) -> list[str]:
+    """A nine-slice frame whose only visible content is a short bar.
+
+    The left and right columns are `lead` wide and the middle column is
+    SIZE - 2 * lead wide, so on a 48 dp task button the bar is that middle
+    column wide, centred, and sits a couple of dp above the Shelf's edge. Every
+    other slice is transparent. Plasma's FrameSvg needs all nine slices, so each
+    is present as an invisible rect; the bar is drawn inside the bottom-centre
+    slice.
+    """
+
+    top_h = 1
+    bottom_h = 7
+    mid_h = SIZE - top_h - bottom_h
+    center_w = SIZE - 2 * lead
+    bar_h = 3
+    bar_offset = 2
+    cols = ((0, lead), (lead, center_w), (lead + center_w, lead))
+    rows = ((y, top_h), (y + top_h, mid_h), (y + top_h + mid_h, bottom_h))
+    names = (
+        ("topleft", "top", "topright"),
+        ("left", "center", "right"),
+        ("bottomleft", "bottom", "bottomright"),
+    )
+    lines = [f'  <g class="{color_class}" fill="currentColor">']
+    for r, (ry, rh) in enumerate(rows):
+        for c, (cx, cw) in enumerate(cols):
+            part = names[r][c]
+            if part == "bottom":
+                lines.extend(
+                    (
+                        f'    <g id="{name}-{part}">',
+                        f'      <rect x="{cx}" y="{ry}" width="{cw}" height="{rh}" opacity="0"/>',
+                        f'      <rect x="{cx}" y="{ry + bar_offset}" width="{cw}" height="{bar_h}" rx="{bar_h / 2:g}" opacity="{opacity}"/>',
+                        "    </g>",
+                    )
+                )
+            else:
+                lines.append(
+                    f'    <rect id="{name}-{part}" x="{cx}" y="{ry}" width="{cw}" height="{rh}" opacity="0"/>'
+                )
+    lines.append("  </g>")
+    return lines
+
+
 def render(target: ThemeTarget) -> str:
     # Keep every running task discoverable, not only the focused window.
     # GoogleBook-style taskbars show a short marker for an open application and
@@ -113,25 +158,26 @@ def render(target: ThemeTarget) -> str:
     # states. When hovered, it asks for <base>-hover before the generic hover
     # frame. Keep each semantic state visible in that path: a generic hover
     # frame alone would erase the active or running indicator.
+    # Running tasks show a short bar under the icon in the dynamic accent
+    # color: shorter and softer for an open window, longer and solid for the
+    # active one, short and faint for a minimized one. A bar frame is its own
+    # slice grid, so hovering keeps the same bar (a touch stronger) instead of
+    # a well that could not be combined with it.
     states = (
-        # Application artwork owns its selected circle/Pixel/squircle shape.
-        # Native Task Manager frames are interaction layers only; opaque task
-        # wells would create a second plate behind every generated app icon.
-        ("normal", "ColorScheme-Background", "0", running),
-        ("focus", "ColorScheme-Background", "0", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
-        ("minimized", "ColorScheme-Background", "0", Indicator(12, 2, "0.42", "ColorScheme-ButtonFocus")),
-        ("attention", "ColorScheme-NeutralText", "0.14", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
+        ("normal", "bar", ("ColorScheme-ButtonFocus", 19, "0.6")),
+        ("focus", "bar", ("ColorScheme-ButtonFocus", 15, "1")),
+        ("minimized", "bar", ("ColorScheme-ButtonFocus", 20, "0.35")),
+        ("attention", "well", ("ColorScheme-NeutralText", "0.14", Indicator(18, 4, "1", "ColorScheme-NeutralText"))),
         # Progress is painted in a clipped overlay by the native task manager.
-        ("progress", "ColorScheme-ButtonFocus", "0.12", running),
-        # Per-state hover frames preserve the corresponding active/running cue.
-        ("normal-hover", "ColorScheme-Background", "0.10", running_hover),
-        ("focus-hover", "ColorScheme-Background", "0.12", Indicator(18, 4, "1", "ColorScheme-ButtonFocus")),
-        ("minimized-hover", "ColorScheme-Background", "0.08", Indicator(12, 2, "0.58", "ColorScheme-ButtonFocus")),
-        ("attention-hover", "ColorScheme-NeutralText", "0.18", Indicator(18, 4, "1", "ColorScheme-NeutralText")),
+        ("progress", "well", ("ColorScheme-ButtonFocus", "0.12", running)),
+        ("normal-hover", "bar", ("ColorScheme-ButtonFocus", 17, "0.85")),
+        ("focus-hover", "bar", ("ColorScheme-ButtonFocus", 13, "1")),
+        ("minimized-hover", "bar", ("ColorScheme-ButtonFocus", 18, "0.5")),
+        ("attention-hover", "well", ("ColorScheme-NeutralText", "0.18", Indicator(18, 4, "1", "ColorScheme-NeutralText"))),
         # Pure pinned launchers use an empty base prefix; give only hover feedback.
-        ("launcher-hover", "ColorScheme-Background", "0.10", None),
+        ("launcher-hover", "well", ("ColorScheme-Background", "0.10", None)),
         # Safe fallback for future/native task states that do not have a variant.
-        ("hover", "ColorScheme-Background", "0.10", None),
+        ("hover", "well", ("ColorScheme-Background", "0.10", None)),
     )
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="96" height="{SIZE * len(states)}" viewBox="0 0 96 {SIZE * len(states)}">',
@@ -142,8 +188,13 @@ def render(target: ThemeTarget) -> str:
         f'    .ColorScheme-NeutralText {{ color: {target.attention}; }}',
         '  </style>',
     ]
-    for index, (name, color_class, opacity, indicator) in enumerate(states):
-        lines.extend(frame(name, index * SIZE, color_class, opacity, indicator))
+    for index, (name, kind, args) in enumerate(states):
+        if kind == "bar":
+            color_class, lead, opacity = args
+            lines.extend(bar_frame(name, index * SIZE, color_class, lead, opacity))
+        else:
+            color_class, opacity, indicator = args
+            lines.extend(frame(name, index * SIZE, color_class, opacity, indicator))
     lines.extend(
         (
             '  <g class="ColorScheme-ButtonFocus" fill="currentColor">',
