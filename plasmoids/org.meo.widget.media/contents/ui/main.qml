@@ -91,7 +91,10 @@ PlasmoidItem {
                     spacing: widget.compactLayout ? MeoTheme.space4 : MeoTheme.space8
                     Item {
                         Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredWidth: (widget.compactLayout ? 52 : 64) * MeoTheme.globalScale
+                        // Short cells get a smaller icon and no description so the
+                        // empty state never runs past the card.
+                        visible: parent.parent.height >= 110 * MeoTheme.globalScale
+                        Layout.preferredWidth: (widget.compactLayout || parent.parent.height < 190 * MeoTheme.globalScale ? 44 : 64) * MeoTheme.globalScale
                         Layout.preferredHeight: Layout.preferredWidth
 
                         MeoShape {
@@ -116,7 +119,7 @@ PlasmoidItem {
                     }
                     MeoText {
                         Layout.fillWidth: true
-                        visible: !widget.compactLayout
+                        visible: !widget.compactLayout && parent.parent.height >= 190 * MeoTheme.globalScale
                         text: MeoI18n.translator.i18n("Media controls appear when a current-session player is available.")
                         typeRole: "body"
                         typeSize: "small"

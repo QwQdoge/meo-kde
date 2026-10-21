@@ -42,7 +42,7 @@ Item {
                     }
                     MeoIconButton {
                         type: "standard"
-                        size: "m"
+                        size: "s"
                         icon.name: SystemState.bluetoothDiscovering ? "stop" : "refresh"
                         enabled: SystemState.bluetoothEnabled && !SystemState.bluetoothBusy
                         Accessible.name: SystemState.bluetoothDiscovering
@@ -54,7 +54,7 @@ Item {
                     }
                     MeoIconButton {
                         type: "standard"
-                        size: "m"
+                        size: "s"
                         icon.name: "settings"
                         Accessible.name: MeoI18n.translator.i18n("Open Bluetooth in Meo Settings")
                         onClicked: root.openMeoBluetoothSettings()

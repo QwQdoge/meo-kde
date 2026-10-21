@@ -92,13 +92,33 @@ PlasmoidItem {
             id: summary
             readonly property bool compactHeight: height < 260 * MeoTheme.globalScale
             readonly property bool roomyWidth: width >= 620 * MeoTheme.globalScale
+            readonly property bool narrowWidth: width < 300 * MeoTheme.globalScale
+            // Cards never go below this height. When the widget is resized
+            // smaller than all four fit, the less important ones are left out
+            // instead of being squashed over each other.
+            readonly property real cardMinHeight: 72 * MeoTheme.globalScale
+            readonly property int gridColumns: roomyWidth ? 4 : width >= 360 * MeoTheme.globalScale ? 2 : 1
+            readonly property int visibleCards: {
+                // Derive the room from the widget's own size, not from the grid,
+                // which would report at least its own minimum height back.
+                const spacing = MeoTheme.space8
+                const footer = summary.compactHeight ? 0 : footerRow.implicitHeight + spacing
+                const header = summaryHeader.visible ? summaryHeader.height + spacing : 0
+                const available = Math.max(0, summaryColumn.height - header - footer)
+                const rows = Math.max(1, Math.floor((available + spacing) / (cardMinHeight + spacing)))
+                return Math.max(1, Math.min(4, rows * gridColumns))
+            }
 
             ColumnLayout {
+                id: summaryColumn
                 anchors.fill: parent
                 anchors.margins: MeoTheme.space12
                 spacing: MeoTheme.space8
 
                 RowLayout {
+                    id: summaryHeader
+                    // A very short cell shows only the metric cards.
+                    visible: summary.height >= 150 * MeoTheme.globalScale
                     Layout.fillWidth: true
                     spacing: MeoTheme.space8
 
@@ -106,10 +126,12 @@ PlasmoidItem {
                         Layout.fillWidth: true
                         spacing: 0
                         MeoText {
+                            Layout.fillWidth: true
                             text: MeoI18n.translator.i18n("Performance")
                             typeRole: "title"
-                            typeSize: summary.compactHeight ? "medium" : "large"
+                            typeSize: summary.compactHeight || summary.narrowWidth ? "medium" : "large"
                             emphasized: true
+                            elide: Text.ElideRight
                         }
                         MeoText {
                             Layout.fillWidth: true
@@ -123,6 +145,7 @@ PlasmoidItem {
                     }
 
                     MeoButton {
+                        visible: summary.width >= 200 * MeoTheme.globalScale
                         text: summary.width >= 390 * MeoTheme.globalScale
                               ? MeoI18n.translator.i18n("Details") : ""
                         type: "tonal"
@@ -133,16 +156,18 @@ PlasmoidItem {
                 }
 
                 GridLayout {
+                    id: metricGrid
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    columns: summary.roomyWidth ? 4
-                             : width >= 360 * MeoTheme.globalScale ? 2 : 1
+                    Layout.minimumHeight: 0
+                    columns: summary.gridColumns
                     rowSpacing: MeoTheme.space8
                     columnSpacing: MeoTheme.space8
 
                     MetricCard {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        Layout.minimumHeight: summary.cardMinHeight
                         title: "CPU"
                         iconName: "memory"
                         valueText: MeoSystem.Performance.cpuUsage.toFixed(0) + "%"
@@ -159,6 +184,8 @@ PlasmoidItem {
                     MetricCard {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        Layout.minimumHeight: summary.cardMinHeight
+                        visible: summary.visibleCards >= 2
                         title: MeoI18n.translator.i18n("Memory")
                         iconName: "memory_alt"
                         valueText: MeoSystem.Performance.memoryUsage.toFixed(0) + "%"
@@ -172,7 +199,8 @@ PlasmoidItem {
                     MetricCard {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        visible: !summary.compactHeight || summary.roomyWidth
+                        Layout.minimumHeight: summary.cardMinHeight
+                        visible: summary.visibleCards >= 3
                         title: MeoI18n.translator.i18n("Network")
                         iconName: "swap_horiz"
                         valueText: "↓ " + root.formatRate(MeoSystem.Performance.networkRxBytesPerSecond)
@@ -187,7 +215,8 @@ PlasmoidItem {
                     MetricCard {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        visible: !summary.compactHeight || summary.roomyWidth
+                        Layout.minimumHeight: summary.cardMinHeight
+                        visible: summary.visibleCards >= 4
                         title: MeoI18n.translator.i18n("GPU")
                         iconName: "developer_board"
                         valueText: MeoSystem.Performance.gpuUsage >= 0
@@ -203,6 +232,7 @@ PlasmoidItem {
                 }
 
                 RowLayout {
+                    id: footerRow
                     Layout.fillWidth: true
                     visible: !summary.compactHeight
                     spacing: MeoTheme.space12

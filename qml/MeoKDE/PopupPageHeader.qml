@@ -13,6 +13,8 @@ Item {
     signal backRequested()
 
     implicitHeight: Math.max(ShellMetrics.popupHeaderHeight, headerRow.implicitHeight)
+    // Keep the page content off the header instead of letting it touch it.
+    Layout.bottomMargin: MeoTheme.space8
 
     RowLayout {
         id: headerRow
