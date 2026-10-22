@@ -52,7 +52,7 @@ Rectangle {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: MeoTheme.space24
-        spacing: MeoTheme.space6
+        spacing: (MeoTheme.space4 + MeoTheme.space2)
 
         Item { Layout.fillHeight: true }
 
@@ -141,7 +141,7 @@ Rectangle {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: MeoTheme.space6
+                    spacing: (MeoTheme.space4 + MeoTheme.space2)
 
                     MeoIcon {
                         icon: "schedule"
@@ -160,7 +160,7 @@ Rectangle {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: MeoTheme.space6
+                    spacing: (MeoTheme.space4 + MeoTheme.space2)
 
                     Repeater {
                         model: Weather.forecast.slice(0, root.forecastItemCount)

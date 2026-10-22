@@ -6,6 +6,8 @@ session; those remain separate runtime acceptance concerns.
 """
 
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -101,6 +103,39 @@ class LockScreenQmlRuntimeTests(unittest.TestCase):
         card.deleteLater()
         component.deleteLater()
         engine.deleteLater()
+
+
+class LockScreenTypeResolutionTests(unittest.TestCase):
+    """Resolve every lock-screen QML type against the installed Plasma.
+
+    KScreenLocker silently falls back to the stock lock screen when any type
+    fails to resolve (Plasma 6.8 removed VirtualKeyboardLoader, which went
+    unnoticed because the source-text tests still passed). Linting against the
+    real installed modules turns that into a test failure.
+    """
+
+    FATAL = ("is not a type", "was not found. Did you add all imports", "Failed to import", "unresolved type", "Member \"space")
+
+    @unittest.skipUnless(
+        Path("/usr/lib/qt6/bin/qmllint").exists(),
+        "qmllint is not installed",
+    )
+    @unittest.skipUnless(Path("/usr/lib/qt6/qml/org/kde/breeze/components").exists(),
+                         "Plasma QML modules are not installed")
+    def test_every_lockscreen_type_resolves_against_installed_plasma(self):
+        qmllint = "/usr/lib/qt6/bin/qmllint"
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "MeoUI").symlink_to(MEO_UI, target_is_directory=True)
+            problems = []
+            for path in sorted(LOCKSCREEN.glob("*.qml")):
+                result = subprocess.run(
+                    [qmllint, "-I", directory, "-I", "/usr/lib/qt6/qml", str(path)],
+                    capture_output=True, text=True, check=False,
+                )
+                for line in (result.stdout + result.stderr).splitlines():
+                    if any(marker in line for marker in self.FATAL):
+                        problems.append(line.strip())
+        self.assertEqual(problems, [])
 
 
 if __name__ == "__main__":

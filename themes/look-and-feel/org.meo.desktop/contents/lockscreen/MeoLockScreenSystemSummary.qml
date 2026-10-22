@@ -137,7 +137,7 @@ Rectangle {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: MeoTheme.space6
+                spacing: (MeoTheme.space4 + MeoTheme.space2)
 
                 FetchLine {
                     label: "OS"
@@ -260,7 +260,7 @@ Rectangle {
 
         RowLayout {
             anchors.centerIn: parent
-            spacing: MeoTheme.space6
+            spacing: (MeoTheme.space4 + MeoTheme.space2)
 
             MeoIcon {
                 icon: statusChip.iconName
