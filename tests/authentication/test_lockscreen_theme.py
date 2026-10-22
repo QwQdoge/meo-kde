@@ -226,6 +226,42 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.password_field)
 
+    def test_surface_registration_follows_the_window_once_it_exists(self):
+        # Window.window is null until the item is inside its KScreenLocker
+        # window; registering only at completion left the ambient hint and the
+        # top status row hidden until the first key press.
+        self.assertIn("onGreeterWindowChanged: syncSurface()", self.ui)
+        self.assertIn("function syncSurface()", self.ui)
+        self.assertIn("syncSurface()\n        Qt.callLater", self.ui)
+
+    def test_googlebook_ambient_layout_and_contrast_contract(self):
+        clock = (LOCKSCREEN / "MeoLockScreenClock.qml").read_text(encoding="utf-8")
+        # Rounded brand face, bold, tight stacking; never the light plain face.
+        self.assertIn("font.family: MeoTheme.typefaceBrand", clock)
+        self.assertIn("font.weight: Font.Bold", clock)
+        self.assertNotIn("Font.Light", clock)
+        # Clock sits vertically centred slightly above the middle.
+        self.assertIn("(parent.height - height) * 0.42", self.ui)
+        # Each element samples the wallpaper pixels behind it; unknown is white.
+        for name in ("clockForeground", "hintForeground", "topForeground"):
+            self.assertIn(f"readonly property color {name}: foregroundFor(", self.ui)
+        self.assertIn('return "white"', self.ui)
+        self.assertNotIn("darkForeground", self.ui)
+        # Ambient view: bottom lock hint and top-left status exist.
+        self.assertIn('text: qsTr("Press any key to unlock")', self.ui)
+        self.assertIn("id: ambientTopLeft", self.ui)
+
+    def test_authentication_surface_is_light_and_cardless(self):
+        # Neutral dim only while authenticating, no surface-coloured wash.
+        self.assertIn("opacity: lockScreenUi.authenticationReveal\n", self.ui)
+        self.assertIn("Qt.rgba(0, 0, 0, 0.42)", self.ui)
+        self.assertNotIn("primaryContainer.r,\n                                   MeoTheme.primaryContainer.g,\n                                   MeoTheme.primaryContainer.b,\n                                   0.08", self.ui)
+        self.assertIn("embedded: true", self.main)
+        self.assertIn("Layout.leftMargin: Math.max(0, (authenticationSurface.width - implicitWidth) / 2)", self.main)
+        # The module alias must not shadow the breeze Battery component.
+        self.assertIn("import org.kde.plasma.private.battery as BatteryApi", self.ui)
+        self.assertIn("Battery { }", self.ui)
+
     def test_does_not_depend_on_removed_greeter_context_property(self):
         # Plasma 6.8 stopped injecting this context property; referencing it
         # throws a ReferenceError at runtime and breaks multi-screen auth.
@@ -380,7 +416,7 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             'variant: "ClamShell"',
             "centerScale: card.centerScale",
-            "size: Math.max(196, 420 * card.centerScale)",
+            "size: Math.max(96 * MeoTheme.globalScale, 160 * card.centerScale)",
             "Layout.topMargin: MeoTheme.space16 * card.centerScale",
             "visible: !card.embedded && text !== \"\"",
         ):
@@ -634,8 +670,8 @@ class LockScreenThemeTests(unittest.TestCase):
     def test_multiscreen_coordinator_selects_only_existing_secure_windows(self):
         for required in (
             "import Meo.KScreenLocker 1.0",
-            "ScreenCoordinator.registerSurface(lockScreenUi.greeterWindow)",
-            "ScreenCoordinator.unregisterSurface(lockScreenUi.greeterWindow)",
+            "ScreenCoordinator.registerSurface(registeredWindow)",
+            "ScreenCoordinator.unregisterSurface(registeredWindow)",
             "ScreenCoordinator.requestAuthenticationOn(lockScreenUi.greeterWindow)",
             "ScreenCoordinator.dismissAuthentication()",
             "activeAuthenticationSurface",

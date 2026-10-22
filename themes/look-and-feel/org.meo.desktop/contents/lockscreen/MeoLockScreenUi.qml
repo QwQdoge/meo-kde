@@ -17,6 +17,7 @@ import QtQuick.Effects
 import org.kde.plasma.workspace.components as PW
 import org.kde.plasma.workspace.keyboardlayout as Keyboards
 import org.kde.plasma.private.keyboardindicator as KeyboardIndicator
+import org.kde.plasma.private.battery as BatteryApi
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.private.sessions
 import org.kde.breeze.components
@@ -77,16 +78,23 @@ Item {
     property int wallpaperContrastRevision: 0
     readonly property var wallpaperContrast: typeof WallpaperContrast === "undefined"
                                              ? null : WallpaperContrast
-    readonly property bool darkForeground: {
+    function foregroundFor(rx, ry, rw, rh) {
         wallpaperContrastRevision
+        // Unknown wallpaper: white, as on the reference lock screen.
         if (!wallpaperContrast || width <= 0 || height <= 0)
-            return !MeoTheme.isDarkMode
-        return wallpaperContrast.prefersDarkForeground(
-                    width * 0.30, height * 0.10, width * 0.40, height * 0.82,
-                    width, height, !MeoTheme.isDarkMode,
+            return "white"
+        const dark = wallpaperContrast.prefersDarkForeground(
+                    width * rx, height * ry, width * rw, height * rh,
+                    width, height, false,
                     wallpaperContrast.lockScreenWallpaperPath())
+        return dark ? Qt.rgba(0, 0, 0, 0.88) : "white"
     }
-    readonly property color ambientForeground: darkForeground ? Qt.rgba(0, 0, 0, 0.88) : "white"
+    // Clock block, date line, bottom hint and top status row are sampled
+    // separately so a mixed wallpaper cannot pick one unreadable color.
+    readonly property color clockForeground: foregroundFor(0.36, 0.20, 0.28, 0.48)
+    readonly property color hintForeground: foregroundFor(0.36, 0.84, 0.28, 0.12)
+    readonly property color topForeground: foregroundFor(0.00, 0.00, 1.00, 0.07)
+    readonly property color ambientForeground: clockForeground
     Connections {
         target: lockScreenUi.wallpaperContrast
         ignoreUnknownSignals: true
@@ -151,11 +159,27 @@ Item {
         }
     }
 
+    // The Window attached property is null until the item is inside its
+    // KScreenLocker window, so (re)register whenever it changes.
+    property var registeredWindow: null
+    function syncSurface() {
+        if (registeredWindow === greeterWindow)
+            return
+        if (registeredWindow)
+            ScreenCoordinator.unregisterSurface(registeredWindow)
+        registeredWindow = greeterWindow
+        if (registeredWindow)
+            ScreenCoordinator.registerSurface(registeredWindow)
+    }
+    onGreeterWindowChanged: syncSurface()
     Component.onCompleted: {
-        ScreenCoordinator.registerSurface(lockScreenUi.greeterWindow)
+        syncSurface()
         Qt.callLater(lockScreenRoot.forceActiveFocus)
     }
-    Component.onDestruction: ScreenCoordinator.unregisterSurface(lockScreenUi.greeterWindow)
+    Component.onDestruction: {
+        if (registeredWindow)
+            ScreenCoordinator.unregisterSurface(registeredWindow)
+    }
 
     function requestAuthenticationHere() {
         ScreenCoordinator.requestAuthenticationOn(lockScreenUi.greeterWindow)
@@ -395,7 +419,7 @@ Item {
             // lock surface. Keep KDE's proven blur implementation, but proxy
             // every opacity target so it cannot override Meo's motion.
             state: ""
-            factor: lockScreenUi.showAmbientDashboard ? 1.0 : lockScreenUi.authenticationReveal
+            factor: lockScreenUi.showAmbientDashboard ? 1.0 : lockScreenUi.authenticationReveal * 0.6
             source: wallpaper
             mainStack: wallpaperMainStackProxy
             footer: wallpaperFooterProxy
@@ -410,36 +434,15 @@ Item {
         Rectangle {
             id: expressiveScrim
             anchors.fill: parent
-            opacity: 0.18 + lockScreenUi.authenticationReveal * 0.82
+            opacity: lockScreenUi.authenticationReveal
 
+            // Neutral dim, not a surface-colored wash: the wallpaper keeps its
+            // colors and the white foreground stays legible.
             gradient: Gradient {
                 orientation: Gradient.Vertical
-
-                GradientStop {
-                    position: 0.0
-                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
-                                   MeoTheme.surface.b,
-                                   0.02 + lockScreenUi.authenticationReveal * 0.08)
-                }
-                GradientStop {
-                    position: 0.48
-                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
-                                   MeoTheme.surface.b,
-                                   0.08 + lockScreenUi.authenticationReveal * 0.20)
-                }
-                GradientStop {
-                    position: 0.78
-                    color: Qt.rgba(MeoTheme.primaryContainer.r,
-                                   MeoTheme.primaryContainer.g,
-                                   MeoTheme.primaryContainer.b,
-                                   0.08 + lockScreenUi.authenticationReveal * 0.26)
-                }
-                GradientStop {
-                    position: 1.0
-                    color: Qt.rgba(MeoTheme.surface.r, MeoTheme.surface.g,
-                                   MeoTheme.surface.b,
-                                   0.26 + lockScreenUi.authenticationReveal * 0.52)
-                }
+                GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.10) }
+                GradientStop { position: 0.55; color: Qt.rgba(0, 0, 0, 0.22) }
+                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.42) }
             }
         }
 
@@ -534,7 +537,7 @@ Item {
                ? wideDashboardSurface.y + MeoTheme.space32
                  - lockScreenUi.authenticationReveal * 20 * MeoTheme.globalScale
                : Math.max(MeoTheme.space32,
-                          parent.height * 0.13
+                          (parent.height - height) * 0.42
                           - lockScreenUi.authenticationReveal * 28 * MeoTheme.globalScale)
 
             Item {
@@ -551,8 +554,8 @@ Item {
                 centerScale: lockScreenUi.dashboardCenterScale
                 // Stacked hours/minutes sized from the screen like the
                 // Googlebook lock screen; foreground follows the wallpaper.
-                pixelSize: lockScreenUi.height * 0.20
-                foregroundColor: lockScreenUi.ambientForeground
+                pixelSize: lockScreenUi.height * 0.205
+                foregroundColor: lockScreenUi.clockForeground
             }
         }
 
@@ -726,13 +729,14 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 icon: "lock"
                 size: 28 * MeoTheme.globalScale
-                color: ambientClock.foregroundColor
+                color: lockScreenUi.hintForeground
             }
             MeoText {
                 text: qsTr("Press any key to unlock")
                 typeRole: "label"
                 typeSize: "medium"
-                color: ambientClock.foregroundColor
+                emphasized: true
+                color: lockScreenUi.hintForeground
             }
         }
 
@@ -751,7 +755,43 @@ Item {
             text: Qt.formatTime(ambientClock.dateTime, "h:mm") + "  " + ambientClock.dateLabel
             typeRole: "label"
             typeSize: "medium"
-            color: lockScreenUi.ambientForeground
+            emphasized: true
+            color: lockScreenUi.topForeground
+        }
+
+        // Top-right status, as on the reference: real battery state only; it
+        // is hidden on machines without an internal battery.
+        Row {
+            id: ambientTopRight
+            anchors {
+                right: parent.right
+                top: parent.top
+                rightMargin: MeoTheme.space24
+                topMargin: MeoTheme.space16
+            }
+            spacing: MeoTheme.space8
+            visible: batteryControl.hasInternalBatteries
+                     && lockScreenUi.activeAuthenticationSurface && opacity > 0.001
+            opacity: 1.0 - lockScreenUi.authenticationReveal
+
+            BatteryApi.BatteryControlModel { id: batteryControl }
+
+            PW.BatteryIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 20 * MeoTheme.globalScale
+                height: width
+                pluggedIn: batteryControl.pluggedIn
+                hasBattery: batteryControl.hasCumulative
+                percent: batteryControl.percent
+            }
+            MeoText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("%1%").arg(batteryControl.percent)
+                typeRole: "label"
+                typeSize: "medium"
+                emphasized: true
+                color: lockScreenUi.topForeground
+            }
         }
 
         // Non-active screens still remain full KScreenLocker surfaces. This
@@ -801,6 +841,9 @@ Item {
 
         StackView {
             id: mainStack
+            Kirigami.Theme.inherit: false
+            Kirigami.Theme.textColor: "white"
+            Kirigami.Theme.disabledTextColor: Qt.rgba(1, 1, 1, 0.6)
             anchors {
                 left: parent.left
                 right: parent.right
@@ -864,7 +907,7 @@ Item {
                 // comes directly from Plasma's SessionManagement.
                 actionItems: [
                     MeoButton {
-                        type: "text"
+                        type: "tonal"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Sleep")
                         icon.name: "bedtime"
@@ -874,7 +917,7 @@ Item {
                         visible: sessionManagement.canSuspend
                     },
                     MeoButton {
-                        type: "text"
+                        type: "tonal"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Hibernate")
                         icon.name: "mode_standby"
@@ -884,7 +927,7 @@ Item {
                         visible: sessionManagement.canHibernate
                     },
                     MeoButton {
-                        type: "text"
+                        type: "tonal"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Switch User")
                         icon.name: "switch_account"
@@ -895,7 +938,7 @@ Item {
                         visible: sessionManagement.canSwitchUser
                     },
                     MeoButton {
-                        type: "text"
+                        type: "tonal"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Restart")
                         icon.name: "restart_alt"
@@ -905,7 +948,7 @@ Item {
                         visible: sessionManagement.canReboot
                     },
                     MeoButton {
-                        type: "text"
+                        type: "tonal"
                         size: "s"
                         text: i18nd("plasma_shell_org.kde.plasma.desktop", "Shut Down")
                         icon.name: "power_settings_new"
@@ -954,7 +997,7 @@ Item {
             // feedback. It owns no authentication state.
             MeoButton {
                 id: virtualKeyboardButton
-                type: "text"
+                type: "tonal"
                 size: "s"
                 focusPolicy: Qt.TabFocus
                 text: i18ndc("plasma_shell_org.kde.plasma.desktop", "Button to show/hide virtual keyboard", "Virtual Keyboard")
@@ -976,7 +1019,7 @@ Item {
             // only presents that existing state through MeoUI.
             MeoButton {
                 id: keyboardButton
-                type: "text"
+                type: "tonal"
                 size: "s"
                 focusPolicy: Qt.TabFocus
                 Accessible.description: i18ndc("plasma_shell_org.kde.plasma.desktop", "Button to change keyboard layout", "Switch layout")

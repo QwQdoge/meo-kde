@@ -28,7 +28,9 @@ Item {
     default property alias content: contentLayout.data
 
     readonly property string effectiveStatus: errorText !== "" ? errorText : statusText
-    readonly property color statusColor: errorText !== "" ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant
+    readonly property color statusColor: embedded
+                                          ? (errorText !== "" ? "#ffb4ab" : Qt.rgba(1, 1, 1, 0.82))
+                                          : (errorText !== "" ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant)
     readonly property real failureOffset: failureSpring.value
     readonly property real contentInset: embedded ? 0 : MeoTheme.space32
 
@@ -177,7 +179,7 @@ Item {
             // column: 420dp at 1440p, then scales with screen height.
             // MeoAvatar.size is expressed in dp and applies globalScale
             // internally, so do not multiply the token twice here.
-            size: Math.max(196, 420 * card.centerScale)
+            size: Math.max(96 * MeoTheme.globalScale, 160 * card.centerScale)
             variant: "ClamShell"
             source: card.avatarSource
             color: MeoTheme.surfaceContainerHighest

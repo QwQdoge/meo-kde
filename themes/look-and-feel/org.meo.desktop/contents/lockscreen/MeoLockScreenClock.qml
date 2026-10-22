@@ -32,28 +32,28 @@ Item {
     Column {
         id: timeColumn
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: -clock.pixelSize * 0.16
+        spacing: -clock.pixelSize * 0.10
         Text {
             objectName: "lockHours"
             text: clock.hours
             color: clock.foregroundColor
-            font.family: MeoTheme.typefacePlain
+            font.family: MeoTheme.typefaceBrand
             font.pixelSize: clock.pixelSize
-            font.weight: Font.Light
-            font.letterSpacing: -clock.pixelSize * 0.02
+            font.weight: Font.Bold
+            font.letterSpacing: -clock.pixelSize * 0.01
             anchors.horizontalCenter: parent.horizontalCenter
-            lineHeight: 0.9
+            lineHeight: 0.86
         }
         Text {
             objectName: "lockMinutes"
             text: clock.minutes
             color: clock.foregroundColor
-            font.family: MeoTheme.typefacePlain
+            font.family: MeoTheme.typefaceBrand
             font.pixelSize: clock.pixelSize
-            font.weight: Font.Light
-            font.letterSpacing: -clock.pixelSize * 0.02
+            font.weight: Font.Bold
+            font.letterSpacing: -clock.pixelSize * 0.01
             anchors.horizontalCenter: parent.horizontalCenter
-            lineHeight: 0.9
+            lineHeight: 0.86
         }
     }
     MeoText {

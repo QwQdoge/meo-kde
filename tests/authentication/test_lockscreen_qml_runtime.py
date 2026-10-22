@@ -114,7 +114,7 @@ class LockScreenTypeResolutionTests(unittest.TestCase):
     real installed modules turns that into a test failure.
     """
 
-    FATAL = ("is not a type", "was not found. Did you add all imports", "Failed to import", "unresolved type", "Member \"space")
+    FATAL = ("is not a type", "cannot be used as a type", "was not found. Did you add all imports", "Failed to import", "unresolved type", "Member \"space")
 
     @unittest.skipUnless(
         Path("/usr/lib/qt6/bin/qmllint").exists(),

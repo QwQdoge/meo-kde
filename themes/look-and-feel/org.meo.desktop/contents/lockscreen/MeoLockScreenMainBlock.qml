@@ -90,7 +90,7 @@ MeoLockScreenSessionManagement {
         Layout.preferredWidth: sessionManager.standaloneCenterWidth
         Layout.maximumWidth: sessionManager.standaloneCenterWidth
         active: sessionManager.activeAuthenticationSurface
-        embedded: sessionManager.embeddedDashboard
+        embedded: true
         centerScale: sessionManager.centerWidthScale
         showClock: false
         failed: sessionManager.authenticationFailed || sessionManager.nonInteractiveError !== ""
@@ -105,10 +105,13 @@ MeoLockScreenSessionManagement {
 
         MeoLockScreenPasswordField {
             id: passwordBox
-            Layout.alignment: Qt.AlignHCenter
+            Layout.alignment: Qt.AlignLeft
             Layout.fillWidth: false
             Layout.preferredWidth: implicitWidth
-            Layout.maximumWidth: authenticationSurface.width * 0.8
+            // Centre explicitly: the embedded card has no inset, and the
+            // layout alignment alone left the pill on the card's left edge.
+            Layout.leftMargin: Math.max(0, (authenticationSurface.width - implicitWidth) / 2)
+            Layout.maximumWidth: authenticationSurface.width
             placeholderText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
             accessibleLabel: placeholderText
             fingerprintAvailable: sessionManager.fingerprintAvailable
