@@ -29,6 +29,7 @@ for relative in \
   kwinrc \
   plasmarc \
   plasma-welcomerc \
+  kscreenlockerrc \
   meo-shellrc \
   fcitx5/conf/classicui.conf; do
   seed_config "${relative}"

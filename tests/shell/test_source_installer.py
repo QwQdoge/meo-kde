@@ -17,6 +17,9 @@ PKGBUILD = ROOT / "packaging" / "arch" / "PKGBUILD"
 SESSION_ENTRY = ROOT / "data" / "wayland-sessions" / "meo.desktop"
 SESSION_LAUNCHER = ROOT / "tools" / "session" / "startmeo-wayland"
 
+LAYOUT = ROOT / "themes" / "look-and-feel" / "org.meo.desktop" / "contents" / "layouts" / "org.kde.plasma.desktop-layout.js"
+LOCKER_DEFAULTS = ROOT / "defaults" / "kde" / "kscreenlockerrc"
+
 PACKAGED_USER_APPLETS = {
     "org.meo.topbar",
     "org.meo.toptasks",
@@ -129,6 +132,25 @@ class InstallerContractTests(unittest.TestCase):
         self.assertIn('MEO_UI_ROOT', source)
         self.assertIn('../MeoUI', source)
         self.assertIn('../meo-ui', source)
+
+
+class DefaultWallpaperContractTests(unittest.TestCase):
+    def test_layout_writes_the_wallpaper_to_the_group_plasma_reads(self) -> None:
+        layout = LAYOUT.read_text(encoding="utf-8")
+        # A single slash-joined string creates a literal "/Wallpaper/..." group
+        # that Plasma ignores, so the default wallpaper silently falls back.
+        self.assertIn('["Wallpaper", "org.kde.image", "General"]', layout)
+        self.assertNotIn('"/Wallpaper/org.kde.image/General"', layout)
+        self.assertIn("file:///usr/share/wallpapers/MeoArch/meoarch_default.jpg", layout)
+
+    def test_default_wallpaper_asset_exists_in_the_source(self) -> None:
+        self.assertTrue((ROOT / "assets" / "wallpapers" / "meoarch_default.jpg").is_file())
+
+    def test_lock_screen_defaults_use_the_same_wallpaper_and_are_seeded(self) -> None:
+        defaults = LOCKER_DEFAULTS.read_text(encoding="utf-8")
+        self.assertIn("[Greeter][Wallpaper][org.kde.image][General]", defaults)
+        self.assertIn("Image=file:///usr/share/wallpapers/MeoArch/meoarch_default.jpg", defaults)
+        self.assertIn("kscreenlockerrc \\", SESSION_LAUNCHER.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
