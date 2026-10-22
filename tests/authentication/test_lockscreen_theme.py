@@ -226,6 +226,12 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.password_field)
 
+    def test_does_not_depend_on_removed_greeter_context_property(self):
+        # Plasma 6.8 stopped injecting this context property; referencing it
+        # throws a ReferenceError at runtime and breaks multi-screen auth.
+        for source in (self.main, self.ui):
+            self.assertNotIn("org_kde_plasma_screenlocker_greeter_view", source)
+
     def test_password_pill_keeps_kscreenlocker_focus_and_keyboard_contract(self):
         self.assertIn("passwordBox.unlockButton.forceActiveFocus()", self.main)
         self.assertIn("mapFromItem(passwordBox.unlockButton", self.main)
@@ -628,9 +634,9 @@ class LockScreenThemeTests(unittest.TestCase):
     def test_multiscreen_coordinator_selects_only_existing_secure_windows(self):
         for required in (
             "import Meo.KScreenLocker 1.0",
-            "ScreenCoordinator.registerSurface(org_kde_plasma_screenlocker_greeter_view)",
-            "ScreenCoordinator.unregisterSurface(org_kde_plasma_screenlocker_greeter_view)",
-            "ScreenCoordinator.requestAuthenticationOn(org_kde_plasma_screenlocker_greeter_view)",
+            "ScreenCoordinator.registerSurface(lockScreenUi.greeterWindow)",
+            "ScreenCoordinator.unregisterSurface(lockScreenUi.greeterWindow)",
+            "ScreenCoordinator.requestAuthenticationOn(lockScreenUi.greeterWindow)",
             "ScreenCoordinator.dismissAuthentication()",
             "activeAuthenticationSurface",
             "screenMigrationDuration",

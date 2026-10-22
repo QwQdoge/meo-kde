@@ -32,10 +32,13 @@ Item {
     // and shares its QML engine between them. The bridge records only which
     // existing window presents the panel; PasswordSync and authenticator keep
     // owning the one credential/authentication state.
+    // Plasma 6.8 no longer injects the greeter view as a context property;
+    // the item's own Window is the per-screen KScreenLocker window.
+    readonly property var greeterWindow: Window.window
     readonly property int screenCoordinatorRevision: ScreenCoordinator.revision
     readonly property bool activeAuthenticationSurface: {
         screenCoordinatorRevision // make the binding react to topology changes
-        return ScreenCoordinator.isSurfaceActive(org_kde_plasma_screenlocker_greeter_view)
+        return ScreenCoordinator.isSurfaceActive(greeterWindow)
     }
     readonly property bool authenticationUiVisible: activeAuthenticationSurface
                                                         && ScreenCoordinator.authenticationRequested
@@ -125,13 +128,13 @@ Item {
     }
 
     Component.onCompleted: {
-        ScreenCoordinator.registerSurface(org_kde_plasma_screenlocker_greeter_view)
+        ScreenCoordinator.registerSurface(lockScreenUi.greeterWindow)
         Qt.callLater(lockScreenRoot.forceActiveFocus)
     }
-    Component.onDestruction: ScreenCoordinator.unregisterSurface(org_kde_plasma_screenlocker_greeter_view)
+    Component.onDestruction: ScreenCoordinator.unregisterSurface(lockScreenUi.greeterWindow)
 
     function requestAuthenticationHere() {
-        ScreenCoordinator.requestAuthenticationOn(org_kde_plasma_screenlocker_greeter_view)
+        ScreenCoordinator.requestAuthenticationOn(lockScreenUi.greeterWindow)
     }
 
     function configValue(name, fallbackValue) {
@@ -243,7 +246,7 @@ Item {
         target: ScreenCoordinator
 
         function onFocusRequested(surface) {
-            if (surface === org_kde_plasma_screenlocker_greeter_view)
+            if (surface === lockScreenUi.greeterWindow)
                 Qt.callLater(lockScreenUi.focusActiveAuthentication)
         }
     }
