@@ -15,6 +15,7 @@ import QtQuick.Layouts
 import QtQuick.Effects
 
 import org.kde.plasma.workspace.components as PW
+import org.kde.plasma.workspace.keyboardlayout as Keyboards
 import org.kde.plasma.private.keyboardindicator as KeyboardIndicator
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.private.sessions
@@ -263,7 +264,7 @@ Item {
         property bool blockUI: lockScreenUi.authenticationUiVisible && containsMouse
                                && (mainStack.depth > 1
                                    || mainBlock.mainPasswordBox.text.length > 0
-                                   || inputPanel.keyboardActive)
+                                   || Keyboards.KWinVirtualKeyboard.visible)
 
         anchors.fill: parent
         hoverEnabled: true
@@ -294,8 +295,8 @@ Item {
             // and request that KScreenLocker clears its single password model.
             if (uiVisible) {
                 ScreenCoordinator.dismissAuthentication()
-                if (inputPanel.keyboardActive)
-                    inputPanel.showHide()
+                if (Keyboards.KWinVirtualKeyboard.visible)
+                    Keyboards.KWinVirtualKeyboard.active = false
                 root.clearPassword()
             }
         }
@@ -868,15 +869,6 @@ Item {
             }
         }
 
-        VirtualKeyboardLoader {
-            id: inputPanel
-            z: 1
-            screenRoot: lockScreenRoot
-            mainStack: mainStack
-            mainBlock: mainBlock
-            passwordField: mainBlock.mainPasswordBox
-        }
-
         Loader {
             z: 2
             active: root.viewVisible
@@ -917,12 +909,17 @@ Item {
                 size: "s"
                 focusPolicy: Qt.TabFocus
                 text: i18ndc("plasma_shell_org.kde.plasma.desktop", "Button to show/hide virtual keyboard", "Virtual Keyboard")
-                icon.name: inputPanel.keyboardActive ? "keyboard_hide" : "keyboard"
+                icon.name: Keyboards.KWinVirtualKeyboard.visible ? "keyboard_hide" : "keyboard"
                 onClicked: {
-                    mainBlock.mainPasswordBox.forceActiveFocus()
-                    inputPanel.showHide()
+                    if (Keyboards.KWinVirtualKeyboard.visible) {
+                        Keyboards.KWinVirtualKeyboard.active = false
+                    } else {
+                        // Keep focus on the password field so on-screen
+                        // keystrokes are not swallowed.
+                        mainBlock.mainPasswordBox.forceActiveFocus()
+                        Keyboards.KWinVirtualKeyboard.forceActivate()
+                    }
                 }
-                visible: inputPanel.status === Loader.Ready
                 Layout.fillHeight: true
             }
 

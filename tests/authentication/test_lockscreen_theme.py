@@ -100,7 +100,7 @@ class LockScreenThemeTests(unittest.TestCase):
         for required in (
             "ScreenLocker.Authenticator.Fingerprint",
             "ScreenLocker.Authenticator.Smartcard",
-            "VirtualKeyboardLoader",
+            "Keyboards.KWinVirtualKeyboard",
             "KeyboardLayoutSwitcher",
             "KeyboardIndicator.KeyState",
             "sessionManagement.suspend()",
@@ -230,7 +230,8 @@ class LockScreenThemeTests(unittest.TestCase):
         self.assertIn("passwordBox.unlockButton.forceActiveFocus()", self.main)
         self.assertIn("mapFromItem(passwordBox.unlockButton", self.main)
         self.assertIn("TextField {", self.password_field)
-        self.assertIn("passwordField: mainBlock.mainPasswordBox", self.ui)
+        self.assertIn("mainBlock.mainPasswordBox.forceActiveFocus()", self.ui)
+        self.assertIn("Keyboards.KWinVirtualKeyboard.forceActivate()", self.ui)
 
     def test_p3_data_adapters_are_explicitly_bounded_and_optional(self):
         for required in (
