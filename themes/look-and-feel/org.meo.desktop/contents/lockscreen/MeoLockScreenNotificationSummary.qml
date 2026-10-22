@@ -65,7 +65,7 @@ Item {
         expandUnread: false
 
         // KScreenLocker owns this QQuickWindow and its secure surface.
-        window: org_kde_plasma_screenlocker_greeter_view
+        window: root.Window.window
     }
 
     Rectangle {
