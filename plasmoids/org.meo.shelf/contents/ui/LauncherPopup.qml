@@ -1285,7 +1285,7 @@ MeoMotionPopup {
                     Layout.minimumHeight: 36 * MeoTheme.globalScale
                     Layout.preferredHeight: 36 * MeoTheme.globalScale
                     Layout.maximumHeight: 36 * MeoTheme.globalScale
-                    spacing: MeoTheme.space6
+                    spacing: (6 * MeoTheme.globalScale)
 
                     MeoChip {
                         id: allAppsChip
@@ -1307,7 +1307,7 @@ MeoMotionPopup {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         orientation: ListView.Horizontal
-                        spacing: MeoTheme.space6
+                        spacing: (6 * MeoTheme.globalScale)
                         clip: true
                         reuseItems: true
                         model: rootAppModel
