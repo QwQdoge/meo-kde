@@ -31,8 +31,8 @@ ShowNotifications=true
 Use24HourClock=true
 
 [Appearance]
-# Popups and the Shelf are solid by default. SurfaceTransparency lets popups
-# show a little of what is below; SurfaceBlur (needs transparency) asks KWin to
-# blur it, which gives the frosted-glass look.
-SurfaceTransparency=false
-SurfaceBlur=false
+# Popups and the Shelf use a little transparency with KWin blur by default (the
+# frosted-glass look of the reference desktop). Set both to false for solid
+# surfaces. SurfaceBlur needs SurfaceTransparency.
+SurfaceTransparency=true
+SurfaceBlur=true

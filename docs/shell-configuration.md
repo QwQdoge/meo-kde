@@ -96,12 +96,13 @@ dialogs, popups, non-active windows, and windows on other outputs.
 
 ```ini
 [Appearance]
-SurfaceTransparency=false
-SurfaceBlur=false
+SurfaceTransparency=true
+SurfaceBlur=true
 ```
 
-Quick Settings and the other popups are solid by default, and so is the bottom
-Shelf. `SurfaceTransparency=true` lets popups and notification cards show a
+Since beta.11 the packaged defaults are transparent with blur (the frosted look
+of the reference desktop); set both to `false` for solid Quick Settings popups
+and a solid Shelf. `SurfaceTransparency=true` lets popups and notification cards show a
 little of what is below (88% / 86% opacity in light / dark). `SurfaceBlur=true`
 (only effective together with transparency) asks KWin's Blur effect, through
 `KWindowEffects`, to blur the area behind the rounded popup, giving a frosted
