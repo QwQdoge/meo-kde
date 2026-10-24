@@ -19,7 +19,6 @@ class LockScreenThemeTests(unittest.TestCase):
         self.clock = (LOCKSCREEN / "MeoLockScreenClock.qml").read_text(encoding="utf-8")
         self.password_field = (LOCKSCREEN / "MeoLockScreenPasswordField.qml").read_text(encoding="utf-8")
         self.session_geometry = (LOCKSCREEN / "MeoLockScreenSessionManagement.qml").read_text(encoding="utf-8")
-        self.no_password = (LOCKSCREEN / "MeoNoPasswordUnlock.qml").read_text(encoding="utf-8")
         self.media = (LOCKSCREEN / "MediaControls.qml").read_text(encoding="utf-8")
         self.notifications = (LOCKSCREEN / "MeoLockScreenNotificationSummary.qml").read_text(encoding="utf-8")
         self.weather_card = (LOCKSCREEN / "MeoLockScreenWeatherCard.qml").read_text(encoding="utf-8")
@@ -662,10 +661,44 @@ class LockScreenThemeTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.media)
 
-    def test_no_password_path_uses_same_meoui_surface(self):
-        self.assertIn("SessionManagementScreen", self.no_password)
-        self.assertIn("MeoLockScreenAuthCard", self.no_password)
-        self.assertIn("Qt.quit()", self.no_password)
+    def test_success_unlocks_directly_including_accounts_without_a_password(self):
+        # An account without a password succeeds without any prompt. The click
+        # or key that revealed authentication must unlock straight to the
+        # desktop; there is no second "Unlock" confirmation screen.
+        self.assertFalse((LOCKSCREEN / "MeoNoPasswordUnlock.qml").exists())
+        succeeded = self.ui[self.ui.index("function onSucceeded()"):]
+        succeeded = succeeded[:succeeded.index("function onInfoMessageChanged()")]
+        self.assertIn("authenticator.stopAuthenticating()", succeeded)
+        self.assertIn("Qt.quit()", succeeded)
+        self.assertNotIn("hadPrompt", succeeded)
+        self.assertNotIn("NoPasswordUnlock", self.ui)
+
+    def test_backend_is_kept_alive_like_plasma_6_8(self):
+        # PamAuthenticators.startAuthenticating() does nothing while the PAM
+        # worker is not ready or still busy, so a single call can leave the
+        # password and fingerprint authenticators without a conversation.
+        heartbeat = self.ui[self.ui.index("id: authenticationHeartbeat"):]
+        heartbeat = heartbeat[:heartbeat.index("}")]
+        for required in ("interval: 1000",
+                         "running: !authenticator.unlocked && lockScreenUi.authenticationUiVisible",
+                         "repeat: true",
+                         "authenticator.startAuthenticating()"):
+            with self.subTest(required=required):
+                self.assertIn(required, heartbeat)
+
+    def test_a_click_or_tap_starts_authentication(self):
+        handler = self.ui[self.ui.index("onClicked: mouse => {"):]
+        handler = handler[:handler.index("onPositionChanged")]
+        self.assertIn("if (!uiVisible)", handler)
+        self.assertIn("lockScreenUi.requestAuthenticationHere()", handler)
+
+    def test_authenticator_signal_handlers_match_the_plasma_6_8_signals(self):
+        # promptChanged() and promptForSecretChanged() carry no arguments in
+        # kscreenlocker 6.8.
+        self.assertIn("function onPromptChanged() {", self.ui)
+        self.assertIn("function onPromptForSecretChanged() {", self.ui)
+        self.assertNotIn("function onPromptChanged(message)", self.ui)
+        self.assertNotIn("function onPromptForSecretChanged(message)", self.ui)
 
     def test_multiscreen_coordinator_selects_only_existing_secure_windows(self):
         for required in (

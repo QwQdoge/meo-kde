@@ -261,13 +261,14 @@ Item {
         }
 
         function onSucceeded() {
-            if (authenticator.hadPrompt) {
-                Qt.quit()
-            } else {
-                mainStack.replace(null, Qt.resolvedUrl("MeoNoPasswordUnlock.qml"),
-                                  { userListModel: users }, StackView.Immediate)
-                mainStack.forceActiveFocus()
-            }
+            // The backend (PAM) reported success: stop every pending
+            // authenticator (password, fingerprint, smartcard) so none of them
+            // times out or retries, then release the lock. An account without a
+            // password succeeds without any prompt; that unlocks directly on the
+            // deliberate click/key that revealed authentication, with no second
+            // confirmation screen.
+            authenticator.stopAuthenticating()
+            Qt.quit()
         }
 
         function onInfoMessageChanged() {
@@ -278,11 +279,11 @@ Item {
             lockScreenUi.handleMessage(authenticator.errorMessage)
         }
 
-        function onPromptChanged(message) {
+        function onPromptChanged() {
             lockScreenUi.handleMessage(authenticator.prompt)
         }
 
-        function onPromptForSecretChanged(message) {
+        function onPromptForSecretChanged() {
             if (!lockScreenUi.activeAuthenticationSurface)
                 return
             mainBlock.showPassword = false
@@ -304,11 +305,11 @@ Item {
         focus: !lockScreenUi.authenticationUiVisible
 
         readonly property bool uiVisible: lockScreenUi.authenticationUiVisible
-        // An ambient lock screen must not begin fingerprint/smartcard (or a
-        // future upstream face method) because of an incidental pointer tap.
-        // 72dp is the explicit touch-intent threshold from the public
-        // session-entry contract. Keyboard input remains its accessible
-        // equivalent and continues to use KScreenLocker's authenticator.
+        // The ambient lock screen starts authentication only on a deliberate
+        // action: any key press, a click/tap, or an upward swipe of at least
+        // 72dp (the touch-intent threshold from the public session-entry
+        // contract). Pointer motion alone never starts fingerprint/smartcard
+        // (or a future upstream face method).
         readonly property real upwardSwipeThreshold: 72 * MeoTheme.globalScale
         property real gestureStartY: 0
         property bool authenticationSwipeRecognized: false
@@ -324,6 +325,10 @@ Item {
         onPressed: mouse => {
             gestureStartY = mouse.y
             authenticationSwipeRecognized = uiVisible
+        }
+        onClicked: mouse => {
+            if (!uiVisible)
+                lockScreenUi.requestAuthenticationHere()
         }
         onPositionChanged: mouse => {
             if (uiVisible || authenticationSwipeRecognized)
@@ -360,6 +365,20 @@ Item {
             } else {
                 event.accepted = false
             }
+        }
+
+        // KScreenLocker's authenticators only start a PAM conversation when
+        // startAuthenticating() finds the worker ready and not busy, and it
+        // must be called again after a failure or a worker restart. Without this
+        // heartbeat the first call can land before the worker is ready, no
+        // prompt is ever issued and typed passwords or fingerprint touches have
+        // nothing to answer. Same contract as the stock Plasma 6.8 lock screen.
+        Timer {
+            id: authenticationHeartbeat
+            interval: 1000
+            running: !authenticator.unlocked && lockScreenUi.authenticationUiVisible
+            repeat: true
+            onTriggered: authenticator.startAuthenticating()
         }
 
         Timer {

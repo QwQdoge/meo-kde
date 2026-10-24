@@ -37,6 +37,22 @@ The lock surface follows the Googlebook reference and MeoUI:
   local literals;
 - reduced motion collapses the transitions through `MeoTheme.reduceMotion`.
 
+## Authentication protocol (Plasma 6.8 backend)
+
+- Authentication starts only on a deliberate action on the ambient surface: a key
+  press, a click/tap, or an upward swipe (72dp). The first call is
+  `authenticator.startAuthenticating()`.
+- While the authentication surface is visible a 1 s heartbeat repeats
+  `startAuthenticating()` (the stock 6.8 lock screen does the same). The backend
+  ignores the call while its PAM worker is not ready or is busy; without the
+  heartbeat a typed password or a fingerprint touch can arrive with no PAM
+  conversation to answer.
+- `respond(password)` only answers a pending PAM prompt; the fingerprint reader runs
+  as the implicit non-interactive authenticator beside the password prompt.
+- On success the UI calls `stopAuthenticating()` and quits (unlocks). An account
+  without a password succeeds without any prompt, so one click or key press goes
+  straight to the desktop; there is no second confirmation screen.
+
 ## Authentication boundary
 
 Authentication success comes from the backend authenticator. Presentation may
