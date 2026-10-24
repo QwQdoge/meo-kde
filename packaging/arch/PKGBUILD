@@ -40,8 +40,9 @@ package() {
   install -d "${pkgdir}/usr/share/plasma/look-and-feel"
   cp -a "${workspace}/themes/look-and-feel/org.meo.desktop" \
     "${pkgdir}/usr/share/plasma/look-and-feel/"
-  install -Dm644 "${workspace}/defaults/sessions/meoarch-wayland.desktop" \
-    "${pkgdir}/usr/share/wayland-sessions/meoarch-wayland.desktop"
+  # The login session entry and its isolated launcher are owned by the
+  # meo-repo `meo-desktop` recipe; this development recipe must not ship a
+  # second, non-isolated "Meo Desktop" entry.
   install -d "${pkgdir}/usr/share/plasma/shells"
   cp -a "${workspace}/themes/shells/org.meo.shell" "${pkgdir}/usr/share/plasma/shells/"
   install -Dm644 "${workspace}/themes/look-and-feel/org.meo.desktop/contents/lockscreen/config.xml" \
