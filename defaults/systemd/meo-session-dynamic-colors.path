@@ -1,0 +1,14 @@
+[Unit]
+Description=Watch the Meo Desktop session's color source configuration
+ConditionEnvironment=MEO_DESKTOP_SESSION=1
+
+[Path]
+# The Meo session keeps its configuration under ~/.config/meo-desktop, which a
+# path unit cannot derive from the session's XDG_CONFIG_HOME.
+PathChanged=%h/.config/meo-desktop/plasma-org.meo.shell-appletsrc
+PathChanged=%h/.config/meo-desktop/kdeglobals
+PathChanged=%h/.config/meo-desktop/meo-dynamic-colorsrc
+Unit=meo-session-dynamic-colors.service
+
+[Install]
+WantedBy=graphical-session.target

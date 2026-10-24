@@ -1,0 +1,18 @@
+[Unit]
+Description=Generate Meo KDE Material 3 colors for the Meo Desktop session
+# Only the isolated Meo Desktop session (startmeo-wayland exports this and
+# startplasma imports it into the user manager before graphical-session.target).
+# A normal Plasma login is unaffected by installing meo-desktop.
+ConditionEnvironment=MEO_DESKTOP_SESSION=1
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+# XDG_CONFIG_HOME is the session's private config home, so the color source,
+# wallpaper and kdeglobals are read and written there.
+ExecStart=/usr/bin/meo-dynamic-colors --follow-meo --apply
+ExecStartPost=/usr/bin/meo-input-method --sync --quiet
+
+[Install]
+WantedBy=graphical-session.target
