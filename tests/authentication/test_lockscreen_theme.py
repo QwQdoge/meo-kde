@@ -254,7 +254,7 @@ class LockScreenThemeTests(unittest.TestCase):
     def test_authentication_surface_is_light_and_cardless(self):
         # Neutral dim only while authenticating, no surface-coloured wash.
         self.assertIn("opacity: lockScreenUi.authenticationReveal\n", self.ui)
-        self.assertIn("Qt.rgba(0, 0, 0, 0.42)", self.ui)
+        self.assertIn("Qt.alpha(\"black\", 0.42)", self.ui)
         self.assertNotIn("primaryContainer.r,\n                                   MeoTheme.primaryContainer.g,\n                                   MeoTheme.primaryContainer.b,\n                                   0.08", self.ui)
         self.assertIn("embedded: true", self.main)
         self.assertIn("Layout.leftMargin: Math.max(0, (authenticationSurface.width - implicitWidth) / 2)", self.main)

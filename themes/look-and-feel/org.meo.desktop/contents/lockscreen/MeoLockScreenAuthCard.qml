@@ -29,7 +29,7 @@ Item {
 
     readonly property string effectiveStatus: errorText !== "" ? errorText : statusText
     readonly property color statusColor: embedded
-                                          ? (errorText !== "" ? "#ffb4ab" : Qt.rgba(1, 1, 1, 0.82))
+                                          ? (errorText !== "" ? "#ffb4ab" : Qt.alpha("white", 0.82))
                                           : (errorText !== "" ? MeoTheme.error : MeoTheme.contentOnSurfaceVariant)
     readonly property real failureOffset: failureSpring.value
     readonly property real contentInset: embedded ? 0 : MeoTheme.space32

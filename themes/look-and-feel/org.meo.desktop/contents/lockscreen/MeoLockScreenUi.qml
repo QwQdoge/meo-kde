@@ -87,7 +87,7 @@ Item {
                     width * rx, height * ry, width * rw, height * rh,
                     width, height, false,
                     wallpaperContrast.lockScreenWallpaperPath())
-        return dark ? Qt.rgba(0, 0, 0, 0.88) : "white"
+        return dark ? Qt.alpha("black", 0.88) : "white"
     }
     // Clock block, date line, bottom hint and top status row are sampled
     // separately so a mixed wallpaper cannot pick one unreadable color.
@@ -440,9 +440,9 @@ Item {
             // colors and the white foreground stays legible.
             gradient: Gradient {
                 orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.10) }
-                GradientStop { position: 0.55; color: Qt.rgba(0, 0, 0, 0.22) }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.42) }
+                GradientStop { position: 0.0; color: Qt.alpha("black", 0.10) }
+                GradientStop { position: 0.55; color: Qt.alpha("black", 0.22) }
+                GradientStop { position: 1.0; color: Qt.alpha("black", 0.42) }
             }
         }
 
@@ -843,7 +843,7 @@ Item {
             id: mainStack
             Kirigami.Theme.inherit: false
             Kirigami.Theme.textColor: "white"
-            Kirigami.Theme.disabledTextColor: Qt.rgba(1, 1, 1, 0.6)
+            Kirigami.Theme.disabledTextColor: Qt.alpha("white", 0.6)
             anchors {
                 left: parent.left
                 right: parent.right

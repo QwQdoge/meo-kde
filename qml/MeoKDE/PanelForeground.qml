@@ -19,7 +19,7 @@ Item {
     // Test/preview override; production leaves this empty (desktop wallpaper).
     property string imagePath: ""
     readonly property bool preferDark: resolvedDark
-    readonly property color color: preferDark ? Qt.rgba(0, 0, 0, 0.88) : "white"
+    readonly property color color: preferDark ? Qt.alpha("black", 0.88) : "white"
 
     readonly property bool fallbackDark: MeoShellTheme.luminance(MeoShellTheme.panelForeground) > 0.5
     property bool resolvedDark: fallbackDark
