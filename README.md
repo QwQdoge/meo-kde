@@ -4,6 +4,10 @@ MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主�
 
 ## 快速安装 / Quick install
 
+单独安装 MeoKDE（AUR）/ Install just MeoKDE from the AUR: `yay -Syu meo-desktop`。
+
+要一次装好全部 MeoArch 软件，使用下面的 Meo 软件源入口 / To install the whole MeoArch software set, use the Meo repository entry point below:
+
 在已经配置官方签名 MeoArch 软件仓库的 Arch / MeoArch 系统上，公开安装入口只有这一条：
 
 ```bash
