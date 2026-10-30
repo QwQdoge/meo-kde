@@ -75,19 +75,27 @@ Item {
         easing.bezierCurve: MeoTheme.motionEasingStandard
     }
 
+    // maskSource must reference an item that is a child of the same QQuickWindow
+    // as the layer host. An inline Item { } literal inside maskSource: has no
+    // parent and therefore no window, triggering the ShaderEffectSource
+    // cross-window error which can crash the Wayland compositor.
+    Item {
+        id: waveMask
+        anchors.fill: parent
+        visible: false
+        layer.enabled: true
+
+        MeoShape {
+            anchors.fill: parent
+            type: root.shapeName
+            color: "white"
+        }
+    }
+
     layer.enabled: visible
     layer.effect: MultiEffect {
         maskEnabled: true
-        maskSource: Item {
-            width: root.width
-            height: root.height
-
-            MeoShape {
-                anchors.fill: parent
-                type: root.shapeName
-                color: "white"
-            }
-        }
+        maskSource: waveMask
     }
 
     Item {
