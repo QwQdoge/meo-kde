@@ -50,10 +50,10 @@ jobs:
           locale -a | grep -qi '^zh_CN\.utf8$'
 
       - name: Check out MeoKDE
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check out MeoUI QML sources
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: QwQdoge/MeoUI
           ref: main

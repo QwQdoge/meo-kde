@@ -37,7 +37,7 @@ jobs:
             qt6-base kservice kio pulseaudio-qt
 
       - name: Check out MeoKDE
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Configure
         run: >-

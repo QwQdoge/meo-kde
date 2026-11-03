@@ -32,13 +32,13 @@ jobs:
             ki18n mesa libglvnd gettext glibc-locales
 
       - name: Check out MeoKDE
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: meo-kde
           submodules: recursive
 
       - name: Check out MeoUI contract source
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: QwQdoge/MeoUI
           ref: main
