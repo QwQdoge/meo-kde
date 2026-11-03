@@ -31,6 +31,11 @@ for relative in \
   plasma-welcomerc \
   kscreenlockerrc \
   meo-shellrc \
+  dolphinrc \
+  katerc \
+  okularrc \
+  arkrc \
+  konsolerc \
   fcitx5/conf/classicui.conf; do
   seed_config "${relative}"
 done

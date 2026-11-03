@@ -152,6 +152,23 @@ class DefaultWallpaperContractTests(unittest.TestCase):
         self.assertIn("Image=file:///usr/share/wallpapers/MeoArch/meoarch_default.jpg", defaults)
         self.assertIn("kscreenlockerrc \\", SESSION_LAUNCHER.read_text(encoding="utf-8"))
 
+    def test_kde_applications_start_without_a_menu_bar_in_the_meo_session(self) -> None:
+        # MeoUI APP_SHELL.md section 6: hamburger menu instead of a menu bar,
+        # seeded only into the private Meo session profile.
+        launcher = SESSION_LAUNCHER.read_text(encoding="utf-8")
+        expected = {
+            "dolphinrc": ("[MainWindow]", "MenuBar=Disabled"),
+            "katerc": ("[MainWindow]", "MenuBar=Disabled"),
+            "okularrc": ("[MainWindow]", "MenuBar=Disabled"),
+            "arkrc": ("[MainWindow]", "MenuBar=Disabled"),
+            "konsolerc": ("[KonsoleWindow]", "ShowMenuBarByDefault=false"),
+        }
+        for name, (group, entry) in expected.items():
+            with self.subTest(name=name):
+                defaults = (ROOT / "defaults" / "applications" / name).read_text(encoding="utf-8")
+                self.assertIn(group + "\n" + entry, defaults)
+                self.assertIn(f"  {name} \\", launcher)
+
 
 if __name__ == "__main__":
     unittest.main()

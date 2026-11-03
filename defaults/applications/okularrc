@@ -1,0 +1,5 @@
+# Meo Desktop session default, seeded once into ~/.config/meo-desktop.
+# Start with the menu bar hidden and the hamburger menu in the toolbar
+# (MeoUI docs/design/APP_SHELL.md section 6). Ctrl+M shows it again.
+[MainWindow]
+MenuBar=Disabled
