@@ -157,7 +157,7 @@ QQC2.ScrollView {
 
     function tileIcon(id) {
         if (id === "darkTheme") return "contrast"
-        if (id === "wifi") return SystemState.wirelessEnabled ? (SystemState.networkConnected ? "wifi" : "wifi_find") : "wifi_off"
+        if (id === "wifi") return SystemState.wirelessAvailable && SystemState.wirelessEnabled ? (SystemState.networkConnected ? "wifi" : "wifi_find") : "wifi_off"
         if (id === "bluetooth") return "bluetooth"
         if (id === "focus") return NotificationManager.Server.inhibited ? "do_not_disturb_on" : "notifications"
         if (id === "nightLight") return "dark_mode"
@@ -171,7 +171,7 @@ QQC2.ScrollView {
 
     function tileActive(id) {
         if (id === "darkTheme") return MeoShellTheme.darkMode
-        if (id === "wifi") return SystemState.wirelessEnabled
+        if (id === "wifi") return SystemState.wirelessAvailable && SystemState.wirelessEnabled
         if (id === "bluetooth") return SystemState.bluetoothEnabled
         if (id === "focus") return NotificationManager.Server.valid && NotificationManager.Server.inhibited
         if (id === "nightLight") return Platform.nightLightEnabled
@@ -184,7 +184,7 @@ QQC2.ScrollView {
 
     function tileEnabled(id) {
         if (id === "darkTheme") return !ColorSchemeActions.busy
-        if (id === "wifi") return SystemState.networkAvailable
+        if (id === "wifi") return SystemState.networkAvailable && SystemState.wirelessAvailable
         if (id === "bluetooth") return SystemState.bluetoothAvailable
         if (id === "focus") return NotificationManager.Server.valid
         if (id === "nightLight") return Platform.nightLightAvailable

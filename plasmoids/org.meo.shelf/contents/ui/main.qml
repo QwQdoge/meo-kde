@@ -16,6 +16,9 @@ PlasmoidItem {
     preferredRepresentation: compactRepresentation
     switchWidth: 0
     switchHeight: 0
+    // The launcher opens its own popup window. Plasma's expanded popup would
+    // only show the empty full representation as a blank capsule on the Shelf.
+    onExpandedChanged: if (expanded) expanded = false
     Layout.minimumWidth: Plasmoid.configuration.showLauncherButton
                          && compactRepresentationItem
                          ? compactRepresentationItem.implicitWidth : 0
