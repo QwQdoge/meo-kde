@@ -111,7 +111,7 @@ jobs:
           pacman -Q libplasma plasma-workspace qt6-base > /tmp/meo-plasma-versions.txt
           tar -C /tmp/meo-native-install -czf /tmp/meo-system-plasma68.tar.gz .
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: meo-system-plasma68-${{ github.sha }}
           path: |
