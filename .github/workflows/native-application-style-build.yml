@@ -36,10 +36,10 @@ jobs:
             qt6-base qt6-declarative breeze
 
       - name: Check out MeoKDE
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check out MeoUI token runtime
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: QwQdoge/MeoUI
           ref: main
