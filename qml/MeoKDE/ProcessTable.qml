@@ -262,6 +262,11 @@ Item {
     }
 
     readonly property var processRows: buildRows()
+    // Diffed by pid so the table keeps its delegates (scroll position,
+    // hover, keyboard focus) across 2 s refreshes instead of resetting.
+    MeoSystem.ProcessRowModel { id: processRowModel }
+    onProcessRowsChanged: processRowModel.sync(processRows)
+    Component.onCompleted: processRowModel.sync(processRows)
     readonly property var columns: tableColumns()
 
     ColumnLayout {
@@ -529,7 +534,7 @@ Item {
             Layout.fillHeight: true
             Layout.minimumHeight: 220 * root.scaleFactor
             columns: root.columns
-            model: root.processRows
+            model: processRowModel
             selectable: false
             showDividers: false
             hoverEffect: true

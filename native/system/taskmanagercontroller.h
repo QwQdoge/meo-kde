@@ -1,13 +1,108 @@
 #pragma once
 
+#include <QAbstractListModel>
 #include <QElapsedTimer>
 #include <QHash>
 #include <QObject>
 #include <QSet>
 #include <QStringList>
+#include <QThreadPool>
 #include <QTimer>
 #include <QVariantList>
 #include <QVariantMap>
+
+namespace MeoTaskSampling {
+
+struct CpuSnapshot {
+    quint64 idle = 0;
+    quint64 total = 0;
+};
+
+struct DesktopAppInfo {
+    QString name;
+    QString icon;
+    QString desktopId;
+};
+
+struct ProcessStaticInfo {
+    quint64 startTicks = 0;
+    QString name;
+    QString appName;
+    QString appIcon;
+    QString desktopId;
+    QString command;
+    QString executable;
+    QString user;
+    QString category;
+    qint64 uid = -1;
+    bool canControl = false;
+};
+
+// Everything a /proc sample needs from the previous state.  Implicitly shared
+// containers make the copy handed to the worker cheap; the worker detaches
+// only what it modifies, so the GUI thread's members are never touched.
+struct SampleInput {
+    double elapsedSeconds = 0;
+    CpuSnapshot lastCpu;
+    QHash<qint64, quint64> lastTicks;
+    QHash<qint64, quint64> lastReadBytes;
+    QHash<qint64, quint64> lastWriteBytes;
+    QHash<qint64, ProcessStaticInfo> staticInfo;
+    QHash<QString, DesktopAppInfo> desktopAppsByExecutable;
+    QHash<qint64, int> efficiencyOriginalNice;
+    quint32 currentUid = 0;
+    qint64 pageSize = 4096;
+    qint64 selfPid = 0;
+};
+
+struct SampleResult {
+    CpuSnapshot cpu;
+    quint64 cpuTotalDelta = 0;
+    QHash<qint64, quint64> ticks;
+    QHash<qint64, quint64> readBytes;
+    QHash<qint64, quint64> writeBytes;
+    QHash<qint64, ProcessStaticInfo> staticInfo;
+    QSet<qint64> livePids;
+    QVariantList processes;
+    QVariantList processTree;
+    QVariantList processGroups;
+    QVariantList userSummaries;
+    double elapsedSeconds = 0;
+    qint64 sampleMicroseconds = 0;
+};
+
+// Reads /proc and derives the process lists.  Touches no controller state, so
+// it is safe to run on a worker thread.
+SampleResult sampleProcessSnapshot(const SampleInput &input);
+
+} // namespace MeoTaskSampling
+
+// Flat list model keyed by a stable integer field ("pid").  sync() diffs the
+// incoming rows against the current ones and emits remove/move/insert/
+// dataChanged per row, so views keep their delegates instead of resetting.
+class ProcessRowModel final : public QAbstractListModel
+{
+    Q_OBJECT
+    Q_PROPERTY(int count READ count NOTIFY countChanged)
+
+public:
+    explicit ProcessRowModel(QObject *parent = nullptr);
+
+    int count() const;
+    int rowCount(const QModelIndex &parent = {}) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    Q_INVOKABLE QVariantMap get(int row) const;
+    Q_INVOKABLE void sync(const QVariantList &rows);
+
+Q_SIGNALS:
+    void countChanged();
+
+private:
+    QList<QVariantMap> m_rows;
+    QList<QString> m_keys;
+};
 
 class TaskManagerController final : public QObject
 {
@@ -41,6 +136,7 @@ class TaskManagerController final : public QObject
 
 public:
     explicit TaskManagerController(QObject *parent = nullptr);
+    ~TaskManagerController() override;
 
     bool available() const;
     bool monitoring() const;
@@ -111,36 +207,20 @@ Q_SIGNALS:
     void serviceActionCompleted(const QString &unit, const QString &action);
 
 private:
-    struct CpuSnapshot {
-        quint64 idle = 0;
-        quint64 total = 0;
-    };
-
-    struct DesktopAppInfo {
-        QString name;
-        QString icon;
-        QString desktopId;
-    };
-
-    struct ProcessStaticInfo {
-        quint64 startTicks = 0;
-        QString name;
-        QString appName;
-        QString appIcon;
-        QString desktopId;
-        QString command;
-        QString executable;
-        QString user;
-        QString category;
-        qint64 uid = -1;
-        bool canControl = false;
-    };
+    using CpuSnapshot = MeoTaskSampling::CpuSnapshot;
+    using DesktopAppInfo = MeoTaskSampling::DesktopAppInfo;
+    using ProcessStaticInfo = MeoTaskSampling::ProcessStaticInfo;
 
     void rebuildActiveModules();
     bool wantsModule(const QString &module) const;
     bool wantsProcessSampling() const;
     void updateTimer();
-    void sampleProcesses(double elapsedSeconds);
+    // Starts an off-thread /proc sample.  A tick (coalesce == false) is
+    // dropped while one is in flight; an explicit request is remembered and
+    // re-run once the in-flight sample has been applied.
+    void requestSample(bool coalesce);
+    void applySample(MeoTaskSampling::SampleResult result, quint64 generation);
+    void invalidateSampling();
     void rebuildDesktopAppIndex();
     void updateSelectedProcessDetails(double elapsedSeconds);
     void setActionError(const QString &message);
@@ -160,6 +240,12 @@ private:
     QVariantMap m_selectedProcessDetails;
     qint64 m_selectedPid = -1;
     bool m_selectedProcessGpuAvailable = false;
+
+    QThreadPool m_samplePool;
+    bool m_sampleInFlight = false;
+    bool m_samplePending = false;
+    quint64 m_sampleGeneration = 0;
+    bool m_logTiming = false;
 
     CpuSnapshot m_lastCpu;
     quint64 m_lastCpuTotalDelta = 0;

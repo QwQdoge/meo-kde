@@ -19,8 +19,8 @@ private slots:
         QVERIFY(controller.monitoring());
         QVERIFY(controller.activeModules().contains(QStringLiteral("processes")));
 
-        controller.refreshNow();
-        QVERIFY(!controller.processes().isEmpty());
+        // Sampling runs on a worker thread; the result arrives as dataChanged().
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.processes().isEmpty(), 5000);
         QVERIFY(!controller.processTree().isEmpty());
         QVERIFY(!controller.processGroups().isEmpty());
         QVERIFY(!controller.userSummaries().isEmpty());
@@ -85,11 +85,11 @@ private slots:
         controller.subscribe(QStringLiteral("test"), {QStringLiteral("processes")});
         QVERIFY(controller.monitoring());
         QVERIFY(!controller.paused());
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.processes().isEmpty(), 5000);
 
         controller.setPaused(true);
         QVERIFY(controller.paused());
         QVERIFY(controller.monitoring());
-        controller.refreshNow();
         QVERIFY(!controller.processes().isEmpty());
 
         controller.setPaused(false);
@@ -101,7 +101,7 @@ private slots:
         TaskManagerController controller;
         controller.subscribe(QStringLiteral("details"),
                              {QStringLiteral("processes"), QStringLiteral("details")});
-        controller.refreshNow();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.processes().isEmpty(), 5000);
         controller.selectProcess(QCoreApplication::applicationPid());
 
         const QVariantMap details = controller.selectedProcessDetails();

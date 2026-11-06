@@ -12,6 +12,7 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QThreadPool>
 #include <QVariantMap>
 #include <QtGlobal>
 
@@ -339,8 +340,21 @@ QString usernameForUid(qint64 uid, QHash<qint64, QString> &cache)
         return cached.value();
     }
     QString value = QString::number(uid);
-    if (const struct passwd *account = getpwuid(static_cast<uid_t>(uid))) {
-        value = QString::fromLocal8Bit(account->pw_name);
+    // getpwuid() returns a shared static buffer; sampling runs off the GUI
+    // thread, so use the reentrant variant.
+    struct passwd account;
+    struct passwd *found = nullptr;
+    QByteArray buffer(1024, '\0');
+    int status = ERANGE;
+    while (status == ERANGE && buffer.size() <= 65536) {
+        status = getpwuid_r(static_cast<uid_t>(uid), &account, buffer.data(),
+                            static_cast<size_t>(buffer.size()), &found);
+        if (status == ERANGE) {
+            buffer.resize(buffer.size() * 2);
+        }
+    }
+    if (status == 0 && found) {
+        value = QString::fromLocal8Bit(account.pw_name);
     }
     cache.insert(uid, value);
     return value;
@@ -406,21 +420,23 @@ TaskManagerController::TaskManagerController(QObject *parent)
     m_available = QFileInfo::exists(QStringLiteral("/proc/stat"))
         && QFileInfo::exists(QStringLiteral("/proc/meminfo"));
     m_refreshTimer.setInterval(m_refreshInterval);
+    m_samplePool.setMaxThreadCount(1);
+    m_logTiming = qEnvironmentVariableIntValue("MEO_TASKS_TIMING") != 0;
     connect(&m_refreshTimer, &QTimer::timeout, this, [this]() {
         if (!wantsProcessSampling()) {
             return;
         }
-        double elapsedSeconds = 0;
-        if (m_rateClock.isValid()) {
-            elapsedSeconds = m_rateClock.elapsed() / 1000.0;
-            m_rateClock.restart();
-        } else {
-            m_rateClock.start();
-        }
-        sampleProcesses(elapsedSeconds);
-        Q_EMIT dataChanged();
+        requestSample(false);
     });
     rebuildDesktopAppIndex();
+}
+
+TaskManagerController::~TaskManagerController()
+{
+    // Queued applySample() calls for this object are discarded with it; make
+    // sure no worker is still reading into the result of a dead controller.
+    ++m_sampleGeneration;
+    m_samplePool.waitForDone();
 }
 
 bool TaskManagerController::available() const { return m_available; }
@@ -442,6 +458,7 @@ void TaskManagerController::setPaused(bool paused)
         return;
     }
     m_paused = paused;
+    invalidateSampling();
     m_rateClock.invalidate();
     m_lastCpu = {};
     m_lastCpuTotalDelta = 0;
@@ -510,8 +527,7 @@ void TaskManagerController::subscribe(const QString &clientId, const QStringList
     }
     if (wantsProcessSampling()) {
         m_rateClock.restart();
-        sampleProcesses(0);
-        Q_EMIT dataChanged();
+        requestSample(true);
     }
     updateTimer();
 
@@ -530,6 +546,7 @@ void TaskManagerController::unsubscribe(const QString &clientId)
     rebuildActiveModules();
     updateTimer();
     if (!wantsProcessSampling()) {
+        invalidateSampling();
         m_rateClock.invalidate();
         m_lastCpu = {};
         m_lastCpuTotalDelta = 0;
@@ -581,15 +598,7 @@ void TaskManagerController::refreshNow()
     }
 
     if (wantsProcessSampling()) {
-        double elapsedSeconds = 0;
-        if (m_rateClock.isValid()) {
-            elapsedSeconds = m_rateClock.elapsed() / 1000.0;
-            m_rateClock.restart();
-        } else {
-            m_rateClock.start();
-        }
-        sampleProcesses(elapsedSeconds);
-        Q_EMIT dataChanged();
+        requestSample(true);
     }
     if (wantsModule(QStringLiteral("startup"))) {
         refreshStartupApps();
@@ -610,6 +619,103 @@ void TaskManagerController::selectProcess(qint64 pid)
     m_selectedProcessGpuAvailable = false;
     updateSelectedProcessDetails(0);
     Q_EMIT selectedProcessDetailsChanged();
+}
+
+void TaskManagerController::invalidateSampling()
+{
+    // Results of a sample that started before this point were computed from
+    // state that has just been discarded; applySample() drops them.
+    ++m_sampleGeneration;
+    m_samplePending = false;
+}
+
+void TaskManagerController::requestSample(bool coalesce)
+{
+    if (!m_available) {
+        return;
+    }
+    if (m_sampleInFlight) {
+        // Never run two samples at once: a timer tick is skipped, an explicit
+        // request is replayed as soon as the running sample is applied.
+        if (coalesce) {
+            m_samplePending = true;
+        }
+        return;
+    }
+
+    double elapsedSeconds = 0;
+    if (m_rateClock.isValid()) {
+        elapsedSeconds = m_rateClock.elapsed() / 1000.0;
+        m_rateClock.restart();
+    } else {
+        m_rateClock.start();
+    }
+
+    MeoTaskSampling::SampleInput input;
+    input.elapsedSeconds = elapsedSeconds;
+    input.lastCpu = m_lastCpu;
+    input.lastTicks = m_lastProcessTicks;
+    input.lastReadBytes = m_lastProcessReadBytes;
+    input.lastWriteBytes = m_lastProcessWriteBytes;
+    input.staticInfo = m_processStaticInfo;
+    input.desktopAppsByExecutable = m_desktopAppsByExecutable;
+    input.efficiencyOriginalNice = m_efficiencyOriginalNice;
+    input.currentUid = static_cast<quint32>(geteuid());
+    input.pageSize = std::max<qint64>(1, sysconf(_SC_PAGESIZE));
+    input.selfPid = static_cast<qint64>(QCoreApplication::applicationPid());
+
+    m_sampleInFlight = true;
+    const quint64 generation = m_sampleGeneration;
+    m_samplePool.start([this, input = std::move(input), generation]() mutable {
+        MeoTaskSampling::SampleResult result = MeoTaskSampling::sampleProcessSnapshot(input);
+        QMetaObject::invokeMethod(this, [this, result = std::move(result), generation]() mutable {
+            applySample(std::move(result), generation);
+        }, Qt::QueuedConnection);
+    });
+}
+
+void TaskManagerController::applySample(MeoTaskSampling::SampleResult result, quint64 generation)
+{
+    QElapsedTimer applyTimer;
+    applyTimer.start();
+    m_sampleInFlight = false;
+
+    const bool stale = generation != m_sampleGeneration || !wantsProcessSampling();
+    if (!stale) {
+        m_lastCpu = result.cpu;
+        m_lastCpuTotalDelta = result.cpuTotalDelta;
+        m_lastProcessTicks = std::move(result.ticks);
+        m_lastProcessReadBytes = std::move(result.readBytes);
+        m_lastProcessWriteBytes = std::move(result.writeBytes);
+        m_processStaticInfo = std::move(result.staticInfo);
+        // The nice map is also edited on the GUI thread between sampling and
+        // applying, so only prune it here instead of replacing it.
+        for (auto it = m_efficiencyOriginalNice.begin(); it != m_efficiencyOriginalNice.end();) {
+            if (!result.livePids.contains(it.key())) {
+                it = m_efficiencyOriginalNice.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        m_processes = std::move(result.processes);
+        m_processTree = std::move(result.processTree);
+        m_processGroups = std::move(result.processGroups);
+        m_userSummaries = std::move(result.userSummaries);
+        // Same interval the old synchronous path passed: time since the
+        // previous sample, measured when this one was requested.
+        updateSelectedProcessDetails(result.elapsedSeconds);
+        Q_EMIT dataChanged();
+        if (m_logTiming) {
+            qInfo().nospace() << "MeoTasks: worker " << result.sampleMicroseconds
+                              << " us, GUI apply " << applyTimer.nsecsElapsed() / 1000
+                              << " us, " << m_processes.size() << " processes";
+        }
+    }
+
+    if (m_samplePending && wantsProcessSampling()) {
+        m_samplePending = false;
+        requestSample(true);
+    }
 }
 
 void TaskManagerController::rebuildDesktopAppIndex()
@@ -670,8 +776,15 @@ void TaskManagerController::rebuildDesktopAppIndex()
     }
 }
 
-void TaskManagerController::sampleProcesses(double elapsedSeconds)
+namespace MeoTaskSampling {
+
+SampleResult sampleProcessSnapshot(const SampleInput &input)
 {
+    QElapsedTimer sampleTimer;
+    sampleTimer.start();
+    SampleResult result;
+    QHash<qint64, ProcessStaticInfo> staticInfoMap = input.staticInfo;
+
     struct Sample {
         qint64 pid = 0;
         qint64 parentPid = 0;
@@ -697,12 +810,14 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
     };
 
     const RawCpuSnapshot currentCpu = readCpuSnapshot();
-    m_lastCpuTotalDelta = 0;
-    if (m_lastCpu.total > 0 && currentCpu.total > m_lastCpu.total) {
-        m_lastCpuTotalDelta = currentCpu.total - m_lastCpu.total;
+    result.cpu.idle = currentCpu.idle;
+    result.cpu.total = currentCpu.total;
+    if (input.lastCpu.total > 0 && currentCpu.total > input.lastCpu.total) {
+        result.cpuTotalDelta = currentCpu.total - input.lastCpu.total;
     }
-    m_lastCpu.idle = currentCpu.idle;
-    m_lastCpu.total = currentCpu.total;
+    const double elapsedSeconds = input.elapsedSeconds;
+    result.elapsedSeconds = elapsedSeconds;
+    const quint64 cpuTotalDelta = result.cpuTotalDelta;
 
     QVector<Sample> samples;
     QHash<qint64, quint64> nextTicks;
@@ -710,8 +825,8 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
     QHash<qint64, quint64> nextWriteBytes;
     QHash<qint64, QString> userNames;
     QSet<qint64> livePids;
-    const qint64 pageSize = std::max<qint64>(1, sysconf(_SC_PAGESIZE));
-    const uid_t currentUid = geteuid();
+    const qint64 pageSize = std::max<qint64>(1, input.pageSize);
+    const uid_t currentUid = static_cast<uid_t>(input.currentUid);
     QDir proc(QStringLiteral("/proc"));
     const QStringList entries = proc.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
     static const QRegularExpression digits(QStringLiteral("^\\d+$"));
@@ -745,10 +860,10 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         nextTicks.insert(pid, ticks);
 
         double cpu = 0;
-        const quint64 previousTicks = m_lastProcessTicks.value(pid);
-        if (previousTicks > 0 && ticks >= previousTicks && m_lastCpuTotalDelta > 0) {
+        const quint64 previousTicks = input.lastTicks.value(pid);
+        if (previousTicks > 0 && ticks >= previousTicks && cpuTotalDelta > 0) {
             cpu = static_cast<double>(ticks - previousTicks) * 100.0
-                / static_cast<double>(m_lastCpuTotalDelta);
+                / static_cast<double>(cpuTotalDelta);
             cpu = std::clamp(cpu, 0.0, 100.0);
         }
 
@@ -760,7 +875,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
 
         const quint64 startTicks = fields.at(19).toULongLong();
         livePids.insert(pid);
-        ProcessStaticInfo staticInfo = m_processStaticInfo.value(pid);
+        ProcessStaticInfo staticInfo = staticInfoMap.value(pid);
         if (staticInfo.startTicks != startTicks || staticInfo.command.isEmpty()) {
             qint64 uid = -1;
             const QList<QByteArray> statusLines =
@@ -794,7 +909,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
                 executable = name;
             }
 
-            const DesktopAppInfo appInfo = m_desktopAppsByExecutable.value(executable);
+            const DesktopAppInfo appInfo = input.desktopAppsByExecutable.value(executable);
             const bool isCurrentUser =
                 uid >= 0 && static_cast<uid_t>(uid) == currentUid;
             QString category;
@@ -817,15 +932,15 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
             staticInfo.user = usernameForUid(uid, userNames);
             staticInfo.category = category;
             staticInfo.canControl = pid > 1
-                && pid != static_cast<qint64>(QCoreApplication::applicationPid())
+                && pid != input.selfPid
                 && isCurrentUser;
-            m_processStaticInfo.insert(pid, staticInfo);
+            staticInfoMap.insert(pid, staticInfo);
         } else if (staticInfo.name != name) {
             staticInfo.name = name;
             if (staticInfo.desktopId.isEmpty()) {
                 staticInfo.appName = name;
             }
-            m_processStaticInfo.insert(pid, staticInfo);
+            staticInfoMap.insert(pid, staticInfo);
         }
 
         const QPair<quint64, quint64> io = readProcessIo(basePath);
@@ -834,8 +949,8 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         double diskReadRate = 0;
         double diskWriteRate = 0;
         if (elapsedSeconds > 0) {
-            const quint64 lastRead = m_lastProcessReadBytes.value(pid);
-            const quint64 lastWrite = m_lastProcessWriteBytes.value(pid);
+            const quint64 lastRead = input.lastReadBytes.value(pid);
+            const quint64 lastWrite = input.lastWriteBytes.value(pid);
             if (lastRead > 0 && io.first >= lastRead) {
                 diskReadRate = static_cast<double>(io.first - lastRead) / elapsedSeconds;
             }
@@ -871,29 +986,23 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
             diskReadRate,
             diskWriteRate,
             staticInfo.canControl,
-            (niceOk && niceValue >= 10) || m_efficiencyOriginalNice.contains(pid),
+            (niceOk && niceValue >= 10) || input.efficiencyOriginalNice.contains(pid),
         });
     }
 
-    for (auto it = m_processStaticInfo.begin(); it != m_processStaticInfo.end();) {
+    for (auto it = staticInfoMap.begin(); it != staticInfoMap.end();) {
         if (!livePids.contains(it.key())) {
-            it = m_processStaticInfo.erase(it);
-        } else {
-            ++it;
-        }
-    }
-    for (auto it = m_efficiencyOriginalNice.begin();
-         it != m_efficiencyOriginalNice.end();) {
-        if (!livePids.contains(it.key())) {
-            it = m_efficiencyOriginalNice.erase(it);
+            it = staticInfoMap.erase(it);
         } else {
             ++it;
         }
     }
 
-    m_lastProcessTicks = nextTicks;
-    m_lastProcessReadBytes = nextReadBytes;
-    m_lastProcessWriteBytes = nextWriteBytes;
+    result.ticks = nextTicks;
+    result.readBytes = nextReadBytes;
+    result.writeBytes = nextWriteBytes;
+    result.staticInfo = staticInfoMap;
+    result.livePids = livePids;
 
     QHash<qint64, int> indexByPid;
     for (int index = 0; index < samples.size(); ++index) {
@@ -958,10 +1067,10 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         return left.memory > right.memory;
     });
 
-    m_processes.clear();
-    m_processes.reserve(cpuSorted.size());
+    result.processes.clear();
+    result.processes.reserve(cpuSorted.size());
     for (const Sample &sample : cpuSorted) {
-        m_processes.push_back(toMap(sample));
+        result.processes.push_back(toMap(sample));
     }
 
     QHash<QString, QVariantMap> groupMap;
@@ -1004,12 +1113,12 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         groupMap.insert(key, group);
     }
 
-    m_processGroups.clear();
-    m_processGroups.reserve(groupMap.size());
+    result.processGroups.clear();
+    result.processGroups.reserve(groupMap.size());
     for (auto it = groupMap.cbegin(); it != groupMap.cend(); ++it) {
-        m_processGroups.push_back(it.value());
+        result.processGroups.push_back(it.value());
     }
-    std::sort(m_processGroups.begin(), m_processGroups.end(),
+    std::sort(result.processGroups.begin(), result.processGroups.end(),
               [](const QVariant &left, const QVariant &right) {
         const QVariantMap a = left.toMap();
         const QVariantMap b = right.toMap();
@@ -1047,7 +1156,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         sortPids(it.value());
     }
 
-    m_processTree.clear();
+    result.processTree.clear();
     QSet<qint64> visited;
     std::function<void(qint64)> appendTree = [&](qint64 pid) {
         if (visited.contains(pid)) {
@@ -1058,7 +1167,7 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         if (indexIt == indexByPid.cend()) {
             return;
         }
-        m_processTree.push_back(toMap(samples.at(indexIt.value())));
+        result.processTree.push_back(toMap(samples.at(indexIt.value())));
         const QVector<qint64> childList = children.value(pid);
         for (qint64 child : childList) {
             appendTree(child);
@@ -1107,18 +1216,21 @@ void TaskManagerController::sampleProcesses(double elapsedSeconds)
         return userMap.value(left).value(QStringLiteral("user")).toString()
             .localeAwareCompare(userMap.value(right).value(QStringLiteral("user")).toString()) < 0;
     });
-    m_userSummaries.clear();
+    result.userSummaries.clear();
     for (qint64 uid : userIds) {
         const QVariantMap summary = userMap.value(uid);
         if (!summary.value(QStringLiteral("currentUser")).toBool()
             && !summary.value(QStringLiteral("sessionActive")).toBool()) {
             continue;
         }
-        m_userSummaries.push_back(summary);
+        result.userSummaries.push_back(summary);
     }
 
-    updateSelectedProcessDetails(elapsedSeconds);
+    result.sampleMicroseconds = sampleTimer.nsecsElapsed() / 1000;
+    return result;
 }
+
+} // namespace MeoTaskSampling
 
 void TaskManagerController::updateSelectedProcessDetails(double elapsedSeconds)
 {
@@ -2265,4 +2377,101 @@ void TaskManagerController::setActionError(const QString &message)
     }
     m_actionError = message;
     Q_EMIT actionErrorChanged();
+}
+
+ProcessRowModel::ProcessRowModel(QObject *parent)
+    : QAbstractListModel(parent)
+{
+}
+
+int ProcessRowModel::count() const { return m_rows.size(); }
+
+int ProcessRowModel::rowCount(const QModelIndex &parent) const
+{
+    return parent.isValid() ? 0 : m_rows.size();
+}
+
+QVariant ProcessRowModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_rows.size()
+        || role != Qt::UserRole + 1) {
+        return {};
+    }
+    return m_rows.at(index.row());
+}
+
+QHash<int, QByteArray> ProcessRowModel::roleNames() const
+{
+    // MeoDataTable delegates read the whole row through `modelData`.
+    return {{Qt::UserRole + 1, QByteArrayLiteral("modelData")}};
+}
+
+QVariantMap ProcessRowModel::get(int row) const
+{
+    return row >= 0 && row < m_rows.size() ? m_rows.at(row) : QVariantMap{};
+}
+
+void ProcessRowModel::sync(const QVariantList &rows)
+{
+    const int oldCount = m_rows.size();
+
+    QList<QVariantMap> incoming;
+    QList<QString> incomingKeys;
+    incoming.reserve(rows.size());
+    incomingKeys.reserve(rows.size());
+    QSet<QString> seen;
+    for (const QVariant &value : rows) {
+        const QVariantMap row = value.toMap();
+        QString key = row.value(QStringLiteral("pid")).toString();
+        for (int suffix = 1; seen.contains(key); ++suffix) {
+            key = row.value(QStringLiteral("pid")).toString() + QLatin1Char('#') + QString::number(suffix);
+        }
+        seen.insert(key);
+        incoming.push_back(row);
+        incomingKeys.push_back(key);
+    }
+
+    // Drop rows that disappeared.
+    for (int row = m_keys.size() - 1; row >= 0; --row) {
+        if (!seen.contains(m_keys.at(row))) {
+            beginRemoveRows({}, row, row);
+            m_rows.removeAt(row);
+            m_keys.removeAt(row);
+            endRemoveRows();
+        }
+    }
+
+    // Walk the target order: keep, move or insert so that row i == incoming[i].
+    for (int target = 0; target < incoming.size(); ++target) {
+        const QString &key = incomingKeys.at(target);
+        if (target < m_keys.size() && m_keys.at(target) == key) {
+            if (m_rows.at(target) != incoming.at(target)) {
+                m_rows[target] = incoming.at(target);
+                const QModelIndex changed = index(target);
+                Q_EMIT dataChanged(changed, changed);
+            }
+            continue;
+        }
+        const int existing = m_keys.indexOf(key, target + 1);
+        if (existing >= 0) {
+            beginMoveRows({}, existing, existing, {}, target);
+            m_rows.move(existing, target);
+            m_keys.move(existing, target);
+            endMoveRows();
+            if (m_rows.at(target) != incoming.at(target)) {
+                m_rows[target] = incoming.at(target);
+                const QModelIndex changed = index(target);
+                Q_EMIT dataChanged(changed, changed);
+            }
+        } else {
+            beginInsertRows({}, target, target);
+            m_rows.insert(target, incoming.at(target));
+            m_keys.insert(target, key);
+            endInsertRows();
+        }
+    }
+
+    if (m_rows.size() != oldCount) {
+        Q_EMIT countChanged();
+    }
 }

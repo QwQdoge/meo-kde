@@ -132,6 +132,7 @@ public:
         qmlRegisterSingletonType<PlatformController>(uri, 1, 0, "Platform", platformProvider);
         qmlRegisterSingletonType<PerformanceController>(uri, 1, 0, "Performance", performanceProvider);
         qmlRegisterSingletonType<TaskManagerController>(uri, 1, 0, "Tasks", tasksProvider);
+        qmlRegisterType<ProcessRowModel>(uri, 1, 0, "ProcessRowModel");
         qmlRegisterSingletonType<MediaController>(uri, 1, 0, "Media", mediaProvider);
         qmlRegisterSingletonType<WeatherCache>(uri, 1, 0, "Weather", weatherProvider);
         qmlRegisterSingletonType<ShellAppearance>(uri, 1, 0, "ShellAppearance", shellAppearanceProvider);
