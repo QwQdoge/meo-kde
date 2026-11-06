@@ -9,6 +9,9 @@ Item {
     signal closeRequested()
 
     property int initialPage: 0
+    // Embedded (Quick Settings) hosts navigate back; the standalone window
+    // has its own window controls.
+    property bool showBackButton: true
     property int currentPage: initialPage
     property string navigationSearchText: ""
     readonly property string performanceClientId: "system-monitor-performance-" + root.toString()
@@ -133,6 +136,7 @@ Item {
             spacing: MeoTheme.space8
 
             MeoButton {
+                visible: root.showBackButton
                 text: MeoI18n.translator.i18n("Back")
                 type: "text"
                 size: "xs"

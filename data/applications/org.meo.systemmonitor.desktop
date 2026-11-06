@@ -9,3 +9,5 @@ Terminal=false
 Categories=System;Monitor;Utility;
 Keywords=task;process;performance;system;monitor;startup;service;
 StartupNotify=true
+# Registered with kglobalaccel (installed to share/kglobalaccel as well).
+X-KDE-Shortcuts=Ctrl+Shift+Esc

@@ -13,6 +13,10 @@ _launch=Meta+E,Meta+E,Dolphin
 [org.meo.settings.desktop]
 _launch=Meta+I,Meta+I,Meo Settings
 
+# Task-manager convention: Ctrl+Shift+Esc opens (or raises) System Monitor.
+[org.meo.systemmonitor.desktop]
+_launch=Ctrl+Shift+Esc,Ctrl+Shift+Esc,System Monitor
+
 [kwin]
 # Meta+N belongs to Meo Notifications; Night Color stays available in Settings.
 Toggle Night Color=none,none,Toggle Night Color

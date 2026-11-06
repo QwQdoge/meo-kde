@@ -200,7 +200,7 @@ add_executable(meo-task-role-smoke task-role-smoke.cpp)
 target_link_libraries(meo-task-role-smoke PRIVATE Qt6::Core Qt6::Gui PW::LibTaskManager)
 
 add_executable(meo-system-monitor systemmonitor-main.cpp)
-target_link_libraries(meo-system-monitor PRIVATE Qt6::Core Qt6::Gui Qt6::Qml)
+target_link_libraries(meo-system-monitor PRIVATE Qt6::Core Qt6::DBus Qt6::Gui Qt6::Qml KF6::WindowSystem)
 
 add_executable(meo-session-actiond
     sessionaction-main.cpp
@@ -258,6 +258,11 @@ install(TARGETS meosystemplugin
 install(TARGETS meo-session-actiond meo-weather-refresh meo-system-monitor RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../data/applications/org.meo.systemmonitor.desktop"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+)
+# kglobalaccel reads service shortcuts (X-KDE-Shortcuts) from this directory,
+# so Ctrl+Shift+Esc also works in sessions seeded before the default existed.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../data/applications/org.meo.systemmonitor.desktop"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/kglobalaccel"
 )
 install(FILES org.meo.SessionAction1.service
     DESTINATION "${CMAKE_INSTALL_DATADIR}/dbus-1/services"
