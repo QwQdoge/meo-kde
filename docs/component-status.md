@@ -1,3 +1,5 @@
+> 📚 [MeoArch 主文档 / Master Doc](https://github.com/QwQdoge/MeoArch-os-workspace/blob/main/docs/MEOARCH_MASTER.md)：全部仓库地图、操作手册、Cloudflare 清单、全部文档链接。<!-- meoarch-master -->
+
 # MeoKDE component status
 
 This file classifies implementations that coexist in the repository. Presence in the tree does not imply that a component is current product direction.

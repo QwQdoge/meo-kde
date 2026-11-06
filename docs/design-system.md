@@ -1,3 +1,5 @@
+> 📚 [MeoArch 主文档 / Master Doc](https://github.com/QwQdoge/MeoArch-os-workspace/blob/main/docs/MEOARCH_MASTER.md)：全部仓库地图、操作手册、Cloudflare 清单、全部文档链接。<!-- meoarch-master -->
+
 # Meo Desktop design system
 
 The canonical cross-renderer **metric token** source is the native MeoUI token runtime (`Meo::DesignTokens`). QML consumes the same runtime through the `MeoTokens` singleton, while `MeoTheme.qml` maps those stable metrics together with live semantic color, typography, motion, and application-facing roles for MeoUI components. Native MeoStyle includes the pure QtCore `meodesigntokens.h` contract directly; it does not link the QML singleton runtime.

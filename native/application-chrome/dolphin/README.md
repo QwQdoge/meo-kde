@@ -1,3 +1,5 @@
+> 📚 [MeoArch 主文档 / Master Doc](https://github.com/QwQdoge/MeoArch-os-workspace/blob/main/docs/MEOARCH_MASTER.md)：全部仓库地图、操作手册、Cloudflare 清单、全部文档链接。<!-- meoarch-master -->
+
 # Dolphin application-chrome pilot
 
 This directory carries the small MeoArch presentation patch series for KDE Dolphin. It is intentionally separate from MeoStyle: MeoStyle owns standard Qt control rendering, while these patches may only adjust Dolphin's top-level application chrome and layout.

@@ -1,3 +1,5 @@
+> 📚 [MeoArch 主文档 / Master Doc](https://github.com/QwQdoge/MeoArch-os-workspace/blob/main/docs/MEOARCH_MASTER.md)：全部仓库地图、操作手册、Cloudflare 清单、全部文档链接。<!-- meoarch-master -->
+
 # MeoKDE
 
 MeoKDE 是 MeoArch 的 KDE Plasma 6 原生集成仓库：Shell、Plasmoid、主题、默认配置、KDE/Qt 原生桥接和 Arch 打包定义都在这里。通用 MD3 QML 组件和 token 由相邻的 `meo-ui` 提供；MeoKDE 不复制它们。

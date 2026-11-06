@@ -1,3 +1,5 @@
+> 📚 [MeoArch 主文档 / Master Doc](https://github.com/QwQdoge/MeoArch-os-workspace/blob/main/docs/MEOARCH_MASTER.md)：全部仓库地图、操作手册、Cloudflare 清单、全部文档链接。<!-- meoarch-master -->
+
 # System dynamic colors
 
 Meo uses one explicit seed source: the current KDE/Plasma accent, the current
