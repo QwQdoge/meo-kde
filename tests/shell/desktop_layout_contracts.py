@@ -451,7 +451,13 @@ class DesktopLayoutTests(unittest.TestCase):
             self.assertIn(component, launcher)
 
         self.assertIn("model.trigger(row, actionId, actionArgument)", launcher)
-        self.assertIn("sourceComponent: launcherPopup.searching", launcher)
+        # Search and browse panes are persistent sibling Loaders: starting or
+        # clearing a query must cross-fade, never rebuild the app grid.
+        self.assertIn("id: searchLoader", launcher)
+        self.assertIn("sourceComponent: searchPane", launcher)
+        self.assertNotIn("sourceComponent: launcherPopup.searching", launcher)
+        # The launcher is a native popup window: never animate its height.
+        self.assertNotIn("Behavior on height", launcher)
         self.assertNotIn("Process {", launcher)
         self.assertNotIn("DesktopEntry", launcher)
 

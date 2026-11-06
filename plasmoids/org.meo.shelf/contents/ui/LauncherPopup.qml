@@ -30,6 +30,10 @@ MeoMotionPopup {
     property bool refreshInFlight: false
     property double lastRefreshMs: 0
     property double openStartedMs: 0
+    // Closing by pressing the Shelf launcher button fires CloseOnPressOutside
+    // on press and the button's clicked() on release; the toggle must not
+    // treat that release as a new open request.
+    property double lastHideMs: 0
     property int lastReadyLatencyMs: -1
 
     // One implementation, two entry surfaces:
@@ -52,6 +56,8 @@ MeoMotionPopup {
     readonly property int searchLoadingDelay: 500
 
     readonly property bool searching: searchField.text.trim() !== ""
+    // The pane that owns keyboard navigation for the current state.
+    readonly property Item activePane: searching ? searchLoader.item : paneLoader.item
     readonly property var favoritesModel: rootAppModel.favoritesModel
     readonly property var allAppsModel: {
         appModelRevision
@@ -120,31 +126,33 @@ MeoMotionPopup {
     focus: true
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
     presentation: MeoMotionPopup.Dialog
-    // Keep the KRunner-like immediacy, but center is the Meo default: the
-    // surface fades/scales into place without pretending it came from a screen
-    // edge. The optional top placement gets a very short downward settle.
+    // Spatial continuity: the launcher is summoned from the Shelf, so it
+    // rises from the bottom edge toward its resting place and returns there
+    // on close (the reveal spring reverses). The optional top placement
+    // settles downward from the top instead.
     motionProfile: "pixel"
-    entranceOffset: placementMode === "top" ? 12 * MeoTheme.globalScale : 0
-    entranceScale: 0.975
-    transformOrigin: placementMode === "top" ? Item.Top : Item.Center
+    entranceOffset: placementMode === "top" ? 12 * MeoTheme.globalScale
+                                            : -24 * MeoTheme.globalScale
+    entranceScale: 0.96
+    transformOrigin: placementMode === "top" ? Item.Top : Item.Bottom
 
-    Behavior on height {
-        enabled: !MeoTheme.reduceMotion
-        NumberAnimation {
-            duration: MeoMotion.stateChange
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
-        }
-    }
+    // Height changes are applied directly. This popup is a native window:
+    // animating its height resized the window (and reallocated its buffers)
+    // on every frame, which stuttered on Wayland. Content cross-fades
+    // instead.
 
     function toggleFullLauncher() {
-        quickSearchMode = false
-        browseMode = defaultPage === "apps" ? 1 : 0
         if (opened || visible) {
             close()
-        } else {
-            requestOpen()
+            return
         }
+        // The press that closed the launcher (outside press on the Shelf
+        // button) is followed by this click on release: stay closed.
+        if (Date.now() - lastHideMs < 350)
+            return
+        quickSearchMode = false
+        browseMode = defaultPage === "apps" ? 1 : 0
+        requestOpen()
     }
 
     function openQuickSearch() {
@@ -167,7 +175,10 @@ MeoMotionPopup {
         const now = Date.now()
         if (!force && refreshInFlight)
             return
-        if (!force && modelsPrimed && now - lastRefreshMs < 30000)
+        // Kicker's models follow KSycoca changes themselves; a full refresh
+        // is a synchronous rebuild on the GUI thread, so it never runs on the
+        // open path once primed and only refreshes stale data after close.
+        if (!force && modelsPrimed && now - lastRefreshMs < 600000)
             return
 
         const favorites = rootAppModel.favoritesModel
@@ -197,19 +208,19 @@ MeoMotionPopup {
     }
 
     function handleSearchNavigation(event) {
-        if (!searching || !paneLoader.item
-                || typeof paneLoader.item.moveSelection !== "function"
+        if (!searching || !launcherPopup.activePane
+                || typeof launcherPopup.activePane.moveSelection !== "function"
                 || (event.modifiers & (Qt.AltModifier | Qt.MetaModifier)))
             return false
         const ctrl = event.modifiers & Qt.ControlModifier
         if (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))
-            paneLoader.item.moveSelection(1, false)
+            launcherPopup.activePane.moveSelection(1, false)
         else if (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))
-            paneLoader.item.moveSelection(-1, false)
+            launcherPopup.activePane.moveSelection(-1, false)
         else if (event.key === Qt.Key_PageDown)
-            paneLoader.item.moveSelection(1, true)
+            launcherPopup.activePane.moveSelection(1, true)
         else if (event.key === Qt.Key_PageUp)
-            paneLoader.item.moveSelection(-1, true)
+            launcherPopup.activePane.moveSelection(-1, true)
         else
             return false
         event.accepted = true
@@ -409,20 +420,40 @@ MeoMotionPopup {
     onAboutToShow: {
         openStartedMs = Date.now()
         lastReadyLatencyMs = appContentReady ? 0 : -1
-        refreshModels(false)
+        // Only the very first open may need to populate Kicker.
+        if (!modelsPrimed)
+            refreshModels(false)
+        // Focus on the first frame, not after the enter transition, so
+        // typing immediately after summoning the launcher is not dropped.
+        Qt.callLater(function() {
+            if (launcherPopup.visible)
+                searchField.forceSearchFocus()
+        })
     }
 
-    onOpened: {
-        searchField.forceSearchFocus()
-    }
+    onAboutToHide: lastHideMs = Date.now()
 
     onClosed: {
+        // Refresh stale app data while the launcher is hidden, never while
+        // it is opening.
+        Qt.callLater(function() { launcherPopup.refreshModels(false) })
         openStartedMs = 0
         searchField.text = ""
         itemContextMenu.close()
     }
 
-    Component.onCompleted: Qt.callLater(function() { launcherPopup.refreshModels(false) })
+    Component.onCompleted: {
+        // A launcher is summoned constantly: use the fast spatial spring and
+        // short fades. Guarded so an older MeoUI without these properties
+        // still loads the launcher.
+        if ("revealSpeed" in launcherPopup)
+            launcherPopup["revealSpeed"] = "fast"
+        if ("enterEffectsDuration" in launcherPopup)
+            launcherPopup["enterEffectsDuration"] = MeoTheme.motionDurationShort4
+        if ("exitEffectsDuration" in launcherPopup)
+            launcherPopup["exitEffectsDuration"] = MeoTheme.motionDurationShort2
+        Qt.callLater(function() { launcherPopup.refreshModels(false) })
+    }
 
     contentItem: FocusScope {
         id: launcherContent
@@ -454,8 +485,8 @@ MeoMotionPopup {
                 Accessible.name: MeoI18n.translator.i18n("Search apps, files, settings and more")
 
                 onAccepted: {
-                    if (paneLoader.item && typeof paneLoader.item.activateCurrent === "function")
-                        paneLoader.item.activateCurrent()
+                    if (launcherPopup.activePane && typeof launcherPopup.activePane.activateCurrent === "function")
+                        launcherPopup.activePane.activateCurrent()
                 }
 
                 Keys.onEscapePressed: {
@@ -466,8 +497,8 @@ MeoMotionPopup {
                 }
 
                 Keys.onDownPressed: {
-                    if (paneLoader.item && typeof paneLoader.item.focusFirst === "function")
-                        paneLoader.item.focusFirst()
+                    if (launcherPopup.activePane && typeof launcherPopup.activePane.focusFirst === "function")
+                        launcherPopup.activePane.focusFirst()
                 }
                 Keys.onPressed: function(event) {
                     launcherPopup.handleSearchNavigation(event)
@@ -502,10 +533,10 @@ MeoMotionPopup {
                     onSelected: function(index, data) {
                         launcherPopup.browseMode = index
                         Qt.callLater(function() {
-                            if (paneLoader.item
-                                    && typeof paneLoader.item.focusFirst === "function"
+                            if (launcherPopup.activePane
+                                    && typeof launcherPopup.activePane.focusFirst === "function"
                                     && !searchField.activeFocus)
-                                paneLoader.item.focusFirst()
+                                launcherPopup.activePane.focusFirst()
                         })
                     }
                 }
@@ -536,24 +567,25 @@ MeoMotionPopup {
                 // Instantiate browse panes only after Kicker has real app
                 // content. This prevents Home's empty state from flashing
                 // before the first model refresh finishes.
+                //
+                // Browse and search panes are separate, persistent Loaders:
+                // typing the first character (or clearing the field) only
+                // cross-fades between them. A single Loader that switched
+                // sourceComponent destroyed and rebuilt the whole app grid on
+                // every search start/clear, which stalled input.
                 Loader {
                     id: paneLoader
                     anchors.fill: parent
-                    active: launcherPopup.searching || launcherPopup.appContentReady
-                    sourceComponent: launcherPopup.searching
-                                     ? searchPane
-                                     : launcherPopup.browseMode === 0
-                                       ? homePane
-                                       : appsPane
+                    active: launcherPopup.appContentReady
+                    visible: opacity > 0
+                    sourceComponent: launcherPopup.browseMode === 0 ? homePane : appsPane
 
                     // If the delayed loading indicator has already appeared,
                     // keep the completed pane hidden until MeoLoadingFeedback
                     // releases its minimum-visible hold. The two then
                     // cross-fade instead of blank -> loader -> content.
-                    opacity: active
-                             && (launcherPopup.searching
-                                 || !startupFeedback.feedbackVisible)
-                             ? 1 : 0
+                    opacity: active && !launcherPopup.searching
+                             && !startupFeedback.feedbackVisible ? 1 : 0
                     scale: opacity > 0 ? 1 : 0.985
 
                     Behavior on opacity {
@@ -571,6 +603,28 @@ MeoMotionPopup {
                             duration: MeoMotion.pageEnter
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                        }
+                    }
+                }
+
+                Loader {
+                    id: searchLoader
+                    anchors.fill: parent
+                    // Created on the first query, then kept for the life of
+                    // the launcher so later searches start instantly.
+                    property bool warm: false
+                    active: launcherPopup.searching || warm
+                    onLoaded: warm = true
+                    visible: opacity > 0
+                    sourceComponent: searchPane
+                    opacity: launcherPopup.searching ? 1 : 0
+
+                    Behavior on opacity {
+                        enabled: !MeoTheme.reduceMotion
+                        NumberAnimation {
+                            duration: MeoTheme.motionDurationShort3
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingStandard
                         }
                     }
                 }

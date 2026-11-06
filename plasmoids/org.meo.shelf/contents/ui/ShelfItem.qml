@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import MeoUI 1.0
+import MeoUI 1.0 as UI
 import MeoKDE 1.0
 
 Item {
@@ -33,7 +34,8 @@ Item {
                                : MeoI18n.translator.i18n("Open application"))
     Accessible.focusable: title !== ""
     Accessible.onPressAction: root.activate()
-    scale: mouseArea.pressed ? 0.94 : 1.0
+    // Shared press amplitude (pixel profile: 0.96) instead of a local 0.94.
+    scale: mouseArea.pressed ? UI.MeoMotion.pressScale("pixel") : 1.0
 
     function activate() {
         root.clicked({ button: Qt.LeftButton })

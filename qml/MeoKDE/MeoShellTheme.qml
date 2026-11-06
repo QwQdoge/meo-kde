@@ -58,7 +58,14 @@ QtObject {
         // bounds receive the controlled spring overshoot.
         MeoTheme.isExpressive = true
         MeoTheme.fontFamily = systemFont.family
-        MeoTheme.fontScale = Math.max(0.85, Math.min(1.5, systemFontPixels / 14))
+        // fontScale is an accessibility multiplier: KDE's default 10pt UI
+        // font (13.33px at 96 dpi) is 1.0, so M3 type sizes render as
+        // designed until the user changes the system font size. MeoUI now
+        // applies fontScale to every component's text (MeoTheme.textScale).
+        MeoTheme.fontScale = Math.max(0.85, Math.min(1.5, systemFontPixels / (10 * 96 / 72)))
+        // One transparency switch for the whole shell: Shell Appearance's
+        // Transparency (meo-shellrc) also drives MeoUI's translucent surfaces.
+        MeoTheme.transparencyEnabled = MeoSystem.ShellAppearance.transparency
         // Kirigami already applies KDE's AnimationDurationFactor. Bridge that
         // platform preference into shared MeoUI motion tokens instead of
         // maintaining a second, contradictory animation switch.
@@ -78,6 +85,12 @@ QtObject {
     onBackgroundColorChanged: sync()
     onSystemFontChanged: sync()
     onPlatformShortDurationChanged: sync()
+
+    property Connections appearanceConnections: Connections {
+        target: MeoSystem.ShellAppearance
+        ignoreUnknownSignals: true
+        function onChanged() { root.sync() }
+    }
 
     // The Material provider can change its Meo seed/source without KDE's
     // Kirigami highlight color changing. Keep every MeoShellTheme consumer

@@ -39,7 +39,7 @@ class LauncherNavigationTests(unittest.TestCase):
             var searching = true, MeoTheme = {globalScale: 1}, ListView = {Contain: 1};
             var searchResultList = {count: 12, currentIndex: 0, height: 180,
                 currentItem: {height: 60}, positionViewAtIndex: function(i) {this.scrolled = i;}};
-            var paneLoader = {item: {moveSelection: moveSelection}};
+            var launcherPopup = {activePane: {moveSelection: moveSelection}};
         '''
         for code in (function_source('moveSelection'), setup,
                      function_source('handleSearchNavigation')):

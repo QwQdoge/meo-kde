@@ -40,6 +40,16 @@ for relative in \
   seed_config "${relative}"
 done
 
+# Sessions seeded before Meo shipped a font default fall back to KDE's Noto
+# Sans. Fill in the Meo UI font (Roboto) only when no font has been chosen;
+# a font the user picked in System Settings is never overwritten.
+meo_kdeglobals="${meo_config_home}/kdeglobals"
+if [ -f "${meo_kdeglobals}" ] && ! grep -q '^font=' "${meo_kdeglobals}" \
+    && command -v kwriteconfig6 >/dev/null 2>&1; then
+  kwriteconfig6 --file "${meo_kdeglobals}" --group General --key font \
+    "Roboto,10,-1,5,50,0,0,0,0,0" || true
+fi
+
 # The Meo Shell adapter has a separate applet-state filename. Migrate only
 # an existing Meo session layout, never the ordinary Plasma configuration.
 old_applets="${meo_config_home}/plasma-org.kde.plasma.desktop-appletsrc"
