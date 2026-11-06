@@ -34,6 +34,19 @@ MeoMotionPopup {
     // on press and the button's clicked() on release; the toggle must not
     // treat that release as a new open request.
     property double lastHideMs: 0
+
+    // Window prewarm. Qt creates a Popup.Window's native window, render
+    // loop, graphics context and shader pipelines on the first open and
+    // keeps the window for later opens. Pay that once, shortly after the
+    // shell is idle, by opening the launcher at 1% opacity and closing it
+    // after its first frames; the first real summon then only shows an
+    // already-built window. Browse content is already instantiated once
+    // Kicker is primed.
+    property bool prewarmEnabled: true
+    property bool _prewarming: false
+    property bool _prewarmed: false
+    property bool _prewarmClosing: false
+    property bool _summonAfterPrewarm: false
     property int lastReadyLatencyMs: -1
 
     // One implementation, two entry surfaces:
@@ -141,7 +154,40 @@ MeoMotionPopup {
     // on every frame, which stuttered on Wayland. Content cross-fades
     // instead.
 
+    function prewarmWindow() {
+        if (_prewarmed || _prewarming || !prewarmEnabled || opened || visible
+                || !modelsPrimed || !shellApplet)
+            return false
+        _prewarming = true
+        requestOpen()
+        return true
+    }
+
+    // A real summon that arrives while the invisible prewarm is on screen
+    // takes the open popup over instead of closing it.
+    function adoptPrewarm() {
+        if (!_prewarming)
+            return false
+        if (_prewarmClosing) {
+            // Already fading out: open for real as soon as it has closed.
+            _summonAfterPrewarm = true
+            return true
+        }
+        _prewarming = false
+        _prewarmed = true
+        openStartedMs = Date.now()
+        lastReadyLatencyMs = appContentReady ? 0 : -1
+        searchField.forceSearchFocus()
+        return true
+    }
+
     function toggleFullLauncher() {
+        if (_prewarming) {
+            quickSearchMode = false
+            browseMode = defaultPage === "apps" ? 1 : 0
+            adoptPrewarm()
+            return
+        }
         if (opened || visible) {
             close()
             return
@@ -161,6 +207,8 @@ MeoMotionPopup {
         // second runner process for quick search.
         quickSearchMode = true
         searchField.text = ""
+        if (adoptPrewarm())
+            return
         if (opened || visible) {
             searchField.forceSearchFocus()
             return
@@ -418,6 +466,8 @@ MeoMotionPopup {
     // onOpened would add the animation duration on top of the 900 ms gate and
     // could make a visibly slow first launch miss the one-second target.
     onAboutToShow: {
+        if (_prewarming)
+            return
         openStartedMs = Date.now()
         lastReadyLatencyMs = appContentReady ? 0 : -1
         // Only the very first open may need to populate Kicker.
@@ -431,9 +481,30 @@ MeoMotionPopup {
         })
     }
 
-    onAboutToHide: lastHideMs = Date.now()
+    onAboutToHide: {
+        if (_prewarming)
+            _prewarmClosing = true
+        else
+            lastHideMs = Date.now()
+    }
+
+    onOpened: {
+        // The enter transition has rendered several frames: the window,
+        // pipelines and content are warm. Close without a visible trace.
+        if (_prewarming)
+            close()
+    }
 
     onClosed: {
+        if (_prewarming) {
+            _prewarming = false
+            _prewarmClosing = false
+            _prewarmed = true
+            if (_summonAfterPrewarm) {
+                _summonAfterPrewarm = false
+                Qt.callLater(function() { launcherPopup.requestOpen() })
+            }
+        }
         // Refresh stale app data while the launcher is hidden, never while
         // it is opening.
         Qt.callLater(function() { launcherPopup.refreshModels(false) })
@@ -455,10 +526,36 @@ MeoMotionPopup {
         Qt.callLater(function() { launcherPopup.refreshModels(false) })
     }
 
+    // Start prewarming a few seconds after the shell settles; retry a few
+    // times while Kicker is still priming, then give up quietly.
+    Timer {
+        id: prewarmTimer
+        interval: 4000
+        repeat: true
+        running: launcherPopup.prewarmEnabled && !launcherPopup._prewarmed
+        property int attempts: 0
+        onTriggered: {
+            attempts++
+            if (launcherPopup._prewarmed || attempts > 6 || launcherPopup.prewarmWindow())
+                stop()
+        }
+    }
+
+    // 1% keeps every item and effect rendered (opacity 0 would be culled and
+    // leave its pipelines cold) while staying invisible.
+    Binding {
+        target: launcherPopup.background
+        property: "opacity"
+        value: 0.01
+        when: launcherPopup._prewarming
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
     contentItem: FocusScope {
         id: launcherContent
         anchors.fill: parent
         focus: true
+        opacity: launcherPopup._prewarming ? 0.01 : 1
 
         Keys.onEscapePressed: {
             if (searchField.text !== "") {
