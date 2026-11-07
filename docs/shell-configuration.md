@@ -98,13 +98,14 @@ dialogs, popups, non-active windows, and windows on other outputs.
 
 ```ini
 [Appearance]
-SurfaceTransparency=true
-SurfaceBlur=true
+SurfaceTransparency=false
+SurfaceBlur=false
 ```
 
-Since beta.11 the packaged defaults are transparent with blur (the frosted look
-of the reference desktop); set both to `false` for solid Quick Settings popups
-and a solid Shelf. `SurfaceTransparency=true` lets popups and notification cards show a
+Both are opt-in and off by default (solid Quick Settings popups and a solid
+Shelf). Turn the frosted look on from Meo Settings > Appearance > Frosted blur
+(which writes these keys to `meo-shellrc`), or set both to `true` by hand.
+`SurfaceTransparency=true` lets popups and notification cards show a
 little of what is below (88% / 86% opacity in light / dark). `SurfaceBlur=true`
 (only effective together with transparency) asks KWin's Blur effect, through
 `KWindowEffects`, to blur the area behind the rounded popup, giving a frosted

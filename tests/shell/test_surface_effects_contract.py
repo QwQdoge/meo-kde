@@ -17,6 +17,11 @@ class SurfaceEffectsContract(unittest.TestCase):
         self.assertIn('readEntry("SurfaceBlur", false)', source)
         self.assertIn("m_transparency && m_blur", read("native/system/shellappearance.h"))
 
+    def test_packaged_profile_keeps_effects_off(self):
+        profile = read("defaults/plasma/meo-shellrc")
+        self.assertIn("SurfaceTransparency=false", profile)
+        self.assertIn("SurfaceBlur=false", profile)
+
     def test_blur_is_a_compositor_request_not_a_capture(self):
         source = read("native/system/windowblur.cpp")
         self.assertIn("KWindowEffects::enableBlurBehind", source)

@@ -31,8 +31,9 @@ ShowNotifications=true
 Use24HourClock=true
 
 [Appearance]
-# Popups and the Shelf use a little transparency with KWin blur by default (the
-# frosted-glass look of the reference desktop). Set both to false for solid
-# surfaces. SurfaceBlur needs SurfaceTransparency.
-SurfaceTransparency=true
-SurfaceBlur=true
+# Optional frosted-glass look. Both are off by default (solid surfaces). Turn
+# them on from Meo Settings > Appearance > Frosted blur, or set both to true
+# here. SurfaceBlur (KWin blur behind popups and the Shelf) needs
+# SurfaceTransparency.
+SurfaceTransparency=false
+SurfaceBlur=false
