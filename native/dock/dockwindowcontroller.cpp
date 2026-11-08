@@ -32,9 +32,15 @@ void DockWindowController::attach(QQuickWindow *window)
 }
 
 void DockWindowController::updateSurfaceRegion(qreal x, qreal y, qreal width,
-                                                qreal height, qreal radius)
+                                                qreal height, qreal radius, bool blur)
 {
     if (!m_window || width <= 0 || height <= 0) {
+        return;
+    }
+    // Blur is opt-in (SurfaceBlur); otherwise withdraw any earlier request.
+    if (!blur) {
+        KWindowEffects::enableBlurBehind(m_window, false);
+        KWindowEffects::enableBackgroundContrast(m_window, false);
         return;
     }
     QPainterPath path;

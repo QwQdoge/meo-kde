@@ -66,6 +66,9 @@ QtObject {
         // One transparency switch for the whole shell: Shell Appearance's
         // Transparency (meo-shellrc) also drives MeoUI's translucent surfaces.
         MeoTheme.transparencyEnabled = MeoSystem.ShellAppearance.transparency
+        // Opt-in frosted look (SurfaceBlur): large MeoUI backgrounds thin out
+        // over the compositor blur that AppWindowBlur / DialogBlur request.
+        MeoTheme.blurEnabled = MeoSystem.ShellAppearance.blur
         // Kirigami already applies KDE's AnimationDurationFactor. Bridge that
         // platform preference into shared MeoUI motion tokens instead of
         // maintaining a second, contradictory animation switch.

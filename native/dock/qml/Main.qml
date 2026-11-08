@@ -30,10 +30,15 @@ Window {
         updateBlurRegion()
     }
 
+    Connections {
+        target: MeoTheme
+        function onBlurEnabledChanged() { root.updateBlurRegion() }
+    }
+
     function updateBlurRegion() {
         DockWindowController.updateSurfaceRegion(
             dockSurface.x, dockSurface.y, dockSurface.width,
-            dockSurface.height, dockSurface.radius)
+            dockSurface.height, dockSurface.radius, MeoTheme.blurEnabled)
     }
 
     function normalizedApplicationId(value) {
@@ -180,7 +185,8 @@ Window {
         color: Qt.rgba(MeoTheme.surfaceContainer.r,
                        MeoTheme.surfaceContainer.g,
                        MeoTheme.surfaceContainer.b,
-                       MeoTheme.transparencyEnabled ? 0.76 : 1.0)
+                       !MeoTheme.transparencyEnabled ? 1.0
+                       : (MeoTheme.blurEnabled ? 0.62 : 0.84))
         border.width: MeoTheme.strokeWidthThin
         border.color: MeoTheme.outlineVariant
 
