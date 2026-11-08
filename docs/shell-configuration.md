@@ -109,7 +109,7 @@ Shelf). Turn the frosted look on from Meo Settings > Appearance > Frosted blur
 little of what is below (88% / 86% opacity in light / dark). `SurfaceBlur=true`
 (only effective together with transparency) asks KWin's Blur effect, through
 `KWindowEffects`, to blur the area behind the rounded popup, giving a frosted
-look: with blur on, the surface tint drops to about 70-74% with a hairline edge so only a soft hint of the backdrop shows, and Meo Settings raises KWin's blur strength (`kwinrc` `[Effect-blur]` `BlurStrength`, only when you have not set it yourself) to 10. Neither captures the screen; `Meo.System.ShellAppearance` reads the keys
+look: with blur on, the surface tint drops to about 70-74% so only a soft hint of the backdrop shows, and Meo Settings raises KWin's blur strength (`kwinrc` `[Effect-blur]` `BlurStrength`, only when you have not set it yourself) to 10. Neither captures the screen; `Meo.System.ShellAppearance` reads the keys
 and follows changes. The top bar is always clear over the wallpaper. The same switch also drives the standalone Dock (blur request and a thinner tint), the notification cards, and native Meo applications: `MeoKDE.AppWindowBlur` asks KWin to blur behind an app window, and `MeoTheme.windowBackground` / `MeoTheme.blurTint()` (MeoUI, bound through `MeoShellTheme`) turn the window and sidebar backgrounds into a thin tint only while blur is on. Plasma's own panels (the bottom Shelf) take their translucency from the Plasma theme and KWin's blur effect, so they benefit from the stronger blur strength but are not changed by this switch.
 
 ## Wallpaper-aware foreground

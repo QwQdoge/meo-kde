@@ -22,6 +22,6 @@ MeoMotionSurface {
     radius: ShellMetrics.radiusPopup
     color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, surfaceOpacity)
     elevation: 3
-    // A hairline edge keeps a blurred popup crisp against what is behind it.
-    showOutline: blurActive
+    // Tonal elevation only: the shell contract forbids a permanent outline.
+    showOutline: false
 }

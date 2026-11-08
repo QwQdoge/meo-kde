@@ -64,7 +64,9 @@ QQC2.AbstractButton {
         hovered: root.hovered
         pressed: root.down
         active: root.active
-        motionProfile: "pixel"
+        // Calm: a gentle 0.98 press and no lift. Buttons pinned to the screen
+        // edge should not jump or grow when their popup opens.
+        motionProfile: "calm"
         speed: "fast"
     }
 
