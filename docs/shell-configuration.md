@@ -109,7 +109,7 @@ Shelf). Turn the frosted look on from Meo Settings > Appearance > Frosted blur
 little of what is below (88% / 86% opacity in light / dark). `SurfaceBlur=true`
 (only effective together with transparency) asks KWin's Blur effect, through
 `KWindowEffects`, to blur the area behind the rounded popup, giving a frosted
-look. Neither captures the screen; `Meo.System.ShellAppearance` reads the keys
+look: with blur on, the surface tint drops to about 70-74% with a hairline edge so only a soft hint of the backdrop shows, and Meo Settings raises KWin's blur strength (`kwinrc` `[Effect-blur]` `BlurStrength`, only when you have not set it yourself) to 10. Neither captures the screen; `Meo.System.ShellAppearance` reads the keys
 and follows changes. The top bar is always clear over the wallpaper.
 
 ## Wallpaper-aware foreground

@@ -22,6 +22,11 @@ class SurfaceEffectsContract(unittest.TestCase):
         self.assertIn("SurfaceTransparency=false", profile)
         self.assertIn("SurfaceBlur=false", profile)
 
+    def test_blur_thins_the_tint_only_with_real_blur(self):
+        source = read("qml/MeoKDE/FrostedSurface.qml")
+        self.assertIn("blurredOpacity", source)
+        self.assertIn("ShellAppearance.blur", source)
+
     def test_blur_is_a_compositor_request_not_a_capture(self):
         source = read("native/system/windowblur.cpp")
         self.assertIn("KWindowEffects::enableBlurBehind", source)
