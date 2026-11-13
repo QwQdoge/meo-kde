@@ -14,13 +14,21 @@ add_library(meo-ai-router-core STATIC router.cpp router.h)
 target_include_directories(meo-ai-router-core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(meo-ai-router-core PUBLIC Qt6::Core)
 
+add_library(meo-ai-router-installer STATIC installer.cpp installer.h)
+target_include_directories(meo-ai-router-installer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(meo-ai-router-installer PUBLIC Qt6::Core)
+
 add_executable(meo-ai-router main.cpp service.cpp service.h)
-target_link_libraries(meo-ai-router PRIVATE meo-ai-router-core Qt6::DBus Qt6::Gui KF6::Service KF6::KIOGui KF6::PulseAudioQt)
+target_link_libraries(meo-ai-router PRIVATE meo-ai-router-core meo-ai-router-installer Qt6::DBus Qt6::Gui KF6::Service KF6::KIOGui KF6::PulseAudioQt)
 
 if(BUILD_TESTING)
     add_executable(meo-ai-router-test tests/router-test.cpp)
     target_link_libraries(meo-ai-router-test PRIVATE meo-ai-router-core Qt6::Test)
     add_test(NAME meo-ai-router COMMAND meo-ai-router-test)
+
+    add_executable(meo-ai-router-installer-test tests/installer-test.cpp)
+    target_link_libraries(meo-ai-router-installer-test PRIVATE meo-ai-router-installer Qt6::Test)
+    add_test(NAME meo-ai-router-installer COMMAND meo-ai-router-installer-test)
 endif()
 
 include(GNUInstallDirs)

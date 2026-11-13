@@ -88,6 +88,28 @@ registered internally, so no destructive action is reachable. Reversible
 installation and repair still use their owning applications' existing
 confirmation and Polkit flows; Router approval cannot bypass them.
 
+## Live installer capabilities
+
+Only in the MeoArch Live environment (`/run/archiso` present), the Router also
+registers three installer capabilities owned by `org.meo.installer`. They never
+change the system:
+
+- `org.meo.installer.proposal.submit` (`session`) takes one string `proposal`
+  (a JSON object of at most 8 KiB). Only allow-listed, shape-checked fields are
+  accepted: locale, timezone, keyboard layout, profile, channel, applications,
+  `targetDisk` (a stable disk id), filesystem, swap, separate home, firewall and
+  a rationale. Usernames, full names, passwords and erase mode are never
+  proposable and are rejected. A valid proposal is written (mode 0600) to the
+  Live user's `$XDG_RUNTIME_DIR/meo-installer/ai-proposal.json`. The Installer
+  treats it as untrusted, re-validates it and applies nothing until the person
+  presses Apply on its Summary page. A `targetDisk` is only preselected; the
+  person still confirms erasing it.
+- `org.meo.installer.log.read` (`read`) takes an integer `lines` (1 to 200) and
+  returns the last lines of the installer log as a JSON array in `message`.
+- `org.meo.installer.disks.list` (`read`) returns detected storage devices as a
+  JSON array in `message`. Listing a device does not mean it is eligible; the
+  Installer decides eligibility.
+
 Static builds and offscreen tests validate only the source and protocol.
 Real Account/KWallet, Plasma application activation and user interaction need
 separate session testing.

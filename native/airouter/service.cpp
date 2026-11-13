@@ -1,4 +1,5 @@
 #include "service.h"
+#include "installer.h"
 
 #include <KIO/ApplicationLauncherJob>
 #include <KService>
@@ -119,6 +120,51 @@ RouterService::RouterService(QObject *parent) : QObject(parent)
         m_router.complete(requestId, true, QStringLiteral("Volume is %1%").arg(percent));
     };
     m_router.addCapability(std::move(volumeStatus));
+
+    // Live installer: propose-only and read-only. These never change the
+    // system; the Installer treats a proposal as untrusted and the person
+    // applies it there. Registered only in the MeoArch Live environment.
+    if (InstallerCapabilities::liveEnvironment()) {
+        Router::Capability proposal;
+        proposal.id = QStringLiteral("org.meo.installer.proposal.submit");
+        proposal.title = QStringLiteral("Suggest installer settings");
+        proposal.owner = QStringLiteral("org.meo.installer");
+        proposal.impact = QStringLiteral("Nothing changes until the person reviews and applies it in the Installer.");
+        proposal.effect = Router::Effect::Session;
+        proposal.arguments = {{QStringLiteral("proposal"), QMetaType::QString}};
+        proposal.dispatch = [this](const QString &requestId, const QVariantMap &arguments) {
+            QString message;
+            const bool ok = InstallerCapabilities::submitProposal(
+                arguments.value(QStringLiteral("proposal")).toString(), &message);
+            m_router.complete(requestId, ok, message);
+        };
+        m_router.addCapability(std::move(proposal));
+
+        Router::Capability log;
+        log.id = QStringLiteral("org.meo.installer.log.read");
+        log.title = QStringLiteral("Read installer log");
+        log.owner = QStringLiteral("org.meo.installer");
+        log.effect = Router::Effect::Read;
+        log.arguments = {{QStringLiteral("lines"), QMetaType::Int}};
+        log.dispatch = [this](const QString &requestId, const QVariantMap &arguments) {
+            QString message;
+            const bool ok = InstallerCapabilities::readLog(arguments.value(QStringLiteral("lines")).toInt(), &message);
+            m_router.complete(requestId, ok, message);
+        };
+        m_router.addCapability(std::move(log));
+
+        Router::Capability disks;
+        disks.id = QStringLiteral("org.meo.installer.disks.list");
+        disks.title = QStringLiteral("List storage devices");
+        disks.owner = QStringLiteral("org.meo.installer");
+        disks.effect = Router::Effect::Read;
+        disks.dispatch = [this](const QString &requestId, const QVariantMap &) {
+            QString message;
+            const bool ok = InstallerCapabilities::listDisks(&message);
+            m_router.complete(requestId, ok, message);
+        };
+        m_router.addCapability(std::move(disks));
+    }
 }
 
 void RouterService::launchDesktop(const QString &requestId, const QString &desktopId)
