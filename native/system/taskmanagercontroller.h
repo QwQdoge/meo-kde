@@ -80,7 +80,7 @@ SampleResult sampleProcessSnapshot(const SampleInput &input);
 // Flat list model keyed by a stable integer field ("pid").  sync() diffs the
 // incoming rows against the current ones and emits remove/move/insert/
 // dataChanged per row, so views keep their delegates instead of resetting.
-class ProcessRowModel final : public QAbstractListModel
+class ProcessRowModel : public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
