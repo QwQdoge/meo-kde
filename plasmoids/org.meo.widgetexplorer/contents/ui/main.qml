@@ -8,10 +8,11 @@ import MeoUI 1.0
 import Meo.System 1.0 as MeoSystem
 import MeoKDE 1.0
 
-// Desktop widget browser surface. Meo entries use the MeoWidget registry;
-// Plasma entries remain real Plasma packages created by the current desktop
-// containment through libplasma. Panels, taskbar, wallpaper and containment
-// configuration remain under Plasma ownership.
+// Optional desktop applet host for the Meo widget browser. Meo Desktop does
+// not place it by default: the browser opens from the desktop right-click /
+// Edit Mode "Add Widgets" action of the org.meo.shell package. Users who want
+// a visible button can still add this applet themselves. Panels, taskbar,
+// wallpaper and containment configuration remain under Plasma ownership.
 PlasmoidItem {
     id: root
 
@@ -20,84 +21,12 @@ PlasmoidItem {
     toolTipSubText: MeoI18n.translator.i18n("Add widgets to your Home screen")
     preferredRepresentation: compactRepresentation
 
-    property var contextWidget: null
-    property alias widgetActionsSurface: widgetActions
-    property string feedbackText: ""
-    property bool feedbackIsError: false
-    readonly property var widgetCatalog: MeoSystem.DesktopWidgets.catalog
-
     Layout.minimumWidth: compactRepresentationItem ? compactRepresentationItem.implicitWidth
                                                    : 48 * MeoTheme.globalScale
     Layout.minimumHeight: compactRepresentationItem ? compactRepresentationItem.implicitHeight
                                                     : 48 * MeoTheme.globalScale
     Layout.preferredWidth: Layout.minimumWidth
     Layout.preferredHeight: Layout.minimumHeight
-
-    onExpandedChanged: {
-        if (expanded)
-            MeoSystem.DesktopWidgets.refreshPlasmaCatalog()
-    }
-
-    function suggestedGeometry(widget) {
-        const width = widget.defaultWidth || 320
-        const height = widget.defaultHeight || 220
-        return Qt.rect(Math.max(MeoTheme.space16, root.x + root.width + MeoTheme.space16),
-                       Math.max(MeoTheme.space16, root.y), width, height)
-    }
-
-    function addDesktopWidget(widget) {
-        if (!widget)
-            return
-        const added = widget.host === "meo"
-                ? MeoSystem.DesktopWidgets.addMeoWidget(Plasmoid.containment, widget.id,
-                                                        suggestedGeometry(widget))
-                : MeoSystem.DesktopWidgets.addPlasmaWidget(Plasmoid.containment, widget.pluginId,
-                                                           suggestedGeometry(widget))
-        if (added) {
-            feedbackText = MeoI18n.translator.i18n("Added %1 to the Home screen.", widget.title)
-            feedbackIsError = false
-        } else {
-            feedbackText = MeoSystem.DesktopWidgets.lastError
-            feedbackIsError = true
-        }
-    }
-
-    function sourceLabel(widget) {
-        if (widget.host === "meo")
-            return MeoI18n.translator.i18n("Meo Widget")
-        return widget.source === "user"
-                ? MeoI18n.translator.i18n("Plasma Widget · User package")
-                : MeoI18n.translator.i18n("Plasma Widget · Compatibility mode")
-    }
-
-    function openWidgetContext(widget, anchor, localX, localY) {
-        contextWidget = widget
-        const isMeo = widget.host === "meo"
-        root.widgetActionsSurface.model = [
-            {
-                "label": MeoI18n.translator.i18n("Add to Home screen"),
-                "icon": "add",
-                "enabled": widget.available,
-                "action": function() { root.addDesktopWidget(root.contextWidget) }
-            },
-            {
-                "type": "separator"
-            },
-            {
-                "label": root.sourceLabel(widget),
-                "icon": isMeo ? "widgets" : "extension",
-                "enabled": false
-            },
-            {
-                "label": isMeo && widget.lockScreenEligible
-                         ? MeoI18n.translator.i18n("Available on lock screen through a reviewed Meo adapter")
-                         : MeoI18n.translator.i18n("Desktop only; generic Plasma packages never run in the lock screen"),
-                "icon": isMeo && widget.lockScreenEligible ? "lock" : "desktop_windows",
-                "enabled": false
-            }
-        ]
-        root.widgetActionsSurface.openAtPoint(anchor, localX, localY)
-    }
 
     compactRepresentation: QQC2.AbstractButton {
         id: compactRepresentationItem
@@ -123,33 +52,19 @@ PlasmoidItem {
         }
     }
 
-    fullRepresentation: Item {
-        id: explorerSurface
-        // Googlebook treats widgets as a first-class Home-screen surface. The
-        // shared picker keeps that broad preview-first composition while this
-        // Plasma adapter remains responsible only for safe package creation.
-        implicitWidth: 1080 * MeoTheme.globalScale
-        implicitHeight: 660 * MeoTheme.globalScale
-
-        MeoWidgetSheet {
-            anchors.fill: parent
-            catalog: root.widgetCatalog
-            feedbackText: root.feedbackText
-            feedbackIsError: root.feedbackIsError
-            onWidgetActivated: function(widget) {
-                root.addDesktopWidget(widget)
+    fullRepresentation: DesktopWidgetExplorer {
+        id: explorer
+        containment: Plasmoid.containment
+        placementOrigin: Qt.point(root.x + root.width + MeoTheme.space16, root.y)
+        onCloseRequested: root.expanded = false
+        Connections {
+            target: root
+            function onExpandedChanged() {
+                if (root.expanded) {
+                    explorer.reset()
+                    explorer.refresh()
+                }
             }
-            onWidgetContextRequested: function(widget, anchor) {
-                root.openWidgetContext(widget, anchor, anchor.width / 2, anchor.height / 2)
-            }
-            onRefreshRequested: MeoSystem.DesktopWidgets.refreshPlasmaCatalog()
-            onCloseRequested: root.expanded = false
         }
-    }
-
-    MeoContextMenu {
-        id: widgetActions
-        parent: root
-        z: 100
     }
 }

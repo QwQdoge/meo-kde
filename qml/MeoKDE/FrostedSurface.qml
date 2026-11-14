@@ -10,7 +10,9 @@ MeoMotionSurface {
     // meo-shellrc they let a little of what is below show through (and, with
     // SurfaceBlur, the compositor blurs it); see Meo.System.ShellAppearance.
     property real translucentOpacity: MeoTheme.isDarkMode ? 0.86 : 0.88
-    readonly property real surfaceOpacity: MeoSystem.ShellAppearance.transparency ? translucentOpacity : 1.0
+    // MeoTheme.surfaceAlpha applies the user's transparency level as well.
+    readonly property real surfaceOpacity: MeoSystem.ShellAppearance.transparency
+                                           ? MeoTheme.surfaceAlpha(translucentOpacity) : 1.0
 
     radius: ShellMetrics.radiusPopup
     color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, surfaceOpacity)

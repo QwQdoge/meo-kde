@@ -1,4 +1,5 @@
 #include "taskmanagercontroller.h"
+#include "systemmonitorconfig.h"
 
 #include <QClipboard>
 #include <QCoreApplication>
@@ -419,7 +420,14 @@ TaskManagerController::TaskManagerController(QObject *parent)
 {
     m_available = QFileInfo::exists(QStringLiteral("/proc/stat"))
         && QFileInfo::exists(QStringLiteral("/proc/meminfo"));
+    m_refreshInterval = MeoSystemMonitorConfig::readRefreshInterval();
     m_refreshTimer.setInterval(m_refreshInterval);
+    m_configWatcher = MeoSystemMonitorConfig::watcher();
+    connect(m_configWatcher.data(), &KConfigWatcher::configChanged, this, [this](const KConfigGroup &group) {
+        if (group.name() == QLatin1String("General")) {
+            applyRefreshInterval(MeoSystemMonitorConfig::readRefreshInterval(), false);
+        }
+    });
     m_samplePool.setMaxThreadCount(1);
     m_logTiming = qEnvironmentVariableIntValue("MEO_TASKS_TIMING") != 0;
     connect(&m_refreshTimer, &QTimer::timeout, this, [this]() {
@@ -472,7 +480,15 @@ void TaskManagerController::setPaused(bool paused)
 
 void TaskManagerController::setRefreshInterval(int interval)
 {
-    const int bounded = qBound(500, interval, 10000);
+    applyRefreshInterval(interval, true);
+}
+
+void TaskManagerController::applyRefreshInterval(int interval, bool persist)
+{
+    const int bounded = MeoSystemMonitorConfig::boundedInterval(interval);
+    if (persist) {
+        MeoSystemMonitorConfig::writeRefreshInterval(bounded);
+    }
     if (bounded == m_refreshInterval) {
         return;
     }

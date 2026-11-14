@@ -1,5 +1,6 @@
 #include "performancecontroller.h"
 
+#include <QStandardPaths>
 #include <QTest>
 
 class PerformanceControllerTest : public QObject
@@ -7,6 +8,12 @@ class PerformanceControllerTest : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+        // Keep the persisted sampling preference out of the real profile.
+        QStandardPaths::setTestModeEnabled(true);
+    }
+
     void samplesRealSystemMetricsOnDemand()
     {
         PerformanceController controller;

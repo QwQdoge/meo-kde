@@ -1,4 +1,5 @@
 #include "performancecontroller.h"
+#include "systemmonitorconfig.h"
 
 #include <QDir>
 #include <QFile>
@@ -345,7 +346,14 @@ PerformanceController::PerformanceController(QObject *parent)
 {
     m_available = QFileInfo::exists(QStringLiteral("/proc/stat"))
         && QFileInfo::exists(QStringLiteral("/proc/meminfo"));
+    m_refreshInterval = MeoSystemMonitorConfig::readRefreshInterval();
     m_refreshTimer.setInterval(m_refreshInterval);
+    m_configWatcher = MeoSystemMonitorConfig::watcher();
+    connect(m_configWatcher.data(), &KConfigWatcher::configChanged, this, [this](const KConfigGroup &group) {
+        if (group.name() == QLatin1String("General")) {
+            applyRefreshInterval(MeoSystemMonitorConfig::readRefreshInterval(), false);
+        }
+    });
     connect(&m_refreshTimer, &QTimer::timeout, this, &PerformanceController::refreshNow);
     refreshStaticSystemInfo();
 }
@@ -384,7 +392,15 @@ void PerformanceController::setPaused(bool paused)
 
 void PerformanceController::setRefreshInterval(int interval)
 {
-    const int bounded = qBound(500, interval, 10000);
+    applyRefreshInterval(interval, true);
+}
+
+void PerformanceController::applyRefreshInterval(int interval, bool persist)
+{
+    const int bounded = MeoSystemMonitorConfig::boundedInterval(interval);
+    if (persist) {
+        MeoSystemMonitorConfig::writeRefreshInterval(bounded);
+    }
     if (bounded == m_refreshInterval) {
         return;
     }

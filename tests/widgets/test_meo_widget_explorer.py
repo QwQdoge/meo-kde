@@ -40,14 +40,19 @@ class MeoWidgetExplorerTests(unittest.TestCase):
             self.assertIn(f"plasmoids/{package_id}", package_source)
 
     def test_explorer_uses_two_real_hosts_without_panel_or_dock_management(self):
-        explorer = (APPLETS / "org.meo.widgetexplorer/contents/ui/main.qml").read_text(encoding="utf-8")
+        explorer = (MEO_KDE_QML / "DesktopWidgetExplorer.qml").read_text(encoding="utf-8")
+        applet = (APPLETS / "org.meo.widgetexplorer/contents/ui/main.qml").read_text(encoding="utf-8")
+        self.assertIn("DesktopWidgetExplorer {", applet)
+        self.assertIn("DesktopWidgetExplorer 1.0 DesktopWidgetExplorer.qml",
+                      (MEO_KDE_QML / "qmldir").read_text(encoding="utf-8"))
         bridge = BRIDGE.read_text(encoding="utf-8")
         header = BRIDGE_HEADER.read_text(encoding="utf-8")
 
         self.assertIn("DesktopWidgets.catalog", explorer)
         self.assertIn("MeoWidgetSheet", explorer)
-        self.assertIn("DesktopWidgets.addMeoWidget(Plasmoid.containment", explorer)
-        self.assertIn("DesktopWidgets.addPlasmaWidget(Plasmoid.containment", explorer)
+        self.assertIn("DesktopWidgets.addMeoWidget(containment", explorer)
+        self.assertIn("DesktopWidgets.addPlasmaWidget(containment", explorer)
+        self.assertIn("containment: Plasmoid.containment", applet)
         self.assertIn("MeoContextMenu", explorer)
         self.assertNotIn("filteredMeoCatalog", explorer)
         self.assertNotIn("filteredPlasmaCatalog", explorer)
@@ -90,7 +95,23 @@ class MeoWidgetExplorerTests(unittest.TestCase):
         self.assertIn("MeoWidget.LockScreen", media)
         self.assertIn("supportedSurfaces: [MeoWidget.Desktop]", performance)
         self.assertNotIn("MeoWidget.LockScreen", performance)
-        self.assertIn('existingDesktops[i].addWidget("org.meo.widgetexplorer", 24, 64, 48, 48)', LAYOUT.read_text(encoding="utf-8"))
+
+    def test_widget_entry_is_the_desktop_context_menu_only(self):
+        layout = LAYOUT.read_text(encoding="utf-8")
+        shell = REPO_ROOT / "themes/shells/org.meo.shell/contents"
+        view = (shell / "views/Desktop.qml").read_text(encoding="utf-8")
+        dialog = (shell / "explorer/MeoWidgetExplorer.qml").read_text(encoding="utf-8")
+        migration = (shell / "updates/meo_widget_explorer_context_menu.js").read_text(encoding="utf-8")
+
+        self.assertNotIn('addWidget("org.meo.widgetexplorer"', layout)
+        self.assertIn("function toggleWidgetExplorer(", view)
+        self.assertIn("function toggleActivityManager(", view)
+        self.assertIn("org.kde.plasma.desktop/contents/views/Desktop.qml", view)
+        self.assertIn("upstream.item.toggleWidgetExplorer(", view)
+        self.assertIn("DesktopWidgetExplorer {", dialog)
+        self.assertIn("editMode = false", dialog)
+        self.assertIn('widgets("org.meo.widgetexplorer")', migration)
+        self.assertIn(".remove()", migration)
 
     def test_performance_manager_is_shared_and_reachable(self):
         qmldir = (MEO_KDE_QML / "qmldir").read_text(encoding="utf-8")

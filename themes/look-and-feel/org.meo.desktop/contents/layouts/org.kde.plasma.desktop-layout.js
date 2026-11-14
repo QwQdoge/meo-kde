@@ -73,10 +73,8 @@ shelf.addWidget("org.kde.plasma.panelspacer")
 // Wallpaper setup
 var existingDesktops = desktopsForActivity(currentActivity())
 for (var i = 0; i < existingDesktops.length; ++i) {
-    // A compact, desktop-only entry point to the Meo Widget Explorer.  It
-    // adds reviewed widgets to this containment but never configures panels,
-    // task managers, or the native Dock.
-    existingDesktops[i].addWidget("org.meo.widgetexplorer", 24, 64, 48, 48)
+    // No desktop button: the Meo widget browser opens from the desktop
+    // right-click / Edit Mode "Add Widgets" action (org.meo.shell views).
     existingDesktops[i].wallpaperPlugin = "org.kde.image"
     existingDesktops[i].currentConfigGroup = ["Wallpaper", "org.kde.image", "General"]
     existingDesktops[i].writeConfig("Image", "file:///usr/share/wallpapers/MeoArch/meoarch_default.jpg")

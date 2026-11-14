@@ -1080,3 +1080,30 @@ msgstr "打开已验证的 .config 与应用配置"
 
 msgid "Quit"
 msgstr "退出"
+
+msgid "Paused"
+msgstr "已暂停"
+
+msgid "Every %1"
+msgstr "每 %1"
+
+msgid "Update speed"
+msgstr "刷新频率"
+
+msgid "%1 s"
+msgstr "%1 秒"
+
+msgid "Resume updates"
+msgstr "恢复刷新"
+
+msgid "Pause updates"
+msgstr "暂停刷新"
+
+msgid "%1 · Updates paused"
+msgstr "%1 · 已暂停刷新"
+
+msgid "System monitor"
+msgstr "系统监视器"
+
+msgid "Browse widgets"
+msgstr "浏览小组件"
