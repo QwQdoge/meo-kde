@@ -4,7 +4,7 @@ BorderActivate=9
 [Plugins]
 overviewEnabled=true
 org.meo.windowcornersEnabled=false
-kwin4_effect_shapecornersEnabled=true
+kwin4_effect_shapecornersEnabled=false
 scaleEnabled=true
 glideEnabled=false
 squashEnabled=true

@@ -30,7 +30,7 @@ BorderActivate=9
 [kwinrc][Plugins]
 overviewEnabled=true
 org.meo.windowcornersEnabled=false
-kwin4_effect_shapecornersEnabled=true
+kwin4_effect_shapecornersEnabled=false
 scaleEnabled=true
 glideEnabled=false
 squashEnabled=true

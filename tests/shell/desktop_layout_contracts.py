@@ -861,7 +861,7 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertNotIn('add_subdirectory(effects/windowcorners)', native)
         self.assertIn('org.meo.windowcornersEnabled=false', defaults)
-        self.assertIn('kwin4_effect_shapecornersEnabled=true', defaults)
+        self.assertIn('kwin4_effect_shapecornersEnabled=false', defaults)
         self.assertIn('EnableCompanionEffect=false', defaults)
         self.assertIn('CornerRadius=16', defaults)
         self.assertIn('ButtonDiameter=24', defaults)
