@@ -1,6 +1,7 @@
 #include "taskmanagercontroller.h"
 
 #include <QCoreApplication>
+#include <QStandardPaths>
 #include <QTest>
 
 class TaskManagerControllerTest : public QObject
@@ -8,6 +9,12 @@ class TaskManagerControllerTest : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+        // Keep the persisted sampling preference out of the real profile.
+        QStandardPaths::setTestModeEnabled(true);
+    }
+
     void samplesProcessesOnDemand()
     {
         TaskManagerController controller;

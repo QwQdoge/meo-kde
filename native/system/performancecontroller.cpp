@@ -1,5 +1,8 @@
 #include "performancecontroller.h"
+#include "systemmonitorconfig.h"
 
+#include <QCoreApplication>
+#include <QMutexLocker>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -340,12 +343,179 @@ QVariantList takeProcesses(const QVector<QVariantMap> &source, int limit)
 }
 }
 
+PerformanceController::PerformanceController(WorkerTag, QObject *parent)
+    : QObject(parent)
+    , m_isWorker(true)
+{
+    // Parent the timer so moveToThread() carries it to the sampling thread.
+    m_refreshTimer.setParent(this);
+    m_available = QFileInfo::exists(QStringLiteral("/proc/stat"))
+        && QFileInfo::exists(QStringLiteral("/proc/meminfo"));
+    connect(&m_refreshTimer, &QTimer::timeout, this, &PerformanceController::refreshNow);
+    refreshStaticSystemInfo();
+}
+
+PerformanceController::~PerformanceController()
+{
+    stopBackgroundSampling();
+    // The timer is a member that was given this object as parent.
+    m_refreshTimer.setParent(nullptr);
+}
+
+void PerformanceController::enableBackgroundSampling()
+{
+    if (m_isWorker || m_samplingThread) {
+        return;
+    }
+    auto *worker = new PerformanceController(WorkerTag{});
+    worker->m_refreshInterval = m_refreshInterval;
+    worker->m_refreshTimer.setInterval(m_refreshInterval);
+    worker->m_paused = m_paused;
+    worker->m_clients = m_clients;
+    worker->m_activeModules = m_activeModules;
+
+    m_samplingThread = new QThread;
+    m_samplingThread->setObjectName(QStringLiteral("meo-performance-sampler"));
+    worker->moveToThread(m_samplingThread);
+    m_worker = worker;
+    connect(m_samplingThread, &QThread::finished, worker, &QObject::deleteLater);
+    connect(worker, &PerformanceController::metricsChanged, this, &PerformanceController::adoptWorkerState,
+            Qt::QueuedConnection);
+    if (QCoreApplication::instance()) {
+        connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this,
+                &PerformanceController::stopBackgroundSampling);
+    }
+    m_refreshTimer.stop();
+    m_samplingThread->start(QThread::LowPriority);
+    if (!m_clients.isEmpty() && !m_paused) {
+        forwardToWorker([](PerformanceController *w) {
+            w->m_rateClock.restart();
+            w->m_refreshTimer.start();
+            w->refreshNow();
+        });
+    }
+}
+
+void PerformanceController::stopBackgroundSampling()
+{
+    if (!m_samplingThread) {
+        return;
+    }
+    if (m_worker) {
+        disconnect(m_worker, nullptr, this, nullptr);
+        forwardToWorker([](PerformanceController *w) { w->m_refreshTimer.stop(); });
+    }
+    m_samplingThread->quit();
+    if (m_samplingThread->wait(3000)) {
+        delete m_samplingThread;
+    }
+    // A sampler stuck in a kernel read is left to process exit rather than
+    // destroying a running QThread.
+    m_samplingThread = nullptr;
+    m_worker = nullptr;
+}
+
+template<typename Function>
+void PerformanceController::forwardToWorker(Function function)
+{
+    if (!m_worker) {
+        return;
+    }
+    QPointer<PerformanceController> worker = m_worker;
+    QMetaObject::invokeMethod(worker.data(), [worker, function]() {
+        if (worker) {
+            function(worker.data());
+        }
+    }, Qt::QueuedConnection);
+}
+
+void PerformanceController::adoptWorkerState()
+{
+    if (!m_worker) {
+        return;
+    }
+    {
+        const PerformanceController &source = *m_worker;
+        QMutexLocker locker(&source.m_publishMutex);
+    m_cpuUsage = source.m_cpuUsage;
+    m_cpuFrequencyMHz = source.m_cpuFrequencyMHz;
+    m_cpuTemperature = source.m_cpuTemperature;
+    m_cpuModel = source.m_cpuModel;
+    m_cpuArchitecture = source.m_cpuArchitecture;
+    m_logicalCores = source.m_logicalCores;
+    m_physicalCores = source.m_physicalCores;
+    m_cpuSockets = source.m_cpuSockets;
+    m_cpuMaxFrequencyMHz = source.m_cpuMaxFrequencyMHz;
+    m_cpuVirtualizationSupported = source.m_cpuVirtualizationSupported;
+    m_cpuCaches = source.m_cpuCaches;
+    m_cpuHistory = source.m_cpuHistory;
+    m_cpuCores = source.m_cpuCores;
+    m_memoryUsage = source.m_memoryUsage;
+    m_memoryUsedBytes = source.m_memoryUsedBytes;
+    m_memoryTotalBytes = source.m_memoryTotalBytes;
+    m_memoryAvailableBytes = source.m_memoryAvailableBytes;
+    m_memoryCachedBytes = source.m_memoryCachedBytes;
+    m_memoryBuffersBytes = source.m_memoryBuffersBytes;
+    m_memorySharedBytes = source.m_memorySharedBytes;
+    m_swapUsedBytes = source.m_swapUsedBytes;
+    m_swapTotalBytes = source.m_swapTotalBytes;
+    m_zramDiskSizeBytes = source.m_zramDiskSizeBytes;
+    m_zramOriginalBytes = source.m_zramOriginalBytes;
+    m_zramCompressedBytes = source.m_zramCompressedBytes;
+    m_zramMemoryUsedBytes = source.m_zramMemoryUsedBytes;
+    m_zramCompressionRatio = source.m_zramCompressionRatio;
+    m_zswapEnabled = source.m_zswapEnabled;
+    m_memoryHistory = source.m_memoryHistory;
+    m_pressure = source.m_pressure;
+    m_networkRxRate = source.m_networkRxRate;
+    m_networkTxRate = source.m_networkTxRate;
+    m_networkRxHistory = source.m_networkRxHistory;
+    m_networkTxHistory = source.m_networkTxHistory;
+    m_networkInterfaces = source.m_networkInterfaces;
+    m_diskReadRate = source.m_diskReadRate;
+    m_diskWriteRate = source.m_diskWriteRate;
+    m_storageUsedBytes = source.m_storageUsedBytes;
+    m_storageTotalBytes = source.m_storageTotalBytes;
+    m_storageUsage = source.m_storageUsage;
+    m_diskReadHistory = source.m_diskReadHistory;
+    m_diskWriteHistory = source.m_diskWriteHistory;
+    m_disks = source.m_disks;
+    m_gpuName = source.m_gpuName;
+    m_gpuUsage = source.m_gpuUsage;
+    m_gpuTemperature = source.m_gpuTemperature;
+    m_gpuMemoryUsedBytes = source.m_gpuMemoryUsedBytes;
+    m_gpuMemoryTotalBytes = source.m_gpuMemoryTotalBytes;
+    m_gpus = source.m_gpus;
+    m_gpuHistory = source.m_gpuHistory;
+    m_uptimeSeconds = source.m_uptimeSeconds;
+    m_load1 = source.m_load1;
+    m_load5 = source.m_load5;
+    m_load15 = source.m_load15;
+    m_processCount = source.m_processCount;
+    m_operatingSystemName = source.m_operatingSystemName;
+    m_kernelVersion = source.m_kernelVersion;
+    m_desktopEnvironment = source.m_desktopEnvironment;
+    m_systemSummary = source.m_systemSummary;
+    m_topCpuProcesses = source.m_topCpuProcesses;
+    m_topMemoryProcesses = source.m_topMemoryProcesses;
+    m_processes = source.m_processes;
+    }
+    Q_EMIT metricsChanged();
+}
+
 PerformanceController::PerformanceController(QObject *parent)
     : QObject(parent)
 {
     m_available = QFileInfo::exists(QStringLiteral("/proc/stat"))
         && QFileInfo::exists(QStringLiteral("/proc/meminfo"));
+    m_refreshInterval = MeoSystemMonitorConfig::readRefreshInterval();
     m_refreshTimer.setInterval(m_refreshInterval);
+    m_configWatcher = MeoSystemMonitorConfig::watcher();
+    connect(m_configWatcher.data(), &KConfigWatcher::configChanged, this, [this](const KConfigGroup &group) {
+        if (group.name() == QLatin1String("General")) {
+            applyRefreshInterval(MeoSystemMonitorConfig::readRefreshInterval(), false);
+        }
+    });
     connect(&m_refreshTimer, &QTimer::timeout, this, &PerformanceController::refreshNow);
     refreshStaticSystemInfo();
 }
@@ -369,6 +539,11 @@ void PerformanceController::setPaused(bool paused)
         return;
     }
     m_paused = paused;
+    if (m_worker) {
+        forwardToWorker([paused](PerformanceController *w) { w->setPaused(paused); });
+        Q_EMIT pausedChanged();
+        return;
+    }
     m_rateClock.invalidate();
     m_lastCpu = {};
     m_lastCpuTotalDelta = 0;
@@ -384,12 +559,21 @@ void PerformanceController::setPaused(bool paused)
 
 void PerformanceController::setRefreshInterval(int interval)
 {
-    const int bounded = qBound(500, interval, 10000);
+    applyRefreshInterval(interval, true);
+}
+
+void PerformanceController::applyRefreshInterval(int interval, bool persist)
+{
+    const int bounded = MeoSystemMonitorConfig::boundedInterval(interval);
+    if (persist) {
+        MeoSystemMonitorConfig::writeRefreshInterval(bounded);
+    }
     if (bounded == m_refreshInterval) {
         return;
     }
     m_refreshInterval = bounded;
     m_refreshTimer.setInterval(m_refreshInterval);
+    forwardToWorker([bounded](PerformanceController *w) { w->applyRefreshInterval(bounded, false); });
     Q_EMIT refreshIntervalChanged();
 }
 
@@ -477,6 +661,11 @@ void PerformanceController::subscribe(const QString &clientId, const QStringList
     const bool wasMonitoring = monitoring();
     m_clients.insert(id, normalized);
     rebuildActiveModules();
+    if (m_worker) {
+        forwardToWorker([id, normalized](PerformanceController *w) { w->subscribe(id, normalized); });
+        Q_EMIT monitoringChanged();
+        return;
+    }
     if (!wasMonitoring) {
         m_rateClock.restart();
         if (!m_paused) {
@@ -494,6 +683,12 @@ void PerformanceController::unsubscribe(const QString &clientId)
         return;
     }
     rebuildActiveModules();
+    if (m_worker) {
+        const QString id = clientId.trimmed();
+        forwardToWorker([id](PerformanceController *w) { w->unsubscribe(id); });
+        Q_EMIT monitoringChanged();
+        return;
+    }
     if (m_clients.isEmpty()) {
         m_refreshTimer.stop();
         m_rateClock.invalidate();
@@ -610,9 +805,14 @@ void PerformanceController::refreshStaticSystemInfo()
 
 void PerformanceController::refreshNow()
 {
+    if (m_worker) {
+        forwardToWorker([](PerformanceController *w) { w->refreshNow(); });
+        return;
+    }
     if (!m_available || m_activeModules.isEmpty()) {
         return;
     }
+    QMutexLocker locker(&m_publishMutex);
 
     double elapsedSeconds = 0;
     if (m_rateClock.isValid()) {
@@ -649,6 +849,7 @@ void PerformanceController::refreshNow()
     if (wantsModule(QStringLiteral("processes"))) {
         sampleProcesses();
     }
+    locker.unlock();
     Q_EMIT metricsChanged();
 }
 
@@ -1489,6 +1690,7 @@ void PerformanceController::startNvidiaGpuSample()
 
     const auto finish = [this, process](bool parseOutput) {
         if (parseOutput && wantsModule(QStringLiteral("gpu"))) {
+            QMutexLocker locker(&m_publishMutex);
             QVariantList updated = m_gpus;
             const QList<QByteArray> rows = process->readAllStandardOutput().split('\n');
             int nvidiaIndex = 0;
@@ -1580,6 +1782,7 @@ void PerformanceController::startNvidiaGpuSample()
             if (m_gpuUsage >= 0) {
                 appendHistory(m_gpuHistory, m_gpuUsage);
             }
+            locker.unlock();
             Q_EMIT metricsChanged();
         }
 

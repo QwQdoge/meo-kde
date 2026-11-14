@@ -10,6 +10,11 @@ Item {
     property color secondaryColor: MeoTheme.tertiary
     property real maximum: 0
     property bool fillArea: true
+    // Task-manager style background grid for large detail graphs.
+    property bool showGrid: false
+    property int gridColumns: 10
+    property int gridRows: 4
+    property color gridColor: MeoTheme.outlineVariant
 
     implicitHeight: 52 * MeoTheme.globalScale
 
@@ -72,6 +77,22 @@ Item {
         onPaint: {
             const ctx = getContext("2d")
             ctx.reset()
+            if (root.showGrid) {
+                ctx.strokeStyle = root.gridColor.toString()
+                ctx.lineWidth = 1
+                ctx.beginPath()
+                for (let column = 1; column < root.gridColumns; ++column) {
+                    const x = Math.round(width * column / root.gridColumns) + 0.5
+                    ctx.moveTo(x, 0)
+                    ctx.lineTo(x, height)
+                }
+                for (let row = 1; row < root.gridRows; ++row) {
+                    const y = Math.round(height * row / root.gridRows) + 0.5
+                    ctx.moveTo(0, y)
+                    ctx.lineTo(width, y)
+                }
+                ctx.stroke()
+            }
             root.drawSeries(ctx, root.values, root.primaryColor, root.fillArea)
             root.drawSeries(ctx, root.secondaryValues, root.secondaryColor, false)
         }
@@ -79,9 +100,24 @@ Item {
         onHeightChanged: requestPaint()
     }
 
-    onValuesChanged: canvas.requestPaint()
-    onSecondaryValuesChanged: canvas.requestPaint()
+    // Only visible graphs redraw; a hidden page or a scrolled-away tile
+    // costs nothing until it is shown again.
+    property bool paintPending: false
+    function schedulePaint() {
+        if (visible && width > 0 && height > 0) {
+            paintPending = false
+            canvas.requestPaint()
+        } else {
+            paintPending = true
+        }
+    }
+    onVisibleChanged: if (visible && paintPending) schedulePaint()
+
+    onValuesChanged: schedulePaint()
+    onSecondaryValuesChanged: schedulePaint()
     onPrimaryColorChanged: canvas.requestPaint()
     onSecondaryColorChanged: canvas.requestPaint()
     onMaximumChanged: canvas.requestPaint()
+    onShowGridChanged: canvas.requestPaint()
+    onGridColorChanged: canvas.requestPaint()
 }

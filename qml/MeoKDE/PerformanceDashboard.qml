@@ -4,10 +4,17 @@ import QtQuick.Layouts
 import MeoUI 1.0
 import Meo.System 1.0 as MeoSystem
 
+// Task-manager style Performance page: a resource list on the left (CPU,
+// memory, every disk, network interface and GPU, each with a live mini
+// graph) and the selected resource's large graph and statistics on the right.
+// Every value comes from Meo.System Performance; unknown values show "—".
 Item {
     id: root
 
     readonly property real scaleFactor: MeoTheme.globalScale
+    readonly property bool wide: width >= 760 * scaleFactor
+    property string selectedKey: "cpu"
+    property bool cpuShowsLogicalProcessors: false
 
     function formatBytes(value) {
         const bytes = Math.max(0, Number(value) || 0)
@@ -25,16 +32,35 @@ Item {
         return formatBytes(value) + "/s"
     }
 
+    function formatBits(bytesPerSecond) {
+        const bits = Math.max(0, Number(bytesPerSecond) || 0) * 8
+        if (bits >= 1e9) return (bits / 1e9).toFixed(1) + " Gbps"
+        if (bits >= 1e6) return (bits / 1e6).toFixed(1) + " Mbps"
+        if (bits >= 1e3) return Math.round(bits / 1e3) + " Kbps"
+        return Math.round(bits) + " bps"
+    }
+
+    function formatFrequency(mhz) {
+        const value = Number(mhz) || 0
+        if (value <= 0)
+            return "—"
+        return value >= 1000 ? (value / 1000).toFixed(2) + " GHz" : Math.round(value) + " MHz"
+    }
+
     function formatUptime(seconds) {
         const total = Math.max(0, Math.floor(Number(seconds) || 0))
         const days = Math.floor(total / 86400)
         const hours = Math.floor((total % 86400) / 3600)
         const minutes = Math.floor((total % 3600) / 60)
-        if (days > 0)
-            return MeoI18n.translator.i18n("%1d %2h", days, hours)
-        if (hours > 0)
-            return MeoI18n.translator.i18n("%1h %2m", hours, minutes)
-        return MeoI18n.translator.i18n("%1m", minutes)
+        const secs = total % 60
+        const clock = String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0")
+                      + ":" + String(secs).padStart(2, "0")
+        return days > 0 ? MeoI18n.translator.i18n("%1 d %2", days, clock) : clock
+    }
+
+    function percent(value) {
+        const number = Number(value)
+        return number >= 0 ? number.toFixed(0) + "%" : "—"
     }
 
     function profileLabel(profile) {
@@ -51,1187 +77,767 @@ Item {
         return "balance"
     }
 
-    function gpuDetail() {
-        const parts = []
-        if (MeoSystem.Performance.gpuTemperature > 0)
-            parts.push(Math.round(MeoSystem.Performance.gpuTemperature) + "°C")
-        if (MeoSystem.Performance.gpuMemoryTotalBytes > 0) {
-            parts.push(MeoI18n.translator.i18n("VRAM %1 / %2", formatBytes(MeoSystem.Performance.gpuMemoryUsedBytes), formatBytes(MeoSystem.Performance.gpuMemoryTotalBytes)))
-        }
-        return parts.join(" · ")
+    function historySpan(history) {
+        const samples = (history || []).length
+        const seconds = Math.round(samples * MeoSystem.Performance.refreshInterval / 1000)
+        return seconds > 0 ? MeoI18n.translator.i18n("%1 seconds", seconds) : ""
     }
 
-    QQC2.ScrollView {
-        id: scroll
-        anchors.fill: parent
-        clip: true
-        contentWidth: availableWidth
+    function networkKindLabel(network) {
+        if (network.kind === "wifi") return MeoI18n.translator.i18n("Wi-Fi")
+        if (network.kind === "virtual") return MeoI18n.translator.i18n("Virtual")
+        return MeoI18n.translator.i18n("Ethernet")
+    }
 
+    // One entry per resource, rebuilt from live telemetry.
+    readonly property var resources: {
+        const rows = [{
+            "key": "cpu", "kind": "cpu", "title": "CPU",
+            "line": root.percent(MeoSystem.Performance.cpuUsage) + "  "
+                    + root.formatFrequency(MeoSystem.Performance.cpuFrequencyMHz),
+            "history": MeoSystem.Performance.cpuHistory, "secondary": [],
+            "maximum": 100, "color": MeoTheme.primary
+        }, {
+            "key": "memory", "kind": "memory", "title": MeoI18n.translator.i18n("Memory"),
+            "line": root.formatBytes(MeoSystem.Performance.memoryUsedBytes) + " / "
+                    + root.formatBytes(MeoSystem.Performance.memoryTotalBytes)
+                    + " (" + root.percent(MeoSystem.Performance.memoryUsage) + ")",
+            "history": MeoSystem.Performance.memoryHistory, "secondary": [],
+            "maximum": 100, "color": MeoTheme.secondary
+        }]
+        const disks = MeoSystem.Performance.disks
+        for (let index = 0; index < disks.length; ++index) {
+            const disk = disks[index]
+            rows.push({
+                "key": "disk:" + (disk.name || index), "kind": "disk", "data": disk,
+                "title": MeoI18n.translator.i18n("Disk %1 (%2)", index, disk.name || "?"),
+                "line": (disk.type || "") + (disk.type ? "  " : "") + root.percent(disk.usage),
+                "history": disk.readHistory || [], "secondary": disk.writeHistory || [],
+                "maximum": 0, "color": MeoTheme.tertiary
+            })
+        }
+        const networks = MeoSystem.Performance.networkInterfaces
+        for (let index = 0; index < networks.length; ++index) {
+            const network = networks[index]
+            rows.push({
+                "key": "net:" + network.name, "kind": "network", "data": network,
+                "title": root.networkKindLabel(network),
+                "subtitle": network.name,
+                "line": network.up
+                        ? MeoI18n.translator.i18n("S: %1  R: %2", root.formatBits(network.txBytesPerSecond),
+                                                  root.formatBits(network.rxBytesPerSecond))
+                        : MeoI18n.translator.i18n("Not connected"),
+                "history": network.rxHistory || [], "secondary": network.txHistory || [],
+                "maximum": 0, "color": MeoTheme.primary
+            })
+        }
+        const gpus = MeoSystem.Performance.gpus
+        for (let index = 0; index < gpus.length; ++index) {
+            const gpu = gpus[index]
+            rows.push({
+                "key": "gpu:" + index, "kind": "gpu", "data": gpu,
+                "title": MeoI18n.translator.i18n("GPU %1", index),
+                "subtitle": gpu.name,
+                "line": root.percent(gpu.usage)
+                        + (gpu.temperature > 0 ? "  (" + Math.round(gpu.temperature) + " °C)" : ""),
+                "history": gpu.history || [], "secondary": [],
+                "maximum": 100, "color": MeoTheme.tertiary
+            })
+        }
+        return rows
+    }
+
+    readonly property var selected: {
+        for (let index = 0; index < resources.length; ++index)
+            if (resources[index].key === selectedKey)
+                return resources[index]
+        return resources[0]
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: MeoTheme.space12
+
+        PopupInlineMessage {
+            Layout.fillWidth: true
+            visible: MeoSystem.Platform.lastError !== ""
+            text: MeoSystem.Platform.lastError
+            dismissible: true
+            onDismissed: MeoSystem.Platform.clearError()
+        }
+
+        PopupInlineMessage {
+            Layout.fillWidth: true
+            visible: MeoSystem.Platform.powerProfileDegradedReason !== ""
+            text: MeoSystem.Platform.powerProfileDegradedReason
+            tone: "warning"
+        }
+
+        // Power mode, like the Windows power-mode control. A Flow wraps on
+        // narrow windows instead of forcing the page wider.
+        Flow {
+            Layout.fillWidth: true
+            visible: MeoSystem.Platform.powerProfilesAvailable
+            spacing: MeoTheme.space8
+
+            MeoText {
+                topPadding: MeoTheme.space4
+                text: MeoI18n.translator.i18n("Performance mode")
+                typeRole: "label"
+                typeSize: "large"
+                color: MeoTheme.contentOnSurfaceVariant
+            }
+
+            Repeater {
+                model: MeoSystem.Platform.powerProfiles
+                delegate: MeoButton {
+                    required property string modelData
+                    text: root.profileLabel(modelData)
+                    icon.name: root.profileIcon(modelData)
+                    size: "xs"
+                    type: MeoSystem.Platform.activePowerProfile === modelData ? "tonal" : "text"
+                    onClicked: MeoSystem.Platform.activePowerProfile = modelData
+                }
+            }
+        }
+
+        GridLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            columns: root.wide ? 2 : 1
+            columnSpacing: MeoTheme.space12
+            rowSpacing: MeoTheme.space12
+
+            // Resource list.
+            QQC2.ScrollView {
+                id: listScroll
+                // In the narrow layout the strip scrolls sideways; it must not
+                // widen the column (and with it the detail pane).
+                Layout.preferredWidth: root.wide ? 260 * root.scaleFactor : 0
+                Layout.fillWidth: !root.wide
+                Layout.fillHeight: root.wide
+                Layout.preferredHeight: root.wide ? -1 : 76 * root.scaleFactor
+                clip: true
+                contentWidth: root.wide ? availableWidth : resourceFlow.implicitWidth
+                QQC2.ScrollBar.horizontal.policy: root.wide ? QQC2.ScrollBar.AlwaysOff : QQC2.ScrollBar.AsNeeded
+
+                GridLayout {
+                    id: resourceFlow
+                    width: root.wide ? listScroll.availableWidth : implicitWidth
+                    columns: root.wide ? 1 : Math.max(1, root.resources.length)
+                    rowSpacing: MeoTheme.space4
+                    columnSpacing: MeoTheme.space8
+
+                    Repeater {
+                        model: root.resources
+                        delegate: ResourceEntry {
+                            required property var modelData
+                            Layout.fillWidth: root.wide
+                            Layout.preferredWidth: root.wide ? -1 : 220 * root.scaleFactor
+                            resource: modelData
+                            selected: modelData.key === root.selected.key
+                            onClicked: root.selectedKey = modelData.key
+                        }
+                    }
+                }
+            }
+
+            // Detail pane.
+            QQC2.ScrollView {
+                id: detailScroll
+                Layout.fillWidth: true
+                Layout.preferredWidth: 0
+                Layout.fillHeight: true
+                clip: true
+                contentWidth: availableWidth
+
+                Loader {
+                    width: detailScroll.availableWidth
+                    sourceComponent: root.selected.kind === "memory" ? memoryDetail
+                                     : root.selected.kind === "disk" ? diskDetail
+                                     : root.selected.kind === "network" ? networkDetail
+                                     : root.selected.kind === "gpu" ? gpuDetail
+                                     : cpuDetail
+                }
+            }
+        }
+    }
+
+    // ── CPU ─────────────────────────────────────────────────────────────
+    Component {
+        id: cpuDetail
         ColumnLayout {
-            width: scroll.availableWidth
             spacing: MeoTheme.space12
 
-            PopupInlineMessage {
-                Layout.fillWidth: true
-                visible: MeoSystem.Platform.lastError !== ""
-                text: MeoSystem.Platform.lastError
-                dismissible: true
-                onDismissed: MeoSystem.Platform.clearError()
-            }
-
-            PopupInlineMessage {
-                Layout.fillWidth: true
-                visible: MeoSystem.Platform.powerProfileDegradedReason !== ""
-                text: MeoSystem.Platform.powerProfileDegradedReason
-                tone: "warning"
-            }
-
-            MeoCard {
-                Layout.fillWidth: true
-                type: "filled"
-                radius: MeoTheme.shapeExtraLarge
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: MeoTheme.space16
-                    spacing: MeoTheme.space16
-
-                    Rectangle {
-                        width: 56 * root.scaleFactor
-                        height: width
-                        radius: 20 * root.scaleFactor
-                        color: MeoTheme.primaryContainer
-
-                        MeoIcon {
-                            anchors.centerIn: parent
-                            icon: "monitoring"
-                            size: 30
-                            fill: true
-                            color: MeoTheme.contentOnPrimaryContainer
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        MeoText {
-                            text: MeoI18n.translator.i18n("Live performance")
-                            typeRole: "title"
-                            typeSize: "medium"
-                            emphasized: true
-                        }
-
-                        MeoText {
-                            Layout.fillWidth: true
-                            text: MeoSystem.Performance.systemSummary
-                                  + " · " + MeoI18n.translator.i18n("Uptime %1", root.formatUptime(MeoSystem.Performance.uptimeSeconds))
-                            typeRole: "body"
-                            typeSize: "small"
-                            color: MeoTheme.contentOnSurfaceVariant
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    MeoChip {
-                        visible: MeoSystem.Platform.powerProfilesAvailable
-                                 && root.width >= 600 * root.scaleFactor
-                        label: root.profileLabel(MeoSystem.Platform.activePowerProfile)
-                        leadingIcon: root.profileIcon(MeoSystem.Platform.activePowerProfile)
-                        type: "assist"
-                        shape: "pill"
-                        elevated: true
-                    }
-                }
-            }
-
-            MeoCard {
-                Layout.fillWidth: true
-                visible: MeoSystem.Platform.powerProfilesAvailable
-                type: "filled"
-                radius: MeoTheme.shapeLargeIncreased
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: MeoTheme.space12
-                    spacing: MeoTheme.space8
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        MeoIcon { icon: "speed"; size: 20; color: MeoTheme.primary }
-                        MeoText {
-                            Layout.fillWidth: true
-                            text: MeoI18n.translator.i18n("Performance mode")
-                            typeRole: "title"
-                            typeSize: "small"
-                            emphasized: true
-                        }
-
-                        MeoText {
-                            text: MeoI18n.translator.i18n("Sampling")
-                            typeRole: "label"
-                            typeSize: "small"
-                            color: MeoTheme.contentOnSurfaceVariant
-                        }
-
-                        Repeater {
-                            model: [1000, 2000, 5000]
-                            delegate: MeoChip {
-                                required property int modelData
-                                label: (modelData / 1000) + "s"
-                                type: "assist"
-                                shape: "pill"
-                                selected: MeoSystem.Performance.refreshInterval === modelData
-                                elevated: selected
-                                onClicked: {
-                                    MeoSystem.Performance.refreshInterval = modelData
-                                    MeoSystem.Tasks.refreshInterval = modelData
-                                }
-                            }
-                        }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: MeoTheme.space8
-
-                        Repeater {
-                            model: MeoSystem.Platform.powerProfiles
-                            delegate: MeoButton {
-                                required property string modelData
-                                Layout.fillWidth: true
-                                text: root.profileLabel(modelData)
-                                icon.name: root.profileIcon(modelData)
-                                size: "s"
-                                type: MeoSystem.Platform.activePowerProfile === modelData ? "tonal" : "outlined"
-                                onClicked: MeoSystem.Platform.activePowerProfile = modelData
-                            }
-                        }
-                    }
-                }
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                columns: width >= 760 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space12
-                columnSpacing: MeoTheme.space12
-
-                MetricCard {
-                    Layout.fillWidth: true
-                    title: "CPU"
-                    iconName: "memory"
-                    valueText: MeoSystem.Performance.cpuUsage.toFixed(1) + "%"
-                    subtitle: MeoSystem.Performance.cpuModel
-                    detail: (MeoSystem.Performance.cpuFrequencyMHz > 0
-                             ? Math.round(MeoSystem.Performance.cpuFrequencyMHz) + " MHz"
-                             : "") + (MeoSystem.Performance.cpuTemperature > 0
-                                      ? " · " + Math.round(MeoSystem.Performance.cpuTemperature) + "°C"
-                                      : "")
-                    progressValue: MeoSystem.Performance.cpuUsage
-                    history: MeoSystem.Performance.cpuHistory
-                    accentColor: MeoTheme.primary
-                }
-
-                MetricCard {
-                    Layout.fillWidth: true
-                    title: MeoI18n.translator.i18n("Memory")
-                    iconName: "memory_alt"
-                    valueText: MeoSystem.Performance.memoryUsage.toFixed(1) + "%"
-                    subtitle: root.formatBytes(MeoSystem.Performance.memoryUsedBytes)
-                              + " / " + root.formatBytes(MeoSystem.Performance.memoryTotalBytes)
-                    detail: MeoSystem.Performance.swapTotalBytes > 0
-                            ? MeoI18n.translator.i18n("Swap %1", root.formatBytes(MeoSystem.Performance.swapUsedBytes))
-                            : ""
-                    progressValue: MeoSystem.Performance.memoryUsage
-                    history: MeoSystem.Performance.memoryHistory
-                    accentColor: MeoTheme.secondary
-                }
-
-                MetricCard {
-                    Layout.fillWidth: true
-                    title: MeoI18n.translator.i18n("Storage")
-                    iconName: "hard_drive"
-                    valueText: MeoSystem.Performance.storageUsage.toFixed(0) + "%"
-                    subtitle: root.formatBytes(MeoSystem.Performance.storageUsedBytes)
-                              + " / " + root.formatBytes(MeoSystem.Performance.storageTotalBytes)
-                    detail: "R " + root.formatRate(MeoSystem.Performance.diskReadBytesPerSecond)
-                            + " · W " + root.formatRate(MeoSystem.Performance.diskWriteBytesPerSecond)
-                    progressValue: MeoSystem.Performance.storageUsage
-                    history: MeoSystem.Performance.diskReadHistory
-                    secondaryHistory: MeoSystem.Performance.diskWriteHistory
-                    accentColor: MeoTheme.secondary
-                    secondaryAccentColor: MeoTheme.tertiary
-                }
-
-                MetricCard {
-                    Layout.fillWidth: true
-                    title: MeoI18n.translator.i18n("Network")
-                    iconName: "swap_horiz"
-                    valueText: "↓ " + root.formatRate(MeoSystem.Performance.networkRxBytesPerSecond)
-                    subtitle: "↑ " + root.formatRate(MeoSystem.Performance.networkTxBytesPerSecond)
-                    detail: MeoI18n.translator.i18n("System total")
-                    history: MeoSystem.Performance.networkRxHistory
-                    secondaryHistory: MeoSystem.Performance.networkTxHistory
-                    progressValue: -1
-                    accentColor: MeoTheme.primary
-                    secondaryAccentColor: MeoTheme.tertiary
-                }
-            }
-
-            MeoCard {
-                Layout.fillWidth: true
-                type: "filled"
-                radius: MeoTheme.shapeLargeIncreased
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: MeoTheme.space12
-                    spacing: MeoTheme.space12
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Rectangle {
-                            width: 40 * root.scaleFactor
-                            height: width
-                            radius: 14 * root.scaleFactor
-                            color: MeoTheme.primaryContainer
-
-                            MeoIcon {
-                                anchors.centerIn: parent
-                                icon: "memory"
-                                size: 22
-                                fill: true
-                                color: MeoTheme.contentOnPrimaryContainer
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 0
-
-                            MeoText {
-                                text: MeoI18n.translator.i18n("CPU details")
-                                typeRole: "title"
-                                typeSize: "small"
-                                emphasized: true
-                            }
-
-                            MeoText {
-                                Layout.fillWidth: true
-                                text: MeoSystem.Performance.cpuModel
-                                typeRole: "body"
-                                typeSize: "small"
-                                color: MeoTheme.contentOnSurfaceVariant
-                                elide: Text.ElideRight
-                            }
-                        }
-
-                        MeoChip {
-                            visible: MeoSystem.Performance.cpuVirtualizationSupported
-                            label: MeoI18n.translator.i18n("Virtualization")
-                            leadingIcon: "developer_mode"
-                            type: "assist"
-                            shape: "pill"
-                            elevated: true
-                        }
-                    }
-
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: width >= 720 * root.scaleFactor ? 5 : 2
-                        rowSpacing: MeoTheme.space8
-                        columnSpacing: MeoTheme.space8
-
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Architecture")
-                            value: MeoSystem.Performance.cpuArchitecture || "—"
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Cores")
-                            value: String(MeoSystem.Performance.physicalCores)
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Logical")
-                            value: String(MeoSystem.Performance.logicalCores)
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Sockets")
-                            value: String(MeoSystem.Performance.cpuSockets)
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Max speed")
-                            value: MeoSystem.Performance.cpuMaxFrequencyMHz > 0
-                                   ? (MeoSystem.Performance.cpuMaxFrequencyMHz >= 1000
-                                      ? (MeoSystem.Performance.cpuMaxFrequencyMHz / 1000).toFixed(2) + " GHz"
-                                      : Math.round(MeoSystem.Performance.cpuMaxFrequencyMHz) + " MHz")
-                                   : "—"
-                        }
-                    }
-
-                    Flow {
-                        Layout.fillWidth: true
-                        visible: MeoSystem.Performance.cpuCaches.length > 0
-                        spacing: MeoTheme.space8
-
-                        Repeater {
-                            model: MeoSystem.Performance.cpuCaches
-
-                            delegate: MeoChip {
-                                required property var modelData
-                                label: (modelData.label || "Cache")
-                                       + " " + root.formatBytes(modelData.sizeBytes)
-                                leadingIcon: "memory"
-                                type: "assist"
-                                shape: "pill"
-                                visualStyle: "outlined"
-                            }
-                        }
-                    }
-                }
-            }
-
-            MeoCard {
-                Layout.fillWidth: true
-                type: "filled"
-                radius: MeoTheme.shapeLargeIncreased
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: MeoTheme.space12
-                    spacing: MeoTheme.space12
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Rectangle {
-                            width: 40 * root.scaleFactor
-                            height: width
-                            radius: 14 * root.scaleFactor
-                            color: MeoTheme.secondaryContainer
-
-                            MeoIcon {
-                                anchors.centerIn: parent
-                                icon: "memory_alt"
-                                size: 22
-                                fill: true
-                                color: MeoTheme.contentOnSecondaryContainer
-                            }
-                        }
-
-                        MeoText {
-                            Layout.fillWidth: true
-                            text: MeoI18n.translator.i18n("Memory details")
-                            typeRole: "title"
-                            typeSize: "small"
-                            emphasized: true
-                        }
-
-                        MeoChip {
-                            visible: MeoSystem.Performance.swapTotalBytes > 0
-                            label: MeoI18n.translator.i18n("Swap %1 / %2", root.formatBytes(MeoSystem.Performance.swapUsedBytes), root.formatBytes(MeoSystem.Performance.swapTotalBytes))
-                            leadingIcon: "swap_vert"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                        }
-                    }
-
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: width >= 720 * root.scaleFactor ? 4 : 2
-                        rowSpacing: MeoTheme.space8
-                        columnSpacing: MeoTheme.space8
-
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Available")
-                            value: root.formatBytes(MeoSystem.Performance.memoryAvailableBytes)
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Cached")
-                            value: root.formatBytes(MeoSystem.Performance.memoryCachedBytes)
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Buffers")
-                            value: root.formatBytes(MeoSystem.Performance.memoryBuffersBytes)
-                        }
-                        HardwareStat {
-                            label: MeoI18n.translator.i18n("Shared")
-                            value: root.formatBytes(MeoSystem.Performance.memorySharedBytes)
-                        }
-                    }
-                }
-            }
-
-            MeoCard {
-                Layout.fillWidth: true
-                visible: !!MeoSystem.Performance.pressure.available
-                type: "filled"
-                radius: MeoTheme.shapeLargeIncreased
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: MeoTheme.space12
-                    spacing: MeoTheme.space8
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Rectangle {
-                            width: 40 * root.scaleFactor
-                            height: width
-                            radius: 14 * root.scaleFactor
-                            color: MeoTheme.tertiaryContainer
-
-                            MeoIcon {
-                                anchors.centerIn: parent
-                                icon: "waves"
-                                size: 22
-                                fill: true
-                                color: MeoTheme.contentOnTertiaryContainer
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 0
-
-                            MeoText {
-                                text: MeoI18n.translator.i18n("System pressure")
-                                typeRole: "title"
-                                typeSize: "small"
-                                emphasized: true
-                            }
-
-                            MeoText {
-                                Layout.fillWidth: true
-                                text: MeoI18n.translator.i18n("Linux PSI · average stall time over the last 10 seconds")
-                                typeRole: "body"
-                                typeSize: "small"
-                                color: MeoTheme.contentOnSurfaceVariant
-                                elide: Text.ElideRight
-                            }
-                        }
-                    }
-
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: MeoTheme.space8
-
-                        MeoChip {
-                            label: MeoI18n.translator.i18n("CPU waiting %1%", Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0).toFixed(1))
-                            leadingIcon: "memory"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                            elevated: Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0) >= 5
-                        }
-
-                        MeoChip {
-                            label: MeoI18n.translator.i18n("Memory waiting %1%", Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0).toFixed(1))
-                            leadingIcon: "memory_alt"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                            elevated: Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0) >= 5
-                        }
-
-                        MeoChip {
-                            label: MeoI18n.translator.i18n("Memory fully stalled %1%", Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0).toFixed(1))
-                            leadingIcon: "warning"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                            elevated: Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0) >= 1
-                        }
-
-                        MeoChip {
-                            label: MeoI18n.translator.i18n("I/O waiting %1%", Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0).toFixed(1))
-                            leadingIcon: "hard_drive"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                            elevated: Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0) >= 5
-                        }
-
-                        MeoChip {
-                            label: MeoI18n.translator.i18n("I/O fully stalled %1%", Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0).toFixed(1))
-                            leadingIcon: "hourglass_top"
-                            type: "assist"
-                            shape: "pill"
-                            visualStyle: "outlined"
-                            elevated: Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0) >= 1
-                        }
-                    }
-                }
-            }
-
-            PopupSectionLabel {
-                sectionText: MeoI18n.translator.i18n("Storage devices")
-            }
-
-            PopupEmptyState {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 150 * root.scaleFactor
-                visible: MeoSystem.Performance.disks.length === 0
-                iconName: "hard_drive"
-                title: MeoI18n.translator.i18n("No disk telemetry")
-                description: MeoI18n.translator.i18n("Physical block-device activity will appear here when available.")
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                visible: MeoSystem.Performance.disks.length > 0
-                columns: width >= 760 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space12
-                columnSpacing: MeoTheme.space12
-
-                Repeater {
-                    model: MeoSystem.Performance.disks
-
-                    delegate: DiskTile {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        disk: modelData
-                    }
-                }
-            }
-
-            PopupSectionLabel {
-                sectionText: MeoI18n.translator.i18n("Network interfaces")
-            }
-
-            PopupEmptyState {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 150 * root.scaleFactor
-                visible: MeoSystem.Performance.networkInterfaces.length === 0
-                iconName: "lan"
-                title: MeoI18n.translator.i18n("No network telemetry")
-                description: MeoI18n.translator.i18n("Active network interfaces will appear here.")
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                visible: MeoSystem.Performance.networkInterfaces.length > 0
-                columns: width >= 760 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space12
-                columnSpacing: MeoTheme.space12
-
-                Repeater {
-                    model: MeoSystem.Performance.networkInterfaces
-
-                    delegate: NetworkTile {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        network: modelData
-                    }
-                }
-            }
-
-            PopupSectionLabel {
-                sectionText: MeoI18n.translator.i18n("CPU cores")
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                columns: width >= 900 * root.scaleFactor ? 4
-                         : width >= 620 * root.scaleFactor ? 3
-                         : width >= 400 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space8
-                columnSpacing: MeoTheme.space8
-
-                Repeater {
-                    model: MeoSystem.Performance.cpuCores
-
-                    delegate: CoreTile {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        core: modelData
-                    }
-                }
-            }
-
-            PopupSectionLabel {
-                sectionText: MeoI18n.translator.i18n("Graphics")
-            }
-
-            PopupEmptyState {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 180 * root.scaleFactor
-                visible: MeoSystem.Performance.gpus.length === 0
-                iconName: "developer_board"
-                title: MeoI18n.translator.i18n("No GPU telemetry")
-                description: MeoI18n.translator.i18n("The graphics driver does not expose supported telemetry.")
-            }
-
-            GridLayout {
-                Layout.fillWidth: true
-                visible: MeoSystem.Performance.gpus.length > 0
-                columns: width >= 760 * root.scaleFactor ? 2 : 1
-                rowSpacing: MeoTheme.space12
-                columnSpacing: MeoTheme.space12
-
-                Repeater {
-                    model: MeoSystem.Performance.gpus
-
-                    delegate: GpuTile {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        gpu: modelData
-                    }
-                }
-            }
-
-            MeoCard {
-                Layout.fillWidth: true
-                type: "filled"
-                radius: MeoTheme.shapeLargeIncreased
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: MeoTheme.space12
-                    spacing: MeoTheme.space12
-
-                    MeoIcon {
-                        icon: "monitor_heart"
-                        size: 24
-                        color: MeoTheme.tertiary
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        MeoText {
-                            text: MeoI18n.translator.i18n("System load")
-                            typeRole: "title"
-                            typeSize: "small"
-                            emphasized: true
-                        }
-
-                        MeoText {
-                            text: MeoI18n.translator.i18n("%1 processes · %2 logical CPUs", MeoSystem.Performance.processCount, MeoSystem.Performance.logicalCores)
-                            typeRole: "body"
-                            typeSize: "small"
-                            color: MeoTheme.contentOnSurfaceVariant
-                        }
-                    }
-
-                    MeoChip {
-                        label: MeoSystem.Performance.loadAverage1.toFixed(2)
-                               + " · " + MeoSystem.Performance.loadAverage5.toFixed(2)
-                               + " · " + MeoSystem.Performance.loadAverage15.toFixed(2)
-                        leadingIcon: "timeline"
-                        type: "assist"
-                        shape: "pill"
-                        elevated: true
-                    }
-                }
-            }
-
-            Item { Layout.fillWidth: true; Layout.preferredHeight: MeoTheme.space8 }
-        }
-    }
-
-    component CoreTile: MeoCard {
-        id: coreTile
-        property var core: ({})
-
-        implicitHeight: 132 * root.scaleFactor
-        type: "filled"
-        radius: MeoTheme.shapeLarge
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space12
-            spacing: MeoTheme.space8
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                MeoText {
-                    Layout.fillWidth: true
-                    text: coreTile.core.label || ("CPU " + coreTile.core.index)
-                    typeRole: "label"
-                    typeSize: "large"
-                    emphasized: true
-                }
-
-                MeoText {
-                    text: Number(coreTile.core.usage || 0).toFixed(0) + "%"
-                    typeRole: "title"
-                    typeSize: "small"
-                    emphasized: true
-                }
-            }
-
-            PerformanceGraph {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 38 * root.scaleFactor
-                values: coreTile.core.history || []
-                primaryColor: MeoTheme.primary
-                maximum: 100
+            DetailHeader {
+                title: "CPU"
+                subtitle: MeoSystem.Performance.cpuModel
             }
 
             RowLayout {
                 Layout.fillWidth: true
-                MeoProgressBar {
-                    Layout.fillWidth: true
-                    value: Math.max(0, Math.min(100, Number(coreTile.core.usage || 0))) / 100
-                    wavy: true
-                }
-
+                spacing: MeoTheme.space8
                 MeoText {
-                    visible: Number(coreTile.core.frequencyMHz || 0) > 0
-                    text: Math.round(Number(coreTile.core.frequencyMHz || 0)) + " MHz"
-                    typeRole: "label"
-                    typeSize: "small"
+                    Layout.fillWidth: true
+                    text: root.cpuShowsLogicalProcessors
+                          ? MeoI18n.translator.i18n("Utilization per logical processor")
+                          : MeoI18n.translator.i18n("% Utilization over %1", root.historySpan(MeoSystem.Performance.cpuHistory))
+                    typeRole: "label"; typeSize: "medium"
                     color: MeoTheme.contentOnSurfaceVariant
                 }
+                MeoChip {
+                    label: MeoI18n.translator.i18n("Overall")
+                    type: "filter"
+                    selected: !root.cpuShowsLogicalProcessors
+                    onClicked: root.cpuShowsLogicalProcessors = false
+                }
+                MeoChip {
+                    label: MeoI18n.translator.i18n("Logical processors")
+                    type: "filter"
+                    selected: root.cpuShowsLogicalProcessors
+                    onClicked: root.cpuShowsLogicalProcessors = true
+                }
+            }
+
+            BigGraph {
+                visible: !root.cpuShowsLogicalProcessors
+                values: MeoSystem.Performance.cpuHistory
+                maximum: 100
+                color: MeoTheme.primary
+                topRightLabel: "100%"
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                visible: root.cpuShowsLogicalProcessors
+                columns: Math.max(2, Math.min(8, Math.floor(width / (110 * root.scaleFactor))))
+                rowSpacing: MeoTheme.space4
+                columnSpacing: MeoTheme.space4
+
+                Repeater {
+                    model: root.cpuShowsLogicalProcessors ? MeoSystem.Performance.cpuCores : []
+                    delegate: MeoCard {
+                        id: coreCell
+                        required property var modelData
+                        Layout.fillWidth: true
+                        implicitHeight: 78 * root.scaleFactor
+                        type: "outlined"
+                        radius: MeoTheme.shapeSmall
+                        padding: MeoTheme.space4
+                        ColumnLayout {
+                            anchors.fill: parent
+                            spacing: 2 * root.scaleFactor
+                            MeoText {
+                                text: (coreCell.modelData.label || ("CPU " + coreCell.modelData.index))
+                                      + " · " + Number(coreCell.modelData.usage || 0).toFixed(0) + "%"
+                                typeRole: "label"; typeSize: "small"
+                                color: MeoTheme.contentOnSurfaceVariant
+                            }
+                            PerformanceGraph {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                values: coreCell.modelData.history || []
+                                primaryColor: MeoTheme.primary
+                                maximum: 100
+                            }
+                            MeoProgressBar {
+                                Layout.fillWidth: true
+                                value: Math.max(0, Math.min(100, Number(coreCell.modelData.usage || 0))) / 100
+                                wavy: true
+                            }
+                        }
+                    }
+                }
+            }
+
+            StatGrid {
+                primaryStats: [
+                    { "label": MeoI18n.translator.i18n("Utilization"), "value": root.percent(MeoSystem.Performance.cpuUsage) },
+                    { "label": MeoI18n.translator.i18n("Speed"), "value": root.formatFrequency(MeoSystem.Performance.cpuFrequencyMHz) },
+                    { "label": MeoI18n.translator.i18n("Processes"), "value": String(MeoSystem.Performance.processCount) },
+                    { "label": MeoI18n.translator.i18n("Up time"), "value": root.formatUptime(MeoSystem.Performance.uptimeSeconds) },
+                    { "label": MeoI18n.translator.i18n("Load average"), "value": MeoSystem.Performance.loadAverage1.toFixed(2)
+                              + " · " + MeoSystem.Performance.loadAverage5.toFixed(2)
+                              + " · " + MeoSystem.Performance.loadAverage15.toFixed(2) },
+                    { "label": MeoI18n.translator.i18n("Temperature"), "value": MeoSystem.Performance.cpuTemperature > 0
+                              ? Math.round(MeoSystem.Performance.cpuTemperature) + " °C" : "—" }
+                ]
+                secondaryStats: {
+                    const rows = [
+                        { "label": MeoI18n.translator.i18n("Maximum speed"), "value": root.formatFrequency(MeoSystem.Performance.cpuMaxFrequencyMHz) },
+                        { "label": MeoI18n.translator.i18n("Sockets"), "value": String(MeoSystem.Performance.cpuSockets) },
+                        { "label": MeoI18n.translator.i18n("Cores"), "value": String(MeoSystem.Performance.physicalCores) },
+                        { "label": MeoI18n.translator.i18n("Logical processors"), "value": String(MeoSystem.Performance.logicalCores) },
+                        { "label": MeoI18n.translator.i18n("Architecture"), "value": MeoSystem.Performance.cpuArchitecture || "—" },
+                        { "label": MeoI18n.translator.i18n("Virtualization"), "value": MeoSystem.Performance.cpuVirtualizationSupported
+                                  ? MeoI18n.translator.i18n("Supported") : MeoI18n.translator.i18n("Not detected") }
+                    ]
+                    const caches = MeoSystem.Performance.cpuCaches
+                    for (let index = 0; index < caches.length; ++index)
+                        rows.push({ "label": MeoI18n.translator.i18n("%1 cache", caches[index].label || "L?"),
+                                    "value": root.formatBytes(caches[index].sizeBytes) })
+                    return rows
+                }
+            }
+
+            PressureNote {
+                text: MeoI18n.translator.i18n("CPU waiting %1% (Linux PSI, last 10 s)",
+                                              Number(MeoSystem.Performance.pressure.cpuSomeAvg10 || 0).toFixed(1))
             }
         }
     }
 
-    component HardwareStat: MeoCard {
-        id: hardwareStat
-        property string label: ""
-        property string value: ""
-
-        Layout.fillWidth: true
-        implicitHeight: 74 * root.scaleFactor
-        type: "outlined"
-        radius: MeoTheme.shapeMedium
-
+    // ── Memory ──────────────────────────────────────────────────────────
+    Component {
+        id: memoryDetail
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space8
-            spacing: 0
+            id: memoryColumn
+            spacing: MeoTheme.space12
 
-            MeoText {
-                text: hardwareStat.value
-                typeRole: "title"
-                typeSize: "small"
-                emphasized: true
+            readonly property real total: Math.max(1, MeoSystem.Performance.memoryTotalBytes)
+            readonly property real used: MeoSystem.Performance.memoryUsedBytes
+            readonly property real cached: MeoSystem.Performance.memoryCachedBytes + MeoSystem.Performance.memoryBuffersBytes
+            readonly property real free: Math.max(0, total - used - cached)
+
+            DetailHeader {
+                title: MeoI18n.translator.i18n("Memory")
+                subtitle: root.formatBytes(MeoSystem.Performance.memoryTotalBytes)
             }
 
             MeoText {
-                text: hardwareStat.label
-                typeRole: "label"
-                typeSize: "small"
+                text: MeoI18n.translator.i18n("Memory usage over %1", root.historySpan(MeoSystem.Performance.memoryHistory))
+                typeRole: "label"; typeSize: "medium"
                 color: MeoTheme.contentOnSurfaceVariant
             }
-        }
-    }
 
-    component DiskTile: MeoCard {
-        id: diskTile
-        property var disk: ({})
+            BigGraph {
+                values: MeoSystem.Performance.memoryHistory
+                maximum: 100
+                color: MeoTheme.secondary
+                topRightLabel: root.formatBytes(MeoSystem.Performance.memoryTotalBytes)
+            }
 
-        implicitHeight: 240 * root.scaleFactor
-        type: "filled"
-        radius: MeoTheme.shapeLargeIncreased
+            MeoText {
+                text: MeoI18n.translator.i18n("Memory composition")
+                typeRole: "label"; typeSize: "medium"
+                color: MeoTheme.contentOnSurfaceVariant
+            }
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space12
-            spacing: MeoTheme.space8
-
-            RowLayout {
+            Row {
+                id: composition
                 Layout.fillWidth: true
-                spacing: MeoTheme.space8
-
-                Rectangle {
-                    width: 40 * root.scaleFactor
-                    height: width
-                    radius: 14 * root.scaleFactor
-                    color: MeoTheme.secondaryContainer
-
-                    MeoIcon {
-                        anchors.centerIn: parent
-                        icon: "hard_drive"
-                        size: 22
-                        fill: true
-                        color: MeoTheme.contentOnSecondaryContainer
+                height: 28 * root.scaleFactor
+                spacing: 2 * root.scaleFactor
+                Repeater {
+                    model: [
+                        { "bytes": memoryColumn.used, "color": MeoTheme.secondary,
+                          "label": MeoI18n.translator.i18n("In use") },
+                        { "bytes": memoryColumn.cached, "color": MeoTheme.secondaryContainer,
+                          "label": MeoI18n.translator.i18n("Cached") },
+                        { "bytes": memoryColumn.free, "color": MeoTheme.surfaceContainerHighest,
+                          "label": MeoI18n.translator.i18n("Free") }
+                    ]
+                    delegate: MeoShape {
+                        required property var modelData
+                        type: "rect"
+                        strokeWidth: 0
+                        width: Math.max(2 * root.scaleFactor,
+                                        (composition.width - composition.spacing * 2)
+                                        * modelData.bytes / Math.max(1, MeoSystem.Performance.memoryTotalBytes))
+                        height: composition.height
+                        radius: MeoTheme.shapeExtraSmall
+                        color: modelData.color
+                        Accessible.name: modelData.label + " " + root.formatBytes(modelData.bytes)
                     }
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
-
-                    MeoText {
-                        Layout.fillWidth: true
-                        text: diskTile.disk.model || diskTile.disk.name || MeoI18n.translator.i18n("Disk")
-                        typeRole: "title"
-                        typeSize: "small"
-                        emphasized: true
-                        elide: Text.ElideRight
-                    }
-
-                    MeoText {
-                        text: (diskTile.disk.name || "")
-                              + " · " + (diskTile.disk.type || "")
-                              + (Number(diskTile.disk.sizeBytes || 0) > 0
-                                 ? " · " + root.formatBytes(diskTile.disk.sizeBytes) : "")
-                        typeRole: "label"
-                        typeSize: "small"
-                        color: MeoTheme.contentOnSurfaceVariant
-                    }
-                }
-
-                MeoText {
-                    text: Number(diskTile.disk.usage || 0).toFixed(0) + "%"
-                    typeRole: "title"
-                    typeSize: "medium"
-                    emphasized: true
                 }
             }
 
-            PerformanceGraph {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 42 * root.scaleFactor
-                values: diskTile.disk.readHistory || []
-                secondaryValues: diskTile.disk.writeHistory || []
-                primaryColor: MeoTheme.secondary
-                secondaryColor: MeoTheme.tertiary
+            StatGrid {
+                primaryStats: [
+                    { "label": MeoI18n.translator.i18n("In use"), "value": root.formatBytes(MeoSystem.Performance.memoryUsedBytes) },
+                    { "label": MeoI18n.translator.i18n("Available"), "value": root.formatBytes(MeoSystem.Performance.memoryAvailableBytes) },
+                    { "label": MeoI18n.translator.i18n("Cached"), "value": root.formatBytes(MeoSystem.Performance.memoryCachedBytes) },
+                    { "label": MeoI18n.translator.i18n("Buffers"), "value": root.formatBytes(MeoSystem.Performance.memoryBuffersBytes) },
+                    { "label": MeoI18n.translator.i18n("Shared"), "value": root.formatBytes(MeoSystem.Performance.memorySharedBytes) },
+                    { "label": MeoI18n.translator.i18n("Swap"), "value": MeoSystem.Performance.swapTotalBytes > 0
+                              ? root.formatBytes(MeoSystem.Performance.swapUsedBytes) + " / " + root.formatBytes(MeoSystem.Performance.swapTotalBytes)
+                              : MeoI18n.translator.i18n("None") }
+                ]
+                secondaryStats: {
+                    const rows = []
+                    if (MeoSystem.Performance.zramDiskSizeBytes > 0) {
+                        rows.push({ "label": MeoI18n.translator.i18n("ZRAM size"), "value": root.formatBytes(MeoSystem.Performance.zramDiskSizeBytes) })
+                        rows.push({ "label": MeoI18n.translator.i18n("ZRAM stored"), "value": root.formatBytes(MeoSystem.Performance.zramOriginalBytes) })
+                        rows.push({ "label": MeoI18n.translator.i18n("ZRAM compressed"), "value": root.formatBytes(MeoSystem.Performance.zramCompressedBytes) })
+                        rows.push({ "label": MeoI18n.translator.i18n("Compression ratio"), "value": MeoSystem.Performance.zramCompressionRatio > 0
+                                  ? MeoSystem.Performance.zramCompressionRatio.toFixed(2) + "×" : "—" })
+                    }
+                    rows.push({ "label": MeoI18n.translator.i18n("Zswap"), "value": MeoSystem.Performance.zswapEnabled
+                              ? MeoI18n.translator.i18n("On") : MeoI18n.translator.i18n("Off") })
+                    return rows
+                }
+            }
+
+            PressureNote {
+                text: MeoI18n.translator.i18n("Memory waiting %1% · fully stalled %2% (Linux PSI, last 10 s)",
+                                              Number(MeoSystem.Performance.pressure.memorySomeAvg10 || 0).toFixed(1),
+                                              Number(MeoSystem.Performance.pressure.memoryFullAvg10 || 0).toFixed(1))
+            }
+        }
+    }
+
+    // ── Disk ────────────────────────────────────────────────────────────
+    Component {
+        id: diskDetail
+        ColumnLayout {
+            readonly property var disk: root.selected.data || ({})
+            spacing: MeoTheme.space12
+
+            DetailHeader {
+                title: root.selected.title
+                subtitle: (disk.model || disk.name || "") + (Number(disk.sizeBytes || 0) > 0 ? " · " + root.formatBytes(disk.sizeBytes) : "")
+            }
+
+            MeoText {
+                text: MeoI18n.translator.i18n("Transfer rate over %1 · read and write", root.historySpan(disk.readHistory))
+                typeRole: "label"; typeSize: "medium"
+                color: MeoTheme.contentOnSurfaceVariant
+            }
+
+            BigGraph {
+                values: disk.readHistory || []
+                secondaryValues: disk.writeHistory || []
                 maximum: 0
+                color: MeoTheme.tertiary
+                secondaryColor: MeoTheme.secondary
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: MeoTheme.space8
-
-                MeoProgressBar {
-                    Layout.fillWidth: true
-                    value: Math.max(0, Math.min(100, Number(diskTile.disk.usage || 0))) / 100
-                    activeColor: MeoTheme.secondary
-                    wavy: true
-                }
-
-                MeoText {
-                    text: "R " + root.formatRate(diskTile.disk.readBytesPerSecond)
-                          + " · W " + root.formatRate(diskTile.disk.writeBytesPerSecond)
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.contentOnSurfaceVariant
-                }
+            StatGrid {
+                primaryStats: [
+                    { "label": MeoI18n.translator.i18n("Active time"), "value": root.percent(disk.usage) },
+                    { "label": MeoI18n.translator.i18n("Average response time"), "value": Number(disk.averageLatencyMs || 0).toFixed(1) + " ms" },
+                    { "label": MeoI18n.translator.i18n("Read speed"), "value": root.formatRate(disk.readBytesPerSecond) },
+                    { "label": MeoI18n.translator.i18n("Write speed"), "value": root.formatRate(disk.writeBytesPerSecond) },
+                    { "label": MeoI18n.translator.i18n("Read operations"), "value": MeoI18n.translator.i18n("%1 IOPS", Number(disk.readIops || 0).toFixed(0)) },
+                    { "label": MeoI18n.translator.i18n("Write operations"), "value": MeoI18n.translator.i18n("%1 IOPS", Number(disk.writeIops || 0).toFixed(0)) }
+                ]
+                secondaryStats: [
+                    { "label": MeoI18n.translator.i18n("Capacity"), "value": Number(disk.sizeBytes || 0) > 0 ? root.formatBytes(disk.sizeBytes) : "—" },
+                    { "label": MeoI18n.translator.i18n("Type"), "value": disk.type || "—" },
+                    { "label": MeoI18n.translator.i18n("Device"), "value": disk.name || "—" },
+                    { "label": MeoI18n.translator.i18n("Requests in flight"), "value": String(Number(disk.inFlight || 0)) }
+                ]
             }
 
-            Flow {
-                Layout.fillWidth: true
-                spacing: MeoTheme.space8
-
-                MeoChip {
-                    label: MeoI18n.translator.i18n("R %1 IOPS", Number(diskTile.disk.readIops || 0).toFixed(0))
-                    leadingIcon: "south"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
-                }
-
-                MeoChip {
-                    label: MeoI18n.translator.i18n("W %1 IOPS", Number(diskTile.disk.writeIops || 0).toFixed(0))
-                    leadingIcon: "north"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
-                }
-
-                MeoChip {
-                    label: Number(diskTile.disk.averageLatencyMs || 0).toFixed(1) + " ms"
-                    leadingIcon: "timer"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
-                }
-
-                MeoChip {
-                    visible: Number(diskTile.disk.inFlight || 0) > 0
-                    label: MeoI18n.translator.i18n("Queue %1", diskTile.disk.inFlight)
-                    leadingIcon: "format_list_numbered"
-                    type: "assist"
-                    shape: "pill"
-                    elevated: Number(diskTile.disk.inFlight || 0) > 2
-                }
+            PressureNote {
+                text: MeoI18n.translator.i18n("I/O waiting %1% · fully stalled %2% (Linux PSI, last 10 s)",
+                                              Number(MeoSystem.Performance.pressure.ioSomeAvg10 || 0).toFixed(1),
+                                              Number(MeoSystem.Performance.pressure.ioFullAvg10 || 0).toFixed(1))
             }
         }
     }
 
-    component NetworkTile: MeoCard {
-        id: networkTile
-        property var network: ({})
-
-        implicitHeight: 244 * root.scaleFactor
-        type: "filled"
-        radius: MeoTheme.shapeLargeIncreased
-
+    // ── Network ─────────────────────────────────────────────────────────
+    Component {
+        id: networkDetail
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space12
-            spacing: MeoTheme.space8
+            readonly property var network: root.selected.data || ({})
+            spacing: MeoTheme.space12
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: MeoTheme.space8
+            DetailHeader {
+                title: root.networkKindLabel(network)
+                subtitle: network.name || ""
+            }
 
-                Rectangle {
-                    width: 40 * root.scaleFactor
-                    height: width
-                    radius: 14 * root.scaleFactor
-                    color: networkTile.network.up
-                           ? MeoTheme.primaryContainer
-                           : MeoTheme.surfaceContainerHighest
+            MeoText {
+                text: MeoI18n.translator.i18n("Throughput over %1 · receive and send", root.historySpan(network.rxHistory))
+                typeRole: "label"; typeSize: "medium"
+                color: MeoTheme.contentOnSurfaceVariant
+            }
 
-                    MeoIcon {
-                        anchors.centerIn: parent
-                        icon: networkTile.network.kind === "wifi" ? "wifi"
-                              : networkTile.network.kind === "virtual" ? "vpn_lock" : "lan"
-                        size: 22
-                        fill: networkTile.network.up
-                        color: networkTile.network.up
-                               ? MeoTheme.contentOnPrimaryContainer
-                               : MeoTheme.contentOnSurfaceVariant
-                    }
-                }
+            BigGraph {
+                values: network.rxHistory || []
+                secondaryValues: network.txHistory || []
+                maximum: 0
+                color: MeoTheme.primary
+                secondaryColor: MeoTheme.tertiary
+            }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
+            StatGrid {
+                primaryStats: [
+                    { "label": MeoI18n.translator.i18n("Send"), "value": root.formatBits(network.txBytesPerSecond) },
+                    { "label": MeoI18n.translator.i18n("Receive"), "value": root.formatBits(network.rxBytesPerSecond) },
+                    { "label": MeoI18n.translator.i18n("Status"), "value": network.up
+                              ? MeoI18n.translator.i18n("Connected") : MeoI18n.translator.i18n("Not connected") },
+                    { "label": MeoI18n.translator.i18n("Link speed"), "value": Number(network.speedMbps || 0) > 0
+                              ? MeoI18n.translator.i18n("%1 Mbps", network.speedMbps) : "—" }
+                ]
+                secondaryStats: [
+                    { "label": MeoI18n.translator.i18n("Addresses"), "value": network.addressSummary || "—" },
+                    { "label": MeoI18n.translator.i18n("Hardware address"), "value": network.hardwareAddress || "—" },
+                    { "label": MeoI18n.translator.i18n("Errors"), "value": MeoI18n.translator.i18n("↓%1 · ↑%2", network.rxErrors || 0, network.txErrors || 0) },
+                    { "label": MeoI18n.translator.i18n("Dropped"), "value": MeoI18n.translator.i18n("↓%1 · ↑%2", network.rxDropped || 0, network.txDropped || 0) }
+                ]
+            }
+        }
+    }
 
-                    MeoText {
-                        text: networkTile.network.name || MeoI18n.translator.i18n("Network")
-                        typeRole: "title"
-                        typeSize: "small"
-                        emphasized: true
-                    }
+    // ── GPU ─────────────────────────────────────────────────────────────
+    Component {
+        id: gpuDetail
+        ColumnLayout {
+            readonly property var gpu: root.selected.data || ({})
+            spacing: MeoTheme.space12
 
-                    MeoText {
-                        text: networkTile.network.up
-                              ? (Number(networkTile.network.speedMbps || 0) > 0
-                                 ? MeoI18n.translator.i18n("Connected · %1 Mbps", networkTile.network.speedMbps)
-                                 : MeoI18n.translator.i18n("Connected"))
-                              : MeoI18n.translator.i18n("Inactive")
-                        typeRole: "label"
-                        typeSize: "small"
-                        color: MeoTheme.contentOnSurfaceVariant
-                    }
-                }
+            DetailHeader {
+                title: root.selected.title
+                subtitle: gpu.name || ""
+            }
 
-                MeoChip {
-                    label: networkTile.network.kind === "wifi"
-                           ? MeoI18n.translator.i18n("Wi-Fi")
-                           : networkTile.network.kind === "virtual"
-                             ? MeoI18n.translator.i18n("Virtual")
-                             : MeoI18n.translator.i18n("Wired")
-                    leadingIcon: networkTile.network.kind === "wifi" ? "wifi"
-                                 : networkTile.network.kind === "virtual" ? "vpn_lock" : "lan"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
-                }
+            MeoText {
+                text: MeoI18n.translator.i18n("% Utilization over %1", root.historySpan(gpu.history))
+                typeRole: "label"; typeSize: "medium"
+                color: MeoTheme.contentOnSurfaceVariant
+            }
+
+            BigGraph {
+                values: gpu.history || []
+                maximum: 100
+                color: MeoTheme.tertiary
+                topRightLabel: "100%"
             }
 
             MeoText {
                 Layout.fillWidth: true
-                visible: (networkTile.network.addressSummary || "") !== ""
-                         || (networkTile.network.hardwareAddress || "") !== ""
-                text: (networkTile.network.addressSummary || "")
-                      + ((networkTile.network.addressSummary || "") !== ""
-                         && (networkTile.network.hardwareAddress || "") !== "" ? " · " : "")
-                      + (networkTile.network.hardwareAddress || "")
-                typeRole: "label"
-                typeSize: "small"
+                visible: Number(gpu.memoryTotalBytes || 0) > 0
+                text: MeoI18n.translator.i18n("Dedicated memory %1 / %2", root.formatBytes(gpu.memoryUsedBytes), root.formatBytes(gpu.memoryTotalBytes))
+                typeRole: "label"; typeSize: "medium"
                 color: MeoTheme.contentOnSurfaceVariant
-                elide: Text.ElideMiddle
             }
-
-            PerformanceGraph {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 42 * root.scaleFactor
-                values: networkTile.network.rxHistory || []
-                secondaryValues: networkTile.network.txHistory || []
-                primaryColor: MeoTheme.primary
-                secondaryColor: MeoTheme.tertiary
-                maximum: 0
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                MeoText {
-                    Layout.fillWidth: true
-                    text: "↓ " + root.formatRate(networkTile.network.rxBytesPerSecond)
-                    typeRole: "label"
-                    typeSize: "small"
-                    emphasized: true
-                }
-
-                MeoText {
-                    text: "↑ " + root.formatRate(networkTile.network.txBytesPerSecond)
-                    typeRole: "label"
-                    typeSize: "small"
-                    color: MeoTheme.contentOnSurfaceVariant
-                }
-            }
-
-            Flow {
-                Layout.fillWidth: true
-                visible: Number(networkTile.network.rxErrors || 0)
-                         + Number(networkTile.network.txErrors || 0)
-                         + Number(networkTile.network.rxDropped || 0)
-                         + Number(networkTile.network.txDropped || 0) > 0
-                spacing: MeoTheme.space8
-
-                MeoChip {
-                    visible: Number(networkTile.network.rxErrors || 0)
-                             + Number(networkTile.network.txErrors || 0) > 0
-                    label: MeoI18n.translator.i18n("Errors ↓%1 · ↑%2", networkTile.network.rxErrors || 0, networkTile.network.txErrors || 0)
-                    leadingIcon: "error"
-                    type: "assist"
-                    shape: "pill"
-                    elevated: true
-                }
-
-                MeoChip {
-                    visible: Number(networkTile.network.rxDropped || 0)
-                             + Number(networkTile.network.txDropped || 0) > 0
-                    label: MeoI18n.translator.i18n("Dropped ↓%1 · ↑%2", networkTile.network.rxDropped || 0, networkTile.network.txDropped || 0)
-                    leadingIcon: "warning"
-                    type: "assist"
-                    shape: "pill"
-                    elevated: true
-                }
-            }
-        }
-    }
-
-    component GpuTile: MeoCard {
-        id: gpuTile
-        property var gpu: ({})
-
-        implicitHeight: 252 * root.scaleFactor
-        type: "filled"
-        radius: MeoTheme.shapeLargeIncreased
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: MeoTheme.space12
-            spacing: MeoTheme.space8
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: MeoTheme.space8
-
-                Rectangle {
-                    width: 40 * root.scaleFactor
-                    height: width
-                    radius: 14 * root.scaleFactor
-                    color: MeoTheme.tertiaryContainer
-
-                    MeoIcon {
-                        anchors.centerIn: parent
-                        icon: "developer_board"
-                        size: 22
-                        fill: true
-                        color: MeoTheme.contentOnTertiaryContainer
-                    }
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
-
-                    MeoText {
-                        Layout.fillWidth: true
-                        text: gpuTile.gpu.name || MeoI18n.translator.i18n("GPU")
-                        typeRole: "title"
-                        typeSize: "small"
-                        emphasized: true
-                        elide: Text.ElideRight
-                    }
-
-                    MeoText {
-                        text: (gpuTile.gpu.driver || "")
-                              + (gpuTile.gpu.temperature > 0
-                                 ? " · " + Math.round(gpuTile.gpu.temperature) + "°C" : "")
-                        typeRole: "label"
-                        typeSize: "small"
-                        color: MeoTheme.contentOnSurfaceVariant
-                    }
-                }
-
-                MeoText {
-                    text: Number(gpuTile.gpu.usage) >= 0
-                          ? Number(gpuTile.gpu.usage).toFixed(0) + "%" : "—"
-                    typeRole: "title"
-                    typeSize: "medium"
-                    emphasized: true
-                }
-            }
-
-            PerformanceGraph {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 44 * root.scaleFactor
-                values: gpuTile.gpu.history || []
-                primaryColor: MeoTheme.tertiary
-                maximum: 100
-            }
-
             MeoProgressBar {
                 Layout.fillWidth: true
-                visible: Number(gpuTile.gpu.usage) >= 0
-                value: Math.max(0, Math.min(100, Number(gpuTile.gpu.usage))) / 100
+                visible: Number(gpu.memoryTotalBytes || 0) > 0
+                value: Number(gpu.memoryUsedBytes || 0) / Math.max(1, Number(gpu.memoryTotalBytes || 0))
                 activeColor: MeoTheme.tertiary
                 wavy: true
             }
 
-            MeoText {
-                Layout.fillWidth: true
-                text: Number(gpuTile.gpu.memoryTotalBytes || 0) > 0
-                      ? MeoI18n.translator.i18n("VRAM %1 / %2", root.formatBytes(gpuTile.gpu.memoryUsedBytes), root.formatBytes(gpuTile.gpu.memoryTotalBytes))
-                      : MeoI18n.translator.i18n("VRAM telemetry unavailable")
-                typeRole: "body"
-                typeSize: "small"
-                color: MeoTheme.contentOnSurfaceVariant
-                elide: Text.ElideRight
+            StatGrid {
+                primaryStats: [
+                    { "label": MeoI18n.translator.i18n("Utilization"), "value": root.percent(gpu.usage) },
+                    { "label": MeoI18n.translator.i18n("Temperature"), "value": gpu.temperature > 0 ? Math.round(gpu.temperature) + " °C" : "—" },
+                    { "label": MeoI18n.translator.i18n("Power"), "value": Number(gpu.powerWatts || 0) > 0 ? Number(gpu.powerWatts).toFixed(1) + " W" : "—" },
+                    { "label": MeoI18n.translator.i18n("Core clock"), "value": root.formatFrequency(gpu.coreClockMHz) }
+                ]
+                secondaryStats: [
+                    { "label": MeoI18n.translator.i18n("Memory clock"), "value": root.formatFrequency(gpu.memoryClockMHz) },
+                    { "label": MeoI18n.translator.i18n("Dedicated memory"), "value": Number(gpu.memoryTotalBytes || 0) > 0
+                              ? root.formatBytes(gpu.memoryTotalBytes) : MeoI18n.translator.i18n("Not reported") },
+                    { "label": MeoI18n.translator.i18n("Driver"), "value": gpu.driver || "—" }
+                ]
+            }
+        }
+    }
+
+    // ── Building blocks ─────────────────────────────────────────────────
+    component ResourceEntry: QQC2.AbstractButton {
+        id: entry
+        property var resource: ({})
+        property bool selected: false
+
+        implicitHeight: 64 * root.scaleFactor
+        hoverEnabled: true
+        Accessible.role: Accessible.RadioButton
+        Accessible.name: (resource.title || "") + ", " + (resource.line || "")
+        Accessible.checked: selected
+
+        background: MeoShape {
+            type: "rect"
+            radius: MeoTheme.shapeMedium
+            strokeWidth: 0
+            color: entry.selected ? MeoTheme.secondaryContainer
+                   : (entry.hovered ? MeoTheme.surfaceContainerHigh : "transparent")
+        }
+
+        contentItem: RowLayout {
+            spacing: MeoTheme.space8
+
+            Item { Layout.preferredWidth: MeoTheme.space4 }
+
+            MeoCard {
+                Layout.preferredWidth: 64 * root.scaleFactor
+                Layout.preferredHeight: 44 * root.scaleFactor
+                type: "outlined"
+                radius: MeoTheme.shapeExtraSmall
+                padding: 1
+                PerformanceGraph {
+                    anchors.fill: parent
+                    values: entry.resource.history || []
+                    secondaryValues: entry.resource.secondary || []
+                    primaryColor: entry.resource.color || MeoTheme.primary
+                    maximum: entry.resource.maximum || 0
+                }
             }
 
-            Flow {
+            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: MeoTheme.space8
-
-                MeoChip {
-                    visible: Number(gpuTile.gpu.powerWatts || 0) > 0
-                    label: Number(gpuTile.gpu.powerWatts || 0).toFixed(1) + " W"
-                    leadingIcon: "bolt"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
+                spacing: 0
+                MeoText {
+                    Layout.fillWidth: true
+                    text: entry.resource.title || ""
+                    typeRole: "title"; typeSize: "small"; emphasized: true
+                    color: entry.selected ? MeoTheme.contentOnSecondaryContainer : MeoTheme.contentOnSurface
+                    elide: Text.ElideRight
                 }
-
-                MeoChip {
-                    visible: Number(gpuTile.gpu.coreClockMHz || 0) > 0
-                    label: Math.round(Number(gpuTile.gpu.coreClockMHz || 0)) + " MHz"
-                    leadingIcon: "speed"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
+                MeoText {
+                    Layout.fillWidth: true
+                    visible: (entry.resource.subtitle || "") !== ""
+                    text: entry.resource.subtitle || ""
+                    typeRole: "label"; typeSize: "small"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    elide: Text.ElideRight
                 }
-
-                MeoChip {
-                    visible: Number(gpuTile.gpu.memoryClockMHz || 0) > 0
-                    label: MeoI18n.translator.i18n("Memory %1 MHz", Math.round(Number(gpuTile.gpu.memoryClockMHz || 0)))
-                    leadingIcon: "memory_alt"
-                    type: "assist"
-                    shape: "pill"
-                    visualStyle: "outlined"
+                MeoText {
+                    Layout.fillWidth: true
+                    text: entry.resource.line || ""
+                    typeRole: "label"; typeSize: "medium"
+                    color: MeoTheme.contentOnSurfaceVariant
+                    elide: Text.ElideRight
                 }
             }
         }
+    }
+
+    component DetailHeader: RowLayout {
+        id: header
+        property string title: ""
+        property string subtitle: ""
+        Layout.fillWidth: true
+        spacing: MeoTheme.space12
+
+        MeoText {
+            text: header.title
+            typeRole: "title"; typeSize: "big"
+            color: MeoTheme.contentOnSurface
+        }
+        MeoText {
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignRight
+            text: header.subtitle
+            typeRole: "title"; typeSize: "small"
+            color: MeoTheme.contentOnSurfaceVariant
+            elide: Text.ElideRight
+        }
+    }
+
+    component BigGraph: MeoCard {
+        id: bigGraph
+        property var values: []
+        property var secondaryValues: []
+        property real maximum: 0
+        property color color: MeoTheme.primary
+        property color secondaryColor: MeoTheme.tertiary
+        property string topRightLabel: ""
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.max(180 * root.scaleFactor, Math.min(320 * root.scaleFactor, width * 0.42))
+        type: "outlined"
+        radius: MeoTheme.shapeSmall
+        padding: 1
+
+        PerformanceGraph {
+            anchors.fill: parent
+            values: bigGraph.values
+            secondaryValues: bigGraph.secondaryValues
+            maximum: bigGraph.maximum
+            primaryColor: bigGraph.color
+            secondaryColor: bigGraph.secondaryColor
+            showGrid: true
+        }
+        MeoText {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: MeoTheme.space4
+            visible: bigGraph.topRightLabel !== ""
+            text: bigGraph.topRightLabel
+            typeRole: "label"; typeSize: "small"
+            color: MeoTheme.contentOnSurfaceVariant
+        }
+    }
+
+    // Two groups like Windows: large live values, then static facts.
+    component StatGrid: GridLayout {
+        id: stats
+        property var primaryStats: []
+        property var secondaryStats: []
+        Layout.fillWidth: true
+        columns: width >= 560 * root.scaleFactor ? 2 : 1
+        columnSpacing: MeoTheme.space24
+        rowSpacing: MeoTheme.space8
+
+        GridLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
+            columns: 2
+            columnSpacing: MeoTheme.space16
+            rowSpacing: MeoTheme.space8
+            Repeater {
+                model: stats.primaryStats
+                delegate: ColumnLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    spacing: 0
+                    MeoText {
+                        text: modelData.label
+                        typeRole: "label"; typeSize: "medium"
+                        color: MeoTheme.contentOnSurfaceVariant
+                    }
+                    MeoText {
+                        Layout.fillWidth: true
+                        text: modelData.value
+                        typeRole: "title"; typeSize: "medium"; emphasized: true
+                        color: MeoTheme.contentOnSurface
+                        wrapMode: Text.Wrap
+                    }
+                }
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: stats.columns === 1
+            Layout.preferredWidth: stats.columns === 1 ? -1 : 300 * root.scaleFactor
+            Layout.alignment: Qt.AlignTop
+            spacing: MeoTheme.space4
+            Repeater {
+                model: stats.secondaryStats
+                delegate: RowLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    spacing: MeoTheme.space12
+                    MeoText {
+                        Layout.preferredWidth: 140 * root.scaleFactor
+                        text: modelData.label
+                        typeRole: "body"; typeSize: "small"
+                        color: MeoTheme.contentOnSurfaceVariant
+                        elide: Text.ElideRight
+                    }
+                    MeoText {
+                        Layout.fillWidth: true
+                        text: modelData.value
+                        typeRole: "body"; typeSize: "small"
+                        color: MeoTheme.contentOnSurface
+                        elide: Text.ElideMiddle
+                    }
+                }
+            }
+        }
+    }
+
+    component PressureNote: MeoText {
+        Layout.fillWidth: true
+        visible: !!MeoSystem.Performance.pressure.available
+        typeRole: "body"; typeSize: "small"
+        color: MeoTheme.contentOnSurfaceVariant
+        wrapMode: Text.WordWrap
     }
 }

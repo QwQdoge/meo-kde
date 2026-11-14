@@ -36,3 +36,8 @@ Use24HourClock=true
 # surfaces. SurfaceBlur needs SurfaceTransparency.
 SurfaceTransparency=true
 SurfaceBlur=true
+# Percent of the designed see-through amount for translucent surfaces (25-200).
+TransparencyLevel=100
+# Percent of the Meo Design System corner radii for shell and Meo app surfaces
+# (0 square - 150 extra round).
+CornerScale=100

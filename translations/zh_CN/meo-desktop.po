@@ -1080,3 +1080,255 @@ msgstr "打开已验证的 .config 与应用配置"
 
 msgid "Quit"
 msgstr "退出"
+
+msgid "Paused"
+msgstr "已暂停"
+
+msgid "Every %1"
+msgstr "每 %1"
+
+msgid "Update speed"
+msgstr "刷新频率"
+
+msgid "%1 s"
+msgstr "%1 秒"
+
+msgid "Resume updates"
+msgstr "恢复刷新"
+
+msgid "Pause updates"
+msgstr "暂停刷新"
+
+msgid "%1 · Updates paused"
+msgstr "%1 · 已暂停刷新"
+
+msgid "System monitor"
+msgstr "系统监视器"
+
+msgid "Browse widgets"
+msgstr "浏览小组件"
+
+msgid "% Utilization over %1"
+msgstr "%1内的利用率 %"
+
+msgid "%1 IOPS"
+msgstr "%1 IOPS"
+
+msgid "%1 Mbps"
+msgstr "%1 Mbps"
+
+msgid "%1 cache"
+msgstr "%1 缓存"
+
+msgid "%1 d %2"
+msgstr "%1 天 %2"
+
+msgid "%1 seconds"
+msgstr "%1 秒"
+
+msgid "Active time"
+msgstr "活动时间"
+
+msgid "Addresses"
+msgstr "地址"
+
+msgid "Architecture"
+msgstr "架构"
+
+msgid "Available"
+msgstr "可用"
+
+msgid "Average response time"
+msgstr "平均响应时间"
+
+msgid "Buffers"
+msgstr "缓冲区"
+
+msgid "CPU waiting %1% (Linux PSI, last 10 s)"
+msgstr "CPU 等待 %1%（Linux PSI，最近 10 秒）"
+
+msgid "Cached"
+msgstr "已缓存"
+
+msgid "Capacity"
+msgstr "容量"
+
+msgid "Compression ratio"
+msgstr "压缩比"
+
+msgid "Core clock"
+msgstr "核心频率"
+
+msgid "Cores"
+msgstr "内核"
+
+msgid "Dedicated memory %1 / %2"
+msgstr "专用显存 %1 / %2"
+
+msgid "Dedicated memory"
+msgstr "专用显存"
+
+msgid "Device"
+msgstr "设备"
+
+msgid "Disk %1 (%2)"
+msgstr "磁盘 %1 (%2)"
+
+msgid "Driver"
+msgstr "驱动程序"
+
+msgid "Dropped"
+msgstr "丢包"
+
+msgid "Errors"
+msgstr "错误"
+
+msgid "Ethernet"
+msgstr "以太网"
+
+msgid "Free"
+msgstr "空闲"
+
+msgid "GPU %1"
+msgstr "GPU %1"
+
+msgid "Hardware address"
+msgstr "硬件地址"
+
+msgid "I/O waiting %1% · fully stalled %2% (Linux PSI, last 10 s)"
+msgstr "I/O 等待 %1% · 完全停滞 %2%（Linux PSI，最近 10 秒）"
+
+msgid "In use"
+msgstr "使用中"
+
+msgid "Link speed"
+msgstr "连接速度"
+
+msgid "Load average"
+msgstr "平均负载"
+
+msgid "Logical processors"
+msgstr "逻辑处理器"
+
+msgid "Maximum speed"
+msgstr "最大速度"
+
+msgid "Memory clock"
+msgstr "显存频率"
+
+msgid "Memory composition"
+msgstr "内存组合"
+
+msgid "Memory usage over %1"
+msgstr "%1内的内存使用量"
+
+msgid "Memory waiting %1% · fully stalled %2% (Linux PSI, last 10 s)"
+msgstr "内存等待 %1% · 完全停滞 %2%（Linux PSI，最近 10 秒）"
+
+msgid "Memory"
+msgstr "内存"
+
+msgid "None"
+msgstr "无"
+
+msgid "Not connected"
+msgstr "未连接"
+
+msgid "Not detected"
+msgstr "未检测到"
+
+msgid "Not reported"
+msgstr "未报告"
+
+msgid "Overall"
+msgstr "总体"
+
+msgid "Performance mode"
+msgstr "性能模式"
+
+msgid "Processes"
+msgstr "进程"
+
+msgid "Read operations"
+msgstr "读取操作"
+
+msgid "Read speed"
+msgstr "读取速度"
+
+msgid "Receive"
+msgstr "接收"
+
+msgid "Requests in flight"
+msgstr "进行中的请求"
+
+msgid "S: %1  R: %2"
+msgstr "发送: %1  接收: %2"
+
+msgid "Shared"
+msgstr "共享"
+
+msgid "Sockets"
+msgstr "插槽"
+
+msgid "Speed"
+msgstr "速度"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Supported"
+msgstr "支持"
+
+msgid "Swap"
+msgstr "交换"
+
+msgid "Temperature"
+msgstr "温度"
+
+msgid "Throughput over %1 · receive and send"
+msgstr "%1内的吞吐量 · 接收和发送"
+
+msgid "Transfer rate over %1 · read and write"
+msgstr "%1内的传输速率 · 读取和写入"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "Up time"
+msgstr "正常运行时间"
+
+msgid "Utilization per logical processor"
+msgstr "每个逻辑处理器的利用率"
+
+msgid "Utilization"
+msgstr "利用率"
+
+msgid "Virtual"
+msgstr "虚拟"
+
+msgid "Virtualization"
+msgstr "虚拟化"
+
+msgid "Write operations"
+msgstr "写入操作"
+
+msgid "Write speed"
+msgstr "写入速度"
+
+msgid "ZRAM compressed"
+msgstr "ZRAM 压缩后"
+
+msgid "ZRAM size"
+msgstr "ZRAM 大小"
+
+msgid "ZRAM stored"
+msgstr "ZRAM 存储"
+
+msgid "Zswap"
+msgstr "Zswap"
+
+msgid "↓%1 · ↑%2"
+msgstr "↓%1 · ↑%2"
+
+msgid "Loading system monitor"
+msgstr "正在加载系统监视器"

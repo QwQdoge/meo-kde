@@ -1,5 +1,7 @@
 #pragma once
 
+#include <KConfigWatcher>
+
 #include <QAbstractListModel>
 #include <QElapsedTimer>
 #include <QHash>
@@ -227,6 +229,8 @@ private:
 
     bool m_available = false;
     int m_refreshInterval = 2000;
+    KConfigWatcher::Ptr m_configWatcher;
+    void applyRefreshInterval(int interval, bool persist);
     bool m_paused = false;
     QTimer m_refreshTimer;
     QElapsedTimer m_rateClock;

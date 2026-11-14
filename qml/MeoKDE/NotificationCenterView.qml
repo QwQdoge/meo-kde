@@ -447,7 +447,7 @@ Item {
                     readonly property color baseColor: critical ? MeoTheme.errorContainer
                                                                 : MeoTheme.surfaceContainerHigh
                     color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b,
-                                   MeoSystem.ShellAppearance.transparency ? 0.9 : 1.0)
+                                   MeoSystem.ShellAppearance.transparency ? MeoTheme.surfaceAlpha(0.9) : 1.0)
                     // Notification cards share the popup's expressive corner
                     // token, so they morph with the same MeoUI shape scale as
                     // the surrounding status surface.

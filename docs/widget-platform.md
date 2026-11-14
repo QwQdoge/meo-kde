@@ -31,6 +31,28 @@ Docks, wallpapers, and non-desktop containments. Plasma continues to own
 layout persistence, drag/resize, placement, screen affinity, and applet
 lifecycle; Meo Widget Explorer does not replace Plasma Edit Mode.
 
+## Entry point
+
+The only default entry point is the desktop itself: right-click the desktop
+and choose **Add or Manage Widgets…**, or use **Add Widgets** in Plasma Edit
+Mode. Meo Desktop does not place a widget button on the desktop.
+
+Both actions are Plasma's own `add widgets` containment action. plasmashell
+asks the active shell package's `views/Desktop.qml` to toggle its widget
+explorer; `org.meo.shell` ships a thin `views/Desktop.qml` that loads the
+unmodified `org.kde.plasma.desktop` view for everything else (containment,
+Edit Mode, activity switcher) and answers only `toggleWidgetExplorer()` with
+the Meo browser (`explorer/MeoWidgetExplorer.qml`, a floating
+`PlasmaCore.Dialog` hosting `MeoKDE.DesktopWidgetExplorer`). If the Meo QML
+modules cannot load, the stock KDE explorer opens instead. Closing the browser
+without adding anything leaves Edit Mode again; after an addition Edit Mode
+stays on so the new widget can be moved.
+
+`org.meo.widgetexplorer` remains available as an optional applet for users who
+want a visible button; it hosts the same `DesktopWidgetExplorer`. The shell
+update script `updates/meo_widget_explorer_context_menu.js` removes the button
+that older Meo layouts placed on the desktop.
+
 ## MeoWidget API
 
 `MeoUI 1.0` owns the platform-neutral public `MeoWidget` QML type. A widget

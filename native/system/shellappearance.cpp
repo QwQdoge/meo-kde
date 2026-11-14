@@ -22,9 +22,15 @@ void ShellAppearance::reload()
     const KConfigGroup group(config, QStringLiteral("Appearance"));
     const bool transparency = group.readEntry("SurfaceTransparency", false);
     const bool blur = group.readEntry("SurfaceBlur", false);
-    if (transparency != m_transparency || blur != m_blur) {
+    const double transparencyLevel = qBound(25, group.readEntry("TransparencyLevel", 100), 200) / 100.0;
+    const double cornerScale = qBound(0, group.readEntry("CornerScale", 100), 150) / 100.0;
+    if (transparency != m_transparency || blur != m_blur
+        || !qFuzzyCompare(transparencyLevel, m_transparencyLevel)
+        || !qFuzzyCompare(cornerScale + 1.0, m_cornerScale + 1.0)) {
         m_transparency = transparency;
         m_blur = blur;
+        m_transparencyLevel = transparencyLevel;
+        m_cornerScale = cornerScale;
         Q_EMIT changed();
     }
 }

@@ -34,6 +34,55 @@ Item {
     }
     readonly property bool updatesPaused: MeoSystem.Tasks.paused
                                           || MeoSystem.Performance.paused
+    // Pages are created the first time they are shown and then kept, so the
+    // monitor opens quickly and switching back keeps scroll and selection.
+    property var visitedPages: ({})
+    readonly property var updateSpeeds: [500, 1000, 2000, 5000, 10000]
+    readonly property int refreshInterval: MeoSystem.Performance.refreshInterval
+
+    function intervalLabel(interval) {
+        return interval < 1000
+                ? MeoI18n.translator.i18n("%1 s", (interval / 1000).toFixed(1))
+                : MeoI18n.translator.i18n("%1 s", Math.round(interval / 1000))
+    }
+
+    function setUpdateSpeed(interval) {
+        MeoSystem.Performance.refreshInterval = interval
+        MeoSystem.Tasks.refreshInterval = interval
+        setPaused(false)
+    }
+
+    function setPaused(paused) {
+        MeoSystem.Tasks.paused = paused
+        MeoSystem.Performance.paused = paused
+    }
+
+    function markVisited(index) {
+        if (visitedPages[index])
+            return
+        const next = Object.assign({}, visitedPages)
+        next[index] = true
+        visitedPages = next
+    }
+
+    function openUpdateSpeedMenu(anchor) {
+        const rows = root.updateSpeeds.map(function(interval) {
+            return {
+                "label": root.intervalLabel(interval),
+                "checked": !root.updatesPaused && root.refreshInterval === interval,
+                "action": function() { root.setUpdateSpeed(interval) }
+            }
+        })
+        rows.push({ "type": "separator" })
+        rows.push({
+            "label": root.updatesPaused ? MeoI18n.translator.i18n("Resume updates")
+                                        : MeoI18n.translator.i18n("Pause updates"),
+            "icon": root.updatesPaused ? "play_arrow" : "pause",
+            "action": function() { root.setPaused(!root.updatesPaused) }
+        })
+        updateSpeedMenu.model = rows
+        updateSpeedMenu.openAtPoint(anchor, anchor.width / 2, anchor.height)
+    }
 
     readonly property var navigationModel: [
         { id: "processes", label: MeoI18n.translator.i18n("Processes"), icon: "apps" },
@@ -45,6 +94,12 @@ Item {
     ]
 
     function currentSubtitle() {
+        const text = pageSubtitle()
+        return updatesPaused && currentPage !== 2 && currentPage !== 3
+                ? MeoI18n.translator.i18n("%1 · Updates paused", text) : text
+    }
+
+    function pageSubtitle() {
         if (currentPage === 0)
             return MeoI18n.translator.i18n("%1 processes", MeoSystem.Tasks.processes.length)
         if (currentPage === 1)
@@ -113,13 +168,46 @@ Item {
         onActivated: root.refreshCurrentPage()
     }
 
-    Component.onCompleted: syncSubscription()
+    // Ctrl+1 … Ctrl+6 jump straight to a page, like browser tabs.
+    Repeater {
+        model: root.navigationModel.length
+        delegate: Item {
+            required property int index
+            Shortcut {
+                sequence: "Ctrl+" + (parent.index + 1)
+                context: Qt.WindowShortcut
+                enabled: root.visible
+                onActivated: root.currentPage = parent.index
+            }
+        }
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Tab"
+        context: Qt.WindowShortcut
+        enabled: root.visible
+        onActivated: root.currentPage = (root.currentPage + 1) % root.navigationModel.length
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Shift+Tab"
+        context: Qt.WindowShortcut
+        enabled: root.visible
+        onActivated: root.currentPage = (root.currentPage + root.navigationModel.length - 1)
+                                        % root.navigationModel.length
+    }
+
+    Component.onCompleted: {
+        markVisited(currentPage)
+        syncSubscription()
+    }
     Component.onDestruction: {
         MeoSystem.Performance.unsubscribe(performanceClientId)
         MeoSystem.Tasks.unsubscribe(tasksClientId)
     }
     onVisibleChanged: syncSubscription()
     onCurrentPageChanged: {
+        markVisited(currentPage)
         syncSubscription()
         if (navigationRail && navigationRail.currentIndex !== currentPage)
             navigationRail.currentIndex = currentPage
@@ -173,19 +261,17 @@ Item {
             }
 
             MeoButton {
+                id: updateSpeedButton
                 visible: root.currentPage === 0 || root.currentPage === 1
                          || root.currentPage === 4 || root.currentPage === 5
                 text: root.updatesPaused
-                      ? MeoI18n.translator.i18n("Resume")
-                      : MeoI18n.translator.i18n("Pause")
+                      ? MeoI18n.translator.i18n("Paused")
+                      : MeoI18n.translator.i18n("Every %1", root.intervalLabel(root.refreshInterval))
                 type: root.updatesPaused ? "tonal" : "text"
                 size: "xs"
-                icon.name: root.updatesPaused ? "play_arrow" : "pause"
-                onClicked: {
-                    const nextPaused = !root.updatesPaused
-                    MeoSystem.Tasks.paused = nextPaused
-                    MeoSystem.Performance.paused = nextPaused
-                }
+                icon.name: root.updatesPaused ? "pause" : "update"
+                Accessible.name: MeoI18n.translator.i18n("Update speed")
+                onClicked: root.openUpdateSpeedMenu(updateSpeedButton)
             }
 
             MeoButton {
@@ -220,7 +306,7 @@ Item {
                 Layout.preferredWidth: 280 * root.scaleFactor
                 visible: root.expandedRail
                 groups: root.navigationGroups
-                title: MeoI18n.translator.i18n("Performance")
+                title: MeoI18n.translator.i18n("System monitor")
                 searchText: root.navigationSearchText
                 searchResults: root.navigationSearchResults
                 selectedRoute: root.selectedNavigationRoute
@@ -254,42 +340,60 @@ Item {
                     Layout.fillHeight: true
                     currentIndex: root.currentPage
 
-                    ProcessTable {
-                        id: processPage
+                    Loader {
+                        id: processLoader
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        onDetailsRequested: root.currentPage = 5
-                    }
-
-                    PerformanceDashboard {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
-
-                    StartupAppsPage {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
-
-                    ServicesPage {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
-
-                    UsersPage {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        onProcessesRequested: function(user) {
-                            processPage.userFilter = user
-                            processPage.groupMode = false
-                            processPage.treeMode = false
-                            root.currentPage = 0
+                        active: root.visitedPages[0] === true
+                        sourceComponent: ProcessTable {
+                            onDetailsRequested: root.currentPage = 5
                         }
                     }
 
-                    ProcessDetailsPage {
+                    Loader {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        active: root.visitedPages[1] === true
+                        sourceComponent: PerformanceDashboard {}
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        active: root.visitedPages[2] === true
+                        sourceComponent: StartupAppsPage {}
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        active: root.visitedPages[3] === true
+                        sourceComponent: ServicesPage {}
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        active: root.visitedPages[4] === true
+                        sourceComponent: UsersPage {
+                            onProcessesRequested: function(user) {
+                                root.markVisited(0)
+                                const processPage = processLoader.item
+                                if (processPage) {
+                                    processPage.userFilter = user
+                                    processPage.groupMode = false
+                                    processPage.treeMode = false
+                                }
+                                root.currentPage = 0
+                            }
+                        }
+                    }
+
+                    Loader {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        active: root.visitedPages[5] === true
+                        sourceComponent: ProcessDetailsPage {}
                     }
                 }
             }
@@ -299,11 +403,17 @@ Item {
     MeoSidebarModal {
         id: navigationSidebarModal
         groups: root.navigationGroups
-        title: MeoI18n.translator.i18n("Performance")
+        title: MeoI18n.translator.i18n("System monitor")
         selectedRoute: root.selectedNavigationRoute
         searchText: root.navigationSearchText
         searchResults: root.navigationSearchResults
         onSearchTextChanged: root.navigationSearchText = searchText
         onRouteActivated: (route, row) => root.selectNavigationRoute(route)
+    }
+
+    MeoContextMenu {
+        id: updateSpeedMenu
+        parent: root
+        z: 100
     }
 }

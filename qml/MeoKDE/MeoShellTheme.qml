@@ -66,6 +66,12 @@ QtObject {
         // One transparency switch for the whole shell: Shell Appearance's
         // Transparency (meo-shellrc) also drives MeoUI's translucent surfaces.
         MeoTheme.transparencyEnabled = MeoSystem.ShellAppearance.transparency
+        // Older Meo.System plugins do not expose these yet; keep the design
+        // defaults instead of reading undefined.
+        MeoTheme.transparencyLevel = MeoSystem.ShellAppearance.transparencyLevel !== undefined
+                ? MeoSystem.ShellAppearance.transparencyLevel : 1.0
+        MeoTheme.cornerScale = MeoSystem.ShellAppearance.cornerScale !== undefined
+                ? MeoSystem.ShellAppearance.cornerScale : 1.0
         // Kirigami already applies KDE's AnimationDurationFactor. Bridge that
         // platform preference into shared MeoUI motion tokens instead of
         // maintaining a second, contradictory animation switch.

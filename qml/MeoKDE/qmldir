@@ -29,3 +29,4 @@ UsersPage 1.0 UsersPage.qml
 ProcessDetailsPage 1.0 ProcessDetailsPage.qml
 SystemMonitorWindow 1.0 SystemMonitorWindow.qml
 AIActionConfirmationCard 1.0 AIActionConfirmationCard.qml
+DesktopWidgetExplorer 1.0 DesktopWidgetExplorer.qml

@@ -17,10 +17,11 @@ ApplicationWindow {
     // Reopen at the size and on the page the user left, like a desktop task
     // manager (stored in the app's own config, not in shell settings).
     Settings {
+        id: windowSettings
         category: "Window"
         property alias width: window.width
         property alias height: window.height
-        property alias page: manager.currentPage
+        property int page: 0
     }
 
     // Standard desktop close shortcut for the standalone window.
@@ -30,12 +31,32 @@ ApplicationWindow {
         onActivated: window.close()
     }
 
-    PerformanceManager {
-        id: manager
+    // The window frame paints first; the monitor itself is created
+    // asynchronously so Ctrl+Shift+Esc shows a window immediately even on a
+    // busy system.
+    Loader {
+        id: content
         anchors.fill: parent
         anchors.margins: MeoTheme.space16
-        initialPage: 0
-        showBackButton: false
-        onCloseRequested: window.close()
+        asynchronous: true
+        sourceComponent: Component {
+            PerformanceManager {
+                id: manager
+                initialPage: 0
+                showBackButton: false
+                onCloseRequested: window.close()
+                onCurrentPageChanged: windowSettings.page = currentPage
+                Component.onCompleted: currentPage = Math.max(0, Math.min(5, windowSettings.page))
+            }
+        }
+    }
+
+    MeoLoadingFeedback {
+        anchors.centerIn: parent
+        width: 200 * MeoTheme.globalScale
+        height: 72 * MeoTheme.globalScale
+        active: content.status !== Loader.Ready
+        delay: 150
+        accessibleName: MeoI18n.translator.i18n("Loading system monitor")
     }
 }
