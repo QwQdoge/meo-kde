@@ -134,6 +134,26 @@ private slots:
         QVERIFY(!controller.paused());
     }
 
+    void samplesOnABackgroundThread()
+    {
+        auto *controller = new PerformanceController;
+        controller->enableBackgroundSampling();
+        int samples = 0;
+        connect(controller, &PerformanceController::metricsChanged, this, [&samples] { ++samples; });
+        controller->subscribe(QStringLiteral("threaded"),
+                              {QStringLiteral("cpu"), QStringLiteral("memory"), QStringLiteral("processes")});
+        QVERIFY(controller->monitoring());
+        QTRY_VERIFY_WITH_TIMEOUT(samples > 0, 5000);
+        QVERIFY(controller->memoryTotalBytes() > 0);
+        QVERIFY(!controller->processes().isEmpty());
+        controller->setPaused(true);
+        QVERIFY(controller->paused());
+        controller->setPaused(false);
+        controller->unsubscribe(QStringLiteral("threaded"));
+        QVERIFY(!controller->monitoring());
+        delete controller;
+    }
+
     void boundsRefreshInterval()
     {
         PerformanceController controller;

@@ -3,6 +3,8 @@
 #include <KConfigWatcher>
 
 #include <QElapsedTimer>
+#include <QMutex>
+#include <QPointer>
 #include <QHash>
 #include <QObject>
 #include <QSet>
@@ -10,6 +12,8 @@
 #include <QTimer>
 #include <QVariantList>
 #include <QVariantMap>
+
+class QThread;
 
 class PerformanceController final : public QObject
 {
@@ -94,6 +98,14 @@ class PerformanceController final : public QObject
 
 public:
     explicit PerformanceController(QObject *parent = nullptr);
+    ~PerformanceController() override;
+
+    // Moves all /proc, /sys and process-table sampling to a dedicated
+    // thread. The object keeps its whole QML API; it publishes a copy of the
+    // worker's results after every sample, so a slow or stuck kernel
+    // interface can never freeze the UI. Without this call the controller
+    // samples synchronously (used by tests and small tools).
+    void enableBackgroundSampling();
 
     bool available() const;
     bool monitoring() const;
@@ -188,6 +200,20 @@ Q_SIGNALS:
     void processActionCompleted(qint64 pid, const QString &action);
 
 private:
+    struct WorkerTag {};
+    PerformanceController(WorkerTag, QObject *parent = nullptr);
+    void adoptWorkerState();
+    void stopBackgroundSampling();
+    template<typename Function>
+    void forwardToWorker(Function function);
+
+    // Worker side: held while samples are written; the UI copy holds it
+    // while reading, so a copy never sees a half-written sample.
+    mutable QMutex m_publishMutex;
+    bool m_isWorker = false;
+    QThread *m_samplingThread = nullptr;
+    QPointer<PerformanceController> m_worker;
+
     struct CpuSnapshot {
         quint64 idle = 0;
         quint64 total = 0;

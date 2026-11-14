@@ -100,8 +100,21 @@ Item {
         onHeightChanged: requestPaint()
     }
 
-    onValuesChanged: canvas.requestPaint()
-    onSecondaryValuesChanged: canvas.requestPaint()
+    // Only visible graphs redraw; a hidden page or a scrolled-away tile
+    // costs nothing until it is shown again.
+    property bool paintPending: false
+    function schedulePaint() {
+        if (visible && width > 0 && height > 0) {
+            paintPending = false
+            canvas.requestPaint()
+        } else {
+            paintPending = true
+        }
+    }
+    onVisibleChanged: if (visible && paintPending) schedulePaint()
+
+    onValuesChanged: schedulePaint()
+    onSecondaryValuesChanged: schedulePaint()
     onPrimaryColorChanged: canvas.requestPaint()
     onSecondaryColorChanged: canvas.requestPaint()
     onMaximumChanged: canvas.requestPaint()

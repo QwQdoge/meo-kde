@@ -1329,3 +1329,6 @@ msgstr "Zswap"
 
 msgid "↓%1 · ↑%2"
 msgstr "↓%1 · ↑%2"
+
+msgid "Loading system monitor"
+msgstr "正在加载系统监视器"

@@ -40,6 +40,9 @@ QObject *platformProvider(QQmlEngine *, QJSEngine *)
 QObject *performanceProvider(QQmlEngine *, QJSEngine *)
 {
     auto *controller = new PerformanceController;
+    // Sample /proc and /sys off the UI thread in every QML host (System
+    // Monitor, plasmashell widgets, Quick Settings).
+    controller->enableBackgroundSampling();
     QQmlEngine::setObjectOwnership(controller, QQmlEngine::CppOwnership);
     return controller;
 }
