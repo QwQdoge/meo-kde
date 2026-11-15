@@ -17,6 +17,26 @@ class SurfaceEffectsContract(unittest.TestCase):
         self.assertIn('readEntry("SurfaceBlur", false)', source)
         self.assertIn("m_transparency && m_blur", read("native/system/shellappearance.h"))
 
+    def test_packaged_profile_keeps_effects_off(self):
+        profile = read("defaults/plasma/meo-shellrc")
+        self.assertIn("SurfaceTransparency=false", profile)
+        self.assertIn("SurfaceBlur=false", profile)
+
+    def test_blur_thins_the_tint_only_with_real_blur(self):
+        source = read("qml/MeoKDE/FrostedSurface.qml")
+        self.assertIn("blurredOpacity", source)
+        self.assertIn("ShellAppearance.blur", source)
+
+    def test_app_windows_dock_and_meoui_follow_the_switch(self):
+        self.assertIn("ShellAppearance.blur", read("qml/MeoKDE/AppWindowBlur.qml"))
+        self.assertIn("AppWindowBlur 1.0", read("qml/MeoKDE/qmldir"))
+        self.assertIn("MeoTheme.blurEnabled = MeoSystem.ShellAppearance.blur",
+                      read("qml/MeoKDE/MeoShellTheme.qml"))
+        dock = read("native/dock/qml/Main.qml")
+        self.assertIn("MeoTheme.blurEnabled", dock)
+        controller = read("native/dock/dockwindowcontroller.cpp")
+        self.assertIn("if (!blur)", controller)
+
     def test_blur_is_a_compositor_request_not_a_capture(self):
         source = read("native/system/windowblur.cpp")
         self.assertIn("KWindowEffects::enableBlurBehind", source)

@@ -19,7 +19,12 @@ MeoShape {
     property color restingColor: "transparent"
     // Hover/press feedback belongs to the single shared state layer. Keep the
     // base surface quiet until the trigger owns an open/selected surface.
-    property color selectedColor: MeoTheme.primaryContainer
+    // The open pill is a soft tint, not a hard saturated capsule: the
+    // wallpaper stays faintly visible through it.
+    property color selectedColor: Qt.rgba(MeoTheme.primaryContainer.r,
+                                          MeoTheme.primaryContainer.g,
+                                          MeoTheme.primaryContainer.b,
+                                          MeoTheme.surfaceAlpha(0.82))
     property color restingContentColor: panelForeground.color
 
     PanelForeground {

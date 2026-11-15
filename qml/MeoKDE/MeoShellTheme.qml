@@ -72,6 +72,9 @@ QtObject {
                 ? MeoSystem.ShellAppearance.transparencyLevel : 1.0
         MeoTheme.cornerScale = MeoSystem.ShellAppearance.cornerScale !== undefined
                 ? MeoSystem.ShellAppearance.cornerScale : 1.0
+        // Opt-in frosted look (SurfaceBlur): large MeoUI backgrounds thin out
+        // over the compositor blur that AppWindowBlur / DialogBlur request.
+        MeoTheme.blurEnabled = MeoSystem.ShellAppearance.blur
         // Kirigami already applies KDE's AnimationDurationFactor. Bridge that
         // platform preference into shared MeoUI motion tokens instead of
         // maintaining a second, contradictory animation switch.

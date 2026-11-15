@@ -19,7 +19,7 @@ public:
 
     void attach(QQuickWindow *window);
     Q_INVOKABLE void updateSurfaceRegion(qreal x, qreal y, qreal width, qreal height,
-                                         qreal radius);
+                                         qreal radius, bool blur);
 
 private:
     void syncDesiredSize();
