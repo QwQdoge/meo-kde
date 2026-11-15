@@ -1,0 +1,83 @@
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -679,3 +679,8 @@
+ endif()
+ 
+ add_subdirectory(itemactions)
++
++# Meo distribution chrome uses only the stable native metric header.
++find_path(MEO_DESIGN_TOKENS_INCLUDE_DIR NAMES meodesigntokens.h
++    HINTS "${MEOUI_SOURCE_DIR}/runtime" PATH_SUFFIXES MeoUI include/MeoUI REQUIRED)
++target_include_directories(dolphinstatic PRIVATE "${MEO_DESIGN_TOKENS_INCLUDE_DIR}")
+--- a/src/dolphinmainwindow.cpp
++++ b/src/dolphinmainwindow.cpp
+@@ -91,6 +91,8 @@
+ #include <QStandardPaths>
+ #include <QTimer>
+ #include <QToolButton>
++#include <QStyle>
++#include <meodesigntokens.h>
+ #include <QtConcurrentRun>
+ #include <dolphindebug.h>
+ 
+@@ -249,6 +251,26 @@
+ 
+     updateAllowedToolbarAreas();
+     updateNavigatorsBackground();
++
++    // Distribution presentation only: actions, KIO, view models, shortcuts,
++    // custom toolbars and persisted panel placement remain upstream-owned.
++    const KConfigGroup meoChrome(KSharedConfig::openConfig(), QStringLiteral("MeoDesktop"));
++    const bool useMeoChrome = qApp->style()->objectName().compare(QStringLiteral("Meo"), Qt::CaseInsensitive) == 0
++        && meoChrome.readEntry("UseChrome", true);
++    if (useMeoChrome) {
++        const int margin = qRound(Meo::DesignTokens::space8());
++        const int icon = qRound(Meo::DesignTokens::iconSizeM());
++        toolBar()->setContentsMargins(margin, margin / 2, margin, margin / 2);
++        toolBar()->setIconSize(QSize(icon, icon));
++        toolBar()->setToolButtonStyle(Qt::ToolButtonIconOnly);
++        m_tabWidget->setContentsMargins(margin, margin, margin, margin);
++        m_placesPanel->setContentsMargins(margin, margin, margin, margin);
++        m_placesPanel->setMinimumWidth(qRound(Meo::DesignTokens::desktopSidebarMinimumWidth()));
++        if (firstRun) {
++            resizeDocks({qobject_cast<QDockWidget *>(m_placesPanel->parentWidget())},
++                        {qRound(Meo::DesignTokens::desktopSidebarWidth())}, Qt::Horizontal);
++        }
++    }
+ 
+     // enable middle-click on back/forward/up to open in a new tab
+     auto *middleClickEventFilter = new MiddleClickActionEventFilter(this);
+@@ -3125,6 +3147,7 @@
+ 
+     updateAllowedToolbarAreas();
+     updateNavigatorsBackground();
++
+     (static_cast<KHamburgerMenu *>(actionCollection()->action(KStandardAction::name(KStandardAction::HamburgerMenu))))->hideActionsOf(toolBar());
+ }
+ 
+--- a/src/dolphinui.rc
++++ b/src/dolphinui.rc
+@@ -1,6 +1,6 @@
+ <?xml version="1.0"?>
+ <!DOCTYPE gui SYSTEM "kpartgui.dtd">
+-<gui name="dolphin" version="49">
++<gui name="dolphin" version="50">
+     <MenuBar>
+         <Menu name="file">
+             <Action name="new_menu" />
+@@ -110,11 +110,12 @@
+         <text context="@title:menu">Main Toolbar</text>
+         <Action name="go_back" />
+         <Action name="go_forward" />
++        <Action name="go_up" />
++        <Action name="url_navigators" />
++        <Action name="toggle_search" />
++        <Action name="split_view" />
+         <Action name="view_settings" />
+-        <Action name="url_navigators" />
+-        <Action name="split_view" />
+         <Action name="split_stash" />
+-        <Action name="toggle_search" />
+         <Action name="hamburger_menu" />
+     </ToolBar>
+     <ActionProperties scheme="Default">
