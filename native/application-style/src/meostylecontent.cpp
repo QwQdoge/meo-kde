@@ -734,7 +734,7 @@ void MeoStyleContent::drawComplexControl(ComplexControl control, const QStyleOpt
 
     if (!menuRect.isEmpty()) {
         painter->save();
-        painter->setPen(QPen(button->palette.color(optionColorGroup(button), QPalette::Midlight), 1.0));
+        painter->setPen(QPen(MeoStyleHelper::outlineVariant(button->palette, optionColorGroup(button)), 1.0));
         const int separatorX = button->direction == Qt::RightToLeft ? menuRect.right() : menuRect.left();
         painter->drawLine(separatorX, button->rect.top() + qRound(Meo::DesignTokens::space4()),
                           separatorX, button->rect.bottom() - qRound(Meo::DesignTokens::space4()));

@@ -11,7 +11,7 @@ PartOf=graphical-session.target
 Type=oneshot
 # XDG_CONFIG_HOME is the session's private config home, so the color source,
 # wallpaper and kdeglobals are read and written there.
-ExecStart=/usr/bin/meo-dynamic-colors --follow-meo --apply
+ExecStart=/usr/bin/meo-dynamic-colors --sync-lock-wallpaper --follow-meo --apply
 ExecStartPost=/usr/bin/meo-input-method --sync --quiet
 
 [Install]

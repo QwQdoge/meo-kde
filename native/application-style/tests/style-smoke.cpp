@@ -891,7 +891,8 @@ private slots:
             QStyle::State_HasFocus, orange);
         QVERIFY(imageContainsColor(slider, orange.color(QPalette::Active, QPalette::Highlight)));
         QVERIFY(imageContainsColor(tab, orange.color(QPalette::Active, QPalette::Highlight)));
-        QVERIFY(imageContainsColor(pressedScrollBar, orange.color(QPalette::Active, QPalette::Highlight)));
+        // MeoScrollBar: a dragged thumb uses onSurface, not the accent.
+        QVERIFY(imageContainsColor(pressedScrollBar, orange.color(QPalette::Active, QPalette::WindowText)));
         QVERIFY(imageContainsColor(focusedCombo, orange.color(QPalette::Active, QPalette::Highlight)));
 
         const QImage defaultButton = renderControl(style.get(), ControlKind::DefaultButton,

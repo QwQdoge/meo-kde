@@ -30,6 +30,13 @@ public:
     static QString configuredWallpaperPath(QString *error = nullptr);
     /// Applet configuration files that can hold the wallpaper, active shell first.
     static QStringList plasmaAppletConfigNames();
+    /**
+     * Makes the KScreenLocker greeter use the desktop wallpaper.  Honors
+     * `[Greeter][Meo] FollowDesktopWallpaper=false` in kscreenlockerrc for a
+     * user who wants a separate lock-screen image.  Returns "updated",
+     * "unchanged", "disabled" or "unavailable" (no local desktop image).
+     */
+    static QString syncLockScreenWallpaper(QString *error = nullptr);
     /// Samples a bounded image representation and returns one stable seed.
     static QColor seedFromWallpaper(const QString &path, QString *error = nullptr);
 

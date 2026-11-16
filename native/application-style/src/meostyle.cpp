@@ -494,7 +494,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     }
     if (element == PE_IndicatorToolBarSeparator || element == PE_IndicatorToolBarHandle) {
         painter->save(); painter->setClipRect(option->rect, Qt::IntersectClip);
-        QColor color = option->palette.color(group, QPalette::Mid); color.setAlphaF(0.55);
+        const QColor color = MeoStyleHelper::outlineVariant(option->palette, group);
         painter->setPen(QPen(color, 1.0, Qt::SolidLine, Qt::RoundCap));
         const QRectF rect = QRectF(option->rect).adjusted(Meo::DesignTokens::space8(), Meo::DesignTokens::space8(),
             -Meo::DesignTokens::space8(), -Meo::DesignTokens::space8());
@@ -550,8 +550,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
         return;
     }
     if (element == PE_PanelMenu) {
-        QColor outline = option->palette.color(group, QPalette::Mid);
-        outline.setAlphaF(0.22);
+        const QColor outline = MeoStyleHelper::outlineVariant(option->palette, group);
         MeoStyleHelper::drawRoundedSurface(
             painter,
             option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
@@ -664,25 +663,32 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
             (pressed ? Meo::DesignTokens::stateOpacityPressed() : focus ? Meo::DesignTokens::stateOpacityFocus()
                      : hover ? Meo::DesignTokens::stateOpacityHover() : 0.0) : 0.0);
         const QColor primary = primaryColor(option->palette, group);
-        const QColor outline = option->palette.color(group, QPalette::Mid);
+        // MeoCheckbox/MeoRadioButton: a transparent box with a 2px
+        // onSurfaceVariant outline at rest; the selected box fills with primary.
+        const QColor outline = MeoStyleHelper::onSurfaceVariant(option->palette, group);
+        const qreal stroke = Meo::DesignTokens::space2();
         const qreal selected = qMax(checkedAmount, partialAmount);
-        QColor indicatorSurface = MeoStyleHelper::blend(option->palette.color(group, QPalette::AlternateBase), primary, selected);
-        indicatorSurface = MeoStyleHelper::blend(indicatorSurface,
-            MeoStyleHelper::blend(option->palette.color(group, QPalette::Text), option->palette.color(group, QPalette::HighlightedText), selected), layer);
+        const QColor restingSurface = option->palette.color(group,
+            element == PE_IndicatorItemViewItemCheck ? QPalette::Base : QPalette::Window);
+        const QColor content = option->palette.color(group, QPalette::WindowText);
         if (element == PE_IndicatorRadioButton) {
+            // A selected radio keeps a transparent centre with a primary ring and dot.
             MeoStyleHelper::drawRoundedSurface(painter, indicator, indicator.width() / 2.0,
-                                                indicatorSurface, outline);
+                                                MeoStyleHelper::blend(restingSurface, content, layer),
+                                                MeoStyleHelper::blend(outline, primary, checkedAmount), stroke);
             if (checkedAmount > 0) {
                 painter->save(); painter->setOpacity(painter->opacity() * checkedAmount);
-                MeoStyleHelper::drawRoundedSurface(painter, indicator.adjusted(5.0, 5.0, -5.0, -5.0),
-                                                    indicator.width() / 2.0,
-                                                    option->palette.color(group, QPalette::HighlightedText));
+                const QRectF dot = indicator.adjusted(5.0, 5.0, -5.0, -5.0);
+                MeoStyleHelper::drawRoundedSurface(painter, dot, dot.width() / 2.0, primary);
                 painter->restore();
             }
         } else {
+            QColor indicatorSurface = MeoStyleHelper::blend(restingSurface, primary, selected);
+            indicatorSurface = MeoStyleHelper::blend(indicatorSurface,
+                MeoStyleHelper::blend(content, option->palette.color(group, QPalette::HighlightedText), selected), layer);
             MeoStyleHelper::drawRoundedSurface(painter, indicator, Meo::DesignTokens::shapeExtraSmall(),
                                                 indicatorSurface,
-                                                MeoStyleHelper::blend(outline, primary, selected));
+                                                MeoStyleHelper::blend(outline, primary, selected), stroke);
             if (checkedAmount > 0) {
                 painter->save(); painter->setOpacity(painter->opacity() * checkedAmount);
                 MeoStyleHelper::drawCheckMark(painter, indicator,
@@ -916,7 +922,8 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             const qreal phase = bar->minimum == 0 && bar->maximum == 0 ? m_animation->progressPhase(widget) : 0.0;
             const auto active = MeoProgress::activeRects(*bar, phase);
             if (element == CE_ProgressBar || element == CE_ProgressBarGroove) {
-                MeoStyleHelper::drawRoundedSurface(painter, bar->rect, radius, bar->palette.color(group, QPalette::Midlight));
+                MeoStyleHelper::drawRoundedSurface(painter, bar->rect, radius,
+                    MeoStyleHelper::secondaryContainer(bar->palette, group, primaryColor(bar->palette, group)));
             }
             if (element == CE_ProgressBar || element == CE_ProgressBarContents) {
                 QPainterPath track; track.addRoundedRect(bar->rect, radius, radius);
@@ -929,14 +936,16 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             if ((element == CE_ProgressBar || element == CE_ProgressBarLabel) && bar->textVisible && !bar->text.isEmpty()) {
                 auto label = [&](QPalette::ColorRole role) {
                     painter->save();
-                    QRect textRect = bar->rect;
+                    // Keep the label off the rounded ends of the pill.
+                    const int inset = qRound(radius);
+                    QRect textRect = bar->rect.adjusted(inset, 0, -inset, 0);
                     if (!MeoProgress::horizontal(*bar)) {
                         if (bar->bottomToTop) {
                             painter->translate(bar->rect.left(), bar->rect.bottom() + 1); painter->rotate(-90);
                         } else {
                             painter->translate(bar->rect.right() + 1, bar->rect.top()); painter->rotate(90);
                         }
-                        textRect = QRect(QPoint(), bar->rect.size().transposed());
+                        textRect = QRect(QPoint(), bar->rect.size().transposed()).adjusted(inset, 0, -inset, 0);
                     }
                     QPalette palette = bar->palette; palette.setCurrentColorGroup(group);
                     drawItemText(painter, textRect, int(bar->textAlignment | Qt::AlignVCenter | Qt::TextSingleLine),
@@ -1045,7 +1054,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             const QRect menuRect = subControlRect(CC_ToolButton, toolButton, SC_ToolButtonMenu, widget);
             if (!menuRect.isEmpty()) {
                 painter->save();
-                painter->setPen(QPen(toolButton->palette.color(group, QPalette::Midlight), 1.0));
+                painter->setPen(QPen(MeoStyleHelper::outlineVariant(toolButton->palette, group), 1.0));
                 const int x = toolButton->direction == Qt::RightToLeft ? menuRect.right() : menuRect.left();
                 painter->drawLine(x, option->rect.top() + 4, x, option->rect.bottom() - 4);
                 painter->restore();
@@ -1075,7 +1084,8 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             const qreal offset = handle / 2.0 + Meo::DesignTokens::space4();
             auto tick = [&](qint64 value) {
                 const int position = sliderPositionFromValue(slider->minimum, slider->maximum, int(value), span, slider->upsideDown);
-                painter->setBrush(slider->palette.color(group, value <= slider->sliderPosition ? QPalette::Link : QPalette::Mid));
+                painter->setBrush(value <= slider->sliderPosition ? primaryColor(slider->palette, group)
+                                                                    : MeoStyleHelper::outline(slider->palette, group));
                 const qreal axis = (horizontal ? slider->rect.left() : slider->rect.top()) + handle / 2.0 + position;
                 for (int side : {-1, 1}) {
                     if (!(slider->tickPosition & (side < 0 ? QSlider::TicksAbove : QSlider::TicksBelow))) continue;
@@ -1100,7 +1110,8 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         const QRectF track = centeredTrack(visualGroove, slider->orientation, Meo::DesignTokens::space4());
         if (option->subControls.testFlag(SC_SliderGroove)) {
             MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(),
-                                                option->palette.color(group, QPalette::Midlight));
+                                                MeoStyleHelper::secondaryContainer(option->palette, group,
+                                                                                   primaryColor(option->palette, group)));
             MeoStyleHelper::drawRoundedSurface(painter,
                                                 sliderActiveTrack(track, handleRect.center(), slider->orientation,
                                                                   slider->upsideDown),
@@ -1150,8 +1161,10 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         if (option->subControls.testFlag(SC_ScrollBarGroove) && !grooveRect.isEmpty()) {
             const QRectF track = centeredTrack(grooveRect, scrollBar->orientation,
                                                 Meo::DesignTokens::space4());
-            MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(),
-                                                option->palette.color(group, QPalette::Midlight));
+            // MeoScrollBar track: outlineVariant at 35%.
+            QColor groove = MeoStyleHelper::outlineVariant(option->palette, group);
+            groove.setAlphaF(0.35);
+            MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(), groove);
         }
 
         const auto drawScrollButton = [&](SubControl subControl) {
@@ -1190,12 +1203,12 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
 
         if (option->subControls.testFlag(SC_ScrollBarSlider) && !sliderRect.isEmpty()) {
             const bool sliderActive = option->activeSubControls.testFlag(SC_ScrollBarSlider);
-            const QColor thumb = enabled
-                ? (pressed && sliderActive
-                       ? primaryColor(option->palette, group)
-                       : MeoStyleHelper::stateLayer(option->palette, group, QPalette::Mid,
-                                                    QPalette::Text, sliderActive || hover, false, focus))
-                : option->palette.color(QPalette::Disabled, QPalette::Mid);
+            // MeoScrollBar: outline at rest, onSurfaceVariant on hover,
+            // onSurface while dragged.
+            QColor thumb = pressed && sliderActive ? option->palette.color(group, QPalette::WindowText)
+                         : (sliderActive || hover) ? MeoStyleHelper::onSurfaceVariant(option->palette, group)
+                                                   : MeoStyleHelper::outline(option->palette, group);
+            if (!enabled) thumb.setAlphaF(0.38);
             const QRectF thumbRect = QRectF(sliderRect).adjusted(1.0, 1.0, -1.0, -1.0);
             MeoStyleHelper::drawRoundedSurface(painter, thumbRect,
                                                 qMin(thumbRect.width(), thumbRect.height()) / 2.0, thumb);
