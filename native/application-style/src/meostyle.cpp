@@ -34,7 +34,7 @@ namespace {
 
 qreal controlRadius()
 {
-    return Meo::DesignTokens::controlRadius();
+    return MeoStyleHelper::corner(Meo::DesignTokens::controlRadius());
 }
 
 qreal buttonRadius(const QStyleOption *option, bool pressed)
@@ -44,8 +44,8 @@ qreal buttonRadius(const QStyleOption *option, bool pressed)
         return halfHeight;
     }
     return qMin(halfHeight,
-                qMax(Meo::DesignTokens::controlPressedRadius(),
-                     qMin(Meo::DesignTokens::controlRadius(),
+                qMax(MeoStyleHelper::corner(Meo::DesignTokens::controlPressedRadius()),
+                     qMin(MeoStyleHelper::corner(Meo::DesignTokens::controlRadius()),
                           halfHeight - Meo::DesignTokens::space8())));
 }
 
@@ -160,9 +160,9 @@ void drawItemViewSurface(const QStyleOption *option, QPainter *painter)
         ? MeoStyleHelper::blend(surface, accent, qMin<qreal>(0.30, selectionOpacity + stateOpacity))
         : option->palette.color(QPalette::Disabled, QPalette::AlternateBase);
     const QRectF itemRect = option->rect.adjusted(1.0, 1.0, -1.0, -1.0);
-    MeoStyleHelper::drawRoundedSurface(painter, itemRect, Meo::DesignTokens::shapeSmall(), fill);
+    MeoStyleHelper::drawRoundedSurface(painter, itemRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), fill);
     if (focused) {
-        MeoStyleHelper::drawFocusRing(painter, itemRect, Meo::DesignTokens::shapeSmall(), accent);
+        MeoStyleHelper::drawFocusRing(painter, itemRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), accent);
     }
 }
 
@@ -300,7 +300,7 @@ int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidge
     if (hint == SH_ToolTip_Mask && option) {
         if (auto *mask = qstyleoption_cast<QStyleHintReturnMask *>(returnData)) {
             QPainterPath path;
-            path.addRoundedRect(option->rect, Meo::DesignTokens::shapeSmall(), Meo::DesignTokens::shapeSmall());
+            path.addRoundedRect(option->rect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()));
             mask->region = QRegion(path.toFillPolygon().toPolygon());
             return true;
         }
@@ -464,7 +464,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     if (element == PE_PanelTipLabel) {
         QColor outline = option->palette.color(group, QPalette::ToolTipText); outline.setAlphaF(0.16);
         MeoStyleHelper::drawRoundedSurface(painter, QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5),
-            Meo::DesignTokens::shapeSmall(), option->palette.color(group, QPalette::ToolTipBase), outline);
+            MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), option->palette.color(group, QPalette::ToolTipBase), outline);
         return;
     }
     if (element == PE_FrameStatusBarItem) return; // No per-item platform bevel.
@@ -501,7 +501,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
         const int extent = qMin(qRound(Meo::DesignTokens::iconSizeS()), qMin(option->rect.width(), option->rect.height()));
         const QRect glyph(option->rect.center().x() - extent / 2, option->rect.center().y() - extent / 2, extent, extent);
         const QColor foreground = option->palette.color(group, QPalette::Text);
-        if (enabled && hover) MeoStyleHelper::drawRoundedSurface(painter, glyph, Meo::DesignTokens::shapeExtraSmall(),
+        if (enabled && hover) MeoStyleHelper::drawRoundedSurface(painter, glyph, MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
             MeoStyleHelper::blend(option->palette.color(group, QPalette::Window), foreground, Meo::DesignTokens::stateOpacityHover()));
         MeoStyleHelper::drawChevron(painter, glyph, foreground, option->state.testFlag(State_Open) ? Qt::DownArrow
             : option->direction == Qt::RightToLeft ? Qt::LeftArrow : Qt::RightArrow);
@@ -538,7 +538,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
         MeoStyleHelper::drawRoundedSurface(
             painter,
             option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
-            Meo::DesignTokens::shapeLargeIncreased(),
+            MeoStyleHelper::corner(Meo::DesignTokens::shapeLargeIncreased()),
             option->palette.color(group, QPalette::Window),
             outline);
         return;
@@ -670,7 +670,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
             QColor indicatorSurface = MeoStyleHelper::blend(restingSurface, primary, selected);
             indicatorSurface = MeoStyleHelper::blend(indicatorSurface,
                 MeoStyleHelper::blend(content, option->palette.color(group, QPalette::HighlightedText), selected), layer);
-            MeoStyleHelper::drawRoundedSurface(painter, indicator, Meo::DesignTokens::shapeExtraSmall(),
+            MeoStyleHelper::drawRoundedSurface(painter, indicator, MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
                                                 indicatorSurface,
                                                 MeoStyleHelper::blend(outline, primary, selected), stroke);
             if (checkedAmount > 0) {
@@ -778,11 +778,11 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             -Meo::DesignTokens::space2(),
             -Meo::DesignTokens::space2());
         MeoStyleHelper::drawRoundedSurface(
-            painter, background, Meo::DesignTokens::shapeLarge(), fill);
+            painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeLarge()), fill);
 
         if (focus) {
             MeoStyleHelper::drawFocusRing(
-                painter, background, Meo::DesignTokens::shapeLarge(), accent);
+                painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeLarge()), accent);
         }
 
         // Breeze remains responsible for icon/check/submenu/mnemonic geometry.
@@ -814,11 +814,11 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                 -Meo::DesignTokens::space2(),
                 -Meo::DesignTokens::space2());
             MeoStyleHelper::drawRoundedSurface(
-                painter, background, Meo::DesignTokens::shapeSmall(),
+                painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()),
                 MeoStyleHelper::blend(surface, accent, opacity));
             if (focus) {
                 MeoStyleHelper::drawFocusRing(
-                    painter, background, Meo::DesignTokens::shapeSmall(), accent);
+                    painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), accent);
             }
         }
 
@@ -848,7 +848,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             ? MeoStyleHelper::stateLayer(option->palette, group, surfaceRole, contentRole, hover, pressed, focus)
             : option->palette.color(QPalette::Disabled, surfaceRole);
         const QRectF tabRect = option->rect.adjusted(1.0, 1.0, -1.0, -1.0);
-        MeoStyleHelper::drawRoundedSurface(painter, tabRect, Meo::DesignTokens::shapeSmall(), fill);
+        MeoStyleHelper::drawRoundedSurface(painter, tabRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), fill);
 
         if (selected) {
             QRectF indicator = tabRect;
@@ -876,7 +876,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                                                 primaryColor(option->palette, group));
         }
         if (focus) {
-            MeoStyleHelper::drawFocusRing(painter, tabRect, Meo::DesignTokens::shapeSmall(),
+            MeoStyleHelper::drawFocusRing(painter, tabRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()),
                                            primaryColor(option->palette, group));
         }
         return;
@@ -1029,7 +1029,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
                 const bool active = spin->activeSubControls.testFlag(part);
                 const auto buttonGroup = stepEnabled ? group : QPalette::Disabled;
                 if (stepEnabled && active && (hover || pressed)) {
-                    MeoStyleHelper::drawRoundedSurface(painter, rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeExtraSmall(),
+                    MeoStyleHelper::drawRoundedSurface(painter, rect.adjusted(2, 2, -2, -2), MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
                         MeoStyleHelper::stateLayer(spin->palette, buttonGroup, QPalette::AlternateBase, QPalette::Text, hover, pressed));
                 }
                 const int extent = qMin(rect.height(), qRound(Meo::DesignTokens::iconSizeS()));
@@ -1213,7 +1213,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             if (active && enabled) {
                 MeoStyleHelper::drawRoundedSurface(
                     painter, QRectF(buttonRect).adjusted(1.0, 1.0, -1.0, -1.0),
-                    Meo::DesignTokens::shapeExtraSmall(),
+                    MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
                     MeoStyleHelper::stateLayer(option->palette, group, QPalette::Button,
                                                 QPalette::ButtonText, true, pressed));
             }

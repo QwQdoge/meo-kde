@@ -214,6 +214,13 @@ void writeMaterialRoles(KConfig &config, const DynamicColors::ColorScheme &schem
              QStringLiteral("onTertiaryContainer"),
              QStringLiteral("onSurfaceVariant"),
              QStringLiteral("outline"),
+             // Surface ladder and hairline role for the native Qt style, so
+             // KDE applications paint with exactly the roles MeoUI uses.
+             QStringLiteral("surface"),
+             QStringLiteral("surfaceContainerLow"),
+             QStringLiteral("surfaceContainerHigh"),
+             QStringLiteral("surfaceContainerHighest"),
+             QStringLiteral("outlineVariant"),
          }) {
         material.writeEntry(name, encoded(role(scheme, name)));
     }

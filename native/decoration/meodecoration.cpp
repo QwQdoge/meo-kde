@@ -52,6 +52,17 @@ bool Decoration::init()
     updateLayout();
     updateShadow();
 
+    m_shellAppearanceWatcher = KConfigWatcher::create(KSharedConfig::openConfig(QStringLiteral("meo-shellrc")));
+    connect(m_shellAppearanceWatcher.data(), &KConfigWatcher::configChanged, this,
+            [this](const KConfigGroup &changed) {
+                if (changed.name() != QLatin1String("Appearance"))
+                    return;
+                loadConfig();
+                updateLayout();
+                updateShadow();
+                update();
+            });
+
     if (const auto decorationSettings = settings()) {
         connect(decorationSettings.get(), &KDecoration3::DecorationSettings::fontChanged, this, [this]() {
             loadConfig();
@@ -91,7 +102,12 @@ void Decoration::loadConfig()
     const QFont titleFont = settings() ? settings()->font() : QGuiApplication::font();
     const int minimumForFont = QFontMetrics(titleFont).height() + 8;
     m_config.titleBarHeight = qBound(30, qMax(requestedTitlebarHeight, minimumForFont), 34);
-    m_config.cornerRadius = qBound(0, group.readEntry("CornerRadius", 16), 48);
+    // The user's corner roundness from Meo Settings scales the window corner
+    // the same way MeoTheme.cornerScale scales MeoUI and Plasma surfaces.
+    const auto shell = KSharedConfig::openConfig(QStringLiteral("meo-shellrc"));
+    shell->reparseConfiguration();
+    const qreal cornerScale = qBound(0, KConfigGroup(shell, QStringLiteral("Appearance")).readEntry("CornerScale", 100), 150) / 100.0;
+    m_config.cornerRadius = qBound(0, qRound(qBound(0, group.readEntry("CornerRadius", 16), 48) * cornerScale), 72);
     m_config.buttonDiameter = qBound(16, group.readEntry("ButtonDiameter", 24), 32);
     m_config.buttonHitSize = qBound(26, group.readEntry("ButtonHitSize", 32), 40);
     m_config.buttonSpacing = qBound(0, group.readEntry("ButtonSpacing", 2), 24);

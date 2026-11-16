@@ -208,11 +208,11 @@ void drawMenuItem(const MeoStyleContent *style, const QStyleOptionMenuItem *item
                                                    -Meo::DesignTokens::space2(),
                                                    -Meo::DesignTokens::space2());
     MeoStyleHelper::drawRoundedSurface(painter, background,
-                                        Meo::DesignTokens::shapeLarge(), fill);
+                                        MeoStyleHelper::corner(Meo::DesignTokens::shapeLarge()), fill);
     if (focusAmount > 0) {
         painter->save(); painter->setOpacity(painter->opacity() * focusAmount);
         MeoStyleHelper::drawFocusRing(painter, background,
-                                       Meo::DesignTokens::shapeLarge(), accent);
+                                       MeoStyleHelper::corner(Meo::DesignTokens::shapeLarge()), accent);
         painter->restore();
     }
 
@@ -454,8 +454,8 @@ void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *op
             const bool focus = item->state.testFlag(State_HasFocus);
             if (selected || hover || pressed || focus) {
                 const QColor fill = MeoStyleHelper::stateLayer(item->palette, group, QPalette::AlternateBase, QPalette::Text, hover || selected, pressed, focus);
-                MeoStyleHelper::drawRoundedSurface(painter, item->rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeSmall(), fill);
-                if (focus) MeoStyleHelper::drawFocusRing(painter, item->rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeSmall(), primaryColor(item->palette, group));
+                MeoStyleHelper::drawRoundedSurface(painter, item->rect.adjusted(2, 2, -2, -2), MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), fill);
+                if (focus) MeoStyleHelper::drawFocusRing(painter, item->rect.adjusted(2, 2, -2, -2), MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), primaryColor(item->palette, group));
             }
             const QRect content = item->rect.adjusted(qRound(Meo::DesignTokens::space12()), qRound(Meo::DesignTokens::space4()),
                 -qRound(Meo::DesignTokens::space12()), -qRound(Meo::DesignTokens::space4()));
@@ -495,11 +495,11 @@ void MeoStyleContent::drawControl(ControlElement element, const QStyleOption *op
         const bool active = option->state.testFlag(State_MouseOver) || option->state.testFlag(State_Sunken)
             || option->state.testFlag(State_On);
         if (element == CE_HeaderSection && active) MeoStyleHelper::drawRoundedSurface(painter,
-            option->rect.adjusted(1, 1, -1, -1), Meo::DesignTokens::shapeSmall(),
+            option->rect.adjusted(1, 1, -1, -1), MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()),
             MeoStyleHelper::stateLayer(option->palette, group, QPalette::AlternateBase, QPalette::Text,
                 option->state.testFlag(State_MouseOver), option->state.testFlag(State_Sunken), option->state.testFlag(State_HasFocus)));
         if (option->state.testFlag(State_HasFocus)) MeoStyleHelper::drawFocusRing(painter,
-            option->rect.adjusted(1, 1, -1, -1), Meo::DesignTokens::shapeSmall(), primaryColor(option->palette, group));
+            option->rect.adjusted(1, 1, -1, -1), MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), primaryColor(option->palette, group));
         painter->restore();
         return;
     }
@@ -665,7 +665,7 @@ void MeoStyleContent::drawComplexControl(ComplexControl control, const QStyleOpt
             painter->save(); painter->setClipRect(group->rect, Qt::IntersectClip);
             if (group->subControls.testFlag(SC_GroupBoxFrame) && !group->features.testFlag(QStyleOptionFrame::Flat)) {
                 MeoStyleHelper::drawRoundedSurface(painter, layout.frame.adjusted(1, 1, -1, -1),
-                    Meo::DesignTokens::shapeMedium(), tonalContainerColor(group->palette, colorGroup));
+                    MeoStyleHelper::corner(Meo::DesignTokens::shapeMedium()), tonalContainerColor(group->palette, colorGroup));
             }
             if (group->subControls.testFlag(SC_GroupBoxLabel) && !layout.label.isEmpty()) {
                 QPalette palette = group->palette;
@@ -684,7 +684,7 @@ void MeoStyleContent::drawComplexControl(ComplexControl control, const QStyleOpt
                 QRect focus = layout.label.isEmpty() ? layout.check : layout.label;
                 if (!layout.check.isEmpty()) focus = focus.united(layout.check);
                 if (!focus.isEmpty()) MeoStyleHelper::drawFocusRing(painter, focus.adjusted(-3, -3, 3, 3),
-                    Meo::DesignTokens::shapeExtraSmall(), primaryColor(group->palette, colorGroup));
+                    MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()), primaryColor(group->palette, colorGroup));
             }
             painter->restore(); return;
         }

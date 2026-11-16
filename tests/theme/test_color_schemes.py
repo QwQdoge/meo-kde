@@ -16,6 +16,9 @@ MATERIAL_ROLES = {
     "surfaceContainer", "onSurface", "primary", "onPrimary",
     "primaryContainer", "onPrimaryContainer", "secondaryContainer",
     "onSecondaryContainer", "onSurfaceVariant", "outline",
+    # Read by the native Qt style so KDE applications use MeoUI's exact roles.
+    "surface", "surfaceContainerLow", "surfaceContainerHigh",
+    "surfaceContainerHighest", "outlineVariant",
 }
 
 
