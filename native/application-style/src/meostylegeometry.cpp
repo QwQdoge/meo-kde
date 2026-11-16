@@ -3,6 +3,8 @@
 #include "meostyleitem.h"
 #include "meostyle.h"
 #include "meostyletab.h"
+#include "meostyletrack.h"
+#include "meostyleprogress.h"
 
 #include <QtCore/QtGlobal>
 #include <initializer_list>
@@ -91,6 +93,10 @@ QRect MeoStyle::subElementRect(SubElement element, const QStyleOption *option,
     case SE_ProgressBarGroove:
     case SE_ProgressBarContents:
     case SE_ProgressBarLabel:
+        if (const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
+            const auto layout = MeoProgress::layout(*bar);
+            return element == SE_ProgressBarLabel ? layout.label : layout.bar;
+        }
         return option->rect;
     case SE_ToolBarHandle: {
         if (const auto *bar = qstyleoption_cast<const QStyleOptionToolBar *>(option)) {
@@ -293,7 +299,9 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
             return QProxyStyle::subControlRect(control, option, subControl, widget);
         }
 
-        const int handleLength = px(Meo::DesignTokens::iconSizeS());
+        // A 20dp pointer target along the axis; the painted thumb is a 4dp bar.
+        const int handleLength = px(MeoTrack::sliderHitLength);
+        const int handleThickness = px(Meo::DesignTokens::sliderThumbHeightXS());
         if (subControl == SC_SliderGroove) {
             // Qt subtracts the handle length when mapping drags to values.
             // Painting applies the visual half-handle inset separately.
@@ -309,9 +317,9 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
                                                         span,
                                                         slider->upsideDown);
                 return QRect(option->rect.left() + pos,
-                             option->rect.center().y() - handleLength / 2,
+                             option->rect.center().y() - handleThickness / 2,
                              handleLength,
-                             handleLength);
+                             handleThickness);
             }
 
             const int span = qMax(0, option->rect.height() - handleLength);
@@ -320,9 +328,9 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
                                                     slider->sliderPosition,
                                                     span,
                                                     slider->upsideDown);
-            return QRect(option->rect.center().x() - handleLength / 2,
+            return QRect(option->rect.center().x() - handleThickness / 2,
                          option->rect.top() + pos,
-                         handleLength,
+                         handleThickness,
                          handleLength);
         }
     }

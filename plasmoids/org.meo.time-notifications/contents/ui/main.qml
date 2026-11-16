@@ -44,7 +44,11 @@ PlasmoidItem {
         showDismissed: false
         sortMode: NotificationManager.Notifications.SortByDate
         sortOrder: Qt.DescendingOrder
-        groupMode: NotificationManager.Notifications.GroupDisabled
+        // Plasma's grouping proxy stacks one application's notifications;
+        // a collapsed group shows its newest one, and the rest fan out below.
+        groupMode: NotificationManager.Notifications.GroupApplicationsFlat
+        groupLimit: 1
+        expandUnread: false
         window: root.Window.window
     }
     compactRepresentation: TimeNotificationButton {
@@ -74,6 +78,9 @@ PlasmoidItem {
             notifications.lastRead = clock.dateTime
             toast.visible = false
             Qt.callLater(function() { popup.requestActivate(); popup.mainItem.forceActiveFocus() })
+        } else {
+            // Reopen with every application group stacked again.
+            notifications.collapseAllGroups()
         }
         mainItem: StatusCenterView {
         Keys.onEscapePressed: popup.visible = false

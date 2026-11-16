@@ -6,6 +6,7 @@
 #include "meostyle.h"
 #include "meostyleanimation.h"
 #include "meostyletab.h"
+#include "meostyletrack.h"
 
 #include "meostylehelper.h"
 
@@ -33,7 +34,7 @@ namespace {
 
 qreal controlRadius()
 {
-    return Meo::DesignTokens::controlRadius();
+    return MeoStyleHelper::corner(Meo::DesignTokens::controlRadius());
 }
 
 qreal buttonRadius(const QStyleOption *option, bool pressed)
@@ -43,8 +44,8 @@ qreal buttonRadius(const QStyleOption *option, bool pressed)
         return halfHeight;
     }
     return qMin(halfHeight,
-                qMax(Meo::DesignTokens::controlPressedRadius(),
-                     qMin(Meo::DesignTokens::controlRadius(),
+                qMax(MeoStyleHelper::corner(Meo::DesignTokens::controlPressedRadius()),
+                     qMin(MeoStyleHelper::corner(Meo::DesignTokens::controlRadius()),
                           halfHeight - Meo::DesignTokens::space8())));
 }
 
@@ -136,24 +137,6 @@ QRectF centeredTrack(const QRect &source, Qt::Orientation orientation, qreal thi
     return track;
 }
 
-QRectF sliderActiveTrack(const QRectF &track, const QPointF &handleCenter,
-                         Qt::Orientation orientation, bool upsideDown)
-{
-    QRectF active = track;
-    if (orientation == Qt::Horizontal) {
-        if (upsideDown) {
-            active.setLeft(qBound(track.left(), handleCenter.x(), track.right()));
-        } else {
-            active.setRight(qBound(track.left(), handleCenter.x(), track.right()));
-        }
-    } else if (upsideDown) {
-        active.setTop(qBound(track.top(), handleCenter.y(), track.bottom()));
-    } else {
-        active.setBottom(qBound(track.top(), handleCenter.y(), track.bottom()));
-    }
-    return active;
-}
-
 void drawItemViewSurface(const QStyleOption *option, QPainter *painter)
 {
     const bool selected = option->state.testFlag(QStyle::State_Selected);
@@ -177,9 +160,9 @@ void drawItemViewSurface(const QStyleOption *option, QPainter *painter)
         ? MeoStyleHelper::blend(surface, accent, qMin<qreal>(0.30, selectionOpacity + stateOpacity))
         : option->palette.color(QPalette::Disabled, QPalette::AlternateBase);
     const QRectF itemRect = option->rect.adjusted(1.0, 1.0, -1.0, -1.0);
-    MeoStyleHelper::drawRoundedSurface(painter, itemRect, Meo::DesignTokens::shapeSmall(), fill);
+    MeoStyleHelper::drawRoundedSurface(painter, itemRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), fill);
     if (focused) {
-        MeoStyleHelper::drawFocusRing(painter, itemRect, Meo::DesignTokens::shapeSmall(), accent);
+        MeoStyleHelper::drawFocusRing(painter, itemRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), accent);
     }
 }
 
@@ -295,15 +278,15 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
         return qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space2());
     case PM_SliderThickness:
     case PM_SliderControlThickness:
-        return qRound(Meo::DesignTokens::iconSizeS());
+        return qRound(Meo::DesignTokens::sliderThumbHeightXS());
     case PM_SliderTickmarkOffset:
-        return qRound(Meo::DesignTokens::iconSizeS() / 2 + Meo::DesignTokens::space4());
+        return 0; // Stops are drawn on the track, not beside it.
     case PM_SliderSpaceAvailable:
         if (const auto *slider = qstyleoption_cast<const QStyleOptionSlider *>(option))
-            return qMax(0, (slider->orientation == Qt::Horizontal ? option->rect.width() : option->rect.height()) - qRound(Meo::DesignTokens::iconSizeS()));
+            return qMax(0, (slider->orientation == Qt::Horizontal ? option->rect.width() : option->rect.height()) - qRound(MeoTrack::sliderHitLength));
         break;
     case PM_SliderLength:
-        return qRound(Meo::DesignTokens::iconSizeS());
+        return qRound(MeoTrack::sliderHitLength);
     default:
         break;
     }
@@ -317,7 +300,7 @@ int MeoStyle::styleHint(StyleHint hint, const QStyleOption *option, const QWidge
     if (hint == SH_ToolTip_Mask && option) {
         if (auto *mask = qstyleoption_cast<QStyleHintReturnMask *>(returnData)) {
             QPainterPath path;
-            path.addRoundedRect(option->rect, Meo::DesignTokens::shapeSmall(), Meo::DesignTokens::shapeSmall());
+            path.addRoundedRect(option->rect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()));
             mask->region = QRegion(path.toFillPolygon().toPolygon());
             return true;
         }
@@ -338,7 +321,8 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
         const auto *slider = qstyleoption_cast<const QStyleOptionSlider *>(option);
         if (!slider) return contentsSize;
         QSize size = slider->orientation == Qt::Horizontal ? contentsSize : contentsSize.transposed();
-        size.setHeight(qMax(qRound(Meo::DesignTokens::controlHeight()), size.height()));
+        // Room for the 44dp bar thumb; tick marks live on the track.
+        size.setHeight(qRound(Meo::DesignTokens::sliderThumbHeightXS()));
         return slider->orientation == Qt::Horizontal ? size : size.transposed();
     }
     case CT_ProgressBar: {
@@ -480,7 +464,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     if (element == PE_PanelTipLabel) {
         QColor outline = option->palette.color(group, QPalette::ToolTipText); outline.setAlphaF(0.16);
         MeoStyleHelper::drawRoundedSurface(painter, QRectF(option->rect).adjusted(0.5, 0.5, -0.5, -0.5),
-            Meo::DesignTokens::shapeSmall(), option->palette.color(group, QPalette::ToolTipBase), outline);
+            MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), option->palette.color(group, QPalette::ToolTipBase), outline);
         return;
     }
     if (element == PE_FrameStatusBarItem) return; // No per-item platform bevel.
@@ -494,7 +478,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
     }
     if (element == PE_IndicatorToolBarSeparator || element == PE_IndicatorToolBarHandle) {
         painter->save(); painter->setClipRect(option->rect, Qt::IntersectClip);
-        QColor color = option->palette.color(group, QPalette::Mid); color.setAlphaF(0.55);
+        const QColor color = MeoStyleHelper::outlineVariant(option->palette, group);
         painter->setPen(QPen(color, 1.0, Qt::SolidLine, Qt::RoundCap));
         const QRectF rect = QRectF(option->rect).adjusted(Meo::DesignTokens::space8(), Meo::DesignTokens::space8(),
             -Meo::DesignTokens::space8(), -Meo::DesignTokens::space8());
@@ -517,7 +501,7 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
         const int extent = qMin(qRound(Meo::DesignTokens::iconSizeS()), qMin(option->rect.width(), option->rect.height()));
         const QRect glyph(option->rect.center().x() - extent / 2, option->rect.center().y() - extent / 2, extent, extent);
         const QColor foreground = option->palette.color(group, QPalette::Text);
-        if (enabled && hover) MeoStyleHelper::drawRoundedSurface(painter, glyph, Meo::DesignTokens::shapeExtraSmall(),
+        if (enabled && hover) MeoStyleHelper::drawRoundedSurface(painter, glyph, MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
             MeoStyleHelper::blend(option->palette.color(group, QPalette::Window), foreground, Meo::DesignTokens::stateOpacityHover()));
         MeoStyleHelper::drawChevron(painter, glyph, foreground, option->state.testFlag(State_Open) ? Qt::DownArrow
             : option->direction == Qt::RightToLeft ? Qt::LeftArrow : Qt::RightArrow);
@@ -550,12 +534,11 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
         return;
     }
     if (element == PE_PanelMenu) {
-        QColor outline = option->palette.color(group, QPalette::Mid);
-        outline.setAlphaF(0.22);
+        const QColor outline = MeoStyleHelper::outlineVariant(option->palette, group);
         MeoStyleHelper::drawRoundedSurface(
             painter,
             option->rect.adjusted(0.5, 0.5, -0.5, -0.5),
-            Meo::DesignTokens::shapeLargeIncreased(),
+            MeoStyleHelper::corner(Meo::DesignTokens::shapeLargeIncreased()),
             option->palette.color(group, QPalette::Window),
             outline);
         return;
@@ -664,25 +647,32 @@ void MeoStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *optio
             (pressed ? Meo::DesignTokens::stateOpacityPressed() : focus ? Meo::DesignTokens::stateOpacityFocus()
                      : hover ? Meo::DesignTokens::stateOpacityHover() : 0.0) : 0.0);
         const QColor primary = primaryColor(option->palette, group);
-        const QColor outline = option->palette.color(group, QPalette::Mid);
+        // MeoCheckbox/MeoRadioButton: a transparent box with a 2px
+        // onSurfaceVariant outline at rest; the selected box fills with primary.
+        const QColor outline = MeoStyleHelper::onSurfaceVariant(option->palette, group);
+        const qreal stroke = Meo::DesignTokens::space2();
         const qreal selected = qMax(checkedAmount, partialAmount);
-        QColor indicatorSurface = MeoStyleHelper::blend(option->palette.color(group, QPalette::AlternateBase), primary, selected);
-        indicatorSurface = MeoStyleHelper::blend(indicatorSurface,
-            MeoStyleHelper::blend(option->palette.color(group, QPalette::Text), option->palette.color(group, QPalette::HighlightedText), selected), layer);
+        const QColor restingSurface = option->palette.color(group,
+            element == PE_IndicatorItemViewItemCheck ? QPalette::Base : QPalette::Window);
+        const QColor content = option->palette.color(group, QPalette::WindowText);
         if (element == PE_IndicatorRadioButton) {
+            // A selected radio keeps a transparent centre with a primary ring and dot.
             MeoStyleHelper::drawRoundedSurface(painter, indicator, indicator.width() / 2.0,
-                                                indicatorSurface, outline);
+                                                MeoStyleHelper::blend(restingSurface, content, layer),
+                                                MeoStyleHelper::blend(outline, primary, checkedAmount), stroke);
             if (checkedAmount > 0) {
                 painter->save(); painter->setOpacity(painter->opacity() * checkedAmount);
-                MeoStyleHelper::drawRoundedSurface(painter, indicator.adjusted(5.0, 5.0, -5.0, -5.0),
-                                                    indicator.width() / 2.0,
-                                                    option->palette.color(group, QPalette::HighlightedText));
+                const QRectF dot = indicator.adjusted(5.0, 5.0, -5.0, -5.0);
+                MeoStyleHelper::drawRoundedSurface(painter, dot, dot.width() / 2.0, primary);
                 painter->restore();
             }
         } else {
-            MeoStyleHelper::drawRoundedSurface(painter, indicator, Meo::DesignTokens::shapeExtraSmall(),
+            QColor indicatorSurface = MeoStyleHelper::blend(restingSurface, primary, selected);
+            indicatorSurface = MeoStyleHelper::blend(indicatorSurface,
+                MeoStyleHelper::blend(content, option->palette.color(group, QPalette::HighlightedText), selected), layer);
+            MeoStyleHelper::drawRoundedSurface(painter, indicator, MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
                                                 indicatorSurface,
-                                                MeoStyleHelper::blend(outline, primary, selected));
+                                                MeoStyleHelper::blend(outline, primary, selected), stroke);
             if (checkedAmount > 0) {
                 painter->save(); painter->setOpacity(painter->opacity() * checkedAmount);
                 MeoStyleHelper::drawCheckMark(painter, indicator,
@@ -788,11 +778,11 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             -Meo::DesignTokens::space2(),
             -Meo::DesignTokens::space2());
         MeoStyleHelper::drawRoundedSurface(
-            painter, background, Meo::DesignTokens::shapeLarge(), fill);
+            painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeLarge()), fill);
 
         if (focus) {
             MeoStyleHelper::drawFocusRing(
-                painter, background, Meo::DesignTokens::shapeLarge(), accent);
+                painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeLarge()), accent);
         }
 
         // Breeze remains responsible for icon/check/submenu/mnemonic geometry.
@@ -824,11 +814,11 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                 -Meo::DesignTokens::space2(),
                 -Meo::DesignTokens::space2());
             MeoStyleHelper::drawRoundedSurface(
-                painter, background, Meo::DesignTokens::shapeSmall(),
+                painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()),
                 MeoStyleHelper::blend(surface, accent, opacity));
             if (focus) {
                 MeoStyleHelper::drawFocusRing(
-                    painter, background, Meo::DesignTokens::shapeSmall(), accent);
+                    painter, background, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), accent);
             }
         }
 
@@ -858,7 +848,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             ? MeoStyleHelper::stateLayer(option->palette, group, surfaceRole, contentRole, hover, pressed, focus)
             : option->palette.color(QPalette::Disabled, surfaceRole);
         const QRectF tabRect = option->rect.adjusted(1.0, 1.0, -1.0, -1.0);
-        MeoStyleHelper::drawRoundedSurface(painter, tabRect, Meo::DesignTokens::shapeSmall(), fill);
+        MeoStyleHelper::drawRoundedSurface(painter, tabRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()), fill);
 
         if (selected) {
             QRectF indicator = tabRect;
@@ -886,7 +876,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                                                 primaryColor(option->palette, group));
         }
         if (focus) {
-            MeoStyleHelper::drawFocusRing(painter, tabRect, Meo::DesignTokens::shapeSmall(),
+            MeoStyleHelper::drawFocusRing(painter, tabRect, MeoStyleHelper::corner(Meo::DesignTokens::shapeSmall()),
                                            primaryColor(option->palette, group));
         }
         return;
@@ -911,46 +901,77 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
     if (element == CE_ProgressBar || element == CE_ProgressBarGroove
         || element == CE_ProgressBarContents || element == CE_ProgressBarLabel) {
         if (const auto *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(option)) {
-            painter->save(); painter->setClipRect(bar->rect, Qt::IntersectClip);
-            const qreal radius = qMin(bar->rect.width(), bar->rect.height()) / 2.0;
-            const qreal phase = bar->minimum == 0 && bar->maximum == 0 ? m_animation->progressPhase(widget) : 0.0;
-            const auto active = MeoProgress::activeRects(*bar, phase);
+            // MeoProgressBar: a 4dp primary segment, a 4dp gap, then the
+            // secondaryContainer track, ending in a 4dp primary stop.
+            const auto layout = MeoProgress::layout(*bar);
+            QStyleOptionProgressBar thin(*bar);
+            thin.rect = MeoProgress::thinBar(*bar, layout.bar);
+            const bool horizontal = MeoProgress::horizontal(*bar);
+            const bool indeterminate = bar->minimum == 0 && bar->maximum == 0;
+            const qreal phase = indeterminate ? m_animation->progressPhase(widget) : 0.0;
+            const auto active = MeoProgress::activeRects(thin, phase);
+            const QColor surface = bar->palette.color(group, QPalette::Window);
+            const QColor content = bar->palette.color(group, QPalette::WindowText);
+            const QColor primary = primaryColor(bar->palette, group);
+            const QColor activeColor = enabled ? primary : MeoStyleHelper::blend(surface, content, 0.38);
+            const QColor trackColor = enabled ? MeoStyleHelper::secondaryContainer(bar->palette, group, primary)
+                                              : MeoStyleHelper::blend(surface, content, 0.12);
+            const QRectF lane(thin.rect);
+            const qreal radius = Meo::DesignTokens::progressTrackThickness() / 2.0;
+            painter->save();
+            painter->setRenderHint(QPainter::Antialiasing);
+            painter->setPen(Qt::NoPen);
+
             if (element == CE_ProgressBar || element == CE_ProgressBarGroove) {
-                MeoStyleHelper::drawRoundedSurface(painter, bar->rect, radius, bar->palette.color(group, QPalette::Midlight));
+                // The track is the lane minus each active segment widened by the gap.
+                QList<QPair<qreal, qreal>> pieces{{horizontal ? lane.left() : lane.top(),
+                                                   horizontal ? lane.right() : lane.bottom()}};
+                for (const auto &rect : active) {
+                    if (rect.isEmpty()) continue;
+                    const qreal length = horizontal ? rect.width() : rect.height();
+                    const qreal gap = qMin(length, Meo::DesignTokens::progressTrackActiveGap());
+                    const qreal cutFrom = (horizontal ? rect.left() : rect.top()) - gap;
+                    const qreal cutTo = (horizontal ? rect.right() : rect.bottom()) + gap;
+                    QList<QPair<qreal, qreal>> next;
+                    for (const auto &piece : pieces) {
+                        if (cutFrom > piece.first) next.append({piece.first, qMin(piece.second, cutFrom)});
+                        if (cutTo < piece.second) next.append({qMax(piece.first, cutTo), piece.second});
+                    }
+                    pieces = next;
+                }
+                painter->setBrush(trackColor);
+                for (const auto &piece : pieces) {
+                    painter->drawPath(MeoTrack::segment(lane, horizontal, piece.first, piece.second, radius, radius));
+                }
+                // End stop at the far end of the fill direction.
+                const qint64 range = qint64(bar->maximum) - bar->minimum;
+                if (!indeterminate && range > 0 && bar->progress < bar->maximum) {
+                    const QRectF end = MeoProgress::segment(thin, 0.999, 1.0);
+                    const qreal stop = Meo::DesignTokens::progressStopSize() / 2.0;
+                    const bool atOrigin = horizontal ? end.center().x() < lane.center().x()
+                                                     : end.center().y() < lane.center().y();
+                    const QPointF centerPoint = horizontal
+                        ? QPointF(atOrigin ? lane.left() + stop : lane.right() - stop, lane.center().y())
+                        : QPointF(lane.center().x(), atOrigin ? lane.top() + stop : lane.bottom() - stop);
+                    painter->setBrush(activeColor);
+                    painter->drawEllipse(centerPoint, stop, stop);
+                }
             }
             if (element == CE_ProgressBar || element == CE_ProgressBarContents) {
-                QPainterPath track; track.addRoundedRect(bar->rect, radius, radius);
-                painter->save(); painter->setClipPath(track, Qt::IntersectClip);
-                const QColor accent = enabled ? primaryColor(bar->palette, group) : bar->palette.color(QPalette::Disabled, QPalette::Highlight);
-                for (const auto &rect : active) if (!rect.isEmpty()) MeoStyleHelper::drawRoundedSurface(painter, rect,
-                    qMin(rect.width(), rect.height()) / 2.0, accent);
-                painter->restore();
+                painter->setBrush(activeColor);
+                for (const auto &rect : active) {
+                    if (!rect.isEmpty()) painter->drawRoundedRect(rect, radius, radius);
+                }
             }
-            if ((element == CE_ProgressBar || element == CE_ProgressBarLabel) && bar->textVisible && !bar->text.isEmpty()) {
-                auto label = [&](QPalette::ColorRole role) {
-                    painter->save();
-                    QRect textRect = bar->rect;
-                    if (!MeoProgress::horizontal(*bar)) {
-                        if (bar->bottomToTop) {
-                            painter->translate(bar->rect.left(), bar->rect.bottom() + 1); painter->rotate(-90);
-                        } else {
-                            painter->translate(bar->rect.right() + 1, bar->rect.top()); painter->rotate(90);
-                        }
-                        textRect = QRect(QPoint(), bar->rect.size().transposed());
-                    }
-                    QPalette palette = bar->palette; palette.setCurrentColorGroup(group);
-                    drawItemText(painter, textRect, int(bar->textAlignment | Qt::AlignVCenter | Qt::TextSingleLine),
-                        palette, enabled, bar->text, role);
-                    painter->restore();
-                };
-                label(QPalette::Text);
-                QPainterPath filled;
-                for (const auto &rect : active) if (!rect.isEmpty()) filled.addRoundedRect(rect,
-                    qMin(rect.width(), rect.height()) / 2.0, qMin(rect.width(), rect.height()) / 2.0);
-                painter->setClipPath(filled, Qt::IntersectClip);
-                label(QPalette::HighlightedText);
+            if ((element == CE_ProgressBar || element == CE_ProgressBarLabel) && !layout.label.isEmpty()) {
+                QPalette palette = bar->palette; palette.setCurrentColorGroup(group);
+                drawItemText(painter, layout.label,
+                             int((bar->direction == Qt::RightToLeft ? Qt::AlignLeft : Qt::AlignRight)
+                                 | Qt::AlignVCenter | Qt::TextSingleLine),
+                             palette, enabled, bar->text, QPalette::WindowText);
             }
-            painter->restore(); return;
+            painter->restore();
+            return;
         }
     }
     QProxyStyle::drawControl(element, option, painter, widget);
@@ -1008,7 +1029,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
                 const bool active = spin->activeSubControls.testFlag(part);
                 const auto buttonGroup = stepEnabled ? group : QPalette::Disabled;
                 if (stepEnabled && active && (hover || pressed)) {
-                    MeoStyleHelper::drawRoundedSurface(painter, rect.adjusted(2, 2, -2, -2), Meo::DesignTokens::shapeExtraSmall(),
+                    MeoStyleHelper::drawRoundedSurface(painter, rect.adjusted(2, 2, -2, -2), MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
                         MeoStyleHelper::stateLayer(spin->palette, buttonGroup, QPalette::AlternateBase, QPalette::Text, hover, pressed));
                 }
                 const int extent = qMin(rect.height(), qRound(Meo::DesignTokens::iconSizeS()));
@@ -1045,7 +1066,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             const QRect menuRect = subControlRect(CC_ToolButton, toolButton, SC_ToolButtonMenu, widget);
             if (!menuRect.isEmpty()) {
                 painter->save();
-                painter->setPen(QPen(toolButton->palette.color(group, QPalette::Midlight), 1.0));
+                painter->setPen(QPen(MeoStyleHelper::outlineVariant(toolButton->palette, group), 1.0));
                 const int x = toolButton->direction == Qt::RightToLeft ? menuRect.right() : menuRect.left();
                 painter->drawLine(x, option->rect.top() + 4, x, option->rect.bottom() - 4);
                 painter->restore();
@@ -1061,77 +1082,100 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             return;
         }
 
-        if (option->subControls.testFlag(SC_SliderTickmarks) && slider->tickPosition != QSlider::NoTicks) {
-            painter->save(); painter->setClipRect(slider->rect, Qt::IntersectClip); painter->setRenderHint(QPainter::Antialiasing);
-            painter->setPen(Qt::NoPen);
-            const bool horizontal = slider->orientation == Qt::Horizontal;
-            const int handle = qRound(Meo::DesignTokens::iconSizeS());
-            const int span = qMax(0, (horizontal ? slider->rect.width() : slider->rect.height()) - handle);
-            const qint64 range = qMax<qint64>(0, qint64(slider->maximum) - slider->minimum);
-            qint64 interval = slider->tickInterval > 0 ? slider->tickInterval : qMax(1, slider->singleStep);
-            // Do not iterate billions of invisible ticks for a wide integer range.
-            const int maximumTicks = qMax(1, span / qRound(Meo::DesignTokens::space8()));
-            interval = qMax(interval, (range + maximumTicks - 1) / maximumTicks);
-            const qreal offset = handle / 2.0 + Meo::DesignTokens::space4();
-            auto tick = [&](qint64 value) {
-                const int position = sliderPositionFromValue(slider->minimum, slider->maximum, int(value), span, slider->upsideDown);
-                painter->setBrush(slider->palette.color(group, value <= slider->sliderPosition ? QPalette::Link : QPalette::Mid));
-                const qreal axis = (horizontal ? slider->rect.left() : slider->rect.top()) + handle / 2.0 + position;
-                for (int side : {-1, 1}) {
-                    if (!(slider->tickPosition & (side < 0 ? QSlider::TicksAbove : QSlider::TicksBelow))) continue;
-                    const QPointF center = horizontal ? QPointF(axis, slider->rect.center().y() + side * offset)
-                                                      : QPointF(slider->rect.center().x() + side * offset, axis);
-                    painter->drawEllipse(center, Meo::DesignTokens::space2() / 2.0, Meo::DesignTokens::space2() / 2.0);
-                }
-            };
-            for (qint64 value = slider->minimum; value <= slider->maximum; value += interval) {
-                tick(value);
-                if (interval <= 0) break;
-            }
-            if (range > 0 && range % interval != 0) tick(slider->maximum);
-            painter->restore();
-        }
-
+        // MeoSlider: a 16dp split track that breaks 6dp either side of a
+        // 4x44dp bar thumb, with a contrasting stop at the trailing end.
+        const bool horizontal = slider->orientation == Qt::Horizontal;
         const QRect grooveRect = subControlRect(CC_Slider, slider, SC_SliderGroove, widget);
         const QRect handleRect = subControlRect(CC_Slider, slider, SC_SliderHandle, widget);
-        const int halfHandle = qRound(Meo::DesignTokens::iconSizeS()) / 2;
-        const QRect visualGroove = slider->orientation == Qt::Horizontal ? grooveRect.adjusted(halfHandle, 0, -halfHandle, 0)
-                                                                        : grooveRect.adjusted(0, halfHandle, 0, -halfHandle);
-        const QRectF track = centeredTrack(visualGroove, slider->orientation, Meo::DesignTokens::space4());
+        const qreal halfHit = (horizontal ? handleRect.width() : handleRect.height()) / 2.0;
+        const QRectF track = centeredTrack(grooveRect, slider->orientation, Meo::DesignTokens::sliderTrackHeightXS())
+            .adjusted(horizontal ? halfHit - Meo::DesignTokens::sliderTrackCornerRadiusXS() : 0,
+                      horizontal ? 0 : halfHit - Meo::DesignTokens::sliderTrackCornerRadiusXS(),
+                      horizontal ? Meo::DesignTokens::sliderTrackCornerRadiusXS() - halfHit : 0,
+                      horizontal ? 0 : Meo::DesignTokens::sliderTrackCornerRadiusXS() - halfHit);
+        const qreal lo = horizontal ? track.left() : track.top();
+        const qreal hi = horizontal ? track.right() : track.bottom();
+        const QPointF handleCenter = QRectF(handleRect).center();
+        const qreal center = qBound(lo, horizontal ? handleCenter.x() : handleCenter.y(), hi);
+        // Qt maps the minimum to the origin unless upsideDown; the active
+        // (filled) side is always the minimum side.
+        const bool activeAtOrigin = !slider->upsideDown;
+
+        const QColor surface = option->palette.color(group, QPalette::Window);
+        const QColor content = option->palette.color(group, QPalette::WindowText);
+        const QColor primary = primaryColor(option->palette, group);
+        const QColor activeColor = enabled ? primary : MeoStyleHelper::blend(surface, content, 0.38);
+        const QColor inactiveColor = enabled ? MeoStyleHelper::secondaryContainer(option->palette, group, primary)
+                                             : MeoStyleHelper::blend(surface, content, 0.12);
+
+        const qreal before = center - Meo::DesignTokens::sliderThumbGap();
+        const qreal after = center + Meo::DesignTokens::sliderThumbGap();
+        const qreal stopRadius = Meo::DesignTokens::sliderStopSize() / 2.0;
+        const auto dotAt = [&](qreal axis) {
+            return horizontal ? QPointF(axis, track.center().y()) : QPointF(track.center().x(), axis);
+        };
+        const bool ticks = option->subControls.testFlag(SC_SliderTickmarks)
+                           && slider->tickPosition != QSlider::NoTicks;
         if (option->subControls.testFlag(SC_SliderGroove)) {
-            MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(),
-                                                option->palette.color(group, QPalette::Midlight));
-            MeoStyleHelper::drawRoundedSurface(painter,
-                                                sliderActiveTrack(track, handleRect.center(), slider->orientation,
-                                                                  slider->upsideDown),
-                                                Meo::DesignTokens::space2(),
-                                                primaryColor(option->palette, group));
+            painter->save(); painter->setRenderHint(QPainter::Antialiasing); painter->setPen(Qt::NoPen);
+            const QColor originColor = activeAtOrigin ? activeColor : inactiveColor;
+            const QColor farColor = activeAtOrigin ? inactiveColor : activeColor;
+            painter->setBrush(originColor);
+            painter->drawPath(MeoTrack::segment(track, horizontal, lo, before,
+                                                Meo::DesignTokens::sliderTrackCornerRadiusXS(), Meo::DesignTokens::sliderTrackInsideCornerRadius()));
+            painter->setBrush(farColor);
+            painter->drawPath(MeoTrack::segment(track, horizontal, after, hi,
+                                                Meo::DesignTokens::sliderTrackInsideCornerRadius(), Meo::DesignTokens::sliderTrackCornerRadiusXS()));
+            if (slider->tickPosition == QSlider::NoTicks) {
+                // Trailing end stop on the remaining (inactive) side.
+                const qreal stopAxis = activeAtOrigin ? hi - Meo::DesignTokens::sliderTrackCornerRadiusXS()
+                                                      : lo + Meo::DesignTokens::sliderTrackCornerRadiusXS();
+                const bool covered = activeAtOrigin ? stopAxis <= after : stopAxis >= before;
+                if (!covered) {
+                    painter->setBrush(activeColor);
+                    painter->drawEllipse(dotAt(stopAxis), stopRadius, stopRadius);
+                }
+            }
+            painter->restore();
+        }
+        // Stops (tick marks) sit on the track: light on the filled side,
+        // primary on the remaining side.
+        if (ticks) {
+            painter->save(); painter->setRenderHint(QPainter::Antialiasing); painter->setPen(Qt::NoPen);
+            {
+                const qint64 range = qMax<qint64>(0, qint64(slider->maximum) - slider->minimum);
+                qint64 interval = slider->tickInterval > 0 ? slider->tickInterval : qMax(1, slider->singleStep);
+                const qreal travel = hi - lo - 2 * Meo::DesignTokens::sliderTrackCornerRadiusXS();
+                const int maximumTicks = qMax(1, int(travel / Meo::DesignTokens::space8()));
+                interval = qMax(interval, (range + maximumTicks - 1) / maximumTicks);
+                for (qint64 value = slider->minimum; value <= slider->maximum && interval > 0; value += interval) {
+                    const int pos = sliderPositionFromValue(slider->minimum, slider->maximum, int(value),
+                                                            qMax(0, int(travel)), slider->upsideDown);
+                    const qreal axis = lo + Meo::DesignTokens::sliderTrackCornerRadiusXS() + pos;
+                    if (qAbs(axis - center) < Meo::DesignTokens::sliderThumbGap() + stopRadius) continue;
+                    const bool onOriginSide = axis < center;
+                    painter->setBrush(onOriginSide == activeAtOrigin ? inactiveColor : activeColor);
+                    painter->drawEllipse(dotAt(axis), stopRadius, stopRadius);
+                }
+            }
+            painter->restore();
         }
 
         if (option->subControls.testFlag(SC_SliderHandle)) {
             const qreal response = animatedValue(widget, QStringLiteral("slider.response"), enabled && pressed ? 1.0 : 0.0, true);
-            const qreal layerAmount = animatedValue(widget, QStringLiteral("slider.layer"), enabled ?
-                (pressed ? Meo::DesignTokens::stateOpacityPressed() : focus ? Meo::DesignTokens::stateOpacityFocus()
-                         : hover || option->activeSubControls.testFlag(SC_SliderHandle) ? Meo::DesignTokens::stateOpacityHover() : 0.0) : 0.0);
             const qreal focusAmount = animatedValue(widget, QStringLiteral("slider.focus"), enabled && focus ? 1.0 : 0.0);
-            const QRectF handle = QRectF(handleRect).adjusted(1.0 - response, 1.0 - response, -1.0 + response, -1.0 + response);
-            if (layerAmount > 0) {
-                const QRectF stateLayer = handle.adjusted(-Meo::DesignTokens::space4(),
-                                                           -Meo::DesignTokens::space4(),
-                                                           Meo::DesignTokens::space4(),
-                                                           Meo::DesignTokens::space4());
-                const QColor layer = MeoStyleHelper::blend(option->palette.color(group, QPalette::Window),
-                                                            primaryColor(option->palette, group),
-                                                            layerAmount);
-                MeoStyleHelper::drawRoundedSurface(painter, stateLayer, stateLayer.width() / 2.0, layer);
-            }
-            MeoStyleHelper::drawRoundedSurface(painter, handle, handle.width() / 2.0,
-                                                primaryColor(option->palette, group));
+            const qreal barWidth = Meo::DesignTokens::sliderThumbWidth()
+                - (Meo::DesignTokens::sliderThumbWidth() - Meo::DesignTokens::sliderThumbPressedWidth()) * response;
+            const qreal barLength = qMin<qreal>(Meo::DesignTokens::sliderThumbHeightXS(),
+                                                horizontal ? slider->rect.height() : slider->rect.width());
+            const QRectF thumb = horizontal
+                ? QRectF(center - barWidth / 2.0, track.center().y() - barLength / 2.0, barWidth, barLength)
+                : QRectF(track.center().x() - barLength / 2.0, center - barWidth / 2.0, barLength, barWidth);
+            MeoStyleHelper::drawRoundedSurface(painter, thumb, barWidth / 2.0, activeColor);
             if (focusAmount > 0) {
                 painter->save(); painter->setOpacity(painter->opacity() * focusAmount);
-                MeoStyleHelper::drawFocusRing(painter, handle.adjusted(-2.0, -2.0, 2.0, 2.0),
-                                               handle.width() / 2.0,
-                                               primaryColor(option->palette, group));
+                MeoStyleHelper::drawFocusRing(painter, thumb.adjusted(-3.0, -3.0, 3.0, 3.0),
+                                               barWidth / 2.0 + 3.0, primary);
                 painter->restore();
             }
         }
@@ -1150,8 +1194,10 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         if (option->subControls.testFlag(SC_ScrollBarGroove) && !grooveRect.isEmpty()) {
             const QRectF track = centeredTrack(grooveRect, scrollBar->orientation,
                                                 Meo::DesignTokens::space4());
-            MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(),
-                                                option->palette.color(group, QPalette::Midlight));
+            // MeoScrollBar track: outlineVariant at 35%.
+            QColor groove = MeoStyleHelper::outlineVariant(option->palette, group);
+            groove.setAlphaF(0.35);
+            MeoStyleHelper::drawRoundedSurface(painter, track, Meo::DesignTokens::space2(), groove);
         }
 
         const auto drawScrollButton = [&](SubControl subControl) {
@@ -1167,7 +1213,7 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             if (active && enabled) {
                 MeoStyleHelper::drawRoundedSurface(
                     painter, QRectF(buttonRect).adjusted(1.0, 1.0, -1.0, -1.0),
-                    Meo::DesignTokens::shapeExtraSmall(),
+                    MeoStyleHelper::corner(Meo::DesignTokens::shapeExtraSmall()),
                     MeoStyleHelper::stateLayer(option->palette, group, QPalette::Button,
                                                 QPalette::ButtonText, true, pressed));
             }
@@ -1190,12 +1236,12 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
 
         if (option->subControls.testFlag(SC_ScrollBarSlider) && !sliderRect.isEmpty()) {
             const bool sliderActive = option->activeSubControls.testFlag(SC_ScrollBarSlider);
-            const QColor thumb = enabled
-                ? (pressed && sliderActive
-                       ? primaryColor(option->palette, group)
-                       : MeoStyleHelper::stateLayer(option->palette, group, QPalette::Mid,
-                                                    QPalette::Text, sliderActive || hover, false, focus))
-                : option->palette.color(QPalette::Disabled, QPalette::Mid);
+            // MeoScrollBar: outline at rest, onSurfaceVariant on hover,
+            // onSurface while dragged.
+            QColor thumb = pressed && sliderActive ? option->palette.color(group, QPalette::WindowText)
+                         : (sliderActive || hover) ? MeoStyleHelper::onSurfaceVariant(option->palette, group)
+                                                   : MeoStyleHelper::outline(option->palette, group);
+            if (!enabled) thumb.setAlphaF(0.38);
             const QRectF thumbRect = QRectF(sliderRect).adjusted(1.0, 1.0, -1.0, -1.0);
             MeoStyleHelper::drawRoundedSurface(painter, thumbRect,
                                                 qMin(thumbRect.width(), thumbRect.height()) / 2.0, thumb);

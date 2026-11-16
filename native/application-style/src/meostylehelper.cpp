@@ -1,4 +1,5 @@
 #include "meostylehelper.h"
+#include "meostyleenvironment.h"
 
 #include <QtGui/QPainter>
 #include <QtGui/QPainterPath>
@@ -37,14 +38,53 @@ QColor stateLayer(const QPalette &palette, QPalette::ColorGroup group,
 }
 
 void drawRoundedSurface(QPainter *painter, const QRectF &rect, qreal radius,
-                        const QColor &fill, const QColor &outline)
+                        const QColor &fill, const QColor &outline, qreal outlineWidth)
 {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(fill);
-    painter->setPen(outline.isValid() ? QPen(outline, 1.0) : Qt::NoPen);
-    painter->drawRoundedRect(rect, radius, radius);
+    if (outline.isValid() && outlineWidth > 1.0) {
+        // Keep a thick stroke inside the indicator bounds.
+        const qreal inset = outlineWidth / 2.0;
+        const QRectF inner = rect.adjusted(inset, inset, -inset, -inset);
+        const qreal innerRadius = qMax<qreal>(0.0, radius - inset);
+        painter->setPen(QPen(outline, outlineWidth));
+        painter->drawRoundedRect(inner, innerRadius, innerRadius);
+    } else {
+        painter->setPen(outline.isValid() ? QPen(outline, 1.0) : Qt::NoPen);
+        painter->drawRoundedRect(rect, radius, radius);
+    }
     painter->restore();
+}
+
+QColor onSurfaceVariant(const QPalette &palette, QPalette::ColorGroup group)
+{
+    const QColor exact = MeoStyleEnvironment::role(QStringLiteral("onSurfaceVariant"), palette, group);
+    if (exact.isValid()) return exact;
+    return blend(palette.color(group, QPalette::Window), palette.color(group, QPalette::WindowText), 0.80);
+}
+
+QColor outline(const QPalette &palette, QPalette::ColorGroup group)
+{
+    const QColor exact = MeoStyleEnvironment::role(QStringLiteral("outline"), palette, group);
+    if (exact.isValid()) return exact;
+    return blend(palette.color(group, QPalette::Window), palette.color(group, QPalette::WindowText), 0.56);
+}
+
+QColor outlineVariant(const QPalette &palette, QPalette::ColorGroup group)
+{
+    const QColor exact = MeoStyleEnvironment::role(QStringLiteral("outlineVariant"), palette, group);
+    if (exact.isValid()) return exact;
+    return blend(palette.color(group, QPalette::Window), palette.color(group, QPalette::WindowText), 0.20);
+}
+
+QColor secondaryContainer(const QPalette &palette, QPalette::ColorGroup group, const QColor &primary)
+{
+    const QColor exact = MeoStyleEnvironment::role(QStringLiteral("secondaryContainer"), palette, group);
+    if (exact.isValid()) return exact;
+    const QColor window = palette.color(group, QPalette::Window);
+    // A dark surface needs more of the primary tone to reach the container step.
+    return blend(window, primary, window.lightnessF() < 0.5 ? 0.24 : 0.15);
 }
 
 void drawFocusRing(QPainter *painter, const QRectF &rect, qreal radius, const QColor &color)
@@ -110,6 +150,11 @@ void drawChevron(QPainter *painter, const QRectF &rect, const QColor &color, Qt:
     painter->setPen(QPen(color, Meo::DesignTokens::space2(), Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawPath(path);
     painter->restore();
+}
+
+qreal corner(qreal radius)
+{
+    return radius * MeoStyleEnvironment::cornerScale();
 }
 
 } // namespace MeoStyleHelper

@@ -94,6 +94,34 @@ int main(int argc, char *argv[])
         QTextStream(stderr) << "Dynamic color source storage/resolution failed: " << sourceError << Qt::endl;
         return 1;
     }
+    // The lock screen follows the desktop wallpaper unless the user opted out.
+    {
+        const auto lockConfig = KSharedConfig::openConfig(QStringLiteral("kscreenlockerrc"));
+        const auto lockImage = [&lockConfig]() {
+            lockConfig->reparseConfiguration();
+            return KConfigGroup(lockConfig, QStringLiteral("Greeter"))
+                .group(QStringLiteral("Wallpaper")).group(QStringLiteral("org.kde.image"))
+                .group(QStringLiteral("General")).readEntry("Image", QString());
+        };
+        const QString expected = QUrl::fromLocalFile(wallpaperPath).toString();
+        if (DynamicColorSource::syncLockScreenWallpaper(&sourceError) != QStringLiteral("updated")
+            || lockImage() != expected
+            || DynamicColorSource::syncLockScreenWallpaper(&sourceError) != QStringLiteral("unchanged")) {
+            QTextStream(stderr) << "Lock screen did not follow the desktop wallpaper: " << sourceError << Qt::endl;
+            return 1;
+        }
+        KConfigGroup(lockConfig, QStringLiteral("Greeter")).group(QStringLiteral("Meo"))
+            .writeEntry("FollowDesktopWallpaper", false);
+        KConfigGroup(lockConfig, QStringLiteral("Greeter")).group(QStringLiteral("Wallpaper"))
+            .group(QStringLiteral("org.kde.image")).group(QStringLiteral("General"))
+            .writeEntry("Image", QStringLiteral("file:///custom/lock.png"));
+        lockConfig->sync();
+        if (DynamicColorSource::syncLockScreenWallpaper(&sourceError) != QStringLiteral("disabled")
+            || lockImage() != QStringLiteral("file:///custom/lock.png")) {
+            QTextStream(stderr) << "The lock-screen opt-out was not honored." << Qt::endl;
+            return 1;
+        }
+    }
     // The active shell package's applet file holds the wallpaper the user picked,
     // in [Wallpaper][org.kde.image][General]; it wins over the layout default.
     {

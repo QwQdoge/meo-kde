@@ -29,7 +29,7 @@ class SessionDynamicColorsUnitTests(unittest.TestCase):
 
     def test_service_uses_packaged_binaries_and_is_started_with_the_session(self):
         service = unit("meo-session-dynamic-colors.service")
-        self.assertEqual(service["Service"]["ExecStart"], "/usr/bin/meo-dynamic-colors --follow-meo --apply")
+        self.assertEqual(service["Service"]["ExecStart"], "/usr/bin/meo-dynamic-colors --sync-lock-wallpaper --follow-meo --apply")
         self.assertNotIn(".local/bin", (UNITS / "meo-session-dynamic-colors.service").read_text())
         self.assertEqual(service["Install"]["WantedBy"], "graphical-session.target")
 

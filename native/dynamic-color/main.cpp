@@ -112,6 +112,8 @@ int main(int argc, char *argv[])
     QCommandLineOption applyOption("apply", "Select the generated light or dark scheme in kdeglobals.");
     QCommandLineOption followOption("follow-meo",
                                     "Apply only while the active KDE scheme belongs to Meo.");
+    QCommandLineOption syncLockOption("sync-lock-wallpaper",
+                                      "Make the lock screen use the desktop wallpaper, then continue.");
     QCommandLineOption darkOption("dark", "Generate/select the dark scheme.");
     parser.addOption(accentOption);
     parser.addOption(sourceOption);
@@ -122,7 +124,20 @@ int main(int argc, char *argv[])
     parser.addOption(applyOption);
     parser.addOption(followOption);
     parser.addOption(darkOption);
+    parser.addOption(syncLockOption);
     parser.process(app);
+
+    // Independent of the color scheme: the lock screen follows the desktop
+    // wallpaper even while a non-Meo KDE scheme is active.
+    if (parser.isSet(syncLockOption)) {
+        QString lockError;
+        const QString lockStatus = DynamicColorSource::syncLockScreenWallpaper(&lockError);
+        if (lockStatus.isEmpty()) {
+            QTextStream(stderr) << lockError << Qt::endl;
+        } else {
+            QTextStream(stdout) << "MEO_LOCK_WALLPAPER " << lockStatus << Qt::endl;
+        }
+    }
 
     if (parser.isSet(followOption)
         && !activeColorScheme().startsWith(QStringLiteral("Meo"), Qt::CaseInsensitive)) {

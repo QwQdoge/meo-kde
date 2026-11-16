@@ -20,7 +20,26 @@ destruction without leaving a timer running.
 Those checks do not prove that a desktop session selected the plugin or that
 already-running applications handled a live KDE colour-scheme notification.
 
-## Supported controls and search fields
+## Dynamic colour and corner roundness
+
+MeoStyle follows the same two desktop settings as MeoUI:
+
+- **Colour roles.** `meo-dynamic-colors` writes MeoUI's Material roles to
+  `kdeglobals` `[MeoMaterial]` (the static Meo schemes ship them too). While
+  those roles describe the active palette (their `onSurface` matches the
+  palette's text colour), tracks, outlines and hairlines use them directly,
+  so a KDE application and a MeoUI surface show identical colours. Another
+  scheme, an application-set palette or the disabled group fall back to
+  roles derived from the palette.
+- **Corner roundness.** `meo-shellrc` `[Appearance] CornerScale` (0-150%)
+  scales the shape and control radii exactly as `MeoTheme.cornerScale`
+  does; pills stay pills and slider tracks keep their fixed corners.
+
+Both files are watched (including KConfig's write-by-rename) and re-read on a
+palette change; open widgets repaint without restarting the application. The
+Meo window decoration applies the same `CornerScale` to its window corners.
+
+
 
 MeoStyle paints the standard Qt Widgets paths for buttons and tool buttons,
 checkboxes and radio buttons, line edits, combo boxes, sliders, progress bars,

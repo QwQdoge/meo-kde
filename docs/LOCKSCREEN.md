@@ -72,3 +72,13 @@ state with the lock screen.
 - Real lock/unlock, wrong-password handling, multi-monitor, suspend/resume and
   DPMS behaviour require a real Plasma/KWin session or VM. Source checks and
   offscreen QML do not prove them.
+
+## Lock-screen wallpaper
+
+The lock screen uses the desktop wallpaper. `meo-dynamic-colors
+--sync-lock-wallpaper` copies the active shell's `org.kde.image` wallpaper into
+`kscreenlockerrc` `[Greeter][Wallpaper][org.kde.image][General] Image`; the
+session dynamic-colors path unit runs it whenever the desktop wallpaper
+changes, independent of the colour scheme. A user who wants a separate
+lock-screen image sets `[Greeter][Meo] FollowDesktopWallpaper=false` in
+`kscreenlockerrc`. Slideshow and non-local wallpapers are left unchanged.

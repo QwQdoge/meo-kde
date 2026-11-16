@@ -40,6 +40,8 @@ add_library(meostyle MODULE
     src/meostyleitem.h
     src/meostyletab.h
     src/meostylehelper.cpp
+    src/meostyleenvironment.cpp
+    src/meostyleenvironment.h
     src/meostylehelper.h
     src/meostyleplugin.cpp
     src/meostyleplugin.h
@@ -73,6 +75,8 @@ add_executable(meo-style-geometry-smoke
     src/meostyleanimation.h
     src/meostylegeometry.cpp
     src/meostylehelper.cpp
+    src/meostyleenvironment.cpp
+    src/meostyleenvironment.h
     src/meostylehelper.h
     src/meostyle.h
 )

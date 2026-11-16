@@ -150,6 +150,11 @@ secondaryContainer=74,68,88
 onSecondaryContainer=232,222,248
 onSurfaceVariant=202,196,208
 outline=147,143,153
+surface=20,18,24
+surfaceContainerLow=29,27,32
+surfaceContainerHigh=43,41,47
+surfaceContainerHighest=54,52,58
+outlineVariant=73,69,78
 
 [WM]
 activeBackground=31,29,36

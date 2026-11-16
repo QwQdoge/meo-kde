@@ -309,3 +309,37 @@ bool DynamicColorSource::resolve(const QString &requestedMode, const QColor &kde
     *resolvedMode = mode;
     return true;
 }
+
+QString DynamicColorSource::syncLockScreenWallpaper(QString *error)
+{
+    if (error) {
+        error->clear();
+    }
+    const auto config = KSharedConfig::openConfig(QStringLiteral("kscreenlockerrc"));
+    config->reparseConfiguration();
+    KConfigGroup greeter(config, QStringLiteral("Greeter"));
+    if (!KConfigGroup(&greeter, QStringLiteral("Meo")).readEntry("FollowDesktopWallpaper", true)) {
+        return QStringLiteral("disabled");
+    }
+    const QString desktop = configuredWallpaperPath();
+    if (desktop.isEmpty()) {
+        return QStringLiteral("unavailable");
+    }
+    const QString image = QUrl::fromLocalFile(desktop).toString();
+    KConfigGroup wallpaper(&greeter, QStringLiteral("Wallpaper"));
+    KConfigGroup plugin(&wallpaper, QStringLiteral("org.kde.image"));
+    KConfigGroup general(&plugin, QStringLiteral("General"));
+    if (greeter.readEntry("WallpaperPlugin", QString()) == QLatin1String("org.kde.image")
+        && general.readEntry("Image", QString()) == image) {
+        return QStringLiteral("unchanged");
+    }
+    greeter.writeEntry("WallpaperPlugin", QStringLiteral("org.kde.image"), KConfig::Notify);
+    general.writeEntry("Image", image, KConfig::Notify);
+    if (!config->sync()) {
+        if (error) {
+            *error = QStringLiteral("Could not write kscreenlockerrc.");
+        }
+        return {};
+    }
+    return QStringLiteral("updated");
+}

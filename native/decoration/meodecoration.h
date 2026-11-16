@@ -5,6 +5,7 @@
 #include <KDecoration3/DecorationSettings>
 #include <KDecoration3/DecorationShadow>
 #include <KColorScheme>
+#include <KConfigWatcher>
 #include <QColor>
 #include <memory>
 
@@ -54,6 +55,8 @@ public:
 
 private:
     void loadConfig();
+    // Meo Settings corner roundness (meo-shellrc [Appearance] CornerScale).
+    KConfigWatcher::Ptr m_shellAppearanceWatcher;
     void updateLayout();
     void updateShadow();
     void createButtons();
