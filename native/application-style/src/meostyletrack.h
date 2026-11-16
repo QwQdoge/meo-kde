@@ -5,23 +5,15 @@
 
 #include <algorithm>
 
-// Slider and linear-progress geometry from MeoUI's MeoSlider/MeoProgressBar.
-// The native MeoUI token header does not carry these yet, so each value names
-// the MeoTheme property it mirrors; move them there once MeoUI exports them.
+#include <meodesigntokens.h>
+
+// Path helpers for the split slider and linear progress tracks. Their
+// dimensions are MeoUI design tokens (Meo::DesignTokens::slider*/progress*).
 namespace MeoTrack {
 
-constexpr qreal sliderTrackHeight = 16.0;        // MeoTheme.sliderTrackHeightXS
-constexpr qreal sliderTrackRadius = 8.0;         // MeoTheme.sliderTrackCornerRadiusXS
-constexpr qreal sliderInsideRadius = 2.0;        // MeoTheme.sliderTrackInsideCornerRadius
-constexpr qreal sliderThumbWidth = 4.0;          // MeoTheme.sliderThumbWidthExpressive
-constexpr qreal sliderThumbPressedWidth = 2.0;   // MeoTheme.sliderThumbPressedWidthExpressive
-constexpr qreal sliderThumbHeight = 44.0;        // MeoTheme.sliderThumbHeightXS
-constexpr qreal sliderThumbGap = 6.0;            // MeoTheme.sliderThumbGapExpressive
-constexpr qreal stopSize = 4.0;                  // MeoTheme.sliderStopSizeExpressive / progress end stop
-constexpr qreal sliderHitLength = 20.0;          // pointer target along the axis; the bar stays 4dp
-
-constexpr qreal progressThickness = 4.0;         // MeoProgressBar.trackThickness
-constexpr qreal progressGap = 4.0;               // ProgressIndicatorDefaults TrackActiveSpace
+// The painted thumb is a 4dp bar; the pointer target along the axis stays
+// wider so a Qt Widgets slider remains easy to grab. Native-style only.
+constexpr qreal sliderHitLength = 20.0;
 
 // Rounded rectangle with independent corner radii, clamped to the rect.
 inline QPainterPath roundedPath(const QRectF &r, qreal topLeft, qreal topRight,

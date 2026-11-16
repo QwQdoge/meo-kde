@@ -372,7 +372,7 @@ void MeoStyleGeometryTest::sliderHandleUsesMeoTokenSize()
     const QRect handle = style.subControlRect(QStyle::CC_Slider, &option,
                                               QStyle::SC_SliderHandle);
     // A 20dp pointer target along the axis, 44dp across (MeoSlider XS thumb).
-    QCOMPARE(handle.size(), QSize(qRound(MeoTrack::sliderHitLength), qRound(MeoTrack::sliderThumbHeight)));
+    QCOMPARE(handle.size(), QSize(qRound(MeoTrack::sliderHitLength), qRound(Meo::DesignTokens::sliderThumbHeightXS())));
     QCOMPARE(groove, option.rect);
     // Qt derives the drag span by subtracting one handle from this rectangle.
     QCOMPARE(groove.width() - handle.width(), style.pixelMetric(QStyle::PM_SliderSpaceAvailable, &option));

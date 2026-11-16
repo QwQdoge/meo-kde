@@ -278,7 +278,7 @@ int MeoStyle::pixelMetric(PixelMetric metric, const QStyleOption *option, const 
         return qRound(Meo::DesignTokens::space12() + Meo::DesignTokens::space2());
     case PM_SliderThickness:
     case PM_SliderControlThickness:
-        return qRound(MeoTrack::sliderThumbHeight);
+        return qRound(Meo::DesignTokens::sliderThumbHeightXS());
     case PM_SliderTickmarkOffset:
         return 0; // Stops are drawn on the track, not beside it.
     case PM_SliderSpaceAvailable:
@@ -322,7 +322,7 @@ QSize MeoStyle::sizeFromContents(ContentsType type, const QStyleOption *option,
         if (!slider) return contentsSize;
         QSize size = slider->orientation == Qt::Horizontal ? contentsSize : contentsSize.transposed();
         // Room for the 44dp bar thumb; tick marks live on the track.
-        size.setHeight(qRound(MeoTrack::sliderThumbHeight));
+        size.setHeight(qRound(Meo::DesignTokens::sliderThumbHeightXS()));
         return slider->orientation == Qt::Horizontal ? size : size.transposed();
     }
     case CT_ProgressBar: {
@@ -917,7 +917,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
             const QColor trackColor = enabled ? MeoStyleHelper::secondaryContainer(bar->palette, group, primary)
                                               : MeoStyleHelper::blend(surface, content, 0.12);
             const QRectF lane(thin.rect);
-            const qreal radius = MeoTrack::progressThickness / 2.0;
+            const qreal radius = Meo::DesignTokens::progressTrackThickness() / 2.0;
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing);
             painter->setPen(Qt::NoPen);
@@ -929,7 +929,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                 for (const auto &rect : active) {
                     if (rect.isEmpty()) continue;
                     const qreal length = horizontal ? rect.width() : rect.height();
-                    const qreal gap = qMin(length, MeoTrack::progressGap);
+                    const qreal gap = qMin(length, Meo::DesignTokens::progressTrackActiveGap());
                     const qreal cutFrom = (horizontal ? rect.left() : rect.top()) - gap;
                     const qreal cutTo = (horizontal ? rect.right() : rect.bottom()) + gap;
                     QList<QPair<qreal, qreal>> next;
@@ -947,7 +947,7 @@ void MeoStyle::drawControl(ControlElement element, const QStyleOption *option,
                 const qint64 range = qint64(bar->maximum) - bar->minimum;
                 if (!indeterminate && range > 0 && bar->progress < bar->maximum) {
                     const QRectF end = MeoProgress::segment(thin, 0.999, 1.0);
-                    const qreal stop = MeoTrack::stopSize / 2.0;
+                    const qreal stop = Meo::DesignTokens::progressStopSize() / 2.0;
                     const bool atOrigin = horizontal ? end.center().x() < lane.center().x()
                                                      : end.center().y() < lane.center().y();
                     const QPointF centerPoint = horizontal
@@ -1088,11 +1088,11 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         const QRect grooveRect = subControlRect(CC_Slider, slider, SC_SliderGroove, widget);
         const QRect handleRect = subControlRect(CC_Slider, slider, SC_SliderHandle, widget);
         const qreal halfHit = (horizontal ? handleRect.width() : handleRect.height()) / 2.0;
-        const QRectF track = centeredTrack(grooveRect, slider->orientation, MeoTrack::sliderTrackHeight)
-            .adjusted(horizontal ? halfHit - MeoTrack::sliderTrackRadius : 0,
-                      horizontal ? 0 : halfHit - MeoTrack::sliderTrackRadius,
-                      horizontal ? MeoTrack::sliderTrackRadius - halfHit : 0,
-                      horizontal ? 0 : MeoTrack::sliderTrackRadius - halfHit);
+        const QRectF track = centeredTrack(grooveRect, slider->orientation, Meo::DesignTokens::sliderTrackHeightXS())
+            .adjusted(horizontal ? halfHit - Meo::DesignTokens::sliderTrackCornerRadiusXS() : 0,
+                      horizontal ? 0 : halfHit - Meo::DesignTokens::sliderTrackCornerRadiusXS(),
+                      horizontal ? Meo::DesignTokens::sliderTrackCornerRadiusXS() - halfHit : 0,
+                      horizontal ? 0 : Meo::DesignTokens::sliderTrackCornerRadiusXS() - halfHit);
         const qreal lo = horizontal ? track.left() : track.top();
         const qreal hi = horizontal ? track.right() : track.bottom();
         const QPointF handleCenter = QRectF(handleRect).center();
@@ -1108,9 +1108,9 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         const QColor inactiveColor = enabled ? MeoStyleHelper::secondaryContainer(option->palette, group, primary)
                                              : MeoStyleHelper::blend(surface, content, 0.12);
 
-        const qreal before = center - MeoTrack::sliderThumbGap;
-        const qreal after = center + MeoTrack::sliderThumbGap;
-        const qreal stopRadius = MeoTrack::stopSize / 2.0;
+        const qreal before = center - Meo::DesignTokens::sliderThumbGap();
+        const qreal after = center + Meo::DesignTokens::sliderThumbGap();
+        const qreal stopRadius = Meo::DesignTokens::sliderStopSize() / 2.0;
         const auto dotAt = [&](qreal axis) {
             return horizontal ? QPointF(axis, track.center().y()) : QPointF(track.center().x(), axis);
         };
@@ -1122,14 +1122,14 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             const QColor farColor = activeAtOrigin ? inactiveColor : activeColor;
             painter->setBrush(originColor);
             painter->drawPath(MeoTrack::segment(track, horizontal, lo, before,
-                                                MeoTrack::sliderTrackRadius, MeoTrack::sliderInsideRadius));
+                                                Meo::DesignTokens::sliderTrackCornerRadiusXS(), Meo::DesignTokens::sliderTrackInsideCornerRadius()));
             painter->setBrush(farColor);
             painter->drawPath(MeoTrack::segment(track, horizontal, after, hi,
-                                                MeoTrack::sliderInsideRadius, MeoTrack::sliderTrackRadius));
+                                                Meo::DesignTokens::sliderTrackInsideCornerRadius(), Meo::DesignTokens::sliderTrackCornerRadiusXS()));
             if (slider->tickPosition == QSlider::NoTicks) {
                 // Trailing end stop on the remaining (inactive) side.
-                const qreal stopAxis = activeAtOrigin ? hi - MeoTrack::sliderTrackRadius
-                                                      : lo + MeoTrack::sliderTrackRadius;
+                const qreal stopAxis = activeAtOrigin ? hi - Meo::DesignTokens::sliderTrackCornerRadiusXS()
+                                                      : lo + Meo::DesignTokens::sliderTrackCornerRadiusXS();
                 const bool covered = activeAtOrigin ? stopAxis <= after : stopAxis >= before;
                 if (!covered) {
                     painter->setBrush(activeColor);
@@ -1145,14 +1145,14 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
             {
                 const qint64 range = qMax<qint64>(0, qint64(slider->maximum) - slider->minimum);
                 qint64 interval = slider->tickInterval > 0 ? slider->tickInterval : qMax(1, slider->singleStep);
-                const qreal travel = hi - lo - 2 * MeoTrack::sliderTrackRadius;
+                const qreal travel = hi - lo - 2 * Meo::DesignTokens::sliderTrackCornerRadiusXS();
                 const int maximumTicks = qMax(1, int(travel / Meo::DesignTokens::space8()));
                 interval = qMax(interval, (range + maximumTicks - 1) / maximumTicks);
                 for (qint64 value = slider->minimum; value <= slider->maximum && interval > 0; value += interval) {
                     const int pos = sliderPositionFromValue(slider->minimum, slider->maximum, int(value),
                                                             qMax(0, int(travel)), slider->upsideDown);
-                    const qreal axis = lo + MeoTrack::sliderTrackRadius + pos;
-                    if (qAbs(axis - center) < MeoTrack::sliderThumbGap + stopRadius) continue;
+                    const qreal axis = lo + Meo::DesignTokens::sliderTrackCornerRadiusXS() + pos;
+                    if (qAbs(axis - center) < Meo::DesignTokens::sliderThumbGap() + stopRadius) continue;
                     const bool onOriginSide = axis < center;
                     painter->setBrush(onOriginSide == activeAtOrigin ? inactiveColor : activeColor);
                     painter->drawEllipse(dotAt(axis), stopRadius, stopRadius);
@@ -1164,9 +1164,9 @@ void MeoStyle::drawComplexControl(ComplexControl control, const QStyleOptionComp
         if (option->subControls.testFlag(SC_SliderHandle)) {
             const qreal response = animatedValue(widget, QStringLiteral("slider.response"), enabled && pressed ? 1.0 : 0.0, true);
             const qreal focusAmount = animatedValue(widget, QStringLiteral("slider.focus"), enabled && focus ? 1.0 : 0.0);
-            const qreal barWidth = MeoTrack::sliderThumbWidth
-                - (MeoTrack::sliderThumbWidth - MeoTrack::sliderThumbPressedWidth) * response;
-            const qreal barLength = qMin<qreal>(MeoTrack::sliderThumbHeight,
+            const qreal barWidth = Meo::DesignTokens::sliderThumbWidth()
+                - (Meo::DesignTokens::sliderThumbWidth() - Meo::DesignTokens::sliderThumbPressedWidth()) * response;
+            const qreal barLength = qMin<qreal>(Meo::DesignTokens::sliderThumbHeightXS(),
                                                 horizontal ? slider->rect.height() : slider->rect.width());
             const QRectF thumb = horizontal
                 ? QRectF(center - barWidth / 2.0, track.center().y() - barLength / 2.0, barWidth, barLength)

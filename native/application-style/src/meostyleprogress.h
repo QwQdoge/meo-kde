@@ -60,7 +60,7 @@ inline Layout layout(const QStyleOptionProgressBar &bar)
 // The thin bar centred across the axis inside `area`.
 inline QRect thinBar(const QStyleOptionProgressBar &bar, const QRect &area)
 {
-    const int thickness = qRound(MeoTrack::progressThickness);
+    const int thickness = qRound(Meo::DesignTokens::progressTrackThickness());
     return horizontal(bar)
         ? QRect(area.left(), area.center().y() - thickness / 2 + 1, area.width(), thickness)
         : QRect(area.center().x() - thickness / 2 + 1, area.top(), thickness, area.height());

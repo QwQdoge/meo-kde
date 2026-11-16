@@ -301,7 +301,7 @@ QRect MeoStyle::subControlRect(ComplexControl control, const QStyleOptionComplex
 
         // A 20dp pointer target along the axis; the painted thumb is a 4dp bar.
         const int handleLength = px(MeoTrack::sliderHitLength);
-        const int handleThickness = px(MeoTrack::sliderThumbHeight);
+        const int handleThickness = px(Meo::DesignTokens::sliderThumbHeightXS());
         if (subControl == SC_SliderGroove) {
             // Qt subtracts the handle length when mapping drags to values.
             // Painting applies the visual half-handle inset separately.
