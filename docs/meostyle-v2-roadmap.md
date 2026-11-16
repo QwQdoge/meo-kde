@@ -44,9 +44,9 @@ remain separate and can be exercised after the code phase.
 | Control family | Native implementation |
 | --- | --- |
 | Push/tool buttons, text fields, combo boxes, checks/radios, menus | Meo-owned metrics, content geometry and painting; Qt retains actions, text editing, keyboard and accessibility behavior. |
-| Tabs, toolbars/menu bars, spin boxes, scroll bars, sliders | Meo-owned geometry/content; slider hit geometry matches Qt's drag range. Toolbar overflow glyphs repaint from the live palette. |
+| Tabs, toolbars/menu bars, spin boxes, scroll bars, sliders | Meo-owned geometry/content. Sliders follow MeoSlider XS: 16dp split track breaking 6dp around a 4x44dp bar thumb (2dp while pressed), stops on the track and a trailing end stop; a 20dp hit target keeps Qt's drag range. Toolbar overflow glyphs repaint from the live palette. |
 | Headers, group boxes, standard item-view delegates/branches | Meo-owned label/indicator geometry and painting; application models and custom delegates remain upstream. |
-| Progress, tooltips, status surfaces | Determinate/busy progress including wide ranges and directionality; rounded tooltip surface/mask; no status-item bevel. |
+| Progress, tooltips, status surfaces | MeoProgressBar geometry: 4dp primary segment, 4dp gap, secondaryContainer track and 4dp end stop; busy state keeps the gaps; a visible label sits beside the bar at the trailing end. Rounded tooltip surface/mask; no status-item bevel. |
 | Interaction motion | Shared MeoUI spring tokens; hover/press/focus/check/selection transitions with reduced-motion and lifecycle cleanup. Item-view checks stay immediate because QStyle lacks model identity. |
 
 `native/application-style/tests/` provides the focused offscreen geometry,
