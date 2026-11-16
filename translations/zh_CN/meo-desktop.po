@@ -440,6 +440,9 @@ msgstr "保持唤醒"
 msgid "Power Mode"
 msgstr "电源模式"
 
+msgid "Display"
+msgstr "显示器"
+
 msgid "Displays"
 msgstr "显示器"
 

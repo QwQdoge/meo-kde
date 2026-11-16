@@ -273,55 +273,89 @@ QQC2.ScrollView {
             onEditRequested: root.editRequested()
         }
 
-        MeoQuickControlSlider {
-            id: combinedBrightnessSlider
-            objectName: "combinedBrightnessSlider"
-            controlled: true
+        // Titled control module, as in the macOS Control Center.
+        ColumnLayout {
+            objectName: "displayModule"
             Layout.fillWidth: true
             visible: Platform.brightnessAvailable
-                iconName: "light_mode"
-                trailingIcon: "settings"
-                extraActionIcon: "dark_mode"
-                extraActionEnabled: Platform.nightLightAvailable
-                extraActionActive: Platform.nightLightEnabled
-                extraActionAccessibleName: MeoI18n.translator.i18n("Night Light")
-                onExtraActionTriggered: Platform.nightLightEnabled = !Platform.nightLightEnabled
-                onTrailingTriggered: Qt.openUrlExternally("applications:org.meo.settings.display.desktop")
-            label: ""
-            accessibleName: Platform.brightnessDisplays.length > 1
-                            ? MeoI18n.translator.i18n("Brightness of all displays")
-                            : MeoI18n.translator.i18n("Display brightness")
-            iconAccessibleName: ""
-            iconActionEnabled: false
-            from: 0
-            to: 100
-            value: root.combinedBrightness
-            detailsAvailable: false
-            onMoved: function(value) { root.setAllBrightness(value) }
+            spacing: MeoTheme.space4
+
+            MeoText {
+                Layout.leftMargin: MeoTheme.space4
+                text: MeoI18n.translator.i18n("Display")
+                typeRole: "label"
+                typeSize: "large"
+                emphasized: true
+                color: MeoTheme.contentOnSurface
+            }
+
+            MeoQuickControlSlider {
+                id: combinedBrightnessSlider
+                objectName: "combinedBrightnessSlider"
+                controlled: true
+                Layout.fillWidth: true
+                visible: Platform.brightnessAvailable
+                    iconName: "light_mode"
+                    trailingIcon: "settings"
+                    extraActionIcon: "dark_mode"
+                    extraActionEnabled: Platform.nightLightAvailable
+                    extraActionActive: Platform.nightLightEnabled
+                    extraActionAccessibleName: MeoI18n.translator.i18n("Night Light")
+                    onExtraActionTriggered: Platform.nightLightEnabled = !Platform.nightLightEnabled
+                    onTrailingTriggered: Qt.openUrlExternally("applications:org.meo.settings.display.desktop")
+                label: ""
+                accessibleName: Platform.brightnessDisplays.length > 1
+                                ? MeoI18n.translator.i18n("Brightness of all displays")
+                                : MeoI18n.translator.i18n("Display brightness")
+                iconAccessibleName: ""
+                iconActionEnabled: false
+                from: 0
+                to: 100
+                value: root.combinedBrightness
+                detailsAvailable: false
+                onMoved: function(value) { root.setAllBrightness(value) }
+            }
         }
 
-        MeoQuickControlSlider {
-                controlled: true
+        // Titled control module, as in the macOS Control Center.
+        ColumnLayout {
+            objectName: "soundModule"
             Layout.fillWidth: true
             visible: SystemState.audioAvailable
-            iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
-            trailingIcon: "music_note"
-            extraActionIcon: "tune"
-            extraActionActive: root.audioExpanded
-            extraActionAccessibleName: MeoI18n.translator.i18n("Audio controls")
-            onExtraActionTriggered: root.audioDetailsRequested()
-            onTrailingTriggered: root.audioExpanded = !root.audioExpanded
-            label: ""
-            accessibleName: MeoI18n.translator.i18n("Output volume")
-            iconAccessibleName: SystemState.audioMuted ? MeoI18n.translator.i18n("Unmute output") : MeoI18n.translator.i18n("Mute output")
-            from: 0
-            to: 100
-            value: SystemState.volumePercent
-            detailsAvailable: SystemState.audioOutputDevices.length > 1 || SystemState.microphoneAvailable
-            expanded: root.audioExpanded
-            onMoved: function(value) { SystemState.volumePercent = Math.round(value) }
-            onIconTriggered: SystemState.audioMuted = !SystemState.audioMuted
-            onDetailsToggled: function(expanded) { root.audioExpanded = expanded }
+            spacing: MeoTheme.space4
+
+            MeoText {
+                Layout.leftMargin: MeoTheme.space4
+                text: MeoI18n.translator.i18n("Sound")
+                typeRole: "label"
+                typeSize: "large"
+                emphasized: true
+                color: MeoTheme.contentOnSurface
+            }
+
+            MeoQuickControlSlider {
+                    controlled: true
+                Layout.fillWidth: true
+                visible: SystemState.audioAvailable
+                iconName: SystemState.audioMuted ? "volume_off" : "volume_up"
+                trailingIcon: "music_note"
+                extraActionIcon: "tune"
+                extraActionActive: root.audioExpanded
+                extraActionAccessibleName: MeoI18n.translator.i18n("Audio controls")
+                onExtraActionTriggered: root.audioDetailsRequested()
+                onTrailingTriggered: root.audioExpanded = !root.audioExpanded
+                label: ""
+                accessibleName: MeoI18n.translator.i18n("Output volume")
+                iconAccessibleName: SystemState.audioMuted ? MeoI18n.translator.i18n("Unmute output") : MeoI18n.translator.i18n("Mute output")
+                from: 0
+                to: 100
+                value: SystemState.volumePercent
+                detailsAvailable: SystemState.audioOutputDevices.length > 1 || SystemState.microphoneAvailable
+                expanded: root.audioExpanded
+                onMoved: function(value) { SystemState.volumePercent = Math.round(value) }
+                onIconTriggered: SystemState.audioMuted = !SystemState.audioMuted
+                onDetailsToggled: function(expanded) { root.audioExpanded = expanded }
+            }
         }
 
         MeoMotionSurface {

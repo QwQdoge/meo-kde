@@ -453,7 +453,9 @@ Item {
                     // the surrounding status surface.
                     radius: root.compactView ? ShellMetrics.radiusMedium : ShellMetrics.radiusLarge
                     elevation: 0
-                    showOutline: false
+                    // A hairline edge separates each card from the wallpaper,
+                    // like macOS notification material.
+                    showOutline: true
                     // The disclosure controls the card's real height.  This
                     // mirrors DMS's retained-content collapse rather than
                     // deleting long text before the contraction completes.
@@ -509,347 +511,385 @@ Item {
                                     ? MeoTheme.contentOnErrorContainer : MeoTheme.primary
                     }
 
-                    ColumnLayout {
+                    // macOS-style layout inside the Meo card: the application icon
+                    // leads, and the source, time, title, body and actions align to
+                    // its right.
+                    RowLayout {
                         id: cardContent
                         anchors.fill: parent
                         anchors.margins: root.cardPadding
-                        spacing: notificationCard.compact ? MeoTheme.space4 : MeoTheme.space8
+                        spacing: MeoTheme.space12
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: MeoTheme.space8
-
-                            Kirigami.Icon {
-                                source: notificationCard.displayIcon
-                                Layout.preferredWidth: 20 * MeoTheme.globalScale
-                                Layout.preferredHeight: Layout.preferredWidth
-                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
-                                                                 : MeoTheme.contentOnSurfaceVariant
-                            }
-                            MeoText {
-                                Layout.fillWidth: true
-                                text: notificationCard.displaySource !== ""
-                                      ? notificationCard.displaySource : MeoI18n.translator.i18n("System")
-                                textFormat: Text.PlainText
-                                typeRole: "label"
-                                typeSize: "small"
-                                emphasized: true
-                                elide: Text.ElideRight
-                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
-                                                                 : MeoTheme.contentOnSurfaceVariant
-                            }
-                            MeoText {
-                                visible: notificationCard.critical
-                                text: MeoI18n.translator.i18n("Critical")
-                                typeRole: "label"
-                                typeSize: "small"
-                                emphasized: true
-                                color: MeoTheme.contentOnErrorContainer
-                                Accessible.name: MeoI18n.translator.i18n("Critical notification")
-                            }
-                            MeoText {
-                                visible: notificationCard.historical && !notificationCard.critical
-                                text: MeoI18n.translator.i18n("Earlier")
-                                typeRole: "label"
-                                typeSize: "small"
-                                emphasized: true
-                                color: MeoTheme.contentOnSurfaceVariant
-                                Accessible.name: MeoI18n.translator.i18n("Notification history")
-                            }
-                            MeoText {
-                                text: root.relativeTime(notificationCard.effectiveTime)
-                                typeRole: "label"
-                                typeSize: "small"
-                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
-                                                                 : MeoTheme.contentOnSurfaceVariant
-                            }
-                            MeoIconButton {
-                                id: configureButton
-                                // Per-app configuration is a secondary action:
-                                // reveal it on hover/focus so every card is not
-                                // two icon buttons wide. It keeps its space so
-                                // the time and dismiss controls do not shift.
-                                visible: notificationCard.configurable
-                                opacity: cardHover.hovered || notificationCard.activeFocus
-                                         || configureButton.activeFocus ? 1 : 0
-                                Behavior on opacity {
-                                    NumberAnimation {
-                                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
-                                        easing.type: Easing.BezierSpline
-                                        easing.bezierCurve: MeoTheme.motionEasingStandard
-                                    }
-                                }
-                                type: "standard"
-                                size: "s"
-                                icon.name: "settings"
-                                Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1", root.plainText(notificationCard.applicationName))
-                                onClicked: if (root.notifications && root.notifications.configure)
-                                               root.notifications.configure(notificationCard.sourceIndex)
-                            }
-                            MeoIconButton {
-                                visible: notificationCard.closable
-                                type: "standard"
-                                size: "s"
-                                icon.name: "close"
-                                Accessible.name: MeoI18n.translator.i18n("Dismiss notification")
-                                onClicked: if (root.notifications && root.notifications.close)
-                                               root.notifications.close(notificationCard.sourceIndex)
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: MeoTheme.space12
-
-                            // Large image or avatar supplied by the application.
-                            Kirigami.Icon {
-                                visible: notificationCard.hasImage
-                                Layout.alignment: Qt.AlignTop
-                                Layout.preferredWidth: (notificationCard.compact ? 40 : 48) * MeoTheme.globalScale
-                                Layout.preferredHeight: Layout.preferredWidth
-                                source: notificationCard.notificationImage
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: notificationCard.compact ? 0 : MeoTheme.space4
-
-                                MeoText {
-                                    Layout.fillWidth: true
-                                    text: root.plainText(notificationCard.summary !== ""
-                                                         ? notificationCard.summary
-                                                         : notificationCard.applicationName)
-                                    textFormat: Text.PlainText
-                                    typeRole: "body"
-                                    typeSize: notificationCard.compact ? "medium" : "large"
-                                    emphasized: true
-                                    wrapMode: Text.Wrap
-                                    color: notificationCard.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.contentOnSurface
-                                }
-
-                                NotificationBodyDisclosure {
-                                    id: bodyDisclosure
-                                    Layout.fillWidth: true
-                                    visible: notificationCard.showPreview && bodyText !== ""
-                                    bodyText: root.displayBody(notificationCard.body, notificationCard.notificationType,
-                                                               notificationCard.percentage)
-                                    collapsedLines: notificationCard.previewLines
-                                    compact: notificationCard.compact
-                                    critical: notificationCard.critical
-                                }
-
-                            }
+                        Kirigami.Icon {
+                            objectName: "notificationAppIcon"
+                            source: notificationCard.displayIcon
+                            Layout.alignment: Qt.AlignTop
+                            Layout.topMargin: MeoTheme.space2
+                            Layout.preferredWidth: (notificationCard.compact ? 28 : 36) * MeoTheme.globalScale
+                            Layout.preferredHeight: Layout.preferredWidth
                         }
 
                         ColumnLayout {
-                            visible: notificationCard.isJob
                             Layout.fillWidth: true
-                            spacing: MeoTheme.space4
+                            Layout.alignment: Qt.AlignTop
+                            spacing: notificationCard.compact ? MeoTheme.space4 : MeoTheme.space8
 
                             RowLayout {
-                                visible: notificationCard.percentage >= 0
                                 Layout.fillWidth: true
                                 spacing: MeoTheme.space8
 
-                                MeoProgressBar {
+                                MeoText {
                                     Layout.fillWidth: true
-                                    value: Math.max(0, Math.min(100, notificationCard.percentage)) / 100
-                                    isThick: true
-                                    enabled: !notificationCard.jobSuspended
+                                    text: notificationCard.displaySource !== ""
+                                          ? notificationCard.displaySource : MeoI18n.translator.i18n("System")
+                                    textFormat: Text.PlainText
+                                    typeRole: "label"
+                                    typeSize: "small"
+                                    emphasized: true
+                                    elide: Text.ElideRight
+                                    color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
+                                                                     : MeoTheme.contentOnSurfaceVariant
                                 }
                                 MeoText {
-                                    text: MeoI18n.translator.i18n("%1%", Math.max(0, notificationCard.percentage))
+                                    visible: notificationCard.critical
+                                    text: MeoI18n.translator.i18n("Critical")
                                     typeRole: "label"
                                     typeSize: "small"
+                                    emphasized: true
+                                    color: MeoTheme.contentOnErrorContainer
+                                    Accessible.name: MeoI18n.translator.i18n("Critical notification")
+                                }
+                                MeoText {
+                                    visible: notificationCard.historical && !notificationCard.critical
+                                    text: MeoI18n.translator.i18n("Earlier")
+                                    typeRole: "label"
+                                    typeSize: "small"
+                                    emphasized: true
                                     color: MeoTheme.contentOnSurfaceVariant
+                                    Accessible.name: MeoI18n.translator.i18n("Notification history")
                                 }
-                            }
+                                // Like macOS, the time sits in the corner at rest and gives way to
+                                // the card's configure and dismiss actions on hover or keyboard
+                                // focus. Both share one slot so the row never changes size.
+                                Item {
+                                    id: trailingSlot
+                                    readonly property bool revealActions: cardHover.hovered || notificationCard.activeFocus
+                                                                          || configureButton.activeFocus || dismissButton.activeFocus
+                                    Layout.alignment: Qt.AlignVCenter
+                                    implicitWidth: Math.max(timeLabel.implicitWidth, cardActions.implicitWidth)
+                                    implicitHeight: Math.max(timeLabel.implicitHeight, cardActions.implicitHeight)
 
-                            // Transfer figures: size, speed and remaining time.
-                            MeoText {
-                                readonly property var details: notificationCard.jobDetails
-                                readonly property real total: details ? Number(details.totalBytes) : 0
-                                readonly property real done: details ? Number(details.processedBytes) : 0
-                                readonly property real speed: details ? Number(details.speed) : 0
-                                visible: notificationCard.isJob && !notificationCard.jobFinished && text !== ""
-                                Layout.fillWidth: true
-                                typeRole: "label"
-                                typeSize: "small"
-                                color: MeoTheme.contentOnSurfaceVariant
-                                elide: Text.ElideRight
-                                text: {
-                                    const parts = []
-                                    if (notificationCard.jobSuspended)
-                                        parts.push(MeoI18n.translator.i18n("Paused"))
-                                    if (total > 0)
-                                        parts.push(MeoI18n.translator.i18n("%1 of %2", root.formatBytes(done), root.formatBytes(total)))
-                                    else if (done > 0)
-                                        parts.push(root.formatBytes(done))
-                                    if (speed > 0 && !notificationCard.jobSuspended) {
-                                        parts.push(MeoI18n.translator.i18n("%1/s", root.formatBytes(speed)))
-                                        if (total > done)
-                                            parts.push(root.formatRemaining((total - done) / speed))
+                                    MeoText {
+                                        id: timeLabel
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: root.relativeTime(notificationCard.effectiveTime)
+                                        typeRole: "label"
+                                        typeSize: "small"
+                                        color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
+                                                                         : MeoTheme.contentOnSurfaceVariant
+                                        opacity: trailingSlot.revealActions && cardActions.implicitWidth > 0 ? 0 : 1
+                                        Behavior on opacity {
+                                            NumberAnimation {
+                                                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
+                                                easing.type: Easing.BezierSpline
+                                                easing.bezierCurve: MeoTheme.motionEasingStandard
+                                            }
+                                        }
                                     }
-                                    return parts.join(" · ")
+
+                                    Row {
+                                        id: cardActions
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 0
+                                        opacity: trailingSlot.revealActions ? 1 : 0
+                                        Behavior on opacity {
+                                            NumberAnimation {
+                                                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
+                                                easing.type: Easing.BezierSpline
+                                                easing.bezierCurve: MeoTheme.motionEasingStandard
+                                            }
+                                        }
+
+                                        MeoIconButton {
+                                            id: configureButton
+                                            visible: notificationCard.configurable
+                                            type: "standard"
+                                            size: "s"
+                                            icon.name: "settings"
+                                            Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1", root.plainText(notificationCard.applicationName))
+                                            onClicked: if (root.notifications && root.notifications.configure)
+                                                           root.notifications.configure(notificationCard.sourceIndex)
+                                        }
+                                        MeoIconButton {
+                                            id: dismissButton
+                                            visible: notificationCard.closable
+                                            type: "standard"
+                                            size: "s"
+                                            icon.name: "close"
+                                            Accessible.name: MeoI18n.translator.i18n("Dismiss notification")
+                                            onClicked: if (root.notifications && root.notifications.close)
+                                                           root.notifications.close(notificationCard.sourceIndex)
+                                        }
+                                    }
                                 }
                             }
 
-                            // Application-provided description lines (for example source and destination).
-                            Repeater {
-                                model: notificationCard.jobDetails ? [
-                                    [notificationCard.jobDetails.descriptionLabel1, notificationCard.jobDetails.descriptionValue1],
-                                    [notificationCard.jobDetails.descriptionLabel2, notificationCard.jobDetails.descriptionValue2]
-                                ] : []
-                                delegate: MeoText {
-                                    required property var modelData
-                                    visible: String(modelData[1] || "") !== ""
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: MeoTheme.space12
+
+                                // Large image or avatar supplied by the application.
+                                Kirigami.Icon {
+                                    visible: notificationCard.hasImage
+                                    Layout.alignment: Qt.AlignTop
+                                    Layout.preferredWidth: (notificationCard.compact ? 40 : 48) * MeoTheme.globalScale
+                                    Layout.preferredHeight: Layout.preferredWidth
+                                    source: notificationCard.notificationImage
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: notificationCard.compact ? 0 : MeoTheme.space4
+
+                                    MeoText {
+                                        Layout.fillWidth: true
+                                        text: root.plainText(notificationCard.summary !== ""
+                                                             ? notificationCard.summary
+                                                             : notificationCard.applicationName)
+                                        textFormat: Text.PlainText
+                                        typeRole: "body"
+                                        typeSize: notificationCard.compact ? "medium" : "large"
+                                        emphasized: true
+                                        wrapMode: Text.Wrap
+                                        color: notificationCard.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.contentOnSurface
+                                    }
+
+                                    NotificationBodyDisclosure {
+                                        id: bodyDisclosure
+                                        Layout.fillWidth: true
+                                        visible: notificationCard.showPreview && bodyText !== ""
+                                        bodyText: root.displayBody(notificationCard.body, notificationCard.notificationType,
+                                                                   notificationCard.percentage)
+                                        collapsedLines: notificationCard.previewLines
+                                        compact: notificationCard.compact
+                                        critical: notificationCard.critical
+                                    }
+
+                                }
+                            }
+
+                            ColumnLayout {
+                                visible: notificationCard.isJob
+                                Layout.fillWidth: true
+                                spacing: MeoTheme.space4
+
+                                RowLayout {
+                                    visible: notificationCard.percentage >= 0
+                                    Layout.fillWidth: true
+                                    spacing: MeoTheme.space8
+
+                                    MeoProgressBar {
+                                        Layout.fillWidth: true
+                                        value: Math.max(0, Math.min(100, notificationCard.percentage)) / 100
+                                        isThick: true
+                                        enabled: !notificationCard.jobSuspended
+                                    }
+                                    MeoText {
+                                        text: MeoI18n.translator.i18n("%1%", Math.max(0, notificationCard.percentage))
+                                        typeRole: "label"
+                                        typeSize: "small"
+                                        color: MeoTheme.contentOnSurfaceVariant
+                                    }
+                                }
+
+                                // Transfer figures: size, speed and remaining time.
+                                MeoText {
+                                    readonly property var details: notificationCard.jobDetails
+                                    readonly property real total: details ? Number(details.totalBytes) : 0
+                                    readonly property real done: details ? Number(details.processedBytes) : 0
+                                    readonly property real speed: details ? Number(details.speed) : 0
+                                    visible: notificationCard.isJob && !notificationCard.jobFinished && text !== ""
                                     Layout.fillWidth: true
                                     typeRole: "label"
                                     typeSize: "small"
                                     color: MeoTheme.contentOnSurfaceVariant
+                                    elide: Text.ElideRight
+                                    text: {
+                                        const parts = []
+                                        if (notificationCard.jobSuspended)
+                                            parts.push(MeoI18n.translator.i18n("Paused"))
+                                        if (total > 0)
+                                            parts.push(MeoI18n.translator.i18n("%1 of %2", root.formatBytes(done), root.formatBytes(total)))
+                                        else if (done > 0)
+                                            parts.push(root.formatBytes(done))
+                                        if (speed > 0 && !notificationCard.jobSuspended) {
+                                            parts.push(MeoI18n.translator.i18n("%1/s", root.formatBytes(speed)))
+                                            if (total > done)
+                                                parts.push(root.formatRemaining((total - done) / speed))
+                                        }
+                                        return parts.join(" · ")
+                                    }
+                                }
+
+                                // Application-provided description lines (for example source and destination).
+                                Repeater {
+                                    model: notificationCard.jobDetails ? [
+                                        [notificationCard.jobDetails.descriptionLabel1, notificationCard.jobDetails.descriptionValue1],
+                                        [notificationCard.jobDetails.descriptionLabel2, notificationCard.jobDetails.descriptionValue2]
+                                    ] : []
+                                    delegate: MeoText {
+                                        required property var modelData
+                                        visible: String(modelData[1] || "") !== ""
+                                        Layout.fillWidth: true
+                                        typeRole: "label"
+                                        typeSize: "small"
+                                        color: MeoTheme.contentOnSurfaceVariant
+                                        textFormat: Text.PlainText
+                                        elide: Text.ElideMiddle
+                                        text: String(modelData[0] || "") !== ""
+                                              ? root.plainText(modelData[0]) + ": " + root.plainText(modelData[1])
+                                              : root.plainText(modelData[1])
+                                    }
+                                }
+
+                                MeoText {
+                                    visible: notificationCard.jobErrorCode !== 0
+                                    Layout.fillWidth: true
+                                    typeRole: "label"
+                                    typeSize: "small"
+                                    emphasized: true
+                                    wrapMode: Text.Wrap
                                     textFormat: Text.PlainText
-                                    elide: Text.ElideMiddle
-                                    text: String(modelData[0] || "") !== ""
-                                          ? root.plainText(modelData[0]) + ": " + root.plainText(modelData[1])
-                                          : root.plainText(modelData[1])
+                                    color: notificationCard.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.error
+                                    text: notificationCard.jobErrorText !== ""
+                                          ? root.plainText(notificationCard.jobErrorText)
+                                          : MeoI18n.translator.i18n("The task failed.")
                                 }
                             }
 
-                            MeoText {
-                                visible: notificationCard.jobErrorCode !== 0
+                            Flow {
+                                visible: !notificationCard.historical
+                                         && (notificationCard.hasReplyAction
+                                             || (notificationCard.actionNames && notificationCard.actionNames.length > 0)
+                                             || (notificationCard.isJob
+                                                 && (notificationCard.suspendable || notificationCard.killable
+                                                     || notificationCard.jobOpenUrl !== ""))
+                                             || notificationCard.attachedUrls.length > 0
+                                             || (notificationCard.hasDefaultAction
+                                                 && notificationCard.defaultActionText !== ""))
                                 Layout.fillWidth: true
-                                typeRole: "label"
-                                typeSize: "small"
-                                emphasized: true
-                                wrapMode: Text.Wrap
-                                textFormat: Text.PlainText
-                                color: notificationCard.critical ? MeoTheme.contentOnErrorContainer : MeoTheme.error
-                                text: notificationCard.jobErrorText !== ""
-                                      ? root.plainText(notificationCard.jobErrorText)
-                                      : MeoI18n.translator.i18n("The task failed.")
-                            }
-                        }
+                                spacing: MeoTheme.space4
 
-                        Flow {
-                            visible: !notificationCard.historical
-                                     && (notificationCard.hasReplyAction
-                                         || (notificationCard.actionNames && notificationCard.actionNames.length > 0)
-                                         || (notificationCard.isJob
-                                             && (notificationCard.suspendable || notificationCard.killable
-                                                 || notificationCard.jobOpenUrl !== ""))
-                                         || notificationCard.attachedUrls.length > 0
-                                         || (notificationCard.hasDefaultAction
-                                             && notificationCard.defaultActionText !== ""))
-                            Layout.fillWidth: true
-                            spacing: MeoTheme.space4
+                                Repeater {
+                                    model: notificationCard.actionNames || []
 
-                            Repeater {
-                                model: notificationCard.actionNames || []
-
-                                delegate: MeoButton {
-                                    required property int index
-                                    required property string modelData
-                                    type: index === 0 ? "tonal" : "text"
-                                    size: "s"
-                                    enabled: !notificationCard.historical
-                                    text: root.buttonLabel(notificationCard.actionLabels
-                                                           && index < notificationCard.actionLabels.length
-                                                          ? notificationCard.actionLabels[index] : modelData)
-                                    onClicked: if (root.notifications && root.notifications.invokeAction)
-                                                   root.notifications.invokeAction(notificationCard.sourceIndex, modelData)
+                                    delegate: MeoButton {
+                                        required property int index
+                                        required property string modelData
+                                        type: index === 0 ? "tonal" : "text"
+                                        size: "s"
+                                        enabled: !notificationCard.historical
+                                        text: root.buttonLabel(notificationCard.actionLabels
+                                                               && index < notificationCard.actionLabels.length
+                                                              ? notificationCard.actionLabels[index] : modelData)
+                                        onClicked: if (root.notifications && root.notifications.invokeAction)
+                                                       root.notifications.invokeAction(notificationCard.sourceIndex, modelData)
+                                    }
                                 }
-                            }
 
-                            MeoButton {
-                                visible: notificationCard.hasDefaultAction && notificationCard.defaultActionText !== ""
-                                type: "tonal"
-                                size: "s"
-                                text: root.buttonLabel(notificationCard.defaultActionText)
-                                onClicked: notificationCard.activate()
-                            }
-
-                            // Files attached to the notification open in their default application.
-                            Repeater {
-                                model: (notificationCard.attachedUrls || []).slice(0, 4)
-                                delegate: MeoButton {
-                                    required property var modelData
+                                MeoButton {
+                                    visible: notificationCard.hasDefaultAction && notificationCard.defaultActionText !== ""
                                     type: "tonal"
                                     size: "s"
-                                    icon.name: "attach_file"
-                                    text: root.buttonLabel(root.fileName(modelData))
-                                    onClicked: Qt.openUrlExternally(modelData)
+                                    text: root.buttonLabel(notificationCard.defaultActionText)
+                                    onClicked: notificationCard.activate()
+                                }
+
+                                // Files attached to the notification open in their default application.
+                                Repeater {
+                                    model: (notificationCard.attachedUrls || []).slice(0, 4)
+                                    delegate: MeoButton {
+                                        required property var modelData
+                                        type: "tonal"
+                                        size: "s"
+                                        icon.name: "attach_file"
+                                        text: root.buttonLabel(root.fileName(modelData))
+                                        onClicked: Qt.openUrlExternally(modelData)
+                                    }
+                                }
+
+                                MeoButton {
+                                    visible: notificationCard.isJob && notificationCard.jobOpenUrl !== ""
+                                    type: notificationCard.jobFinished ? "tonal" : "text"
+                                    size: "s"
+                                    icon.name: "folder_open"
+                                    text: MeoI18n.translator.i18n("Open")
+                                    onClicked: Qt.openUrlExternally(notificationCard.jobOpenUrl)
+                                }
+
+                                MeoButton {
+                                    objectName: "notificationReplyButton-" + notificationCard.index
+                                    visible: !notificationCard.historical && notificationCard.hasReplyAction
+                                    type: notificationCard.replyExpanded ? "tonal" : "text"
+                                    size: "s"
+                                    text: notificationCard.replyActionLabel !== ""
+                                          ? root.buttonLabel(notificationCard.replyActionLabel) : MeoI18n.translator.i18n("Reply")
+                                    onClicked: notificationCard.toggleReply()
+                                }
+
+                                MeoButton {
+                                    visible: !notificationCard.historical && notificationCard.isJob && notificationCard.suspendable
+                                    type: "text"
+                                    size: "s"
+                                    text: notificationCard.jobState === NotificationManager.Notifications.JobStateSuspended
+                                          ? MeoI18n.translator.i18n("Resume") : MeoI18n.translator.i18n("Pause")
+                                    onClicked: {
+                                        if (!root.notifications)
+                                            return
+                                        if (notificationCard.jobState === NotificationManager.Notifications.JobStateSuspended)
+                                            root.notifications.resumeJob(notificationCard.sourceIndex)
+                                        else
+                                            root.notifications.suspendJob(notificationCard.sourceIndex)
+                                    }
+                                }
+
+                                MeoButton {
+                                    visible: !notificationCard.historical && notificationCard.isJob && notificationCard.killable
+                                    type: "text"
+                                    size: "s"
+                                    text: MeoI18n.translator.i18n("Cancel")
+                                    onClicked: if (root.notifications && root.notifications.killJob)
+                                                   root.notifications.killJob(notificationCard.sourceIndex)
                                 }
                             }
 
-                            MeoButton {
-                                visible: notificationCard.isJob && notificationCard.jobOpenUrl !== ""
-                                type: notificationCard.jobFinished ? "tonal" : "text"
-                                size: "s"
-                                icon.name: "folder_open"
-                                text: MeoI18n.translator.i18n("Open")
-                                onClicked: Qt.openUrlExternally(notificationCard.jobOpenUrl)
-                            }
-
-                            MeoButton {
-                                objectName: "notificationReplyButton-" + notificationCard.index
-                                visible: !notificationCard.historical && notificationCard.hasReplyAction
-                                type: notificationCard.replyExpanded ? "tonal" : "text"
-                                size: "s"
-                                text: notificationCard.replyActionLabel !== ""
-                                      ? root.buttonLabel(notificationCard.replyActionLabel) : MeoI18n.translator.i18n("Reply")
-                                onClicked: notificationCard.toggleReply()
-                            }
-
-                            MeoButton {
-                                visible: !notificationCard.historical && notificationCard.isJob && notificationCard.suspendable
-                                type: "text"
-                                size: "s"
-                                text: notificationCard.jobState === NotificationManager.Notifications.JobStateSuspended
-                                      ? MeoI18n.translator.i18n("Resume") : MeoI18n.translator.i18n("Pause")
-                                onClicked: {
-                                    if (!root.notifications)
-                                        return
-                                    if (notificationCard.jobState === NotificationManager.Notifications.JobStateSuspended)
-                                        root.notifications.resumeJob(notificationCard.sourceIndex)
-                                    else
-                                        root.notifications.suspendJob(notificationCard.sourceIndex)
-                                }
-                            }
-
-                            MeoButton {
-                                visible: !notificationCard.historical && notificationCard.isJob && notificationCard.killable
-                                type: "text"
-                                size: "s"
-                                text: MeoI18n.translator.i18n("Cancel")
-                                onClicked: if (root.notifications && root.notifications.killJob)
-                                               root.notifications.killJob(notificationCard.sourceIndex)
-                            }
-                        }
-
-                        RowLayout {
-                            visible: !notificationCard.historical && notificationCard.hasReplyAction && notificationCard.replyExpanded
-                            Layout.fillWidth: true
-                            spacing: MeoTheme.space8
-
-                            MeoTextField {
-                                id: replyField
+                            RowLayout {
+                                visible: !notificationCard.historical && notificationCard.hasReplyAction && notificationCard.replyExpanded
                                 Layout.fillWidth: true
-                                size: "s"
-                                type: "outlined"
-                                placeholder: notificationCard.replyPlaceholderText !== ""
-                                             ? root.plainText(notificationCard.replyPlaceholderText)
-                                             : MeoI18n.translator.i18n("Write a reply")
-                                Accessible.name: placeholder
-                                onAccepted: notificationCard.submitReply()
-                            }
+                                spacing: MeoTheme.space8
 
-                            MeoButton {
-                                type: "filled"
-                                size: "s"
-                                enabled: replyField.text.trim() !== ""
-                                text: notificationCard.replySubmitButtonText !== ""
-                                      ? root.buttonLabel(notificationCard.replySubmitButtonText) : MeoI18n.translator.i18n("Send")
-                                onClicked: notificationCard.submitReply()
+                                MeoTextField {
+                                    id: replyField
+                                    Layout.fillWidth: true
+                                    size: "s"
+                                    type: "outlined"
+                                    placeholder: notificationCard.replyPlaceholderText !== ""
+                                                 ? root.plainText(notificationCard.replyPlaceholderText)
+                                                 : MeoI18n.translator.i18n("Write a reply")
+                                    Accessible.name: placeholder
+                                    onAccepted: notificationCard.submitReply()
+                                }
+
+                                MeoButton {
+                                    type: "filled"
+                                    size: "s"
+                                    enabled: replyField.text.trim() !== ""
+                                    text: notificationCard.replySubmitButtonText !== ""
+                                          ? root.buttonLabel(notificationCard.replySubmitButtonText) : MeoI18n.translator.i18n("Send")
+                                    onClicked: notificationCard.submitReply()
+                                }
                             }
                         }
                     }
