@@ -44,6 +44,8 @@ Item {
                                              ? notificationPreview : "full"
     readonly property real cardPadding: (compactView || compactDensity)
                                       ? MeoTheme.space8 : MeoTheme.space12
+    readonly property real cardGap: (compactView || compactDensity) ? MeoTheme.space4 : MeoTheme.space8
+    readonly property real groupSegmentGap: MeoTheme.space2
 
     readonly property int notificationCount: {
         root.modelRevision
@@ -64,7 +66,8 @@ Item {
         root.showJobs
         let visibleCount = 0
         for (let row = 0; row < root.notificationCount; ++row) {
-            if (root.isModelRowVisible(row))
+            // A group header is not a notification of its own.
+            if (root.isModelRowVisible(row) && !root.isGroupRow(row))
                 ++visibleCount
         }
         return visibleCount
@@ -74,17 +77,46 @@ Item {
         root.notificationCount
         let count = 0
         for (let row = 0; row < root.notificationCount; ++row) {
-            if (root.isModelRowVisible(row)
-                    && Boolean(root.modelRoleValue(row,
+            // Count what one close removes: a group header closes its whole
+            // group, including children a collapsed group does not show.
+            if (!root.isModelRowVisible(row) || root.isInGroupRow(row)
+                    || !Boolean(root.modelRoleValue(row,
                                NotificationManager.Notifications.ClosableRole,
                                "closable", false)))
-                ++count
+                continue
+            count += root.isGroupRow(row)
+                     ? Math.max(1, Number(root.modelRoleValue(row,
+                                   NotificationManager.Notifications.GroupChildrenCountRole,
+                                   "groupChildrenCount", 1)))
+                     : 1
         }
         return count
     }
     property bool clearPending: false
 
     signal settingsRequested()
+
+    // A card's text wraps in the Layouts polish that runs after the list has
+    // placed its rows, and rows moved by a running insert/remove transition
+    // keep the target computed before that. Either way the rows below a
+    // wrapped card overlap it. Re-place the rows once things settle;
+    // changing `spacing` is the public way to make ListView do so.
+    function relayoutSoon() {
+        // Re-placing rows mid-transition cancels it and strands removed rows
+        // on screen; each transition requests this again when it finishes.
+        if (insertTransition.running || displaceTransition.running)
+            return
+        if (!relayoutTimer.running)
+            relayoutTimer.start()
+    }
+    Timer {
+        id: relayoutTimer
+        interval: 0
+        onTriggered: {
+            notificationList.spacing = root.groupSegmentGap + 0.01
+            notificationList.spacing = Qt.binding(function() { return root.groupSegmentGap })
+        }
+    }
 
     function modelIndex(row) {
         return root.notifications && root.notifications.index
@@ -107,6 +139,18 @@ Item {
         return fallbackValue
     }
 
+    // KDE's GroupApplicationsFlat proxy owns application grouping and the
+    // writable expansion state; the view only reads these roles.
+    function isGroupRow(row) {
+        return Boolean(root.modelRoleValue(row, NotificationManager.Notifications.IsGroupRole,
+                                           "isGroup", false))
+    }
+
+    function isInGroupRow(row) {
+        return Boolean(root.modelRoleValue(row, NotificationManager.Notifications.IsInGroupRole,
+                                           "isInGroup", false))
+    }
+
     function isModelRowVisible(row) {
         const expired = Boolean(root.modelRoleValue(row,
                                 NotificationManager.Notifications.ExpiredRole,
@@ -126,6 +170,10 @@ Item {
         root.clearPending = true
         clearFeedbackTimer.restart()
         for (let row = root.notifications.count - 1; row >= 0; --row) {
+            // Closing a group header closes every child, including those a
+            // collapsed group hides; its visible children are skipped here.
+            if (root.isInGroupRow(row))
+                continue
             const idx = root.notifications.index(row, 0)
             if (root.isModelRowVisible(row)
                     && root.notifications.data(idx, NotificationManager.Notifications.ClosableRole))
@@ -296,13 +344,44 @@ Item {
                 enabled: root.visibleNotificationCount > 0
                 opacity: root.visibleNotificationCount > 0 ? 1 : 0
                 clip: true
-                spacing: root.compactView || root.compactDensity
-                         ? MeoTheme.space4 : MeoTheme.space8
+                // Segments of one application group sit 2dp apart (Pixel's
+                // grouped notification); the section spacer restores the
+                // normal gap between applications.
+                spacing: root.groupSegmentGap
                 boundsBehavior: Flickable.StopAtBounds
-                reuseItems: true
+                // Not reused: a pooled delegate stops its remove transition
+                // midway and stays on screen when a group collapses. The
+                // center holds at most 50 rows, so reuse gains little.
+                reuseItems: false
                 preserveScrollPosition: true
+                section.property: "applicationName"
+                section.criteria: ViewSection.FullString
+                section.delegate: Item {
+                    required property string section
+                    width: ListView.view ? ListView.view.width : 0
+                    // No spacer above the first section.
+                    height: y > 0 ? Math.max(0, root.cardGap - root.groupSegmentGap) : 0
+                }
+
+                // Expanding a group inserts its children: they fade and
+                // settle in while the rows below glide down. Collapsing fades
+                // them out in place (see removeAnimation in the delegate),
+                // then the rows below glide up. Reduce Motion keeps state
+                // changes immediate.
                 add: Transition {
-                    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoTheme.motionDurationListInsert; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate }
+                    id: insertTransition
+                    onRunningChanged: if (!running) root.relayoutSoon()
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationListInsert; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate }
+                        NumberAnimation { property: "scale"; from: MeoTheme.reduceMotion ? 1 : 0.96; to: 1; duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                    }
+                }
+                displaced: Transition {
+                    id: displaceTransition
+                    onRunningChanged: if (!running) root.relayoutSoon()
+                    NumberAnimation { properties: "x,y"; duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate }
+                    // A displaced row may still be mid-insert; finish it.
+                    NumberAnimation { properties: "opacity,scale"; to: 1; duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter }
                 }
                 // The center has no single selected row. Leaving ListView's
                 // implicit current item enabled can auto-position a growing
@@ -313,7 +392,10 @@ Item {
                 Behavior on opacity {
                     NumberAnimation { duration: MeoTheme.motionDurationPanelState; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
                 }
-                delegate: MeoMotionSurface {
+                // A plain Item: `cardShape` below is the only painted
+                // surface. (MeoMotionSurface drops its colour's alpha, which
+                // made translucent cards opaque and "transparent" black.)
+                delegate: Item {
                     id: notificationCard
 
                     required property int index
@@ -341,6 +423,51 @@ Item {
                     required property bool killable
                     required property var created
                     required property var updated
+
+                    // Application grouping (KDE GroupApplicationsFlat). Read
+                    // through `model` so ungrouped models keep working.
+                    readonly property bool isGroupHeader: model.isGroup !== undefined && Boolean(model.isGroup)
+                    readonly property bool isInGroup: model.isInGroup !== undefined && Boolean(model.isInGroup)
+                    readonly property bool groupExpanded: model.isGroupExpanded !== undefined && Boolean(model.isGroupExpanded)
+                    readonly property int groupSize: model.groupChildrenCount !== undefined ? Number(model.groupChildrenCount) : 0
+                    readonly property int groupShown: model.expandedGroupChildrenCount !== undefined
+                                                      ? Number(model.expandedGroupChildrenCount) : 0
+                    readonly property bool nextInGroup: {
+                        root.modelRevision
+                        return (isGroupHeader || isInGroup) && root.isInGroupRow(index + 1)
+                    }
+                    // Collapsed groups fan their hidden notifications out
+                    // beneath the visible one, like a stack of cards. This
+                    // changes the row height, so it reads only this row's own
+                    // roles: a neighbour lookup would update a frame after
+                    // the list has laid out. The center uses groupLimit 1, so
+                    // a collapsed group shows exactly one child.
+                    readonly property int hiddenInGroup: isInGroup && !groupExpanded
+                                                         ? Math.max(0, groupSize - groupShown) : 0
+                    readonly property real peekStep: 6 * MeoTheme.globalScale
+                    readonly property real peekDepth: hiddenInGroup > 1 ? 2 * peekStep
+                                                                        : (hiddenInGroup > 0 ? peekStep : 0)
+                    property real animatedPeekDepth: peekDepth
+                    Behavior on animatedPeekDepth {
+                        NumberAnimation {
+                            duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                        }
+                    }
+                    // Segmented shape: full corners on the outside of a group,
+                    // small corners where two segments meet.
+                    readonly property real outerRadius: root.compactView ? ShellMetrics.radiusMedium : ShellMetrics.radiusLarge
+                    readonly property real innerRadius: MeoTheme.shapeExtraSmall
+                    readonly property real topRadius: isInGroup ? innerRadius : outerRadius
+                    // Corners only repaint, so the neighbour lookup is fine here.
+                    readonly property real bottomRadius: isGroupHeader || (isInGroup && groupExpanded && nextInGroup)
+                                                         ? innerRadius : outerRadius
+
+                    function toggleGroup() {
+                        if (notificationCard.groupSize > 0)
+                            notificationCard.model.isGroupExpanded = !notificationCard.groupExpanded
+                    }
 
                     readonly property var sourceIndex: root.modelIndex(index)
                     readonly property string displayIcon: root.safeIconName(iconName, applicationIconName)
@@ -377,8 +504,10 @@ Item {
                     readonly property string jobOpenUrl: jobDetails && jobDetails.effectiveDestUrl
                                                          && String(jobDetails.effectiveDestUrl) !== ""
                                                          ? String(jobDetails.effectiveDestUrl) : ""
-                    readonly property bool clickable: !historical
-                                                      && (hasDefaultAction || applicationLaunchUrl !== "")
+                    readonly property bool clickable: isGroupHeader
+                                                      ? groupSize > 0
+                                                      : (!historical
+                                                         && (hasDefaultAction || applicationLaunchUrl !== ""))
                     readonly property bool compact: root.compactView
                     readonly property bool showPreview: root.normalizedPreview !== "hidden"
                     readonly property int previewLines: root.normalizedPreview === "full"
@@ -396,6 +525,10 @@ Item {
                     // The default action when the app provides one; otherwise open the
                     // application that posted the notification.
                     function activate() {
+                        if (notificationCard.isGroupHeader) {
+                            notificationCard.toggleGroup()
+                            return
+                        }
                         if (!notificationCard.clickable || !root.notifications)
                             return
                         if (notificationCard.hasDefaultAction) {
@@ -442,20 +575,18 @@ Item {
                     enabled: contentAllowed
                     height: contentAllowed ? implicitHeight : 0
                     opacity: contentAllowed ? 1 : 0
-                    implicitHeight: cardContent.implicitHeight + 2 * root.cardPadding
+                    readonly property real cardHeight: (isGroupHeader ? groupHeaderRow.implicitHeight
+                                                                      : cardContent.implicitHeight)
+                                                       + 2 * root.cardPadding
+                    implicitHeight: cardHeight + animatedPeekDepth
+                    onHeightChanged: root.relayoutSoon()
                     // Solid unless the user enabled SurfaceTransparency in meo-shellrc.
                     readonly property color baseColor: critical ? MeoTheme.errorContainer
                                                                 : MeoTheme.surfaceContainerHigh
-                    color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b,
-                                   MeoSystem.ShellAppearance.transparency ? MeoTheme.surfaceAlpha(0.9) : 1.0)
-                    // Notification cards share the popup's expressive corner
-                    // token, so they morph with the same MeoUI shape scale as
-                    // the surrounding status surface.
-                    radius: root.compactView ? ShellMetrics.radiusMedium : ShellMetrics.radiusLarge
-                    elevation: 0
-                    // A hairline edge separates each card from the wallpaper,
-                    // like macOS notification material.
-                    showOutline: true
+                    readonly property real surfaceAlpha: MeoSystem.ShellAppearance.transparency
+                                                         ? MeoTheme.surfaceAlpha(0.9) : 1.0
+                    // The visible card is `cardShape` below, which needs a
+                    // different radius per corner for grouped segments.
                     // The disclosure controls the card's real height.  This
                     // mirrors DMS's retained-content collapse rather than
                     // deleting long text before the contraction completes.
@@ -474,7 +605,9 @@ Item {
                     }
                     activeFocusOnTab: clickable
                     Accessible.role: Accessible.ListItem
-                    Accessible.name: root.plainText(summary !== "" ? summary : applicationName)
+                    Accessible.name: isGroupHeader
+                                     ? MeoI18n.translator.i18n("%1, %2 notifications", root.plainText(applicationName), groupSize)
+                                     : root.plainText(summary !== "" ? summary : applicationName)
                     Accessible.description: root.displayBody(body, notificationType, percentage)
                                             + (historical ? MeoI18n.translator.i18n(" Earlier notification.") : "")
                     Accessible.focusable: clickable
@@ -483,11 +616,104 @@ Item {
                     Keys.onEnterPressed: activate()
                     Keys.onSpacePressed: activate()
 
+                    // Hidden notifications of a collapsed group peek out below the
+                    // card as the edges of a stack. They slide out from under it when
+                    // the group collapses and tuck back in when it expands. The strip
+                    // is clipped to the area below the card so a translucent card
+                    // never shows the stack through itself.
+                    Item {
+                        id: stackStrip
+                        objectName: "notificationStack"
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: cardShape.bottom
+                        height: 2 * notificationCard.peekStep + MeoTheme.strokeWidthThin
+                        clip: true
+                        visible: notificationCard.isInGroup
+
+                        Repeater {
+                            model: 2
+                            delegate: Rectangle {
+                                required property int index
+                                readonly property int stackLevel: index + 1
+                                readonly property bool shown: notificationCard.hiddenInGroup >= stackLevel
+                                objectName: "notificationStackLayer-" + stackLevel
+                                z: -stackLevel
+                                x: stackLevel * 2 * notificationCard.peekStep
+                                width: stackStrip.width - 2 * x
+                                height: notificationCard.cardHeight
+                                // Only the bottom edge lies inside the strip.
+                                y: (shown ? stackLevel * notificationCard.peekStep : 0) - height
+                                opacity: shown ? 1 : 0
+                                radius: notificationCard.outerRadius
+                                readonly property color layerColor: stackLevel === 1 ? MeoTheme.surfaceContainer
+                                                                                     : MeoTheme.surfaceContainerLow
+                                color: Qt.rgba(layerColor.r, layerColor.g, layerColor.b, notificationCard.surfaceAlpha)
+                                border.width: MeoTheme.strokeWidthThin
+                                border.color: Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.16)
+                                Behavior on y {
+                                    NumberAnimation {
+                                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+                                    }
+                                }
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort4
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: MeoTheme.motionEasingStandard
+                                    }
+                                }
+                            }
+                        }
+
+                        TapHandler {
+                            enabled: notificationCard.hiddenInGroup > 0
+                            onTapped: notificationCard.toggleGroup()
+                        }
+                    }
+
+                    Rectangle {
+                        id: cardShape
+                        objectName: "notificationCardShape"
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        height: notificationCard.cardHeight
+                        color: Qt.rgba(notificationCard.baseColor.r, notificationCard.baseColor.g,
+                                       notificationCard.baseColor.b, notificationCard.surfaceAlpha)
+                        topLeftRadius: notificationCard.topRadius
+                        topRightRadius: notificationCard.topRadius
+                        bottomLeftRadius: notificationCard.bottomRadius
+                        bottomRightRadius: notificationCard.bottomRadius
+                        // A hairline edge separates each card from the wallpaper.
+                        border.width: MeoTheme.strokeWidthThin
+                        border.color: Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.16)
+                        Behavior on topLeftRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
+                        Behavior on topRightRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
+                    }
+
+                    // A removed card stays until it has faded out in place;
+                    // ListView then moves the rows below up with `displaced`.
+                    ListView.onRemove: removeAnimation.start()
+                    SequentialAnimation {
+                        id: removeAnimation
+                        PropertyAction { target: notificationCard; property: "ListView.delayRemove"; value: true }
+                        ParallelAnimation {
+                            NumberAnimation { target: notificationCard; property: "opacity"; to: 0; duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureExit; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
+                            NumberAnimation { target: notificationCard; property: "scale"; to: MeoTheme.reduceMotion ? 1 : 0.96; duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureExit; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate }
+                        }
+                        PropertyAction { target: notificationCard; property: "ListView.delayRemove"; value: false }
+                    }
+
                     HoverHandler { id: cardHover }
 
                     MouseArea {
                         id: notificationPointer
-                        anchors.fill: parent
+                        anchors.fill: cardShape
                         enabled: notificationCard.clickable
                         hoverEnabled: true
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
@@ -498,7 +724,7 @@ Item {
                     // their feedback on the same shared click-point state layer
                     // as every MeoUI button instead of a card-local color swap.
                     MeoStateLayer {
-                        anchors.fill: parent
+                        anchors.fill: cardShape
                         enabled: notificationPointer.enabled
                         internalPointerTrackingEnabled: false
                         hovered: notificationPointer.containsMouse
@@ -506,7 +732,7 @@ Item {
                         focused: notificationCard.activeFocus
                         pressX: notificationPointer.mouseX
                         pressY: notificationPointer.mouseY
-                        radius: notificationCard.radius
+                        radius: Math.min(notificationCard.topRadius, notificationCard.bottomRadius)
                         focusColor: notificationCard.critical
                                     ? MeoTheme.contentOnErrorContainer : MeoTheme.primary
                     }
@@ -514,9 +740,98 @@ Item {
                     // macOS-style layout inside the Meo card: the application icon
                     // leads, and the source, time, title, body and actions align to
                     // its right.
+                    // Pixel group header: application, count chip and collapse
+                    // chevron, and a button that dismisses the whole group.
+                    RowLayout {
+                        id: groupHeaderRow
+                        objectName: "notificationGroupHeader"
+                        visible: notificationCard.isGroupHeader
+                        anchors.left: cardShape.left
+                        anchors.right: cardShape.right
+                        anchors.verticalCenter: cardShape.verticalCenter
+                        anchors.leftMargin: root.cardPadding
+                        anchors.rightMargin: root.cardPadding
+                        spacing: MeoTheme.space12
+
+                        Kirigami.Icon {
+                            source: root.safeIconName(notificationCard.applicationIconName, notificationCard.iconName)
+                            Layout.preferredWidth: (notificationCard.compact ? 20 : 24) * MeoTheme.globalScale
+                            Layout.preferredHeight: Layout.preferredWidth
+                        }
+                        MeoText {
+                            Layout.fillWidth: true
+                            text: root.plainText(notificationCard.applicationName) !== ""
+                                  ? root.plainText(notificationCard.applicationName) : MeoI18n.translator.i18n("System")
+                            textFormat: Text.PlainText
+                            typeRole: "title"
+                            typeSize: "small"
+                            emphasized: true
+                            elide: Text.ElideRight
+                            color: MeoTheme.contentOnSurface
+                        }
+                        QQC2.AbstractButton {
+                            id: groupChip
+                            objectName: "notificationGroupExpandChip"
+                            visible: notificationCard.groupSize > 0
+                            hoverEnabled: true
+                            implicitHeight: 28 * MeoTheme.globalScale
+                            implicitWidth: chipRow.implicitWidth + 2 * MeoTheme.space8
+                            Accessible.role: Accessible.Button
+                            Accessible.name: notificationCard.groupExpanded
+                                             ? MeoI18n.translator.i18n("Collapse notifications from %1", root.plainText(notificationCard.applicationName))
+                                             : MeoI18n.translator.i18n("Show %1 notifications from %2", notificationCard.groupSize, root.plainText(notificationCard.applicationName))
+                            onClicked: notificationCard.toggleGroup()
+                            background: Rectangle {
+                                radius: height / 2
+                                color: groupChip.down ? MeoTheme.secondaryContainer
+                                       : (groupChip.hovered ? MeoTheme.surfaceContainerHighest : MeoTheme.surfaceContainer)
+                                Behavior on color { ColorAnimation { duration: MeoTheme.motionDurationShort2 } }
+                            }
+                            contentItem: Item {
+                                Row {
+                                    id: chipRow
+                                    anchors.centerIn: parent
+                                    spacing: MeoTheme.space2
+                                    MeoText {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: String(notificationCard.groupSize)
+                                        typeRole: "label"
+                                        typeSize: "large"
+                                        emphasized: true
+                                        color: MeoTheme.contentOnSurface
+                                    }
+                                    MeoIcon {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        icon: "expand_more"
+                                        size: 20
+                                        color: MeoTheme.contentOnSurface
+                                        rotation: notificationCard.groupExpanded ? 180 : 0
+                                        Behavior on rotation {
+                                            NumberAnimation {
+                                                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter
+                                                easing.type: Easing.BezierSpline
+                                                easing.bezierCurve: MeoTheme.motionEasingEmphasized
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        MeoIconButton {
+                            visible: notificationCard.closable
+                            type: "standard"
+                            size: "s"
+                            icon.name: "close"
+                            Accessible.name: MeoI18n.translator.i18n("Dismiss all notifications from %1", root.plainText(notificationCard.applicationName))
+                            onClicked: if (root.notifications && root.notifications.close)
+                                           root.notifications.close(notificationCard.sourceIndex)
+                        }
+                    }
+
                     RowLayout {
                         id: cardContent
-                        anchors.fill: parent
+                        visible: !notificationCard.isGroupHeader
+                        anchors.fill: cardShape
                         anchors.margins: root.cardPadding
                         spacing: MeoTheme.space12
 
@@ -540,8 +855,12 @@ Item {
 
                                 MeoText {
                                     Layout.fillWidth: true
-                                    text: notificationCard.displaySource !== ""
-                                          ? notificationCard.displaySource : MeoI18n.translator.i18n("System")
+                                    // Inside a group the header already names the
+                                    // application; keep only a specific origin.
+                                    text: notificationCard.isInGroup
+                                          ? root.plainText(notificationCard.originName)
+                                          : (notificationCard.displaySource !== ""
+                                             ? notificationCard.displaySource : MeoI18n.translator.i18n("System"))
                                     textFormat: Text.PlainText
                                     typeRole: "label"
                                     typeSize: "small"
