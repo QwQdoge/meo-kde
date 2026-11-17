@@ -1300,61 +1300,59 @@ Item {
                         }
                     }
 
-                    // Gesture layer above the card. Its handlers only watch passively until
-                    // a horizontal drag passes the threshold, so taps, the card's buttons
-                    // and vertical list scrolling keep working underneath.
-                    Item {
-                        id: swipeLayer
-                        objectName: "notificationSwipeLayer"
-                        anchors.fill: cardShape
+                    // Swipe gestures live on the card itself, not on an overlay:
+                    // a handler on an item stacked above the content takes the
+                    // press, so the card's buttons and tap would stop working.
+                    // On the parent it only watches until a horizontal drag
+                    // passes the threshold, so taps, buttons and vertical list
+                    // scrolling keep working.
+                    DragHandler {
+                        id: swipeDrag
                         enabled: notificationCard.closable && !notificationCard.swipeDismissing
-
-                        DragHandler {
-                            id: swipeDrag
-                            target: null
-                            xAxis.enabled: true
-                            yAxis.enabled: false
-                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchScreen | PointerDevice.Stylus
-                            onTranslationChanged: {
-                                const dx = translation.x
-                                // Rightwards follows the pointer; leftwards resists.
-                                notificationCard.swipeX = dx >= 0 ? dx : dx * 0.2
-                            }
-                            onActiveChanged: {
-                                if (active)
-                                    swipeBack.stop()
-                                else
-                                    notificationCard.settleSwipe(centroid.velocity.x)
-                            }
+                        target: null
+                        xAxis.enabled: true
+                        yAxis.enabled: false
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchScreen | PointerDevice.Stylus
+                        onTranslationChanged: {
+                            const dx = translation.x
+                            // Rightwards follows the pointer; leftwards resists.
+                            notificationCard.swipeX = dx >= 0 ? dx : dx * 0.2
                         }
-
-                        // Two-finger touchpad swipe. Deltas are applied the way Flickable
-                        // scrolls, so the card moves with the fingers under the user's own
-                        // natural-scrolling setting; vertical scrolls go to the list.
-                        WheelHandler {
-                            target: null
-                            // Horizontal only: vertical scrolls never reach this
-                            // handler, so they keep scrolling the list.
-                            orientation: Qt.Horizontal
-                            acceptedDevices: PointerDevice.TouchPad
-                            onWheel: (event) => {
-                                const dx = event.pixelDelta.x !== 0 ? event.pixelDelta.x : event.angleDelta.x / 8
-                                const dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8
-                                if (Math.abs(dx) <= Math.abs(dy) && notificationCard.swipeX === 0) {
-                                    event.accepted = false
-                                    return
-                                }
+                        onActiveChanged: {
+                            if (active)
                                 swipeBack.stop()
-                                const next = notificationCard.swipeX + dx
-                                notificationCard.swipeX = next >= 0 ? next : Math.max(next, -24 * MeoTheme.globalScale)
-                                wheelSettle.restart()
+                            else
+                                notificationCard.settleSwipe(centroid.velocity.x)
+                        }
+                    }
+
+                    // Two-finger touchpad swipe. Deltas are applied the way Flickable
+                    // scrolls, so the card moves with the fingers under the user's own
+                    // natural-scrolling setting; vertical scrolls go to the list.
+                    WheelHandler {
+                        target: null
+                        enabled: notificationCard.closable && !notificationCard.swipeDismissing
+                        // Horizontal only: vertical scrolls never reach this
+                        // handler, so they keep scrolling the list.
+                        orientation: Qt.Horizontal
+                        acceptedDevices: PointerDevice.TouchPad
+                        onWheel: (event) => {
+                            const dx = event.pixelDelta.x !== 0 ? event.pixelDelta.x : event.angleDelta.x / 8
+                            const dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8
+                            if (Math.abs(dx) <= Math.abs(dy) && notificationCard.swipeX === 0) {
+                                event.accepted = false
+                                return
                             }
+                            swipeBack.stop()
+                            const next = notificationCard.swipeX + dx
+                            notificationCard.swipeX = next >= 0 ? next : Math.max(next, -24 * MeoTheme.globalScale)
+                            wheelSettle.restart()
                         }
-                        Timer {
-                            id: wheelSettle
-                            interval: 120
-                            onTriggered: notificationCard.settleSwipe(0)
-                        }
+                    }
+                    Timer {
+                        id: wheelSettle
+                        interval: 120
+                        onTriggered: notificationCard.settleSwipe(0)
                     }
                 }
 
