@@ -616,6 +616,8 @@ Item {
                                       && swipeX > width * 0.12
                         if (closable && (swipeX > width * 0.35 || flick))
                             dismissBySwipe()
+                        else if (swipeX !== 0 && MeoTheme.reduceMotion)
+                            swipeX = 0
                         else if (swipeX !== 0)
                             swipeBack.restart()
                     }
@@ -624,15 +626,16 @@ Item {
                         swipeDismissing = true
                         swipeOut.restart()
                     }
-                    NumberAnimation {
+                    // A damped spring, like a macOS banner settling back: it
+                    // overshoots a little and comes to rest without a fixed duration.
+                    SpringAnimation {
                         id: swipeBack
                         target: notificationCard
                         property: "swipeX"
                         to: 0
-                        duration: MeoTheme.reduceMotion ? 0 : 420
-                        // A soft overshoot, like a macOS banner settling back.
-                        easing.type: Easing.OutBack
-                        easing.overshoot: 1.1
+                        spring: 4.5
+                        damping: 0.4
+                        epsilon: 0.25
                     }
                     NumberAnimation {
                         id: swipeOut
@@ -640,8 +643,10 @@ Item {
                         property: "swipeX"
                         to: notificationCard.width + MeoTheme.space24
                         duration: root.swipeOutDuration
+                        // Released mid-motion: keep the momentum and decelerate out,
+                        // instead of pausing to accelerate again.
                         easing.type: Easing.BezierSpline
-                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
                         onFinished: if (root.notifications && root.notifications.close)
                                         root.notifications.close(notificationCard.sourceIndex)
                     }
@@ -666,9 +671,10 @@ Item {
                                 clearOut.restart()
                         }
                     }
-                    readonly property real cardHeight: (isGroupHeader ? groupHeaderRow.implicitHeight
-                                                                      : cardContent.implicitHeight)
-                                                       + 2 * root.cardPadding
+                    // A group header is a compact label row, not a full card.
+                    readonly property real cardHeight: isGroupHeader
+                                                       ? groupHeaderRow.implicitHeight + 2 * MeoTheme.space8
+                                                       : cardContent.implicitHeight + 2 * root.cardPadding
                     implicitHeight: cardHeight + animatedPeekDepth
                     onHeightChanged: root.relayoutSoon()
                     // Solid unless the user enabled SurfaceTransparency in meo-shellrc.
@@ -907,7 +913,7 @@ Item {
                         MeoIconButton {
                             visible: notificationCard.closable
                             type: "standard"
-                            size: "s"
+                            size: "xs"
                             icon.name: "close"
                             Accessible.name: MeoI18n.translator.i18n("Dismiss all notifications from %1", root.plainText(notificationCard.applicationName))
                             onClicked: if (root.notifications && root.notifications.close)
@@ -934,13 +940,20 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignTop
-                            spacing: notificationCard.compact ? MeoTheme.space4 : MeoTheme.space8
+                            spacing: notificationCard.compact ? MeoTheme.space2 : MeoTheme.space4
 
                             RowLayout {
+                                id: sourceRow
                                 Layout.fillWidth: true
+                                // Grouped children skip it unless they have a specific
+                                // origin; the title then starts the card.
+                                visible: sourceLabel.text !== "" || notificationCard.critical
+                                         || notificationCard.historical
+                                Layout.rightMargin: trailingSlot.width + MeoTheme.space8
                                 spacing: MeoTheme.space8
 
                                 MeoText {
+                                    id: sourceLabel
                                     Layout.fillWidth: true
                                     // Inside a group the header already names the
                                     // application; keep only a specific origin.
@@ -974,72 +987,6 @@ Item {
                                     color: MeoTheme.contentOnSurfaceVariant
                                     Accessible.name: MeoI18n.translator.i18n("Notification history")
                                 }
-                                // Like macOS, the time sits in the corner at rest and gives way to
-                                // the card's configure and dismiss actions on hover or keyboard
-                                // focus. Both share one slot so the row never changes size.
-                                Item {
-                                    id: trailingSlot
-                                    readonly property bool revealActions: cardHover.hovered || notificationCard.activeFocus
-                                                                          || configureButton.activeFocus || dismissButton.activeFocus
-                                    Layout.alignment: Qt.AlignVCenter
-                                    implicitWidth: Math.max(timeLabel.implicitWidth, cardActions.implicitWidth)
-                                    implicitHeight: Math.max(timeLabel.implicitHeight, cardActions.implicitHeight)
-
-                                    MeoText {
-                                        id: timeLabel
-                                        anchors.right: parent.right
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: root.relativeTime(notificationCard.effectiveTime)
-                                        typeRole: "label"
-                                        typeSize: "small"
-                                        color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
-                                                                         : MeoTheme.contentOnSurfaceVariant
-                                        opacity: trailingSlot.revealActions && cardActions.implicitWidth > 0 ? 0 : 1
-                                        Behavior on opacity {
-                                            NumberAnimation {
-                                                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
-                                                easing.type: Easing.BezierSpline
-                                                easing.bezierCurve: MeoTheme.motionEasingStandard
-                                            }
-                                        }
-                                    }
-
-                                    Row {
-                                        id: cardActions
-                                        anchors.right: parent.right
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        spacing: 0
-                                        opacity: trailingSlot.revealActions ? 1 : 0
-                                        Behavior on opacity {
-                                            NumberAnimation {
-                                                duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
-                                                easing.type: Easing.BezierSpline
-                                                easing.bezierCurve: MeoTheme.motionEasingStandard
-                                            }
-                                        }
-
-                                        MeoIconButton {
-                                            id: configureButton
-                                            visible: notificationCard.configurable
-                                            type: "standard"
-                                            size: "s"
-                                            icon.name: "settings"
-                                            Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1", root.plainText(notificationCard.applicationName))
-                                            onClicked: if (root.notifications && root.notifications.configure)
-                                                           root.notifications.configure(notificationCard.sourceIndex)
-                                        }
-                                        MeoIconButton {
-                                            id: dismissButton
-                                            visible: notificationCard.closable
-                                            type: "standard"
-                                            size: "s"
-                                            icon.name: "close"
-                                            Accessible.name: MeoI18n.translator.i18n("Dismiss notification")
-                                            onClicked: if (root.notifications && root.notifications.close)
-                                                           root.notifications.close(notificationCard.sourceIndex)
-                                        }
-                                    }
-                                }
                             }
 
                             RowLayout {
@@ -1057,9 +1004,11 @@ Item {
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: notificationCard.compact ? 0 : MeoTheme.space4
+                                    spacing: notificationCard.compact ? 0 : MeoTheme.space2
 
                                     MeoText {
+                                        // Starts the card when the source row is hidden.
+                                        Layout.rightMargin: sourceRow.visible ? 0 : trailingSlot.width + MeoTheme.space8
                                         Layout.fillWidth: true
                                         text: root.plainText(notificationCard.summary !== ""
                                                              ? notificationCard.summary
@@ -1296,6 +1245,78 @@ Item {
                                           ? root.buttonLabel(notificationCard.replySubmitButtonText) : MeoI18n.translator.i18n("Send")
                                     onClicked: notificationCard.submitReply()
                                 }
+                            }
+                        }
+                    }
+
+                    // Like macOS, the time sits in the top corner at rest and gives
+                    // way to the card's configure and dismiss actions on hover or
+                    // keyboard focus. The slot floats over the card so it never adds
+                    // height; the first text row reserves its width.
+                    Item {
+                        id: trailingSlot
+                        visible: !notificationCard.isGroupHeader
+                        anchors.top: cardShape.top
+                        anchors.right: cardShape.right
+                        anchors.topMargin: root.cardPadding
+                        anchors.rightMargin: root.cardPadding
+                        readonly property bool revealActions: cardHover.hovered || notificationCard.activeFocus
+                                                              || configureButton.activeFocus || dismissButton.activeFocus
+                        width: Math.max(timeLabel.implicitWidth, cardActions.implicitWidth)
+                        height: timeLabel.implicitHeight
+
+                        MeoText {
+                            id: timeLabel
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.relativeTime(notificationCard.effectiveTime)
+                            typeRole: "label"
+                            typeSize: "small"
+                            color: notificationCard.critical ? MeoTheme.contentOnErrorContainer
+                                                             : MeoTheme.contentOnSurfaceVariant
+                            opacity: trailingSlot.revealActions && cardActions.implicitWidth > 0 ? 0 : 1
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                                }
+                            }
+                        }
+
+                        Row {
+                            id: cardActions
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 0
+                            opacity: trailingSlot.revealActions ? 1 : 0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationShort2
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: MeoTheme.motionEasingStandard
+                                }
+                            }
+
+                            MeoIconButton {
+                                id: configureButton
+                                visible: notificationCard.configurable
+                                type: "standard"
+                                size: "xs"
+                                icon.name: "settings"
+                                Accessible.name: MeoI18n.translator.i18n("Configure notifications from %1", root.plainText(notificationCard.applicationName))
+                                onClicked: if (root.notifications && root.notifications.configure)
+                                               root.notifications.configure(notificationCard.sourceIndex)
+                            }
+                            MeoIconButton {
+                                id: dismissButton
+                                visible: notificationCard.closable
+                                type: "standard"
+                                size: "xs"
+                                icon.name: "close"
+                                Accessible.name: MeoI18n.translator.i18n("Dismiss notification")
+                                onClicked: if (root.notifications && root.notifications.close)
+                                               root.notifications.close(notificationCard.sourceIndex)
                             }
                         }
                     }

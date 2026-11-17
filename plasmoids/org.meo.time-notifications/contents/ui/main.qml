@@ -20,7 +20,7 @@ PlasmoidItem {
     Plasmoid.title: MeoI18n.translator.i18n("Meo Time and Notifications")
     toolTipMainText: Plasmoid.title
     preferredRepresentation: compactRepresentation
-    onExpandedChanged: if (root.expanded) { root.expanded = false; popup.visible = true }
+    onExpandedChanged: if (root.expanded) { root.expanded = false; root.openCenter() }
     Layout.minimumWidth: compactRepresentationItem
                          ? compactRepresentationItem.implicitWidth
                          : 80 * MeoTheme.globalScale
@@ -63,7 +63,7 @@ PlasmoidItem {
         showNotifications: true
         showUnreadBadge: Plasmoid.configuration.showUnreadBadge
         use24HourClock: root.use24Hour
-        onStatusCenterRequested: popup.visible = !popup.visible
+        onStatusCenterRequested: popup.visible ? root.closeCenter() : root.openCenter()
     }
     fullRepresentation: Item { implicitWidth: 1; implicitHeight: 1 }
     PlasmaCore.Dialog {
@@ -77,13 +77,25 @@ PlasmoidItem {
         onVisibleChanged: if (visible) {
             notifications.lastRead = clock.dateTime
             toast.visible = false
-            Qt.callLater(function() { popup.requestActivate(); popup.mainItem.forceActiveFocus() })
+            Qt.callLater(function() { popup.requestActivate(); centerView.forceActiveFocus() })
         } else {
             // Reopen with every application group stacked again.
             notifications.collapseAllGroups()
         }
-        mainItem: StatusCenterView {
-        Keys.onEscapePressed: popup.visible = false
+        mainItem: Item {
+        id: centerContent
+        // Content offset for the slide; the window itself stays put.
+        property real slide: 0
+        implicitWidth: centerView.implicitWidth
+        implicitHeight: centerView.implicitHeight
+        clip: true
+        StatusCenterView {
+        id: centerView
+        x: centerContent.slide
+        width: parent.width
+        height: parent.height
+        opacity: 1 - Math.min(1, Math.max(0, centerContent.slide) / Math.max(1, centerContent.width)) * 0.8
+        Keys.onEscapePressed: root.closeCenter()
         revealActive: popup.visible
         notifications: notifications
         currentDateTime: clock.dateTime
@@ -96,7 +108,48 @@ PlasmoidItem {
         notificationView: Plasmoid.configuration.notificationView
         notificationPreview: Plasmoid.configuration.notificationPreview
         density: Plasmoid.configuration.density
+        }
     }
+    }
+
+    // Notification Center slides in from the right and leaves to the right
+    // (macOS-style). Clicking elsewhere still hides the window at once:
+    // Plasma owns that path.
+    function openCenter() {
+        centerExit.stop()
+        if (MeoTheme.reduceMotion) {
+            centerContent.slide = 0
+            popup.visible = true
+            return
+        }
+        centerContent.slide = Math.max(1, centerContent.width) * 0.6
+        popup.visible = true
+        centerEnter.restart()
+    }
+    function closeCenter() {
+        if (!popup.visible)
+            return
+        centerEnter.stop()
+        if (MeoTheme.reduceMotion) {
+            popup.visible = false
+            return
+        }
+        centerExit.restart()
+    }
+    NumberAnimation {
+        id: centerEnter
+        target: centerContent; property: "slide"; to: 0
+        duration: 450
+        easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+    }
+    SequentialAnimation {
+        id: centerExit
+        NumberAnimation {
+            target: centerContent; property: "slide"; to: centerContent.width * 0.6
+            duration: 200
+            easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+        }
+        ScriptAction { script: popup.visible = false }
     }
     NotificationManager.Notifications {
         id: toastModel
@@ -137,10 +190,11 @@ PlasmoidItem {
     function showToast() {
         toastExit.stop()
         if (!toast.visible) {
-            toastContent.slide = toastContent.width
+            toastContent.slide = MeoTheme.reduceMotion ? 0 : toastContent.width
             toast.visible = true
         }
-        toastEnter.restart()
+        if (!MeoTheme.reduceMotion)
+            toastEnter.restart()
     }
     function hideToast(expire) {
         if (!toast.visible)
@@ -149,13 +203,13 @@ PlasmoidItem {
         toastExit.expireAfter = expire
         toastExit.restart()
     }
-    SequentialAnimation {
+    // MD3 emphasized decelerate: a fast start and a long, soft settle (close to
+    // Apple's ease-out). No overshoot: the window edge would clip it.
+    NumberAnimation {
         id: toastEnter
-        NumberAnimation {
-            target: toastContent; property: "slide"; to: 0
-            duration: MeoTheme.reduceMotion ? 0 : 450
-            easing.type: Easing.OutBack; easing.overshoot: 0.9
-        }
+        target: toastContent; property: "slide"; to: 0
+        duration: 450
+        easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
     }
     SequentialAnimation {
         id: toastExit
