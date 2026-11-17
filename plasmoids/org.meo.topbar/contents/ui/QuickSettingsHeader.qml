@@ -35,6 +35,7 @@ RowLayout {
         visible: root.systemState.batteryAvailable
         text: root.systemState.batteryPercent + "%"
         typeRole: "label"; typeSize: "medium"
+        color: MeoTheme.contentOnSurface
     }
     MeoIconButton {
         type: "standard"; size: "s"; icon.name: "lock"

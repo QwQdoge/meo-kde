@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as QQC2
 import MeoUI 1.0
 import MeoKDE 1.0
+import Meo.System 1.0 as MeoSystem
 
 MeoMotionPopup {
     id: quickSettingsPopup
@@ -16,13 +17,60 @@ MeoMotionPopup {
     closePolicy: QQC2.Popup.CloseOnPressOutside | QQC2.Popup.CloseOnEscape
     presentation: MeoMotionPopup.Dialog
     transformOrigin: Item.TopRight
+    // Opens like macOS Control Center: it grows out of the status corner
+    // (top right) instead of fading in place.
+    entranceScale: 0.9
+    // Frosted like the other shell popups: translucent with SurfaceTransparency
+    // (thinner over real blur, which DialogBlur requests for this window).
+    readonly property color baseSurface: MeoTheme.surfaceContainerHigh
+    surfaceColor: MeoSystem.ShellAppearance.transparency
+                  ? Qt.rgba(baseSurface.r, baseSurface.g, baseSurface.b,
+                            MeoTheme.surfaceAlpha(MeoSystem.ShellAppearance.blur ? 0.74 : 0.88))
+                  : baseSurface
+
+    // The content settles in just after the surface: it drops 8dp and fades
+    // in, which gives the opening some depth.
+    Connections {
+        target: quickSettingsPopup
+        function onAboutToShow() {
+            if (MeoTheme.reduceMotion) {
+                contentRoot.opacity = 1
+                contentShift.y = 0
+                return
+            }
+            contentRoot.opacity = 0
+            contentShift.y = -8 * MeoTheme.globalScale
+            contentReveal.restart()
+        }
+    }
+    ParallelAnimation {
+        id: contentReveal
+        SequentialAnimation {
+            PauseAnimation { duration: 60 }
+            NumberAnimation {
+                target: contentRoot; property: "opacity"; to: 1
+                duration: 220
+                easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandardDecelerate
+            }
+        }
+        SequentialAnimation {
+            PauseAnimation { duration: 60 }
+            NumberAnimation {
+                target: contentShift; property: "y"; to: 0
+                duration: 380
+                easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedDecelerate
+            }
+        }
+    }
     onOpened: {
         while (stack.depth > 1)
             stack.pop()
     }
 
     contentItem: Item {
+        id: contentRoot
         anchors.fill: parent
+        transform: Translate { id: contentShift }
         anchors.margins: 20 * MeoTheme.globalScale
         QQC2.StackView {
             id: stack

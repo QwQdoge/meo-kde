@@ -431,7 +431,10 @@ QQC2.ScrollView {
                     // Pixel tiles keep a consistent 80 dp touch height. Wide
                     // tiles gain information density horizontally instead of
                     // becoming a different visual language vertically.
-                    implicitHeight: ShellMetrics.quickSettingsTileHeight * root.tileDensityScale
+                    // Small tiles carry their label under the icon, so they are taller.
+                    implicitHeight: (tileSpan === 2 ? ShellMetrics.quickSettingsTileHeight
+                                                    : ShellMetrics.quickSettingsLabelledTileHeight)
+                                    * root.tileDensityScale
                     Layout.preferredHeight: implicitHeight
 
                     DropArea {
@@ -455,7 +458,10 @@ QQC2.ScrollView {
                         enabled: root.tileEnabled(tileSlot.tileId)
                         wide: tileSlot.tileSpan === 2
                         visualStyle: "pixel"
+                        // Wide tiles show a details chevron; small tiles keep only
+                        // their label and open details on long press.
                         detailsEnabled: tileSlot.tileId === "wifi" || tileSlot.tileId === "bluetooth" || tileSlot.tileId === "powerMode" || tileSlot.tileId === "microphone" || tileSlot.tileId === "audioDevices"
+                        showCompactLabel: tileSlot.tileSpan !== 2
                         editMode: root.editMode
                         modelIndex: tileSlot.index
                         onTriggered: root.triggerTile(tileSlot.tileId)
