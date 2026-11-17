@@ -413,18 +413,18 @@ class DesktopLayoutTests(unittest.TestCase):
 
     def test_shelf_pairs_launcher_and_search_without_a_second_task_model(self):
         shelf = (REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/main.qml").read_text()
-        self.assertIn("MeoButtonGroup", shelf)
-        self.assertIn('variant: "connected"', shelf)
-        self.assertIn('type: "tonal"', shelf)
-        self.assertIn('icon: "apps"', shelf)
-        self.assertIn('icon: "search"', shelf)
+        # Googlebook taskbar: one launcher entry (the Meo mark in a pill);
+        # search lives inside the launcher popup, not as a second button.
+        self.assertIn('source: "meoarch-logo"', shelf)
+        self.assertIn("ShellTriggerSurface", shelf)
+        self.assertNotIn('icon: "search"', shelf)
         self.assertIn("launcherPopup.toggleFullLauncher()", shelf)
-        self.assertIn("launcherPopup.openQuickSearch()", shelf)
         self.assertNotIn("TaskManager.TasksModel", shelf)
         for key in ("launcherDefaultPage", "launcherWidth", "launcherPlacement",
                     "launcherShowFavorites", "launcherShowRecents"):
             self.assertIn(f"Plasmoid.configuration.{key}", shelf)
         launcher = (REPO_ROOT / "plasmoids/org.meo.shelf/contents/ui/LauncherPopup.qml").read_text()
+        self.assertIn("function openQuickSearch()", launcher)
         self.assertIn("popupType: QQC2.Popup.Window", launcher)
 
     def test_shelf_launcher_reuses_plasma_models_and_meoui_surfaces(self):
@@ -782,7 +782,8 @@ class DesktopLayoutTests(unittest.TestCase):
 
         self.assertIn("DockHeight=48", profile)
         self.assertIn("DockImplementation=native", profile)
-        self.assertIn("shelfPanelHeight: 80 * MeoTheme.globalScale", metrics)
+        # Launcher placement follows the real 48 dp native Plasma taskbar.
+        self.assertIn("shelfPanelHeight: 48 * MeoTheme.globalScale", metrics)
         self.assertIn('if ("${panel_mode}" === "dual" && "${dock_implementation}" === "native")', helper)
         self.assertNotIn('writeConfig("maxStripes"', helper)
         expected_fallbacks = {

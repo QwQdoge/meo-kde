@@ -10,12 +10,20 @@ MeoMotionSurface {
     // meo-shellrc they let a little of what is below show through (and, with
     // SurfaceBlur, the compositor blurs it); see Meo.System.ShellAppearance.
     property real translucentOpacity: MeoTheme.isDarkMode ? 0.86 : 0.88
+    // Over real blur the tint can be thinner: the backdrop is reduced to soft
+    // colour, so only a faint hint of it shows through (the Pixel "frosted
+    // glass" look). Without blur a thin tint would look like cheap
+    // transparency, so it keeps the denser value above.
+    property real blurredOpacity: MeoTheme.isDarkMode ? 0.70 : 0.74
+    readonly property bool blurActive: MeoSystem.ShellAppearance.blur
     // MeoTheme.surfaceAlpha applies the user's transparency level as well.
-    readonly property real surfaceOpacity: MeoSystem.ShellAppearance.transparency
-                                           ? MeoTheme.surfaceAlpha(translucentOpacity) : 1.0
+    readonly property real surfaceOpacity: !MeoSystem.ShellAppearance.transparency ? 1.0
+                                           : MeoTheme.surfaceAlpha(blurActive ? blurredOpacity : translucentOpacity)
 
     radius: ShellMetrics.radiusPopup
     color: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, surfaceOpacity)
     elevation: 3
+    // Tonal elevation only; the shell contracts keep popups free of a
+    // permanent outline.
     showOutline: false
 }

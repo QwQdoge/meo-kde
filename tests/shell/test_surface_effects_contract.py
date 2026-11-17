@@ -17,10 +17,12 @@ class SurfaceEffectsContract(unittest.TestCase):
         self.assertIn('readEntry("SurfaceBlur", false)', source)
         self.assertIn("m_transparency && m_blur", read("native/system/shellappearance.h"))
 
-    def test_packaged_profile_keeps_effects_off(self):
+    def test_packaged_profile_ships_the_frosted_look(self):
+        # The reader defaults stay off (above); the packaged session turns the
+        # reference desktop's transparent, blurred surfaces on (fee77251).
         profile = read("defaults/plasma/meo-shellrc")
-        self.assertIn("SurfaceTransparency=false", profile)
-        self.assertIn("SurfaceBlur=false", profile)
+        self.assertIn("SurfaceTransparency=true", profile)
+        self.assertIn("SurfaceBlur=true", profile)
 
     def test_blur_thins_the_tint_only_with_real_blur(self):
         source = read("qml/MeoKDE/FrostedSurface.qml")

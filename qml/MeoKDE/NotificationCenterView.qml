@@ -583,8 +583,9 @@ Item {
                     // Solid unless the user enabled SurfaceTransparency in meo-shellrc.
                     readonly property color baseColor: critical ? MeoTheme.errorContainer
                                                                 : MeoTheme.surfaceContainerHigh
-                    readonly property real surfaceAlpha: MeoSystem.ShellAppearance.transparency
-                                                         ? MeoTheme.surfaceAlpha(0.9) : 1.0
+                    // Thinner over real blur, like FrostedSurface.
+                    readonly property real surfaceAlpha: !MeoSystem.ShellAppearance.transparency ? 1.0
+                                                         : MeoTheme.surfaceAlpha(MeoSystem.ShellAppearance.blur ? 0.8 : 0.9)
                     // The visible card is `cardShape` below, which needs a
                     // different radius per corner for grouped segments.
                     // The disclosure controls the card's real height.  This
