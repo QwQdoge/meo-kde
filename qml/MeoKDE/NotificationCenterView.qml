@@ -93,6 +93,11 @@ Item {
         return count
     }
     property bool clearPending: false
+    // Clear all first sends every dismissible card out to the right, one
+    // after another, then closes them (see clearOutTimer).
+    property bool clearingAll: false
+    readonly property int clearStagger: MeoTheme.reduceMotion ? 0 : 35
+    readonly property int swipeOutDuration: MeoTheme.reduceMotion ? 0 : 220
 
     signal settingsRequested()
 
@@ -169,6 +174,25 @@ Item {
             return
         root.clearPending = true
         clearFeedbackTimer.restart()
+        if (!root.clearingAll && !MeoTheme.reduceMotion) {
+            root.clearingAll = true
+            clearOutTimer.interval = Math.min(root.visibleNotificationCount, 8) * root.clearStagger
+                                     + root.swipeOutDuration
+            clearOutTimer.restart()
+            return
+        }
+        root.closeAllClosable()
+    }
+
+    Timer {
+        id: clearOutTimer
+        onTriggered: {
+            root.closeAllClosable()
+            root.clearingAll = false
+        }
+    }
+
+    function closeAllClosable() {
         for (let row = root.notifications.count - 1; row >= 0; --row) {
             // Closing a group header closes every child, including those a
             // collapsed group hides; its visible children are skipped here.
@@ -574,7 +598,74 @@ Item {
                     visible: contentAllowed
                     enabled: contentAllowed
                     height: contentAllowed ? implicitHeight : 0
-                    opacity: contentAllowed ? 1 : 0
+                    // Swipe right to dismiss (pointer drag, touch or a two-finger
+                    // touchpad swipe). The card follows the gesture, fades a
+                    // little as it leaves, and springs back if released early.
+                    property real swipeX: 0
+                    property bool swipeDismissing: false
+                    readonly property real swipeProgress: Math.max(0, Math.min(1, swipeX / Math.max(1, width)))
+                    transform: Translate { x: notificationCard.swipeX }
+                    opacity: (contentAllowed ? 1 : 0) * (1 - 0.6 * swipeProgress)
+
+                    function settleSwipe(velocityX) {
+                        if (swipeDismissing)
+                            return
+                        // Past a third of the card, or a quick flick that has
+                        // already travelled a little way, dismisses.
+                        const flick = isFinite(velocityX) && velocityX > 900 * MeoTheme.globalScale
+                                      && swipeX > width * 0.12
+                        if (closable && (swipeX > width * 0.35 || flick))
+                            dismissBySwipe()
+                        else if (swipeX !== 0)
+                            swipeBack.restart()
+                    }
+                    function dismissBySwipe() {
+                        swipeBack.stop()
+                        swipeDismissing = true
+                        swipeOut.restart()
+                    }
+                    NumberAnimation {
+                        id: swipeBack
+                        target: notificationCard
+                        property: "swipeX"
+                        to: 0
+                        duration: MeoTheme.reduceMotion ? 0 : 420
+                        // A soft overshoot, like a macOS banner settling back.
+                        easing.type: Easing.OutBack
+                        easing.overshoot: 1.1
+                    }
+                    NumberAnimation {
+                        id: swipeOut
+                        target: notificationCard
+                        property: "swipeX"
+                        to: notificationCard.width + MeoTheme.space24
+                        duration: root.swipeOutDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+                        onFinished: if (root.notifications && root.notifications.close)
+                                        root.notifications.close(notificationCard.sourceIndex)
+                    }
+                    // Clear all: leave in order, top first.
+                    SequentialAnimation {
+                        id: clearOut
+                        PauseAnimation { duration: Math.max(0, Math.min(notificationCard.index, 8)) * root.clearStagger }
+                        NumberAnimation {
+                            target: notificationCard
+                            property: "swipeX"
+                            to: notificationCard.width + MeoTheme.space24
+                            duration: root.swipeOutDuration
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+                        }
+                    }
+                    Connections {
+                        target: root
+                        function onClearingAllChanged() {
+                            if (root.clearingAll && notificationCard.visible
+                                    && (notificationCard.closable || notificationCard.isInGroup))
+                                clearOut.restart()
+                        }
+                    }
                     readonly property real cardHeight: (isGroupHeader ? groupHeaderRow.implicitHeight
                                                                       : cardContent.implicitHeight)
                                                        + 2 * root.cardPadding
@@ -650,8 +741,6 @@ Item {
                                 readonly property color layerColor: stackLevel === 1 ? MeoTheme.surfaceContainer
                                                                                      : MeoTheme.surfaceContainerLow
                                 color: Qt.rgba(layerColor.r, layerColor.g, layerColor.b, notificationCard.surfaceAlpha)
-                                border.width: MeoTheme.strokeWidthThin
-                                border.color: Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.16)
                                 Behavior on y {
                                     NumberAnimation {
                                         duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationDisclosureEnter
@@ -688,9 +777,6 @@ Item {
                         topRightRadius: notificationCard.topRadius
                         bottomLeftRadius: notificationCard.bottomRadius
                         bottomRightRadius: notificationCard.bottomRadius
-                        // A hairline edge separates each card from the wallpaper.
-                        border.width: MeoTheme.strokeWidthThin
-                        border.color: Qt.rgba(MeoTheme.outline.r, MeoTheme.outline.g, MeoTheme.outline.b, 0.16)
                         Behavior on topLeftRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
                         Behavior on topRightRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: MeoTheme.reduceMotion ? 0 : MeoTheme.motionDurationMedium1; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized } }
@@ -1211,6 +1297,63 @@ Item {
                                     onClicked: notificationCard.submitReply()
                                 }
                             }
+                        }
+                    }
+
+                    // Gesture layer above the card. Its handlers only watch passively until
+                    // a horizontal drag passes the threshold, so taps, the card's buttons
+                    // and vertical list scrolling keep working underneath.
+                    Item {
+                        id: swipeLayer
+                        objectName: "notificationSwipeLayer"
+                        anchors.fill: cardShape
+                        enabled: notificationCard.closable && !notificationCard.swipeDismissing
+
+                        DragHandler {
+                            id: swipeDrag
+                            target: null
+                            xAxis.enabled: true
+                            yAxis.enabled: false
+                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchScreen | PointerDevice.Stylus
+                            onTranslationChanged: {
+                                const dx = translation.x
+                                // Rightwards follows the pointer; leftwards resists.
+                                notificationCard.swipeX = dx >= 0 ? dx : dx * 0.2
+                            }
+                            onActiveChanged: {
+                                if (active)
+                                    swipeBack.stop()
+                                else
+                                    notificationCard.settleSwipe(centroid.velocity.x)
+                            }
+                        }
+
+                        // Two-finger touchpad swipe. Deltas are applied the way Flickable
+                        // scrolls, so the card moves with the fingers under the user's own
+                        // natural-scrolling setting; vertical scrolls go to the list.
+                        WheelHandler {
+                            target: null
+                            // Horizontal only: vertical scrolls never reach this
+                            // handler, so they keep scrolling the list.
+                            orientation: Qt.Horizontal
+                            acceptedDevices: PointerDevice.TouchPad
+                            onWheel: (event) => {
+                                const dx = event.pixelDelta.x !== 0 ? event.pixelDelta.x : event.angleDelta.x / 8
+                                const dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8
+                                if (Math.abs(dx) <= Math.abs(dy) && notificationCard.swipeX === 0) {
+                                    event.accepted = false
+                                    return
+                                }
+                                swipeBack.stop()
+                                const next = notificationCard.swipeX + dx
+                                notificationCard.swipeX = next >= 0 ? next : Math.max(next, -24 * MeoTheme.globalScale)
+                                wheelSettle.restart()
+                            }
+                        }
+                        Timer {
+                            id: wheelSettle
+                            interval: 120
+                            onTriggered: notificationCard.settleSwipe(0)
                         }
                     }
                 }

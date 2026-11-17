@@ -117,7 +117,7 @@ PlasmoidItem {
         // Present only after bindings have observed the complete model.
         Qt.callLater(function() {
             if (toastModel.ready && toastModel.count > 0 && !NotificationManager.Server.inhibited && !popup.visible) {
-                toast.visible = true
+                root.showToast()
                 toastExpiry.restart()
             }
         })
@@ -129,9 +129,58 @@ PlasmoidItem {
     Timer {
         id: toastExpiry
         interval: 7000
-        onTriggered: {
-            toast.visible = false
-            if (toastModel.count > 0) toastModel.expire(toastModel.index(0, 0))
+        onTriggered: root.hideToast(true)
+    }
+    // The banner slides in from the screen edge on the right and leaves the
+    // same way (with a soft settle, like a macOS banner). The window itself
+    // stays put; only its content moves, clipped to the window.
+    function showToast() {
+        toastExit.stop()
+        if (!toast.visible) {
+            toastContent.slide = toastContent.width
+            toast.visible = true
+        }
+        toastEnter.restart()
+    }
+    function hideToast(expire) {
+        if (!toast.visible)
+            return
+        toastEnter.stop()
+        toastExit.expireAfter = expire
+        toastExit.restart()
+    }
+    SequentialAnimation {
+        id: toastEnter
+        NumberAnimation {
+            target: toastContent; property: "slide"; to: 0
+            duration: MeoTheme.reduceMotion ? 0 : 450
+            easing.type: Easing.OutBack; easing.overshoot: 0.9
+        }
+    }
+    SequentialAnimation {
+        id: toastExit
+        property bool expireAfter: false
+        NumberAnimation {
+            target: toastContent; property: "slide"; to: toastContent.width
+            duration: MeoTheme.reduceMotion ? 0 : 260
+            easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasizedAccelerate
+        }
+        ScriptAction {
+            script: {
+                toast.visible = false
+                if (toastExit.expireAfter && toastModel.count > 0)
+                    toastModel.expire(toastModel.index(0, 0))
+            }
+        }
+    }
+    Connections {
+        target: toastModel
+        // Swiped away or closed from its own buttons: nothing left to show.
+        function onCountChanged() {
+            if (toastModel.count === 0 && toast.visible) {
+                toastExpiry.stop()
+                toast.visible = false
+            }
         }
     }
     PlasmaCore.Dialog {
@@ -142,7 +191,17 @@ PlasmoidItem {
         location: PlasmaCore.Types.Floating
         x: root.screenGeometry.x + root.screenGeometry.width - width - ShellMetrics.screenMargin
         y: root.screenGeometry.y + ShellMetrics.topBarHeight + ShellMetrics.popupGap
-        mainItem: NotificationCenterView {
+        mainItem: Item {
+            id: toastContent
+            property real slide: 0
+            implicitWidth: toastView.implicitWidth
+            implicitHeight: toastView.implicitHeight
+            clip: true
+            NotificationCenterView {
+            id: toastView
+            x: toastContent.slide
+            width: parent.width
+            height: parent.height
             implicitWidth: 360 * MeoTheme.globalScale
             implicitHeight: Math.max(180 * MeoTheme.globalScale, Math.min(320 * MeoTheme.globalScale, renderedHeight + MeoTheme.space24))
             notifications: toastModel
@@ -153,6 +212,7 @@ PlasmoidItem {
             showSettingsAction: false
             showJobs: false
             showHistory: false
+            }
         }
     }
 
