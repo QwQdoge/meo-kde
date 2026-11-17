@@ -86,6 +86,17 @@ MeoMotionPopup {
                 NumberAnimation { property: "x"; from: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale; to: 0; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized }
                 NumberAnimation { property: "opacity"; from: MeoTheme.reduceMotion ? 1 : 0; to: 1; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
             }
+            // The page underneath moves the same 24dp the other way, so every
+            // step is a short shared-axis shift instead of Qt's default
+            // full-width slide, which travels outside the rounded panel.
+            pushExit: Transition {
+                NumberAnimation { property: "x"; from: 0; to: MeoTheme.reduceMotion ? 0 : -24 * MeoTheme.globalScale; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized }
+                NumberAnimation { property: "opacity"; from: 1; to: MeoTheme.reduceMotion ? 1 : 0; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
+            }
+            popEnter: Transition {
+                NumberAnimation { property: "x"; from: MeoTheme.reduceMotion ? 0 : -24 * MeoTheme.globalScale; to: 0; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized }
+                NumberAnimation { property: "opacity"; from: MeoTheme.reduceMotion ? 1 : 0; to: 1; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
+            }
             popExit: Transition {
                 NumberAnimation { property: "x"; from: 0; to: MeoTheme.reduceMotion ? 0 : 24 * MeoTheme.globalScale; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingEmphasized }
                 NumberAnimation { property: "opacity"; from: 1; to: MeoTheme.reduceMotion ? 1 : 0; duration: MeoTheme.motionDurationPage; easing.type: Easing.BezierSpline; easing.bezierCurve: MeoTheme.motionEasingStandard }
